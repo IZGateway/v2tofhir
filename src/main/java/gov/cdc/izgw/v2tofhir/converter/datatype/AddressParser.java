@@ -1,4 +1,4 @@
-package gov.cdc.izgw.v2tofhir.converter;
+package gov.cdc.izgw.v2tofhir.converter.datatype;
 
 import java.util.Arrays;
 import java.util.regex.Pattern;
@@ -10,10 +10,11 @@ import org.hl7.fhir.r4.model.Address.AddressUse;
 import ca.uhn.hl7v2.model.Composite;
 import ca.uhn.hl7v2.model.Primitive;
 import ca.uhn.hl7v2.model.Type;
+import gov.cdc.izgw.v2tofhir.converter.ParserUtils;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class AddressParser {
+public class AddressParser implements DatatypeParser<Address> {
 
 	private static final Pattern caPostalCode1 = Pattern
 			.compile("^[a-zA-Z]\\d[a-zA-Z]$");
@@ -165,10 +166,15 @@ public class AddressParser {
 			"SW", "SUROESTE", "SOUTHWEST", "E", "ESTE", "EAST", "W", "OESTE",
 			"WEST");
 
-	public static Address toAddress(Type type) {
+	@Override
+	public Class<Address> type() {
+		return Address.class;
+	}
+	@Override
+	public Address convert(Type type) {
 		Address addr = null;
 		if (type instanceof Primitive pt) {
-			addr = parse(pt.getValue());
+			addr = fromString(pt.getValue());
 		} else if (type instanceof Composite comp && Arrays.asList("AD", "XAD")
 				.contains(type.getName())) {
 			addr = parse(comp.getComponents());
@@ -178,7 +184,8 @@ public class AddressParser {
 		}
 		return addr;
 	}
-	public static Address parse(String value) {
+	@Override
+	public Address fromString(String value) {
 		if (StringUtils.isBlank(value)) {
 			return null;
 		}
@@ -210,6 +217,7 @@ public class AddressParser {
 		}
 		return null;
 	}
+	
 	private static void getCityStatePostalCode(Address addr, String part) {
 		// could be an address line, country, or some combination of
 		// city, state, and postal code
@@ -330,7 +338,4 @@ public class AddressParser {
 				return null;
 		}
 	}
-	private AddressParser() {
-	}
-
 }

@@ -120,7 +120,7 @@ public class Systems {
 		}
 	}
 
-	public static String mapCodeSystem(String value) {
+	public static String mapIdSystem(String value) {
 		if (StringUtils.isBlank(value)) {
 			return null;
 		}
@@ -140,8 +140,19 @@ public class Systems {
 		}
 		return value;
 	}
-	public static String mapIdSystem(String value) {
-		return mapCodeSystem(value);
+	public static String mapCodeSystem(String value) {
+		String system = mapIdSystem(value);
+		if (system == null) {
+			return null;
+		}
+		// Handle mapping for HL7 V2 tables
+		if (system.startsWith("HL7") || system.startsWith("hl7")) {
+			system = system.substring(3);
+			return "http://terminology.hl7.org/CodeSystem/v2-" + system;
+		} else if (system.length() == 4 && StringUtils.isNumeric(system)) {
+			return "http://terminology.hl7.org/CodeSystem/v2-" + system;
+		}
+		return value;
 	}
 	/**
 	 * Given a URI, get the associated OID

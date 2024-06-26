@@ -21,7 +21,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -39,7 +38,6 @@ import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.InstantType;
 import org.hl7.fhir.r4.model.IntegerType;
 import org.hl7.fhir.r4.model.PositiveIntType;
-import org.hl7.fhir.r4.model.PrimitiveType;
 import org.hl7.fhir.r4.model.StringType;
 import org.hl7.fhir.r4.model.TimeType;
 import org.hl7.fhir.r4.model.UnsignedIntType;
@@ -51,20 +49,19 @@ import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Composite;
-import ca.uhn.hl7v2.model.Group;
 import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.model.Primitive;
 import ca.uhn.hl7v2.model.Segment;
-import ca.uhn.hl7v2.model.Structure;
 import ca.uhn.hl7v2.model.Type;
-import ca.uhn.hl7v2.model.Visitable;
 import ca.uhn.hl7v2.parser.Parser;
 import ca.uhn.hl7v2.parser.PipeParser;
 import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
 import gov.cdc.izgw.v2tofhir.converter.Mapping;
+import gov.cdc.izgw.v2tofhir.converter.MessageParser;
 import gov.cdc.izgw.v2tofhir.converter.ParserUtils;
 import gov.cdc.izgw.v2tofhir.converter.Systems;
 import lombok.extern.slf4j.Slf4j;
+import test.gov.cdc.izgateway.AssertionUtils;
 
 @Slf4j
 /**
@@ -96,7 +93,7 @@ class ConverterTest {
 	private static final FhirContext ctx = FhirContext.forR4();
 	private static final IParser fhirParser = ctx.newJsonParser().setPrettyPrint(true);
 	@ParameterizedTest
-	@MethodSource("testMessages")
+	@MethodSource("getTestMessages")
 	@Disabled("Used for testing a local microsoft V2 converter")
 	void testConversion(String hl7Message) throws IOException, ParseException {
 		HttpURLConnection con = getUrlConnection();
@@ -121,27 +118,28 @@ class ConverterTest {
 		log.info("HL7 V2: {}", hl7Message);
 		log.info("FHIR: {}", fhirResult);
 		IParser p = ctx.newJsonParser();
+		@SuppressWarnings("unused")
 		Bundle b = p.parseResource(Bundle.class, fhirResult);
 	}
 	
 	@ParameterizedTest
-	@MethodSource("testComposites")
+	@MethodSource("getTestComposites")
 	void testCompositeConversionsDataCheck(Type t) {
 		assertNotNull(t);
 		assertTrue(t instanceof Composite);
 	}
 
 	@ParameterizedTest
-	@MethodSource("testCompositesForCoding")
+	@MethodSource("getTestCompositesForCoding")
 	void testCompositeConversionsForCodings(Type t) throws HL7Exception {
 		CodeableConcept cc = DatatypeConverter.toCodeableConcept(t);
 		Coding coding = DatatypeConverter.toCoding(t);
 		if (cc != null && coding != null) {
-			assertEquals(toString(cc.getCodingFirstRep()), toString(coding));
+			assertEquals(AssertionUtils.toString(cc.getCodingFirstRep()), AssertionUtils.toString(coding));
 		}
 		
 		String first = (t instanceof Composite comp) ? comp.getComponents()[0].encode() : t.encode();
-		if ("HD".equals(t.getClass().getSimpleName())) {
+		if ("HD".equals(t.getName())) {
 			// HD has System but not code
 			assertFalse(coding.hasCode());
 			assertTrue(coding.hasSystem());
@@ -188,10 +186,10 @@ class ConverterTest {
 			}
 		}
 		System.out.println(encoded);
-		System.out.println(toString(coding));
+		System.out.println(AssertionUtils.toString(coding));
 	}
 	private boolean hasDisplay(Type t) {
-		return Arrays.asList("CE", "CNE", "CWE").contains(t.getClass().getSimpleName());
+		return Arrays.asList("CE", "CNE", "CWE").contains(t.getName());
 	}
 	private boolean hasComponent(Type t, int index) {
 		if (t instanceof Composite comp) {
@@ -209,7 +207,7 @@ class ConverterTest {
 	}
 	
 	@ParameterizedTest
-	@MethodSource("testCompositesForIdentifier")
+	@MethodSource("getTestCompositesForIdentifier")
 	void testCompositeConversionsForIdentifier(Type t) throws HL7Exception {
 		Coding coding = DatatypeConverter.toCoding(t);
 		Identifier id = DatatypeConverter.toIdentifier(t);
@@ -218,7 +216,7 @@ class ConverterTest {
 			assertEquals(coding.getSystem(), id.getSystem());
 		}
 		String first = (t instanceof Composite comp) ? comp.getComponents()[0].encode() : t.encode();
-		if ("HD".equals(t.getClass().getSimpleName())) {
+		if ("HD".equals(t.getName())) {
 			assertEquals(first, id.getSystem());
 		} else {
 			assertEquals(first, id.getValue());
@@ -226,192 +224,74 @@ class ConverterTest {
 	}
 	
 	@ParameterizedTest
-	@MethodSource("testPrimitives")
+	@MethodSource("getTestPrimitives")
 	void testPrimitiveConversionsDataCheck(Type t) throws HL7Exception {
 		assertNotNull(t);
 		assertTrue(t instanceof Primitive);
 	}
 	
 	@ParameterizedTest
-	@MethodSource("testPrimitives")
+	@MethodSource("getTestPrimitives")
 	void testPrimitiveConversionsIntegerType(Type t) throws HL7Exception {
 		assertTrue(t instanceof Primitive);
-		compareStringValues(DatatypeConverter::toIntegerType, IntegerType::new, t);
+		AssertionUtils.compareStringValues(DatatypeConverter::toIntegerType, IntegerType::new, t);
 	}
 	@ParameterizedTest
-	@MethodSource("testPrimitives")
+	@MethodSource("getTestPrimitives")
 	void testPrimitiveConversionsPositiveIntType(Type t) throws HL7Exception {
-		compareStringValues(DatatypeConverter::toPositiveIntType, PositiveIntType::new, t);
+		AssertionUtils.compareStringValues(DatatypeConverter::toPositiveIntType, PositiveIntType::new, t);
 	}
 	@ParameterizedTest
-	@MethodSource("testPrimitives")
+	@MethodSource("getTestPrimitives")
 	void testPrimitiveConversionsUnsignedIntType(Type t) throws HL7Exception {
-		compareStringValues(DatatypeConverter::toUnsignedIntType, UnsignedIntType::new, t); 
+		AssertionUtils.compareStringValues(DatatypeConverter::toUnsignedIntType, UnsignedIntType::new, t); 
 	}
 	@ParameterizedTest
-	@MethodSource("testPrimitives")
+	@MethodSource("getTestPrimitives")
 	void testPrimitiveConversionsDateTimeType(Type t) throws HL7Exception {
-		compareStringValues(DatatypeConverter::toDateTimeType, DateTimeType::new, t);
+		AssertionUtils.compareStringValues(DatatypeConverter::toDateTimeType, DateTimeType::new, t);
 	}
 	@ParameterizedTest
-	@MethodSource("testPrimitives")
+	@MethodSource("getTestPrimitives")
 	void testPrimitiveConversionsDateType(Type t) throws HL7Exception {
-		compareStringValues(DatatypeConverter::toDateType, DateType::new, t);
+		AssertionUtils.compareStringValues(DatatypeConverter::toDateType, DateType::new, t);
 	}
 	@ParameterizedTest
-	@MethodSource("testPrimitives")
+	@MethodSource("getTestPrimitives")
 	void testPrimitiveConversionsInstantType(Type t) throws HL7Exception {
-		compareStringValues(DatatypeConverter::toInstantType, InstantType::new, t); 
+		AssertionUtils.compareStringValues(DatatypeConverter::toInstantType, InstantType::new, t); 
 	}
 	@ParameterizedTest
-	@MethodSource("testPrimitives")
+	@MethodSource("getTestPrimitives")
 	@Disabled(value="HAPI's TimeType has a bug in which they don't parse the actual value, just store it")
 	void testPrimitiveConversionsTimeType(Type t) throws HL7Exception {
-		compareStringValues(DatatypeConverter::toTimeType, TimeType::new, t); 
+		AssertionUtils.compareStringValues(DatatypeConverter::toTimeType, TimeType::new, t); 
 	}
 	@ParameterizedTest
-	@MethodSource("testPrimitives")
+	@MethodSource("getTestPrimitives")
 	void testPrimitiveConversionsStringType(Type t) throws HL7Exception {
-		compareStringValues(DatatypeConverter::toStringType, StringType::new, t);
+		AssertionUtils.compareStringValues(DatatypeConverter::toStringType, StringType::new, t);
 	}
 	@ParameterizedTest
-	@MethodSource("testPrimitives")
+	@MethodSource("getTestPrimitives")
 	void testPrimitiveConversionsUriType(Type t) throws HL7Exception {
-		compareStringValues(DatatypeConverter::toUriType, UriType::new, t);
+		AssertionUtils.compareStringValues(DatatypeConverter::toUriType, UriType::new, t);
 	}
 	@ParameterizedTest
-	@MethodSource("testPrimitives")
+	@MethodSource("getTestPrimitives")
 	void testPrimitiveConversionsCodeType(Type t) throws HL7Exception {
-		compareStringValues(DatatypeConverter::toCodeType, CodeType::new, t);
+		AssertionUtils.compareStringValues(DatatypeConverter::toCodeType, CodeType::new, t);
 	}
 	
-	private void compareStringValues(
-		Function<Type, PrimitiveType<?>> conversionFunction, 
-		Function<String, PrimitiveType<?>> stringFunction,
-		Type t
-	) throws HL7Exception {
-		Throwable fhirConversionFailure = null;
-		PrimitiveType<?> fhirTypeFromString = null;
-		if (t.encode() == null) {
-			log.warn("t is null for ", t.getMessage().encode());
-		}
-		try {
-			String value = ParserUtils.unescapeV2Chars(t.encode());
-			Boolean cleanupNeeded = needsIsoCleanup(t);
-			if (cleanupNeeded != null) {
-				value = ParserUtils.cleanupIsoDateTime(value, cleanupNeeded);
-			}
-			fhirTypeFromString = stringFunction.apply(value);
-			assertEquals(t.encode(), fhirTypeFromString.asStringValue());
-		} catch (Exception ex) {
-			fhirConversionFailure = ex;
-		} catch (AssertionError err) {
-			fhirConversionFailure = err;
-		}
-		PrimitiveType<?> fhirType = conversionFunction.apply(t);
-		// In these cases, if we reproduce the encoded value, count it as a win.
-		String encodedValue = null;
-		boolean needsIntFix = false;
-		if (fhirType != null) {
-			switch (fhirType.fhirType()) {
-			case "instant", "datetime", "date":
-				encodedValue = fhirType.asStringValue();
-				if (encodedValue != null) {
-					encodedValue = encodedValue.replaceAll("[\\-T:]", "");
-				}
-				break;
-			case "time":
-				encodedValue = fhirType.asStringValue();
-				if (encodedValue != null) {
-					encodedValue = encodedValue.replace(":", "");
-				}
-				break;
-			case "integer":
-			case "long":
-			case "positiveInt":
-			case "unsignedInt":
-				encodedValue = fhirType.asStringValue();
-				needsIntFix = true;
-				break;
-			default:
-				encodedValue = fhirType.asStringValue();
-				break;
-			}
-		}
-		
-		if (fhirConversionFailure == null) {
-			assertNotNull(fhirTypeFromString);
-			// The values are the same.
-			if (fhirType == null) {
-				// TimeType has a bug in that it doesn't parse the actual value
-				// in use.
-				if (!"time".equals(fhirTypeFromString.fhirType())) {
-					assertEqualStrings(null, fhirTypeFromString.asStringValue());
-				}
-			} else {
-				assertEquals(isEmpty(fhirTypeFromString.getValue()), isEmpty(fhirType.getValue()),
-					"'" + fhirTypeFromString.getValue() + "' <> '" + fhirType.getValue() + "'");
-				if (!isEmpty(fhirTypeFromString.getValue())) {
-					assertEquals(fhirTypeFromString.getValue(), fhirType.getValue());
-				}
-				// The types are the same.
-				assertEquals(fhirTypeFromString.fhirType(), fhirType.fhirType());
-			}
-		} 
-		
-		if (fhirType != null) {
-			if (!needsIntFix) {
-				assertEqualStrings(ParserUtils.unescapeV2Chars(t.encode()), encodedValue);
-			} else {
-				// The string representations should be the same, except in special cases
-				assertEqualStrings(intFix(t), encodedValue);
-			}
-		}  
+	@ParameterizedTest
+	@MethodSource("getTestSegments")
+	void testSegmentConversions(NamedSegment segment) throws HL7Exception {
+		MessageParser p = new MessageParser();
+		System.out.println(segment);
+		Bundle b = p.createBundle(Collections.singleton(segment.segment()));
+		System.out.println(fhirParser.encodeResourceToString(b));
 	}
 	
-	/**
-	 * To capture numbers from ST values, the v2 converter ignores anything after the numeric part
-	 * of the message, and truncates decimals to integers where needed.
-	 * 
-	 * @param t	The field being extracted from.
-	 * @return	The corrected value.
-	 * @throws HL7Exception Unlikely, but if something went wrong in the parse.
-	 */
-	private String intFix(Type t) throws HL7Exception {
-		String value = ParserUtils.unescapeV2Chars(t.encode()).trim();
-		value = value.split("\\s+")[0];
-		value = StringUtils.substringBefore(value, ".");
-		if (value.length() == 0) {
-			value = "0";
-		}
-		
-		return Integer.valueOf(value).toString();
-	}
-
-	private void assertEqualStrings(String a, String b) {
-		// If one is empty or blank, the other one must be.
-		assertEquals(StringUtils.isBlank(a), StringUtils.isBlank(b), a + " <> '" + b + "'");
-		// if we get here, both have values or both are empty
-		if (StringUtils.isNotEmpty(a)) {
-			// and now we can safely compare them.
-			assertEquals(a, b);
-		}
-	}
-	private boolean isEmpty(Object o) {
-		return o == null || (o instanceof String s && StringUtils.isEmpty(s)); 
-	}
-
-	private Boolean needsIsoCleanup(Type t) {
-		String typeName = t.getClass().getSimpleName();
-		switch (typeName) {
-		case "TM": return Boolean.FALSE;
-		case "DIN", "DLD", "DR", "DT", "DTM": 
-			return Boolean.TRUE;
-		default:
-			return null;  // No cleanup needed
-		}
-	}
-
 	private String testMicrosoftConverterResponse(InputStream is) throws IOException, ParseException {
 		String response = IOUtils.toString(is, StandardCharsets.UTF_8);
 		StreamTokenizer t = new StreamTokenizer(new StringReader(response));
@@ -433,7 +313,7 @@ class ConverterTest {
 				case "Status":
 					skipColon(t);
 					assertEquals('"', t.nextToken());
-					assertEquals(t.sval, "OK");
+					assertEquals("OK", t.sval);
 					break;
 				}
 			}
@@ -500,131 +380,56 @@ class ConverterTest {
 		}
 	}
 	
-	static List<Segment> testSegments() {
-		Set<Segment> testSegments = new TreeSet<Segment>(ConverterTest::compare);
+	static List<NamedSegment> getTestSegments() {
+		Set<Segment> testSegments = new TreeSet<Segment>(AssertionUtils::compare);
 		for (Message msg : testV2Messages().toList()) {
-			iterateSegments(msg, testSegments);
+			ParserUtils.iterateSegments(msg, testSegments);
 		}
-		return new ArrayList<>(testSegments);
+		return testSegments.stream().map(s -> new NamedSegment(s)).toList();
 	}
 	
-	private static void iterateSegments(Group g, Set<Segment> testSegments) {
-		if (g == null) {
-			return;
+	public static class NamedSegment {
+		private final Segment segment;
+		public NamedSegment(Segment segment) {
+			this.segment = segment;
 		}
-		for (String name: g.getNames()) {
+		public Segment segment() {
+			return segment;
+		}
+		public String toString() {
 			try {
-				for (Structure s: g.getAll(name)) {
-					if (s instanceof Segment seg) {
-						testSegments.add(seg);
-					} else if (s instanceof Group group) {
-						iterateSegments(group, testSegments);
-					}
-				}
+				return segment.encode();
 			} catch (HL7Exception e) {
-				e.printStackTrace();
+				throw new AssertionError("Cannot convert " + segment + " to String");
 			}
 		}
 	}
 	
-	private static int compareObjects(Object a, Object b) {
-		if (a == null && b == null) {
-			return 0;
-		}
-		if (a == null) {
-			return -1;
-		}
-		if (b == null) {
-			return 1;
-		}
-		int comp = StringUtils.compare(a.getClass().getSimpleName(), b.getClass().getSimpleName());
-		if (comp != 0) {
-			return comp;
-		}
-		return 2;
+	static Set<Type> getTestComposites() {
+		return getTestComposites(Collections.emptySet());
 	}
-	private static int compare(Visitable a, Visitable b) {
-		int comp = compareObjects(a, b);
-		if (comp != 2) {
-			return comp;
-		}
-		// Two Types are equal if they encode to the same string values.
-		String a1;
-		try {
-			a1 = toString(a);
-		} catch (HL7Exception e) {
-			e.printStackTrace();
-			return -1;
-		}
-		String b1;
-		try {
-			b1 = toString(b);
-		} catch (HL7Exception e) {
-			e.printStackTrace();
-			return 1;
-		}
-		return StringUtils.compare(a1, b1);
-	}
-	private static String toString(Visitable a) throws HL7Exception {
-		if (a instanceof Type t) {
-			return t.encode();
-		} else if (a instanceof Segment s) {
-			return s.encode();
-		}
-		return null;
-	}
-
-	private static int compare(
-			org.hl7.fhir.r4.model.Type a,
-			org.hl7.fhir.r4.model.Type b) {
-		int comp = compareObjects(a, b);
-		if (comp != 2) {
-			return comp;
-		}
-		return StringUtils.compare(toString(a), toString(b));
-	}
-	private static String toString(org.hl7.fhir.r4.model.Type a) {
-		return fhirParser.encodeToString(a);
-	}
-	
-	private static int compare(
-			org.hl7.fhir.r4.model.Resource a,
-			org.hl7.fhir.r4.model.Resource b) {
-		int comp = compareObjects(a, b);
-		if (comp != 2) {
-			return comp;
-		}
-		return StringUtils.compare(toString(a), toString(b));
-	}
-	private static String toString(org.hl7.fhir.r4.model.Resource a) {
-		return fhirParser.encodeResourceToString(a);
-	}
-	
-	static Set<Type> testComposites() {
-		return testComposites(Collections.emptySet());
-	}
-	static Set<Type> testCompositesForCoding() {
+	static Set<Type> getTestCompositesForCoding() {
 		List<String> codingTypes 
 			= Arrays.asList("CE", "CWE", "CX", "EI", "HD");
-		return testFields(t -> codingTypes.contains(t.getClass().getSimpleName()));
+		return getTestFields(t -> codingTypes.contains(t.getName()));
 	}
-	static Set<Type> testCompositesForIdentifier() {
+	static Set<Type> getTestCompositesForIdentifier() {
 		List<String> idTypes 
 			= Arrays.asList("CE", "CWE", "CX", "EI", "HD");
-		return testFields(t -> idTypes.contains(t.getClass().getSimpleName()));
+		return getTestFields(t -> idTypes.contains(t.getName()));
 	}
 	
-	static Set<Type> testComposites(Collection<String> type) {
+	static Set<Type> getTestComposites(Collection<String> type) {
 		if (type.isEmpty()) {
-			return testFields(t -> t instanceof Composite);
+			return getTestFields(t -> t instanceof Composite);
 		} 
-		return testFields(t -> type.contains(t.getClass().getSimpleName()));
+		return getTestFields(t -> type.contains(t.getName()));
 	}
 	
-	static List<Type> testPrimitives() {
-		Set<Type> testPrimitives = new TreeSet<Type>(ConverterTest::compare);
-		testPrimitives.addAll(testFields(t -> t instanceof Primitive));
-		for (Type type: testComposites()) {
+	static List<Type> getTestPrimitives() {
+		Set<Type> testPrimitives = new TreeSet<Type>(AssertionUtils::compare);
+		testPrimitives.addAll(getTestFields(t -> t instanceof Primitive));
+		for (Type type: getTestComposites()) {
 			if (type instanceof Composite comp) {
 				explodeComposite(comp, testPrimitives);
 			}
@@ -642,13 +447,13 @@ class ConverterTest {
 		}
 	}
 	
-	static Set<Type> testFields(Predicate<Type> test) {
-		Set<Type> testFields = new TreeSet<Type>(ConverterTest::compare); 
-		for (Segment segment: testSegments()) {
-			for (int i = 1; i <= segment.numFields(); i++) {
+	static Set<Type> getTestFields(Predicate<Type> test) {
+		Set<Type> testFields = new TreeSet<Type>(AssertionUtils::compare); 
+		for (NamedSegment segment: getTestSegments()) {
+			for (int i = 1; i <= segment.segment().numFields(); i++) {
 				Type[] fields;
 				try {
-					fields = segment.getField(i);
+					fields = segment.segment().getField(i);
 				} catch (HL7Exception e) {
 					e.printStackTrace();
 					continue;

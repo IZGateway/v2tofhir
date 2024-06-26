@@ -103,7 +103,7 @@ public class Mapping {
 				log.debug("{}: Loaded {} lines from {}", fileno, line, name);
 
 			} catch (Exception e) {
-				log.warn("Unexpected {} reading {}({}): {}", e.getClass().getSimpleName(), file.getFilename(), line,
+				warnException("Unexpected {} reading {}({}): {}", e.getClass().getSimpleName(), file.getFilename(), line,
 						e.getMessage(), e);
 			}
 			m.lock();
@@ -241,7 +241,7 @@ public class Mapping {
 				updateCodeLookup(coding);
 			}
 		} catch (Exception e) {
-			log.warn("Unexpected {} reading {}({}): {}", e.getClass().getSimpleName(), file.getFilename(), line,
+			warnException("Unexpected {} reading {}({}): {}", e.getClass().getSimpleName(), file.getFilename(), line,
 					e.getMessage(), e);
 		}
 		
@@ -283,7 +283,7 @@ public class Mapping {
 		}
 		Map<String, Coding> cm = codingMaps.get(table.trim());
 		if (cm == null) {
-			log.warn("Unknow code system: {}", table);
+			warn("Unknow code system: {}", table);
 			return null;
 		}
 		Coding coding = cm.get(code);
@@ -307,4 +307,12 @@ public class Mapping {
 
 	public static void main(String... strings) {
 	}
+	
+	private static void warn(String msg, Object ...args) {
+		log.warn(msg, args);
+	}
+	private static void warnException(String msg, Object ...args) {
+		log.warn(msg, args);
+	}
+
 }

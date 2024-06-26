@@ -4,18 +4,23 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.function.Consumer;
 
 import org.apache.commons.lang3.StringUtils;
+import org.hl7.fhir.r4.model.Address;
+import org.hl7.fhir.r4.model.BaseDateTimeType;
 import org.hl7.fhir.r4.model.CodeType;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.DateType;
 import org.hl7.fhir.r4.model.DecimalType;
-import org.hl7.fhir.r4.model.HumanName;
+import org.hl7.fhir.r4.model.IdType;
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.InstantType;
 import org.hl7.fhir.r4.model.IntegerType;
@@ -25,24 +30,39 @@ import org.hl7.fhir.r4.model.StringType;
 import org.hl7.fhir.r4.model.TimeType;
 import org.hl7.fhir.r4.model.UnsignedIntType;
 import org.hl7.fhir.r4.model.UriType;
-
+import ca.uhn.fhir.model.api.TemporalPrecisionEnum;
+import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Composite;
+import ca.uhn.hl7v2.model.DataTypeException;
 import ca.uhn.hl7v2.model.Primitive;
 import ca.uhn.hl7v2.model.Type;
+import ca.uhn.hl7v2.model.primitive.TSComponentOne;
+import gov.cdc.izgw.v2tofhir.converter.datatype.AddressParser;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class DatatypeConverter {
 	private static final String UNEXPECTED_EXCEPTION_MESSAGE = "Unexpected {}: {}";
 	private static final BigDecimal MAX_UNSIGNED_VALUE = new BigDecimal(Integer.MAX_VALUE);
+	private static final AddressParser addressParser = new AddressParser();
+	
+	private DatatypeConverter() {
+	}
+	
+	public static Address toAddress(Type codedElement) {
+		return addressParser.convert(codedElement);
+	}
 	public static CodeableConcept toCodeableConcept(Type codedElement) {
+		return toCodeableConcept(codedElement, null);
+	}
+	public static CodeableConcept toCodeableConcept(Type codedElement, String table) {
 		if (codedElement == null) {
 			return null;
 		}
 		CodeableConcept cc = new CodeableConcept();
 		Primitive st = null;
 		Composite comp = null;
-		switch (codedElement.getClass().getSimpleName()) {
+		switch (codedElement.getName()) {
 			case "CE", "CF", "CNE", "CWE" :
 				comp = (Composite) codedElement;
 				for (int i = 0; i <= 3; i += 3) {
@@ -68,12 +88,18 @@ public class DatatypeConverter {
 			case "HD" :
 				comp = (Composite) codedElement;
 				ident = extractAsIdentifier(comp, -1, -1, -1, 1, 0);
+				if (ident == null) {
+					return null;
+				}
 				addCoding(cc, new Coding(ident.getSystem(), ident.getValue(), null));
 				break;
 			case "EI" :
 				// EI is a simple code plus an HD
 				comp = (Composite) codedElement;
 				ident = extractAsIdentifier(comp, 0, -1, -1, 2, 1);
+				if (ident == null) {
+					return null;
+				}
 				addCoding(cc, new Coding(ident.getSystem(), ident.getValue(), null));
 				break;
 			case "ID" :
@@ -86,7 +112,7 @@ public class DatatypeConverter {
 
 			case "IS", "ST" :
 				st = (Primitive) codedElement;
-				addCoding(cc, new Coding(null, st.getValue(), null));
+				addCoding(cc, new Coding(Systems.mapCodeSystem(table), st.getValue(), null));
 				break;
 			default :
 				break;
@@ -135,7 +161,7 @@ public class DatatypeConverter {
 		if (type instanceof Primitive pt) {
 			return pt.getValue();
 		} else if (type instanceof Composite comp2 && 
-				   "HD".equals(comp2.getClass().getSimpleName()) // NOSONAR Name check is correct here
+				   "HD".equals(comp2.getName()) // NOSONAR Name check is correct here
 		) {  
 			Identifier id2 = getHDasIdentifier(comp2.getComponents());
 			return id2 == null ? null : id2.getSystem();
@@ -174,13 +200,20 @@ public class DatatypeConverter {
 	}
 
 	public static Coding toCoding(Type type) {
-		CodeableConcept cc = toCodeableConcept(type);
+		return toCoding(type, null);
+	}
+	
+	public static Coding toCoding(Type type, String table) {
+		CodeableConcept cc = toCodeableConcept(type, table);
 		if (cc == null || cc.isEmpty()) {
 			return null;
 		}
 		Coding coding = cc.getCodingFirstRep();
 		if (coding == null || coding.isEmpty()) {
 			return null;
+		}
+		if (table != null && !coding.hasSystem()) {
+			coding.setSystem(Systems.mapCodeSystem(table));
 		}
 		return coding;
 	}
@@ -207,7 +240,7 @@ public class DatatypeConverter {
 			if (field < types.length) {
 				String code = ParserUtils.toString(types[field]);
 				if (StringUtils.isNotBlank(code)) {
-					return new Coding("" + table, code, Mapping.getDisplay(code, "HL7" + table));
+					return new Coding(Systems.mapCodeSystem(table), code, Mapping.getDisplay(code, "HL7" + table));
 				}
 			}
 		}
@@ -238,58 +271,30 @@ public class DatatypeConverter {
 		return qt.getValueElement();
 	}
 
-	public static HumanName toHumanName(Type t) {
-		HumanName hn = null;
-		if (t instanceof Primitive pt) {
-			String name = pt.getValue();
-			hn = HumanNameParser.parse(name);
-
-		} else if (t instanceof Composite comp) {
-			Type[] types = comp.getComponents();
-			switch (t.getClass().getSimpleName()) {
-				case "CNN" :
-					hn = HumanNameParser.parse(types, 1, -1);
-					break;
-				case "XCN" :
-					hn = HumanNameParser.parse(types, 1, 9);
-					break;
-				case "XPN" :
-					hn = HumanNameParser.parse(types, 0, 9);
-					break;
-				default :
-					break;
-			}
-		}
-		if (hn == null || hn.isEmpty()) {
-			return null;
-		}
-		return hn;
-	}
-
 	public static Identifier toIdentifier(Type t) {
 		if (t == null) {
 			return null;
 		}
 
-		Identifier id = new Identifier();
+		Identifier id = null;
 		if (t instanceof Primitive pt) {
-			id.setValue(pt.getValue());
+			id = new Identifier().setValue(pt.getValue());
 		} else if (t instanceof Composite comp) {
 			Type[] types = comp.getComponents();
-			switch (t.getClass().getSimpleName()) {
+			if (types.length < 1) {
+				return null;
+			}
+			switch (t.getName()) {
 				case "EIP" :
-					if (types.length < 1) {
-						break;
-					}
 					t = types[0];
 					// Fall through
 				case "CE", "CF", "CNE", "CWE", "EI" :
 					Coding coding = toCoding(t);
-					if (coding == null || coding.isEmpty()) {
-						return null;
+					if (coding != null) {
+						id = new Identifier();
+						id.setValue(coding.getCode());
+						id.setSystem(coding.getSystem());
 					}
-					id.setValue(coding.getCode());
-					id.setSystem(coding.getSystem());
 					break;
 				case "CX" :
 					id = extractAsIdentifier(comp, 0, 1, 4, 3, 9, 8);
@@ -307,8 +312,9 @@ public class DatatypeConverter {
 					break;
 				case "HD" :
 					Identifier id2 = getHDasIdentifier(types);
-					id = new Identifier();
-					id.setSystem(id2.getValue());
+					if (id2 != null) {
+						id = new Identifier().setSystem(id2.getValue());
+					}
 					break;
 				default :
 					break;
@@ -318,6 +324,10 @@ public class DatatypeConverter {
 			return null;
 		}
 		return id;
+	}
+	
+	public static IdType toIdType(Type type) {
+		return new IdType(ParserUtils.toString(type));
 	}
 
 	private static Identifier getHDasIdentifier(Type[] types) {
@@ -352,19 +362,110 @@ public class DatatypeConverter {
 	}
 	
 	/**
-	 * Convert a string to an instant
-	 * @param value
-	 * @return
+	 * Let HAPI V2 do the parsing work for use in TSComponentOne, which is
+	 * independent of any HL7 Version.
+	 */
+	private static class MyTSComponentOne extends TSComponentOne {
+		private static final long serialVersionUID = 1L;
+		public MyTSComponentOne() {
+			super(null);
+		}
+	}
+	/**
+	 * Convert a string to an instant.  This method converts a String to an InstantType.  It uses both the
+	 * HAPI V2 and the FHIR Parsers to attempt to convert the input.  First it tries the HAPI V2 parser using 
+	 * the date without any ISO Punctuation.  If that fails it uses the FHIR Parser.  The two parsers operate
+	 * differently and have overlapping coverage on their input string ranges, so this provides the highest
+	 * level of compatibility.
+	 * 
+	 * @param value	The value to convert
+	 * @return An InstantType set to the precision of the timestamp. NOTE: This is
+	 * a small abuse of InstantType.
 	 */
 	public static InstantType toInstantType(String value) {
+		if (value == null || value.length() == 0) {
+			return null;
+		}
+		value = value.trim();
+		String original = value; // Save trimmed string for use with FHIR Parser.
+		
+		if (value.length() == 0) {
+			return null;
+		}
+		value = removeIsoPunct(value); 
+		
+		TSComponentOne ts1 = new MyTSComponentOne();
+		try {
+			ts1.setValue(value);
+			Calendar cal = ts1.getValueAsCalendar();
+			String valueWithoutZone = StringUtils.substringBefore(value.replace("+", "-"),"+");
+			TemporalPrecisionEnum prec = null;
+			InstantType t = new InstantType(cal);
+			String valueWithoutDecimal = StringUtils.substringBefore(value, ".");
+			int len = valueWithoutDecimal.length();
+			if (len < 5) {
+				prec = TemporalPrecisionEnum.YEAR;
+			} else if (len < 7) {
+				prec = TemporalPrecisionEnum.MONTH;
+			} else if (len < 9) {
+				prec = TemporalPrecisionEnum.DAY;
+			} else if (len < 13) {
+				prec = TemporalPrecisionEnum.MINUTE;
+			} else if (len < 15) {
+				prec = TemporalPrecisionEnum.SECOND;
+			}
+			if (valueWithoutDecimal.length() < valueWithoutZone.length()) {
+				prec = TemporalPrecisionEnum.MILLI;
+			}
+			t.setPrecision(prec);
+			return t;
+		} catch (Exception e) {
+			try {
+				// We failed to convert, try as FHIR
+				BaseDateTimeType fhirType = new DateTimeType();
+				fhirType.setValueAsString(original);
+				Date date = fhirType.getValue();
+				TemporalPrecisionEnum prec = fhirType.getPrecision();
+				InstantType instant = new InstantType();
+				TimeZone tz = fhirType.getTimeZone();
+				instant.setValue(date);
+				instant.setPrecision(prec);
+				instant.setTimeZone(tz);
+				return instant;
+			} catch (Exception ex) {
+				debugException("Unexpected FHIR {} parsing {} as InstantType: {}",
+						e.getClass().getSimpleName(), original, ex.getMessage(), ex);
+			}
+			debugException("Unexpected   V2 {} parsing {} as InstantType: {}",
+					e.getClass().getSimpleName(), original, e.getMessage());
+			return null;
+		}
+	}
+	private static String removeIsoPunct(String value) {
+		value = value.toUpperCase();
+		String left = value.substring(0, Math.min(11, value.length()));
+		String right = value.length() == left.length() ? "" : value.substring(left.length());
+		left = left.replace("-", "").replace("T", ""); // Remove - and T from date part
+		right = right.replace("-", "+"); // Change any - to +, and remove :
+		String tz = StringUtils.substringAfter(right, "+");  // Get TZ length after +
+		right = StringUtils.substringBefore(right, "+");
+		if (tz.length() != 0) {
+			tz = value.substring(value.length() - tz.length() - 1);	// adjust TZ
+		} else if (right.endsWith("Z")) {	// Check for ZULU time
+			right = right.substring(0, right.length() - 1);
+			tz = "Z";
+		}
+		right = right.replace(":", "");
+		value = left + right + tz;
+		return value;
+	}
+	public static InstantType oldToInstantType(String value) {
 		if (StringUtils.isBlank(value)) {
 			return null;
 		}
-		if (!StringUtils.containsAny(value.substring(0, Math.min(value.length(), 10)), ":T-")) {
-			value = ParserUtils.cleanupIsoDateTime(value, true);
-			if (StringUtils.isBlank(value)) {
-				return null;
-			}
+		value = ParserUtils.cleanupIsoDateTime(value, true);
+		if (StringUtils.isBlank(value)) {
+			return null;
 		}
 		try {
 			return new InstantType(value);
@@ -392,10 +493,18 @@ public class DatatypeConverter {
 			return null;
 		}
 	}
-
 	
 	public static InstantType toInstantType(Type type) {
-		// This will convert the first primitive component of anything to an instant. 
+		// This will convert the first primitive component of anything to an instant.
+		if (type instanceof TSComponentOne ts1) {
+			try {
+				Calendar cal = ts1.getValueAsCalendar();
+				return new InstantType(cal.getTime());
+			} catch (DataTypeException e) {
+				warnException("Unexpected {} parsing {} as InstantType: {}",
+						e.getClass().getSimpleName(), type, e.getMessage(), e);
+			}
+		} 
 		return toInstantType(ParserUtils.toString(type));
 	}
 
@@ -410,7 +519,7 @@ public class DatatypeConverter {
 			int value = bigInt.intValueExact();
 			return new IntegerType(value);
 		} catch (ArithmeticException ex) {
-			log.warn("Integer overflow value in field {}", pt.toString());
+			warnException("Integer overflow value in field {}", pt.toString(), ex);
 			return null;
 		}
 	}
@@ -421,7 +530,7 @@ public class DatatypeConverter {
 			return null;
 		}
 		if (dt.getValue() < 0) {
-			log.warn("Illegal negative value in field {}", pt.toString());
+			warn("Illegal negative value in field {}", pt.toString());
 			return null;
 		}
 		return new PositiveIntType(dt.getValue());
@@ -434,7 +543,7 @@ public class DatatypeConverter {
 		}
 		if (type instanceof Composite comp) {
 			Type[] types = comp.getComponents();
-			if ("CQ".equals(type.getClass().getSimpleName()) // NOSONAR name check is OK here
+			if ("CQ".equals(type.getName()) // NOSONAR name check is OK here
 					&& types.length > 0) { // NOSONAR name compare is correct
 				qt = getQuantity((Primitive) types[0]);
 				if (types.length > 1) {
@@ -471,10 +580,18 @@ public class DatatypeConverter {
 			return new StringType(pt.getValue());
 		}
 		String s = null;
-		switch (type.getClass().getSimpleName()) {
+		switch (type.getName()) {
 			case "CE", "CF", "CNE", "CWE" :
 				CodeableConcept cc = toCodeableConcept(type);
 				s = toString(cc);
+				break;
+			case "ERL":
+				// TODO: Consider converting this type to a FHIRPath expression  
+				try {
+					s = type.encode();
+				} catch (HL7Exception e) {
+					// ignore this error.
+				}
 				break;
 			case "CQ" :
 				Quantity qt = toQuantity(type);
@@ -518,12 +635,12 @@ public class DatatypeConverter {
 			return null;
 		}
 		if (dt.getValue().compareTo(BigDecimal.ZERO) < 0) {
-			log.warn("Illegal negative value in field {}", pt.toString());
+			warn("Illegal negative value in field {}", pt.toString(), pt);
 			return null;
 		}
 		if (dt.getValue().compareTo(MAX_UNSIGNED_VALUE) > 0) {
-			log.warn("Unsigned Integer overflow value in field {}",
-					pt.toString());
+			warn("Unsigned Integer overflow value in field {}",
+					pt.toString(), pt);
 			return null;
 		}
 		return new UnsignedIntType(dt.getValueAsInteger());
@@ -540,7 +657,7 @@ public class DatatypeConverter {
 		if (types.length == 0) {
 			return null;
 		}
-		if ("HD".equals(type.getClass().getSimpleName())) { // NOSONAR Name
+		if ("HD".equals(type.getName())) { // NOSONAR Name
 															// comparison is
 															// correct
 			Identifier id = toIdentifier(type);
@@ -571,7 +688,7 @@ public class DatatypeConverter {
 		Type[] types = composite.getComponents();
 		int versionIndex = 6;
 		int codeSystemOID = 13;
-		if ("EI".equals(composite.getClass().getSimpleName())) { // NOSONAR Use of string comparison is correct
+		if ("EI".equals(composite.getName())) { // NOSONAR Use of string comparison is correct
 			versionIndex = 99;
 			codeSystemOID = 2;
 			hasDisplay = false;
@@ -600,9 +717,9 @@ public class DatatypeConverter {
 			}
 			return coding;
 		} catch (Exception e) {
-			log.warn("Unexpected {} converting {}[{}] to Coding: {}",
-					e.getClass().getSimpleName(), composite.toString(), index,
-					e.getMessage());
+			warnException("Unexpected {} converting {}[{}] to Coding: {}",
+					e.getClass().getName(), composite.toString(), index,
+					e.getMessage(), e);
 			return null;
 		}
 	}
@@ -690,6 +807,14 @@ public class DatatypeConverter {
 		}
 		return b.toString();
 	}
-	private DatatypeConverter() {
+	
+	private static void warn(String msg, Object ...args) {
+		log.warn(msg, args);
+	}
+	private static void warnException(String msg, Object ...args) {
+		log.error(msg, args);
+	}
+	private static void debugException(String msg, Object ...args) {
+		log.debug(msg, args);
 	}
 }

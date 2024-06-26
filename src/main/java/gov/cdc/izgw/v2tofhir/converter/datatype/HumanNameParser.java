@@ -1,4 +1,4 @@
-package gov.cdc.izgw.v2tofhir.converter;
+package gov.cdc.izgw.v2tofhir.converter.datatype;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -8,10 +8,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.HumanName;
 import org.hl7.fhir.r4.model.HumanName.NameUse;
 
+import ca.uhn.hl7v2.model.Composite;
 import ca.uhn.hl7v2.model.Primitive;
 import ca.uhn.hl7v2.model.Type;
+import gov.cdc.izgw.v2tofhir.converter.ParserUtils;
 
-public class HumanNameParser {
+public class HumanNameParser implements DatatypeParser<HumanName> {
 	private static Set<String> prefixes = new HashSet<>(
 	Arrays.asList("mr", "mrs", "miss", "sr", "br", "fr", "dr"));
 	private static Set<String> suffixes = new HashSet<>(
@@ -33,9 +35,13 @@ public class HumanNameParser {
 	"mla", "mba", "msc", "meng", "mbi", "jd", "md", "do", "pharmd",
 	"dmin", "phd", "edd", "dphil", "dba", "lld", "engd", "esq"));
 
-	private HumanNameParser() {}
+	@Override
+	public Class<HumanName> type() {
+		return HumanName.class;
+	}
 
-	static HumanName parse(String name) {
+	@Override
+	public HumanName fromString(String name) {
 		HumanName hn = new HumanName();
 		hn.setText(name);
 		String[] parts = name.split("\\s");
@@ -68,6 +74,29 @@ public class HumanNameParser {
 		}
 		return hn;
 	}
+	
+	@Override
+	public HumanName convert(Type t) {
+		if (t instanceof Primitive pt) {
+			return fromString(pt.getValue());
+		} 
+		
+		if (t instanceof Composite comp) {
+			Type[] types = comp.getComponents();
+			switch (t.getName()) {
+				case "CNN" :
+					return HumanNameParser.parse(types, 1, -1);
+				case "XCN" :
+					return HumanNameParser.parse(types, 1, 9);
+				case "XPN" :
+					return HumanNameParser.parse(types, 0, 9);
+				default :
+					break;
+			}
+		}
+		return null;
+	}
+
 
 	static HumanName parse(Type[] types, int offset, int nameTypeLoc) {
 		HumanName hn = new HumanName();
@@ -159,7 +188,6 @@ public class HumanNameParser {
 	}
 
 	private static boolean isPrefix(String part) {
-		// TODO Auto-generated method stub
 		return prefixes.contains(part.toLowerCase().replace(".", ""));
 	}
 
@@ -169,5 +197,6 @@ public class HumanNameParser {
 
 	private static boolean isDegree(String part) {
 		return degrees.contains(part.toLowerCase().replace(".", ""));
-	};
+	}
+
 }
