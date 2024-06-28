@@ -2,8 +2,11 @@ package gov.cdc.izgw.v2tofhir.converter;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.NamingSystem;
 import org.hl7.fhir.r4.model.NamingSystem.NamingSystemIdentifierType;
@@ -13,7 +16,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class Systems {
-	NamingSystem ns;
+	public static final String CDCGS1VIS = "urn:oid:2.16.840.1.114222.4.5.307";
+	public static final String CDCGS1VIS_OID = "2.16.840.1.114222.4.5.307";
 	public static final String CDCPHINVS = "urn:oid:2.16.840.1.113883.12.471";
 	public static final String CDCPHINVS_OID = "2.16.840.1.113883.12.471";
 	public static final String CDCREC = "urn:oid:2.16.840.1.113883.6.238";
@@ -53,6 +57,7 @@ public class Systems {
 
 	// See https://hl7-definition.caristix.com/v2/HL7v2.8/Tables/0396
 	private static final String[][] stringToUri = {
+		{ CDCGS1VIS, "CDCGS1VIS", CDCGS1VIS_OID },
 		{ CDCPHINVS, "CDCPHINVS", CDCPHINVS_OID },
 		{ CDCREC, "CDCREC", CDCREC_OID },
 		{ CPT, "CPT", "C4", "CPT4", CPT_OID},
@@ -77,7 +82,7 @@ public class Systems {
 		NamingSystem ns = null;
 		for (String[] list: stringToUri) {
 			String uri = list[0];
-			ns = createNamingSystem(uri);
+			ns = createNamingSystem(uri, list[1]);
 			for (String s: list) {
 				if (!uri.equals(s)) {
 					updateNamingSystem(ns, s);
@@ -90,7 +95,7 @@ public class Systems {
 	private Systems() {
 	}
 	
-	private static NamingSystem createNamingSystem(String uri) {
+	private static NamingSystem createNamingSystem(String uri, String name) {
 		NamingSystem ns = new NamingSystem();
 		ns.setUrl(uri);
 		NamingSystemUniqueIdComponent uid = ns.addUniqueId();
@@ -124,20 +129,16 @@ public class Systems {
 		if (StringUtils.isBlank(value)) {
 			return null;
 		}
-		if (value.startsWith("urn:oid:")) {
-			value = value.substring(8);
-		} else if (value.startsWith("urn:uuid:")) {
-			value = value.substring(9);
-		}
-		NamingSystem ns = namingSystems.get(value);
-		if (ns == null) {
-			// Normalize value by replacing any whitespace, hypens or underscores, and uppercasing the text.
-			String normalizedValue = value.replace("[-_\\s]+", "").toUpperCase();
-			ns = namingSystems.get(normalizedValue);
-		}
+		NamingSystem ns = getNamingSystem(value);
 		if (ns != null) {
 			return ns.getUrl();
 		}
+		
+		if (value.startsWith("urn:oid:")) {
+			return value.substring(8);
+		} else if (value.startsWith("urn:uuid:")) {
+			return value.substring(9);
+		} 
 		return value;
 	}
 	public static String mapCodeSystem(String value) {
@@ -148,6 +149,9 @@ public class Systems {
 		// Handle mapping for HL7 V2 tables
 		if (system.startsWith("HL7") || system.startsWith("hl7")) {
 			system = system.substring(3);
+			if (system.startsWith("-")) {
+				system = system.substring(1);
+			}
 			return "http://terminology.hl7.org/CodeSystem/v2-" + system;
 		} else if (system.length() == 4 && StringUtils.isNumeric(system)) {
 			return "http://terminology.hl7.org/CodeSystem/v2-" + system;
@@ -160,16 +164,39 @@ public class Systems {
 	 * @return the associated OID or null if none is known (without the urn:oid: prefix).
 	 */
 	public static String toOid(String uri) {
+		if (StringUtils.isEmpty(uri)) {
+			return null;
+		}
 		NamingSystem ns = namingSystems.get(uri);
 		if (ns == null) {
 			return null;
 		}
 		for (NamingSystemUniqueIdComponent uid : ns.getUniqueId()) {
-			if (NamingSystemIdentifierType.OID.equals(ns.getType())) {
+			if (NamingSystemIdentifierType.OID.equals(uid.getType())) {
 				return uid.getValue();
 			}
 		}
 		return null;
+	}
+	
+	public static String toTextName(String uri) {
+		if (StringUtils.isEmpty(uri)) {
+			return "";
+		}
+		NamingSystem ns = namingSystems.get(uri);
+		if (ns == null) {
+			return null;
+		}
+		for (NamingSystemUniqueIdComponent uid : ns.getUniqueId()) {
+			if (!uid.getPreferred()) {  // First non-preferred uinque id is used as name 
+				return uid.getValue();
+			}
+		}
+		if (ns.hasUniqueId()) {
+			return ns.getUniqueIdFirstRep().getValue();
+		}
+		return null;
+		
 	}
 	/**
 	 * Given a OID, get the associated URI
@@ -188,12 +215,30 @@ public class Systems {
 	}
 
 	public static Collection<String> getSystemNames(String system) {
-		NamingSystem ns = namingSystems.get(system);
-		List<NamingSystemUniqueIdComponent> l = ns.getUniqueId();
-		return l.stream().map(u -> u.getValue()).toList();
+		NamingSystem ns = getNamingSystem(system);
+		Set<String> found = null;
+		if (ns == null) {
+			found = new LinkedHashSet<>();
+		} else {
+			found = ns.getUniqueId().stream().map(u -> u.getValue()).collect(Collectors.toCollection(LinkedHashSet::new));
+		}
+		// Return a name for things that are obviously HL7 systems.
+		if (system.matches("^(?i)(HL7-?|http://terminology.hl7.org/CodeSystem/v2-|)\\d{4}$")) {
+			String name = "HL7" + StringUtils.right(system, 4);
+			found.add(name);
+			found.add(system.trim());
+		}
+		return found;
 	}
 	
 	static NamingSystem getNamingSystem(String system) {
-		return namingSystems.get(system);
+		NamingSystem ns = namingSystems.get(system);
+		if (ns == null) {
+			// Normalize value by replacing any whitespace, hypens or underscores, and uppercasing the text.
+			String normalizedValue = system.replace("[-_\\s]+", "").toUpperCase();
+			ns = namingSystems.get(normalizedValue);
+		}
+		return ns;
 	}
+	
 }

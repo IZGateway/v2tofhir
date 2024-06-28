@@ -2,6 +2,9 @@ package gov.cdc.izgw.v2tofhir.converter;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -10,8 +13,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.function.Consumer;
-
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.FastDateFormat;
 import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.BaseDateTimeType;
 import org.hl7.fhir.r4.model.CodeType;
@@ -25,6 +28,7 @@ import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.InstantType;
 import org.hl7.fhir.r4.model.IntegerType;
 import org.hl7.fhir.r4.model.PositiveIntType;
+import org.hl7.fhir.r4.model.PrimitiveType;
 import org.hl7.fhir.r4.model.Quantity;
 import org.hl7.fhir.r4.model.StringType;
 import org.hl7.fhir.r4.model.TimeType;
@@ -36,6 +40,7 @@ import ca.uhn.hl7v2.model.Composite;
 import ca.uhn.hl7v2.model.DataTypeException;
 import ca.uhn.hl7v2.model.Primitive;
 import ca.uhn.hl7v2.model.Type;
+import ca.uhn.hl7v2.model.Varies;
 import ca.uhn.hl7v2.model.primitive.TSComponentOne;
 import gov.cdc.izgw.v2tofhir.converter.datatype.AddressParser;
 import lombok.extern.slf4j.Slf4j;
@@ -56,7 +61,7 @@ public class DatatypeConverter {
 		return toCodeableConcept(codedElement, null);
 	}
 	public static CodeableConcept toCodeableConcept(Type codedElement, String table) {
-		if (codedElement == null) {
+		if ((codedElement = adjustIfVaries(codedElement)) == null) {
 			return null;
 		}
 		CodeableConcept cc = new CodeableConcept();
@@ -121,6 +126,13 @@ public class DatatypeConverter {
 			return null;
 		}
 		return cc;
+	}
+
+	private static Type adjustIfVaries(Type codedElement) {
+		if (codedElement instanceof Varies v) {
+			return v.getData();
+		}
+		return codedElement;
 	}
 
 	private static Identifier extractAsIdentifier(Composite comp,
@@ -190,7 +202,7 @@ public class DatatypeConverter {
 			return null;
 		}
 		if (codedElement instanceof Primitive pt) {
-			return new CodeType(pt.getValue()); 
+			return new CodeType(StringUtils.strip(pt.getValue())); 
 		}
 		Coding coding = toCoding(codedElement);
 		if (coding != null && !coding.isEmpty()) {
@@ -252,7 +264,47 @@ public class DatatypeConverter {
 		if (instant == null || instant.isEmpty()) {
 			return null;
 		}
-		return new DateTimeType(instant.getValue(), instant.getPrecision());
+		return convert(new DateTimeType(), instant);
+	}
+
+	public static <T extends BaseDateTimeType, U extends BaseDateTimeType> U convert(U to, T from) {
+		to.setValue(from.getValue());
+		to.setPrecision(from.getPrecision());
+		return to;
+	}
+	
+	/**
+	 * Convert beween numeric FHIR types, truncating as necessary.  Basically this 
+	 * works like a cast.  
+	 * @param <N1>	A Number type (e.g., Long, BigDecimal, Integer, et cetera)
+	 * @param <N2>	Another Number type
+	 * @param <F>	Type type of number used in the from parameter
+	 * @param <T>	Type type of number used in the to parameter
+	 * @param to	The place to perform the conversion
+	 * @param from	The place from which to convert
+	 * @return	The converted type
+	 */
+	public static <
+		N1 extends Number,
+		N2 extends Number,
+		F extends PrimitiveType<N1>, 
+		T extends PrimitiveType<N2>
+	> T castInto(F from, T to) {
+		// IntegerType and DecimalType are the only two classes of Number that directly extend PrimitiveType
+		if (to instanceof IntegerType i) {
+			// PositiveIntType and UnsignedIntType extend IntegerType, so this code works for those as well.
+			if (from instanceof DecimalType f) {
+				f.round(0, RoundingMode.DOWN);	// Truncate to an Integer;
+				i.setValue(f.getValue().intValueExact());
+			}
+		} else if (to instanceof DecimalType t) {
+			if (from instanceof DecimalType f) {
+				t.setValue(f.getValue());
+			} else if (from instanceof IntegerType fi) {
+				t.setValue(fi.getValue());
+			}
+		}
+		return to;
 	}
 	
 	public static DateType toDateType(Type type) {
@@ -260,7 +312,7 @@ public class DatatypeConverter {
 		if (instant == null || instant.isEmpty()) {
 			return null;
 		}
-		return new DateType(instant.getValue(), instant.getPrecision());
+		return convert(new DateType(), instant);
 	}
 	
 	public static DecimalType toDecimalType(Type pt) {
@@ -272,7 +324,7 @@ public class DatatypeConverter {
 	}
 
 	public static Identifier toIdentifier(Type t) {
-		if (t == null) {
+		if ((t = adjustIfVaries(t)) == null) {
 			return null;
 		}
 
@@ -327,7 +379,7 @@ public class DatatypeConverter {
 	}
 	
 	public static IdType toIdType(Type type) {
-		return new IdType(ParserUtils.toString(type));
+		return new IdType(StringUtils.strip(ParserUtils.toString(type)));
 	}
 
 	private static Identifier getHDasIdentifier(Type[] types) {
@@ -386,7 +438,7 @@ public class DatatypeConverter {
 		if (value == null || value.length() == 0) {
 			return null;
 		}
-		value = value.trim();
+		value = value.strip();
 		String original = value; // Save trimmed string for use with FHIR Parser.
 		
 		if (value.length() == 0) {
@@ -441,7 +493,10 @@ public class DatatypeConverter {
 			return null;
 		}
 	}
-	private static String removeIsoPunct(String value) {
+	public static String removeIsoPunct(String value) {
+		if (value == null) {
+			return null;
+		}
 		value = value.toUpperCase();
 		String left = value.substring(0, Math.min(11, value.length()));
 		String right = value.length() == left.length() ? "" : value.substring(left.length());
@@ -459,53 +514,50 @@ public class DatatypeConverter {
 		value = left + right + tz;
 		return value;
 	}
-	public static InstantType oldToInstantType(String value) {
-		if (StringUtils.isBlank(value)) {
-			return null;
-		}
-		value = ParserUtils.cleanupIsoDateTime(value, true);
-		if (StringUtils.isBlank(value)) {
-			return null;
-		}
-		try {
-			return new InstantType(value);
-		} catch (Exception ex) {
-			log.trace(UNEXPECTED_EXCEPTION_MESSAGE, ex.getClass().getSimpleName(), ex);
-			// Fall through and try types with lower resolution and upconvert
-		}
-		try {
-			DateTimeType dtt = new DateTimeType(value);
-			InstantType it = new InstantType(dtt.getValue());
-			it.setPrecision(dtt.getPrecision());
-			return it;
-		} catch (Exception ex) {
-			log.trace(UNEXPECTED_EXCEPTION_MESSAGE, ex.getClass().getSimpleName(), ex);
-			// Fall through and try one more type
-		}
-		try {
-			DateType dt = new DateType(value);
-			InstantType it = new InstantType(dt.getValue());
-			it.setPrecision(dt.getPrecision());
-			return it;
-		} catch (Exception ex) {
-			// Now we bail.			
-			log.debug(UNEXPECTED_EXCEPTION_MESSAGE, ex.getClass().getSimpleName(), ex);
-			return null;
-		}
-	}
 	
 	public static InstantType toInstantType(Type type) {
 		// This will convert the first primitive component of anything to an instant.
 		if (type instanceof TSComponentOne ts1) {
 			try {
-				Calendar cal = ts1.getValueAsCalendar();
-				return new InstantType(cal.getTime());
+				Date date = ts1.getValueAsDate();
+				if (date != null) {
+					InstantType instant = new InstantType();
+					TemporalPrecisionEnum prec = getTemporalPrecision(ts1);
+					instant.setValue(date);
+					instant.setPrecision(prec);
+					return instant;
+				}
+				return null;
 			} catch (DataTypeException e) {
 				warnException("Unexpected {} parsing {} as InstantType: {}",
 						e.getClass().getSimpleName(), type, e.getMessage(), e);
 			}
 		} 
 		return toInstantType(ParserUtils.toString(type));
+	}
+
+	private static TemporalPrecisionEnum getTemporalPrecision(TSComponentOne ts1) {
+		String v = ts1.getValue();
+		String ts = StringUtils.substringBefore(v, ".");
+		if (ts.length() != v.length()) {
+			return TemporalPrecisionEnum.MILLI;
+		}
+		StringUtils.replace(ts, "-", "+");
+		ts = StringUtils.substringBefore(ts1.getValue(), "+");
+		switch (ts.length()) {
+		case 1, 2, 3, 4:
+			return TemporalPrecisionEnum.YEAR;
+		case 5, 6:
+			return TemporalPrecisionEnum.MONTH;
+		case 7, 8:
+			return TemporalPrecisionEnum.DAY;
+		case 9, 10, 11, 12:
+			return TemporalPrecisionEnum.MINUTE;
+		case 13, 14:
+			return TemporalPrecisionEnum.SECOND;
+		default:
+			return TemporalPrecisionEnum.MILLI;
+		}
 	}
 
 	public static IntegerType toIntegerType(Type pt) {
@@ -517,7 +569,9 @@ public class DatatypeConverter {
 		BigInteger bigInt = decimal.toBigInteger();
 		try {
 			int value = bigInt.intValueExact();
-			return new IntegerType(value);
+			IntegerType i = new IntegerType(value);
+			i.setValue(i.getValue());  // Force normalization of string value
+			return i;
 		} catch (ArithmeticException ex) {
 			warnException("Integer overflow value in field {}", pt.toString(), ex);
 			return null;
@@ -606,22 +660,84 @@ public class DatatypeConverter {
 		return new StringType(s);
 	}
 	
+	private static final String V2_TIME_FORMAT = "HHmmss.SSSS";
+	private static final String FHIR_TIME_FORMAT = "HH:mm:ss.SSS";
 	public static TimeType toTimeType(String value) {
+		
 		if (StringUtils.isBlank(value)) {
 			return null;
 		}
-		value = ParserUtils.cleanupIsoDateTime(value, false);
-		if (StringUtils.isEmpty(value)) {
-			return null;
-		}
+		// Parse according to V2 rule: HH[MM[SS[.S[S[S[S]]]]]][+/-ZZZZ]
+		// Remove any inserted : or space values.
+		String timePart = value.replace(":", "").replace(" ", "").split("[\\-+]")[0];
+		String zonePart = StringUtils.right(value, value.length() - (timePart.length() + 1));
+		String wholePart = StringUtils.substringBefore(timePart, ".");
 		try {
-			TimeType tt = new TimeType();
-			tt.setValue(value);
-			return tt;
-		} catch (Exception ex) {
-			log.debug(UNEXPECTED_EXCEPTION_MESSAGE, ex.getClass().getSimpleName(), ex);
+			if (!checkTime(wholePart, "time")) {
+				return null;
+			}
+			if (zonePart.length() == 0 || !checkTime(zonePart, "timezone")) {
+				return null;
+			}
+		} catch (NumberFormatException ex) {
+			warn("Not a valid time {}", value);
 			return null;
 		}
+		boolean hasTz = timePart.length() < value.length(); 
+		String fmt = StringUtils.left(V2_TIME_FORMAT, timePart.length());
+		if (hasTz) {
+			fmt += "ZZZZ"; // It has a time zone
+		}
+		FastDateFormat ft = FastDateFormat.getInstance(fmt);
+		
+		try {
+			Date d = ft.parse(value);
+			TimeType t = new TimeType();
+			if (value.contains(".")) {
+				fmt = FHIR_TIME_FORMAT;
+			} else switch (timePart.length()) {
+			case 1, 2:
+				fmt = StringUtils.left(FHIR_TIME_FORMAT, 2);
+				break;
+			case 3, 4:
+				fmt = StringUtils.left(FHIR_TIME_FORMAT, 5);
+				break;
+			default:
+				fmt = StringUtils.left(FHIR_TIME_FORMAT, 8);
+				break;
+			}
+			if (hasTz) {
+				fmt += "ZZZZ"; // It has a time zone
+			}
+			ft = FastDateFormat.getInstance(fmt);
+			t.setValue(ft.format(d));
+			return t;
+		} catch (ParseException e) {
+			warn("Error parsing time {}", value);
+			return null;
+		}
+	}
+
+	private static boolean checkTime(String wholePart, String where) {
+		String[] parts = { "hour", "minute", "second" };
+		int i;
+		for (i = 0; i < wholePart.length() && i < 6; i += 2) {
+			String part = StringUtils.substring(wholePart, i, i + 2);
+			if (part.length() != 2) {
+				warn("Missing {} digits in {} of {} ", parts[i/2], where, wholePart);
+				return false;
+			}
+			int v = Integer.parseInt(part);
+			if ((i == 0 && v > 23) || (v > 60)) {
+				warn("Invalid {} in {} of {}", parts[i/2], where, wholePart);
+				return false;
+			}
+		}
+		if (i < 2) {
+			warn("Missing hours in {} of {}", wholePart, where);
+			return false;
+		}
+		return i > 0;
 	}
 	
 	public static TimeType toTimeType(Type type) {
@@ -651,7 +767,7 @@ public class DatatypeConverter {
 			return null;
 		}
 		if (type instanceof Primitive pt) {
-			return new UriType(pt.getValue());
+			return new UriType(StringUtils.strip(pt.getValue()));
 		}
 		Type[] types = ((Composite) type).getComponents();
 		if (types.length == 0) {
@@ -730,7 +846,7 @@ public class DatatypeConverter {
 		if (StringUtils.isBlank(pt.getValue())) {
 			return null;
 		}
-		value = pt.getValue();
+		value = pt.getValue().strip();
 		String[] valueParts = value.split("\\s+");
 		try {
 			qt.setValueElement(new DecimalType(valueParts[0]));

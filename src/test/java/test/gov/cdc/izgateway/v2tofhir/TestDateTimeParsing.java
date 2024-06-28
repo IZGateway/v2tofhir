@@ -21,6 +21,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import ca.uhn.fhir.model.api.TemporalPrecisionEnum;
 import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
+import test.gov.cdc.izgateway.TestUtils;
 import test.gov.cdc.izgateway.NamedArrayList;
 
 class TestDateTimeParsing {
@@ -274,9 +275,9 @@ class TestDateTimeParsing {
 
 	private static NamedArrayList cross(NamedArrayList first, NamedArrayList second, NamedArrayList third,
 			char separator) {
-		assertNotEmpty(first);
-		assertNotEmpty(second);
-		assertNotEmpty(third);
+		TestUtils.assertNotEmpty(first);
+		TestUtils.assertNotEmpty(second);
+		TestUtils.assertNotEmpty(third);
 		long count = first.size() * second.size() * third.size();
 		System.out.printf("Computing %d * %d * %d = %d test cases%n", first.size(), second.size(), third.size(), count);
 		NamedArrayList cross = NamedArrayList.find(first.name() + " X " + second.name() + " X " + third.name());
@@ -304,8 +305,8 @@ class TestDateTimeParsing {
 	}
 
 	private static NamedArrayList cross(NamedArrayList first, NamedArrayList second, char separator) {
-		assertNotEmpty(first);
-		assertNotEmpty(second);
+		TestUtils.assertNotEmpty(first);
+		TestUtils.assertNotEmpty(second);
 		long count = first.size() * second.size();
 		System.out.printf("Computing %d * %d = %d test cases%n", first.size(), second.size(), count);
 		NamedArrayList cross = NamedArrayList.find(first.name() + " X " + second.name());
@@ -418,7 +419,7 @@ class TestDateTimeParsing {
 			dates = null;
 			break;
 		}
-		assertNotEmpty(dates);
+		TestUtils.assertNotEmpty(dates);
 		NamedArrayList times;
 		switch (combo) {
 		case VALID_DATE_AND_TIME:
@@ -437,7 +438,7 @@ class TestDateTimeParsing {
 			times = null;
 			break;
 		}
-		assertNotEmpty(times);
+		TestUtils.assertNotEmpty(times);
 
 		NamedArrayList crossedResult = cross(dates, times, punct);
 		System.out.println("Computed " + crossedResult.size() + " test cases");

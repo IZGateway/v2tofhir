@@ -18,6 +18,7 @@ import ca.uhn.hl7v2.model.Primitive;
 import ca.uhn.hl7v2.model.Segment;
 import ca.uhn.hl7v2.model.Structure;
 import ca.uhn.hl7v2.model.Type;
+import ca.uhn.hl7v2.model.Varies;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -45,18 +46,44 @@ public class ParserUtils {
 		b.setLength(b.length() - 1);
 		return Pattern.compile(b.toString(), Pattern.CASE_INSENSITIVE);
 	}
+	
 	public static String toString(Type type) {
 		if (type == null) {
 			return null;
 		}
-		if (type instanceof Composite comp) {
-			Type[] types = comp.getComponents();
-			return types.length > 0 ? toString(types[0]) : null;
-		} else if (type instanceof Primitive pt) {
-			return pt.getValue();
+		while (type != null) {
+			if (type instanceof Primitive pt) {
+				return pt.getValue();
+			}
+			if (type instanceof Composite comp) {
+				return toString(comp, 0);
+			} 
+			if (type instanceof Varies v) {
+				type = v.getData();
+			} else {
+				return null;
+			}
 		}
 		return null;
 	}
+	
+	public static String toString(Composite v2Type, int i) {
+		Type[] types = v2Type.getComponents();
+		return types.length > i ? toString(types[i]) : null;
+	}
+	
+	public static String[] toStrings(Composite v2Type, int ...locations) {
+		String[] strings = new String[locations.length];
+		
+		Type[] types = v2Type.getComponents();
+		for (int i = 0; i < locations.length; i++) {
+			if (types.length < locations[i]) {
+				strings[i] = toString(v2Type, locations[i]);
+			}
+		}
+		return strings;
+	}
+	
 	public static boolean isEmpty(Type type) {
 		try {
 			return type.isEmpty();

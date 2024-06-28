@@ -169,9 +169,10 @@ public class AddressParser {
 		Address addr = null;
 		if (type instanceof Primitive pt) {
 			addr = parse(pt.getValue());
-		} else if (type instanceof Composite comp && Arrays.asList("AD", "XAD")
-				.contains(type.getName())) {
+		} else if (type instanceof Composite comp && Arrays.asList("AD", "XAD").contains(type.getName())) {
 			addr = parse(comp.getComponents());
+		} else if (type instanceof Composite comp && "SAD".equals(type.getName())) {
+			addr = new Address().addLine(ParserUtils.toString(comp, 0));
 		}
 		if (addr == null || addr.isEmpty()) {
 			return null;

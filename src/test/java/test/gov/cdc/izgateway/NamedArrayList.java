@@ -5,8 +5,6 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.TreeMap;
 
-import test.gov.cdc.izgateway.v2tofhir.TestDateTimeParsing;
-
 /**
  * NamedArrayList is used to make automated lists test cases which
  * are intended to be extensive in what they test.  
@@ -67,7 +65,7 @@ public class NamedArrayList
 	}
 	public NamedArrayList notEmpty() {
 		System.out.println(name + " has " + size() + " elements.");
-		TestDateTimeParsing.assertNotEmpty(this);
+		TestUtils.assertNotEmpty(this);
 		return this;
 	}
 	
