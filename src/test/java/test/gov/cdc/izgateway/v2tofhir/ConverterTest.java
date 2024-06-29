@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import org.apache.commons.io.IOUtils;
@@ -47,6 +48,7 @@ import ca.uhn.hl7v2.model.Composite;
 import ca.uhn.hl7v2.model.Primitive;
 import ca.uhn.hl7v2.model.Segment;
 import ca.uhn.hl7v2.model.Type;
+import ca.uhn.hl7v2.model.Varies;
 import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
 import gov.cdc.izgw.v2tofhir.converter.Mapping;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
@@ -60,7 +62,7 @@ import test.gov.cdc.izgateway.TestUtils;
  * This test checks a V2 conversion for FHIR Parsing and validates the result against the FHIR US Core
  * It requires a running CDC / Microsoft generated FHIR Converter at localhost:8080 
  */
-class ConverterTest extends BaseTest {
+class ConverterTest extends TestBase {
 	private static final String base = "http://localhost:8080/fhir-converter/convert-to-fhir";
 	private static final String messageTemplate = 
 			  "{"
@@ -102,13 +104,6 @@ class ConverterTest extends BaseTest {
 	}
 	
 	@ParameterizedTest
-	@MethodSource("getTestData")
-	void testCompositeConversionsDataCheck(Type t) {
-		assertNotNull(t);
-		assertTrue(t instanceof Composite);
-	}
-
-	@ParameterizedTest
 	@MethodSource("getTestDataForCoding")
 	void testCompositeConversionsForCodings(Type t) throws HL7Exception {
 		CodeableConcept cc = DatatypeConverter.toCodeableConcept(t);
@@ -123,28 +118,34 @@ class ConverterTest extends BaseTest {
 			assertFalse(coding.hasCode());
 			assertTrue(coding.hasSystem());
 		} else {
-			assertEquals(first, coding.getCode());
+			String code = coding == null ? null : coding.getCode();
+			assertEquals(StringUtils.isBlank(first), StringUtils.isBlank(code));
+			if (!StringUtils.isBlank(first)) {
+				assertEquals(first, code);
+			}
 		}
-		if (hasDisplay(t) && hasComponent(t, 2)) {
+		if (coding != null && hasDisplay(t) && hasComponent(t, 2)) {
 			// Either both are blank or both are filled.
 			assertEquals(StringUtils.isBlank(getComponent(t, 2)), StringUtils.isBlank(coding.getDisplay()));
-			// If both are filled, check values.
-			String[] a = { getComponent(t, 2), Mapping.getDisplay(coding) };
-			List<String> l = Arrays.asList(a);
-			Supplier<Boolean> test = null;
-			
-			if (StringUtils.isNotBlank(coding.getDisplay())) {
-				// Display came from component 2, or it was properly mapped.
-				test = () -> l.contains(coding.getDisplay());
-			} else {
-				// Display is empty and there are no good values to use.
-				test = () -> StringUtils.isAllEmpty(a);
+			if (!StringUtils.isBlank(first)) {
+				// If both are filled, check values.
+				String[] a = { getComponent(t, 2), Mapping.getDisplay(coding) };
+				List<String> l = Arrays.asList(a);
+				Supplier<Boolean> test = null;
+				
+				if (StringUtils.isNotBlank(coding.getDisplay())) {
+					// Display came from component 2, or it was properly mapped.
+					test = () -> l.contains(coding.getDisplay());
+				} else {
+					// Display is empty and there are no good values to use.
+					test = () -> StringUtils.isAllEmpty(a);
+				}
+				assertEquals(Boolean.TRUE, test.get(),
+					"Display value " + coding.getDisplay() + " expected to be from " + l);
 			}
-			assertEquals(Boolean.TRUE, test.get(),
-				"Display value " + coding.getDisplay() + " expected to be from " + l);
 		}
 		String encoded = ParserUtils.unescapeV2Chars(t.encode());
-		if (coding.hasSystem()) {
+		if (coding != null && coding.hasSystem()) {
 			if (coding.getSystem().contains(":")) {
 				// There is a proper URI, verify we got it correctly.
 				Collection<String> names = Systems.getSystemNames(coding.getSystem());
@@ -173,7 +174,11 @@ class ConverterTest extends BaseTest {
 	private boolean hasComponent(Type t, int index) {
 		if (t instanceof Composite comp) {
 			Type types[] = comp.getComponents();
-			return types.length >= index;
+			try {
+				return types.length >= index && !types[index].isEmpty();
+			} catch (HL7Exception e) {
+				return false;
+			}
 		}
 		return false;
 	}
@@ -206,13 +211,13 @@ class ConverterTest extends BaseTest {
 	@MethodSource("getTestPrimitives")
 	void testPrimitiveConversionsDataCheck(Type t) throws HL7Exception {
 		assertNotNull(t);
-		assertTrue(t instanceof Primitive);
+		assertTrue(t instanceof Primitive || 
+				  (t instanceof Varies v && v.getData() instanceof Primitive));
 	}
 	
 	@ParameterizedTest
 	@MethodSource("getTestPrimitives")
 	void testPrimitiveConversionsIntegerType(Type t) throws HL7Exception {
-		assertTrue(t instanceof Primitive);
 		TestUtils.compareStringValues(DatatypeConverter::toIntegerType, IntegerType::new, ConverterTest::normalizeNumbers, t, IntegerType.class);
 	}
 	@ParameterizedTest

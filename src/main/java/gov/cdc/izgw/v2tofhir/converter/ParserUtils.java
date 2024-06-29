@@ -52,6 +52,9 @@ public class ParserUtils {
 			return null;
 		}
 		while (type != null) {
+			if (type instanceof Varies v) {
+				type = v.getData();
+			}
 			if (type instanceof Primitive pt) {
 				return pt.getValue();
 			}
@@ -77,7 +80,7 @@ public class ParserUtils {
 		
 		Type[] types = v2Type.getComponents();
 		for (int i = 0; i < locations.length; i++) {
-			if (types.length < locations[i]) {
+			if (locations[i] < types.length) {
 				strings[i] = toString(v2Type, locations[i]);
 			}
 		}
@@ -221,6 +224,9 @@ public class ParserUtils {
 		}
 	}
 	public static Type getComponent(Type type, int number) {
+		if (type instanceof Varies v) {
+			type = v.getData();
+		}
 		if (type instanceof Composite comp) {
 			return comp.getComponents()[number];
 		}

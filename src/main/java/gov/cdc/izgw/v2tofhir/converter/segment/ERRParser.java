@@ -15,10 +15,10 @@ import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Segment;
 import ca.uhn.hl7v2.model.Type;
 import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
+import gov.cdc.izgw.v2tofhir.converter.Mapping;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
 import gov.cdc.izgw.v2tofhir.converter.ParserUtils;
 import gov.cdc.izgw.v2tofhir.converter.PathUtils;
-import gov.cdc.izgw.v2tofhir.converter.Systems;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -54,6 +54,9 @@ public class ERRParser extends AbstractSegmentParser {
 		if (oo == null) {
 			oo = createResource(OperationOutcome.class);
 			MessageHeader mh = getFirstResource(MessageHeader.class);
+			if (mh == null) {
+				mh = createResource(MessageHeader.class);
+			}
 			mh.getResponse().setDetails(ParserUtils.toReference(oo));
 		}
 		
@@ -76,7 +79,8 @@ public class ERRParser extends AbstractSegmentParser {
 		if (errorCode != null) {
 			issue.setDetails(errorCode);
 			for (Coding c: errorCode.getCoding()) {
-				if (Systems.mapCodeSystem("HL70357").equals(c.getSystem())) {
+				// If from table 0357
+				if ("http://terminology.hl7.org/CodeSystem/v2-0357".equals(c.getSystem())) {  // Check the system.
 					String[] map = errorCodeMap.get(c.getCode());
 					if (map != null) {
 						issue.setCode(IssueType.fromCode(map[0]));

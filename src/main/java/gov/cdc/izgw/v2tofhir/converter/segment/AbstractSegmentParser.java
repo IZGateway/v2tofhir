@@ -66,8 +66,11 @@ public abstract class AbstractSegmentParser implements SegmentParser {
 			return null;
 		}
 		try {
-			Type t = segment.getField(field)[0]; 
-			return t.isEmpty() ? null : t;
+			Type[] types = segment.getField(field); 
+			if (types.length == 0) {
+				return null;
+			}
+			return types[0].isEmpty() ? null : types[0];
 		} catch (HL7Exception e) {
 			return null;
 		}

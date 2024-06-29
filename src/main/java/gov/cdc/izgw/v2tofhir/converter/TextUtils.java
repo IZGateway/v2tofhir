@@ -1,5 +1,9 @@
 package gov.cdc.izgw.v2tofhir.converter;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Objects;
 
 import org.apache.commons.lang3.StringUtils;
@@ -14,6 +18,7 @@ import org.hl7.fhir.r4.model.Type;
 
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Composite;
+import ca.uhn.hl7v2.model.Varies;
 
 /**
  * Utility class to convert FHIR and V2 Objects to and from strings used in text.
@@ -106,14 +111,29 @@ public class TextUtils {
 			String code = parts.length > i ? parts[i] : "";
 			String display = parts.length > (i+1) ? parts[i+1] : ""; 
 			String system = parts.length > (i+2) ? parts[i+2] : "";
+			if (StringUtils.isAllEmpty(code, display, system)) {
+				continue;
+			}
 			if (!b.isEmpty()) {
 				b.append(", ");
 			}
 			appendIfNonBlank(b, display, null);
 			if (StringUtils.isNotBlank(code) && StringUtils.isNotBlank(system)) {
+				// For converting to Strings, if system is a URL, make it 
+				// a more human readable name like people would expect.
+				if (StringUtils.contains(system, ":")) {
+					List<String> l = Systems.getSystemNames(system);
+					// First name is always preferred name, second is the V2 common name
+					system = l.get(0);
+					if (l.size() > 1) {
+						// If there is a V2 name, use that.
+						system = l.get(1);
+					}
+				}
 				b.append(" (").append(system).append(" ").append(code).append(")");
 			} else if (StringUtils.isNotBlank(code)) {
-				b.append(" (").append(code).append(")");
+				// The space after ( makes it easily parsed as a code with an empty system
+				b.append(" ( ").append(code).append(")"); 
 			}
 		}
 		return b.toString();
@@ -151,7 +171,7 @@ public class TextUtils {
 	 */
 	public static String identifierToText(String type, String value, String checkDigit) {
 		StringBuilder b = new StringBuilder();
-		appendIfNonBlank(b, type, "#");
+		appendIfNonBlank(b, type, "# ");
 		appendIfNonBlank(b, value, null);
 		if (StringUtils.isNotBlank(checkDigit)) {
 			b.append("-").append(checkDigit);
@@ -179,6 +199,15 @@ public class TextUtils {
 	 */
 	public static String quantityToText(String value, String unit) {
 		StringBuilder b = new StringBuilder();
+		if (value != null) {
+			if (value.startsWith("-.")) {
+				value = "-0." + value.substring(2);
+			} else if (value.startsWith("+.")) {
+				value = "0." + value.substring(2);
+			} else if (value.startsWith(".")) {
+				value = "0." + value.substring(1);
+			}
+		}
 		appendIfNonBlank(b, value, " ");
 		appendIfNonBlank(b, unit, null);
 		return rightTrim(b).toString();
@@ -193,6 +222,9 @@ public class TextUtils {
 	 */
 	public static String toString(ca.uhn.hl7v2.model.Type v2Type) {
 		Composite comp = null;
+		if (v2Type instanceof Varies v) {
+			v2Type = v.getData();
+		}
 		if (v2Type instanceof Composite c) {
 			comp = c;
 		}
@@ -204,7 +236,6 @@ public class TextUtils {
 					ParserUtils.toString(comp, 2),
 					ParserUtils.toString(comp, 3),
 					ParserUtils.toString(comp, 4),
-					null,
 					ParserUtils.toString(comp, 7),
 					ParserUtils.toString(comp, 1)
 				);
@@ -214,8 +245,8 @@ public class TextUtils {
 				ParserUtils.toString(comp, 2),
 				ParserUtils.toString(comp, 3),
 				ParserUtils.toString(comp, 4),
-				null,
-				ParserUtils.toString(comp, 9),
+				ParserUtils.toString(comp, 8),
+				ParserUtils.toString(comp, 0),
 				ParserUtils.toString(comp, 1)
 			);
 				
@@ -225,13 +256,15 @@ public class TextUtils {
 			return codingToText(ParserUtils.toStrings(comp, 8, 0, 1, 2, 3, 4, 5, 9, 10, 11));
 		case "CX":
 			return identifierToText(ParserUtils.toString(comp, 4), ParserUtils.toString(comp, 0), ParserUtils.toString(comp, 1));
+		case "NM":
+			return quantityToText(ParserUtils.toString(v2Type), null);
 		case "CQ":
 			return quantityToText(ParserUtils.toString(comp, 2), ParserUtils.toString(comp, 1));
 		case "HD":
 			return Objects.toString(ParserUtils.toString(comp), ParserUtils.toString(comp, 1));
 		case "EI":
 			return identifierToText(ParserUtils.toString(comp, 1), ParserUtils.toString(comp, 0), null);
-		case "ID", "IS", "ST", "NM", "EIP", "XON":
+		case "ID", "IS", "ST", "EIP", "XON":
 			return ParserUtils.toString(v2Type);
 		
 		case "CNN", "XCN":
@@ -259,8 +292,8 @@ public class TextUtils {
 	 * @return
 	 */
 	public static String toString(Type fhirType) {
-		if (fhirType.isEmpty()) {
-			return "<unknown>";
+		if (fhirType == null || fhirType.isEmpty()) {
+			return "";
 		}
 		
 		if (fhirType instanceof PrimitiveType<?> pt) {
@@ -305,12 +338,14 @@ public class TextUtils {
 	 * @see codingToText
 	 */
 	public static String toText(CodeableConcept codeableConcept) {
-		if (codeableConcept.hasCoding()) {
-			Coding coding = codeableConcept.getCodingFirstRep();
-			return codingToText(coding.getCode(), Objects.toString(codeableConcept.getText(), coding.getDisplay()), coding.getSystem());
-		} else {
-			return codeableConcept.hasText() ? codeableConcept.getText() : ""; 
+		List<String> l = new ArrayList<>();
+		l.add(codeableConcept.hasText() ? codeableConcept.getText() : null);
+		for (Coding coding : codeableConcept.getCoding()) {
+			l.add(coding.hasCode() ? coding.getCode() : null);
+			l.add(coding.hasDisplay() ? coding.getDisplay() : null);
+			l.add(coding.hasSystem() ? coding.getSystem() : null);
 		}
+		return codingToText(l.toArray(new String[0]));
 	}
 
 	/**
@@ -343,11 +378,24 @@ public class TextUtils {
 		if (identifier == null || identifier.isEmpty()) {
 			return "";
 		}
-		CodeableConcept cc = identifier.getType();
-		Coding coding = cc.getCodingFirstRep();
-		String type = Objects.toString(cc.getText(),  
-						Objects.toString(coding.getClass(), 
-							Systems.toTextName(identifier.getSystem())));
+		String type = null;
+		if (identifier.hasType()) {
+			CodeableConcept cc = identifier.getType();
+			Coding coding = cc.getCodingFirstRep();
+			type = Objects.toString(cc.getText(),  
+							Objects.toString(coding.getCode(), 
+								Systems.toTextName(identifier.getSystem())));
+		} else {
+			List<String> types = Systems.getSystemNames(identifier.getSystem());
+			if (!types.isEmpty()) {
+				type = types.get(0);
+				if (types.size() > 1) {
+					type = types.get(1);
+				}
+			} else {
+				type = identifier.getSystem();
+			}
+		}
 		return identifierToText(type, identifier.getValue(), null);
 	}
 	
@@ -358,16 +406,8 @@ public class TextUtils {
 	 * @see quantityToText
 	 */
 	public static String toText(Quantity quantity) {
-		StringBuilder b = new StringBuilder();
-		if (quantity.hasValue()) {
-			b.append(quantity.getValue()).append(" ");
-		}
-		if (quantity.hasUnit()) {
-			b.append(quantity.getUnit());
-		} else if (quantity.hasCode()) {
-			b.append(quantity.getCode());
-		}
-		return b.toString();
+		String unit = quantity.hasUnit() ? quantity.getUnit() : quantity.getCode();
+		return TextUtils.quantityToText(quantity.getValue(), unit);
 	}
 	
 	/** 
@@ -377,11 +417,11 @@ public class TextUtils {
 	 * @param extra	The extra text that will be appended if both first and extra are non-empty
 	 */
 	private static void appendIfNonBlank(StringBuilder b, Object first, String extra) {
-		if (StringUtils.isNotBlank(first.toString())) {
+		if (first != null && StringUtils.isNotBlank(first.toString())) {
 			b.append(first);
-		}
-		if (extra != null) {
-			b.append(extra);
+			if (extra != null) {
+				b.append(extra);
+			}
 		}
 	}
 
@@ -392,12 +432,34 @@ public class TextUtils {
 	 */
 	private static StringBuilder rightTrim(StringBuilder b) {
 		int len = b.length();
-		while (len > 0) {
-			if (Character.isWhitespace(b.charAt(len - 1))) {
-				--len;
-			}
+		while (len > 0 && Character.isWhitespace(b.charAt(len - 1))) {
+			--len;
 		}
 		b.setLength(len);
 		return b;
+	}
+
+	public static CodeableConcept toCodeableConcept(String actualString) {
+		String[] parts = actualString.split(", ");
+		CodeableConcept cc = new CodeableConcept();
+		
+		for (String part: parts) {
+			String display = StringUtils.substringBefore(part, "(");
+			String codeAndSystem = StringUtils.substringBetween(part, "(", ")");
+			String system = StringUtils.substringBefore(codeAndSystem, " ");
+			String code = StringUtils.substringAfter(codeAndSystem, " ");
+			if (!cc.hasText() && 
+				StringUtils.isNotEmpty(display) && 
+				StringUtils.isAllEmpty(code, system)
+			) {
+				cc.setText(display);
+			} else {
+				Coding coding = new Coding(system, code, display);
+				if (!coding.isEmpty()) {
+					cc.addCoding(coding);
+				}
+			}
+		}
+		return cc;
 	}
 }

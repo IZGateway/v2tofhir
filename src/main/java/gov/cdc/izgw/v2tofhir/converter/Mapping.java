@@ -7,14 +7,19 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.ServiceConfigurationError;
-
 import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.CodeSystem;
+import org.hl7.fhir.r4.model.CodeSystem.CodeSystemContentMode;
 import org.hl7.fhir.r4.model.CodeSystem.ConceptDefinitionComponent;
 import org.hl7.fhir.r4.model.CodeSystem.ConceptPropertyComponent;
+import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.Enumerations.PublicationStatus;
 import org.hl7.fhir.r4.model.Identifier;
+import org.hl7.fhir.r4.model.NamingSystem;
+import org.hl7.fhir.r4.model.NamingSystem.NamingSystemType;
 import org.hl7.fhir.r4.model.StringType;
+import org.hl7.fhir.r4.model.Type;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
@@ -37,28 +42,12 @@ public class Mapping {
 		initConceptMaps();
 		initVocabulary();
 	}
-	private static final String[][] idTypeToDisplay = { { "CLIA", "Clinical Laboratory Improvement Amendments" },
-			{ "CLIP", "Clinical laboratory Improvement Program" }, { "DNS", "An Internet host name" },
-			{ "EUI64", "IEEE 64-bit Extended Unique Identifier" }, { "GUID", "Same as UUID" },
-			{ "HCD", "The CEN Healthcare Coding Scheme Designator" }, { "HL7", "HL7 registration schemes" },
-			{ "ISO", "An International Standards Organization Object Identifier (OID)" },
-			{ "L", "First Locally defined coding entity identifier" },
-			{ "M", "Second Locally defined coding entity identifier" },
-			{ "N", "Third Locally defined coding entity identifier" },
-			{ "Random", "Usually a base64 encoded string of random bits" }, { "URI", "Uniform Resource Identifier" },
-			{ "UUID", "The DCE Universal Unique Identifier" }, { "x400", "An X.400 MHS identifier" },
-			{ "x500", "An X.500 directory name" } };
-	private static Map<String, String> idTypeToDisplayMap = new LinkedHashMap<>();
-	static {
-		for (String[] pair : idTypeToDisplay) {
-			idTypeToDisplayMap.put(pair[0], pair[1]);
-		}
-	}
+	
 
 	private final String name;
 	private Map<String, Coding> from = new LinkedHashMap<>();
 	private Map<String, Coding> to = new LinkedHashMap<>();
-	public static final String IDENTIFIER_TYPE = "http://terminology.hl7.org/CodeSystem/v2-0301";
+
 
 	public Mapping(final String name) {
 		this.name = name;
@@ -73,41 +62,112 @@ public class Mapping {
 	 * Initialize concept maps from V2-to-fhir CSV tables.
 	 */
 	private static void initConceptMaps() {
-		Resource[] files;
+		Resource[] conceptFiles;
+		Resource[] codeSystemFiles;
 		try {
-			files = resolver.getResources("/coding/*.csv");
+			conceptFiles = resolver.getResources("/coding/HL7 Concept*.csv");
+			codeSystemFiles = resolver.getResources("/coding/HL7 CodeSystem*.csv");
 		} catch (IOException e) {
 			log.error("Cannot load coding resources");
 			throw new ServiceConfigurationError("Cannot load coding resources", e);
 
 		}
 		int fileno = 0;
-		for (Resource file : files) {
+		for (Resource file : conceptFiles) {
 			fileno++;
-			String name = file.getFilename().split("_ ")[1].split(" ")[0];
-			Mapping m = new Mapping(name);
-			codeMaps.put(name, m);
-			int line = 0;
-			try (InputStreamReader sr = new InputStreamReader(file.getInputStream());
-					CSVReader reader = new CSVReader(sr);) {
-				reader.readNext(); // Skip first line header
-				line++;
-				String[] headers = reader.readNext();
-				int[] indices = getHeaderIndices(headers);
-				line++;
-				String[] fields = null;
-
-				while ((fields = reader.readNext()) != null) {
-					addMappings(name, m, ++line, indices, fields);
-				}
-				log.debug("{}: Loaded {} lines from {}", fileno, line, name);
-
-			} catch (Exception e) {
-				warnException("Unexpected {} reading {}({}): {}", e.getClass().getSimpleName(), file.getFilename(), line,
-						e.getMessage(), e);
-			}
+			Mapping m = loadConceptFile(fileno, file);
 			m.lock();
 		}
+		for (Resource file : codeSystemFiles) {
+			fileno++;
+			// loadCodeSystemFile(fileno, file);
+		}
+	}
+
+	private static Mapping loadConceptFile(int fileno, Resource file) {
+		String name = file.getFilename().split("_ ")[1].split(" ")[0];
+		Mapping m = new Mapping(name);
+		codeMaps.put(name, m);
+		int line = 0;
+		try (InputStreamReader sr = new InputStreamReader(file.getInputStream());
+				CSVReader reader = new CSVReader(sr);) {
+			reader.readNext(); // Skip first line header
+			line++;
+			String[] headers = reader.readNext();
+			int[] indices = getHeaderIndices(headers);
+			line++;
+			String[] fields = null;
+
+			while ((fields = reader.readNext()) != null) {
+				addMapping(name, m, ++line, indices, fields);
+			}
+			log.debug("{}: Loaded {} lines from {}", fileno, line, name);
+
+		} catch (Exception e) {
+			warnException("Unexpected {} reading {}({}): {}", e.getClass().getSimpleName(), file.getFilename(), line,
+					e.getMessage(), e);
+		}
+		return m;
+	}
+	
+	// TODO: This
+	private static void loadCodeSystemFile(int fileno, Resource file) {
+		String name = file.getFilename().split("_ ")[1].split(" ")[0];
+		Mapping m = new Mapping(name);
+		codeMaps.put(name, m);
+		int line = 0;
+		try (InputStreamReader sr = new InputStreamReader(file.getInputStream());
+				CSVReader reader = new CSVReader(sr);) {
+			String[] metadata = reader.readNext(); // Skip first line header
+			
+			CodeSystem cs = new CodeSystem();
+			cs.setName(metadata.length > 2 ? metadata[2] : null);
+			cs.setUrl(metadata.length > 0 ? metadata[0] : null);
+			cs.setContent(CodeSystemContentMode.COMPLETE);
+			cs.setCaseSensitive(false);
+			cs.setLanguage("en-US");
+			cs.setStatus(PublicationStatus.ACTIVE);
+			
+			createNamingSystem(cs);
+			
+			line++;
+			String[] headers = reader.readNext();
+			int[] indices = getHeaderIndices(headers);
+			line++;
+			String[] fields = null;
+
+			while ((fields = reader.readNext()) != null) {
+				addCodes(cs, ++line, indices, fields);
+				cs.setCount(cs.getCount()+1);
+			}
+			log.debug("{}: Loaded {} lines from {}", fileno, line, name);
+
+		} catch (Exception e) {
+			warnException("Unexpected {} reading {}({}): {}", e.getClass().getSimpleName(), file.getFilename(), line,
+					e.getMessage(), e);
+		}
+	}
+
+	private static void addCodes(CodeSystem cs, int i, int[] indices, String[] fields) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private static NamingSystem createNamingSystem(CodeSystem cs) {
+		NamingSystem ns = new NamingSystem();
+		ns.setName(cs.getName());
+		ns.setUrl(cs.getUrl());
+		ns.setTitle(cs.getTitle());
+		ns.setText(cs.getText());
+		ns.setKind(NamingSystemType.CODESYSTEM);
+		ns.setLanguage(cs.getLanguage());
+		ns.setStatus(cs.getStatus());
+		
+		// Link NamingSystem to CodeSystem
+		ns.setUserData(CodeSystem.class.getName(), cs);
+		// Link CodeSystem to NamingSystem
+		cs.setUserData(NamingSystem.class.getName(), ns);
+		return ns;
 	}
 
 	private static void updateMaps(Mapping m, Coding here, Coding there, String altLookupName) {
@@ -128,7 +188,7 @@ public class Mapping {
 		return cm;
 	}
 
-	private static void addMappings(String name, Mapping m, int line, int[] indices, String[] fields) {
+	private static void addMapping(String name, Mapping m, int line, int[] indices, String[] fields) {
 		String table = get(fields, indices[2]);
 		if (table == null) {
 			log.trace("Missing table reading {}({}): {}", name, line, Arrays.asList(fields));
@@ -194,6 +254,7 @@ public class Mapping {
 		identifier.setSystem(Systems.IETF);
 		identifier.setValue("urn:oid:2.16.840.1.113883.12.292");
 		cs.addIdentifier(identifier);
+		createNamingSystem(cs);
 		loadData(resolver.getResource("/coding/cvx.txt"), cs, true);
 	}
 
@@ -206,6 +267,7 @@ public class Mapping {
 		identifier.setSystem(Systems.IETF);
 		identifier.setValue("urn:oid:2.16.840.1.113883.12.227");
 		cs.addIdentifier(identifier);
+		createNamingSystem(cs);
 		loadData(resolver.getResource("/coding/mvx.txt"), cs, false);
 	}
 
@@ -278,12 +340,13 @@ public class Mapping {
 		if (StringUtils.isBlank(table)) {
 			return null;
 		}
-		if (IDENTIFIER_TYPE.equals(table)) {
-			return idTypeToDisplayMap.get(code);
+		if (Systems.IDENTIFIER_TYPE.equals(table)) {
+			return Systems.idTypeToDisplayMap.get(code);
 		}
-		Map<String, Coding> cm = codingMaps.get(table.trim());
+		
+		Map<String, Coding> cm = codingMaps.get(Mapping.getPreferredCodeSystem(table.trim()));
 		if (cm == null) {
-			warn("Unknow code system: {}", table);
+			warn("Unknown code system: {}", table);
 			return null;
 		}
 		Coding coding = cm.get(code);
@@ -301,11 +364,44 @@ public class Mapping {
 	public static void setDisplay(Coding coding) {
 		String display = getDisplay(coding);
 		if (display != null) {
+			coding.setUserData("originalDisplay", coding.getDisplay());
 			coding.setDisplay(display);
 		}
 	}
-
-	public static void main(String... strings) {
+	
+	/**
+	 * The converter adds some extra data that it knows about codes
+	 * for better interoperability, e.g., display names, code system URLs
+	 * et cetera.  This may be why the strings are different.  Reset those
+	 * changes (the original supplied values are in user data under
+	 * the string "original{FieldName}"
+	 * 
+	 * @param type The type to reset to original values.
+	 */
+	public static void reset(Type type) {
+		if (type instanceof Coding c) {
+			reset(c);
+		} else if (type instanceof CodeableConcept cc) {
+			reset(cc);
+		}
+	}
+	public static void reset(Coding coding) {
+		if (coding == null) {
+			return;
+		}
+		if (coding.hasUserData("originalDisplay")) {
+			coding.setDisplay((String)coding.getUserData("originalDisplay"));
+		}
+		
+	}
+	public static void reset(CodeableConcept cc) {
+		if (cc == null) {
+			return;
+		}
+		if (cc.hasUserData("originalText")) {
+			cc.setText((String)cc.getUserData("originalText"));
+		}
+		cc.getCoding().forEach(Mapping::reset);
 	}
 	
 	private static void warn(String msg, Object ...args) {
@@ -313,6 +409,66 @@ public class Mapping {
 	}
 	private static void warnException(String msg, Object ...args) {
 		log.warn(msg, args);
+	}
+
+	public static Coding mapSystem(Coding coding) {
+		if (!coding.hasSystem()) {
+			return coding;
+		}
+		String system = coding.getSystem();
+		coding.setSystem(Mapping.getPreferredCodeSystem(system));
+		if (!system.equals(coding.getSystem())) {
+			coding.setUserData("originalSystem", system);
+		}
+		return coding;
+	}
+
+	public static Identifier mapSystem(Identifier ident) {
+		if (!ident.hasSystem()) {
+			return ident;
+		}
+		String system = ident.getSystem();
+		ident.setSystem(Mapping.getPreferredIdSystem(system));
+		if (!system.equals(ident.getSystem())) {
+			ident.setUserData("originalSystem", system);
+		}
+		return ident;
+	}
+
+	private static String getPreferredCodeSystem(String value) {
+		String system = Mapping.getPreferredIdSystem(value);
+		if (system == null) {
+			return null;
+		}
+		
+		// Handle mapping for HL7 V2 tables
+		if (system.startsWith("HL7") || system.startsWith("hl7")) {
+			system = system.substring(3);
+			if (system.startsWith("-")) {
+				system = system.substring(1);
+			}
+			return "http://terminology.hl7.org/CodeSystem/v2-" + system;
+		} else if (system.length() == 4 && StringUtils.isNumeric(system)) {
+			return "http://terminology.hl7.org/CodeSystem/v2-" + system;
+		}
+		return value;
+	}
+
+	private static String getPreferredIdSystem(String value) {
+		if (StringUtils.isBlank(value)) {
+			return null;
+		}
+		NamingSystem ns = Systems.getNamingSystem(value);
+		if (ns != null) {
+			return ns.getUrl();
+		}
+		
+		if (value.startsWith("urn:oid:")) {
+			return value.substring(8);
+		} else if (value.startsWith("urn:uuid:")) {
+			return value.substring(9);
+		} 
+		return value;
 	}
 
 }

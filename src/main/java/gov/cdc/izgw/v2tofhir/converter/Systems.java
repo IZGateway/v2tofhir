@@ -1,8 +1,11 @@
 package gov.cdc.izgw.v2tofhir.converter;
 
-import java.util.Collection;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -38,6 +41,10 @@ public class Systems {
 	public static final String ICD9CM_OID = "2.16.840.1.113883.6.103";
 	public static final String ICD9PCS = "http://hl7.org/fhir/sid/icd-9-cm";
 	public static final String ICD9PCS_OID = "2.16.840.1.113883.6.104";
+	public static final String IDENTIFIER_TYPE = "http://terminology.hl7.org/CodeSystem/v2-0301";
+	public static final String IDENTIFIER_TYPE_OID = "2.16.840.1.113883.18.108";
+	public static final String IDTYPE = "http://terminology.hl7.org/CodeSystem/v2-0203";
+	public static final String IDTYPE_OID = "2.16.840.1.113883.18.186";
 	public static final String LOINC = "http://loinc.org";
 	public static final String LOINC_OID = "2.16.840.1.113883.6.1";
 	public static final String MVX = "http://hl7.org/fhir/sid/mvx";
@@ -46,14 +53,55 @@ public class Systems {
 	public static final String NDC_OID = "2.16.840.1.113883.6.69";
 	public static final String NCI_OID = "2.16.840.1.113883.3.26.1.1";
 	public static final String NCI = "http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl";
-	public static final String NDFRT = "";
-	public static final String NDFRT_OID = "";
+	public static final String NDFRT = "http://hl7.org/fhir/ndfrt";
+	public static final String NDFRT_OID = "2.16.840.1.113883.6.209";
 	public static final String RXNORM = "http://www.nlm.nih.gov/research/umls/rxnorm";
 	public static final String RXNORM_OID = "2.16.840.1.113883.6.88";
 	public static final String SNOMED = "http://snomed.info/sct";
 	public static final String SNOMED_OID = "2.16.840.1.113883.6.96";
 	public static final String UCUM = "http://unitsofmeasure.org";
 	public static final String UCUM_OID = "2.16.840.1.113883.6.8";
+
+
+	static final String[] IDTYPE_NAMES =  { IDTYPE, "HL70203", "0203", "IDTYPE", "2.16.840.1.113883.12.203", IDTYPE_OID };
+	static final String[] IDENTIFIER_TYPE_NAMES = { IDENTIFIER_TYPE, "HL70301", "0301", "2.16.840.1.113883.12.301", IDENTIFIER_TYPE_OID };
+	
+	private static final String[][] idTypeToDisplay = { { "CLIA", "Clinical Laboratory Improvement Amendments" },
+			{ "CLIP", "Clinical laboratory Improvement Program" }, { "DNS", "An Internet host name" },
+			{ "EUI64", "IEEE 64-bit Extended Unique Identifier" }, { "GUID", "Same as UUID" },
+			{ "HCD", "The CEN Healthcare Coding Scheme Designator" }, { "HL7", "HL7 registration schemes" },
+			{ "ISO", "An International Standards Organization Object Identifier (OID)" },
+			{ "L", "First Locally defined coding entity identifier" },
+			{ "M", "Second Locally defined coding entity identifier" },
+			{ "N", "Third Locally defined coding entity identifier" },
+			{ "Random", "Usually a base64 encoded string of random bits" }, { "URI", "Uniform Resource Identifier" },
+			{ "UUID", "The DCE Universal Unique Identifier" }, { "x400", "An X.400 MHS identifier" },
+			{ "x500", "An X.500 directory name" } };
+	static Map<String, String> idTypeToDisplayMap = new LinkedHashMap<>();
+	static {
+		for (String[] pair : idTypeToDisplay) {
+			idTypeToDisplayMap.put(pair[0], pair[1]);
+		}
+	}
+	/** 
+	 * All the types from 
+	 * Official URL: http://terminology.hl7.org/CodeSystem/v2-0203	Version: 4.0.0
+	 * Active as of 2022-12-07	Responsible: Health Level Seven International	Computable Name: IdentifierType
+	 * Other Identifiers: urn:ietf:rfc:3986#Uniform Resource Identifier (URI)#urn:oid:2.16.840.1.113883.18.108
+	 **/
+	public static final Set<String> IDENTIFIER_TYPES = idTypeToDisplayMap.keySet(); 
+	static final Set<String> ID_TYPES = new LinkedHashSet<>(
+		Arrays.asList("AC", "ACSN", "AIN", "AM", "AMA", "AN",
+			"ANC", "AND", "ANON", "ANT", "APRN", "ASID", "BA", "BC", "BCFN", "BCT", "BR", "BRN", "BSNR", "CAAI", "CC",
+			"CONM", "CY", "CZ", "DC", "DCFN", "DDS", "DEA", "DFN", "DI", "DL", "DN", "DO", "DP", "DPM", "DR", "DS",
+			"DSG", "EI", "EN", "ESN", "FDR", "FDRFN", "FGN", "FI", "FILL", "GI", "GIN", "GL", "GN", "HC", "IND",
+			"IRISTEM", "JHN", "LACSN", "LANR", "LI", "L&I", "LN", "LR", "MA", "MB", "MC", "MCD", "MCN", "MCR", "MCT",
+			"MD", "MI", "MR", "MRT", "MS", "NBSNR", "NCT", "NE", "NH", "NI", "NII", "NIIP", "NNxxx", "NP", "NPI", "OBI",
+			"OD", "PA", "PC", "PCN", "PE", "PEN", "PGN", "PHC", "PHE", "PHO", "PI", "PIN", "PLAC", "PN", "PNT", "PPIN",
+			"PPN", "PRC", "PRN", "PT", "QA", "RI", "RN", "RPH", "RR", "RRI", "RRP", "SAMN", "SB", "SID", "SL", "SN",
+			"SNBSN", "SNO", "SP", "SR", "SRX", "SS", "STN", "TAX", "TN", "TPR", "TRL", "U", "UDI", "UPIN", "USID", "VN",
+			"VP", "VS", "WC", "WCN", "WP", "XV", "XX")
+	);
 
 	// See https://hl7-definition.caristix.com/v2/HL7v2.8/Tables/0396
 	private static final String[][] stringToUri = {
@@ -67,17 +115,27 @@ public class Systems {
 		{ ICD10CM, "ICD10CM", ICD10CM_OID },
 		{ ICD9CM, "ICD9CM", "I9CDX", "I9C", ICD9CM_OID },
 		{ ICD9PCS, "ICD9PCS", "I9CP", ICD9PCS_OID },
+		IDENTIFIER_TYPE_NAMES,
+		IDTYPE_NAMES,
 		{ LOINC, "LOINC", "LN", "LNC", LOINC_OID },
 		{ MVX, "MVX", MVX_OID },
 		{ NCI, "NCI", "NCIT", NCI_OID },
 		{ NDC, "NDC", NDC_OID },
-		{ NDFRT, "NDFRT", NDFRT_OID },
+		{ NDFRT, "NDFRT", "NDF-RT", NDFRT_OID },
 		{ RXNORM, "RXNORM", RXNORM_OID },
 		{ SNOMED, "SNOMEDCT", "SNOMED", "SNM", "SCT", SNOMED_OID },
 		{ UCUM, "UCUM", UCUM_OID },
 	};
 	
-	private static Map<String, NamingSystem> namingSystems = new LinkedHashMap<>();
+	public static List<List<String>> getCodeSystemAliases() {
+		List<List<String>> a = new ArrayList<>();
+		for (String[] s : stringToUri) {
+			a.add(Arrays.asList(s));
+		}
+		return a;
+	}
+	
+	static Map<String, NamingSystem> namingSystems = new LinkedHashMap<>();
 	static {
 		NamingSystem ns = null;
 		for (String[] list: stringToUri) {
@@ -91,7 +149,7 @@ public class Systems {
 			}
 		}
 	}
-	
+
 	private Systems() {
 	}
 	
@@ -123,41 +181,9 @@ public class Systems {
 		} else {
 			uniqueId.setType(NamingSystemIdentifierType.OTHER);
 		}
+		namingSystems.put(uid, ns);
 	}
 
-	public static String mapIdSystem(String value) {
-		if (StringUtils.isBlank(value)) {
-			return null;
-		}
-		NamingSystem ns = getNamingSystem(value);
-		if (ns != null) {
-			return ns.getUrl();
-		}
-		
-		if (value.startsWith("urn:oid:")) {
-			return value.substring(8);
-		} else if (value.startsWith("urn:uuid:")) {
-			return value.substring(9);
-		} 
-		return value;
-	}
-	public static String mapCodeSystem(String value) {
-		String system = mapIdSystem(value);
-		if (system == null) {
-			return null;
-		}
-		// Handle mapping for HL7 V2 tables
-		if (system.startsWith("HL7") || system.startsWith("hl7")) {
-			system = system.substring(3);
-			if (system.startsWith("-")) {
-				system = system.substring(1);
-			}
-			return "http://terminology.hl7.org/CodeSystem/v2-" + system;
-		} else if (system.length() == 4 && StringUtils.isNumeric(system)) {
-			return "http://terminology.hl7.org/CodeSystem/v2-" + system;
-		}
-		return value;
-	}
 	/**
 	 * Given a URI, get the associated OID
 	 * @param uri
@@ -214,24 +240,35 @@ public class Systems {
 		return ns.getUrl();
 	}
 
-	public static Collection<String> getSystemNames(String system) {
+	public static List<String> getSystemNames(String system) {
+		if (StringUtils.isBlank(system)) {
+			return Collections.emptyList();
+		}
+		system = StringUtils.trim(system);
 		NamingSystem ns = getNamingSystem(system);
-		Set<String> found = null;
+		List<String> found = null;
 		if (ns == null) {
-			found = new LinkedHashSet<>();
+			found = new ArrayList<>();
 		} else {
-			found = ns.getUniqueId().stream().map(u -> u.getValue()).collect(Collectors.toCollection(LinkedHashSet::new));
+			found = ns.getUniqueId().stream().map(u -> u.getValue()).collect(Collectors.toCollection(ArrayList::new));
 		}
 		// Return a name for things that are obviously HL7 systems.
-		if (system.matches("^(?i)(HL7-?|http://terminology.hl7.org/CodeSystem/v2-|)\\d{4}$")) {
-			String name = "HL7" + StringUtils.right(system, 4);
+		if (system.matches("^(?i)(HL7-?|http://terminology.hl7.org/CodeSystem/v2-|)\\d{4}$") || 
+			system.startsWith("2.16.840.1.113883.12.")	// V2 Table OID
+		) {
+			String name = "HL7" + StringUtils.right("000" + system, 4);
+			if (found.isEmpty()) {
+				found.add("http://terminology.hl7.org/CodeSystem/v2-" + StringUtils.right(name, 4));
+			}
 			found.add(name);
-			found.add(system.trim());
 		}
 		return found;
 	}
 	
 	static NamingSystem getNamingSystem(String system) {
+		if (StringUtils.isBlank(system)) {
+			return null;
+		}
 		NamingSystem ns = namingSystems.get(system);
 		if (ns == null) {
 			// Normalize value by replacing any whitespace, hypens or underscores, and uppercasing the text.
@@ -240,5 +277,4 @@ public class Systems {
 		}
 		return ns;
 	}
-	
 }

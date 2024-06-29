@@ -11,6 +11,7 @@ import org.hl7.fhir.r4.model.HumanName.NameUse;
 import ca.uhn.hl7v2.model.Composite;
 import ca.uhn.hl7v2.model.Primitive;
 import ca.uhn.hl7v2.model.Type;
+import ca.uhn.hl7v2.model.Varies;
 import gov.cdc.izgw.v2tofhir.converter.ParserUtils;
 
 public class HumanNameParser implements DatatypeParser<HumanName> {
@@ -77,6 +78,9 @@ public class HumanNameParser implements DatatypeParser<HumanName> {
 	
 	@Override
 	public HumanName convert(Type t) {
+		if (t instanceof Varies v) {
+			t = v.getData();
+		}
 		if (t instanceof Primitive pt) {
 			return fromString(pt.getValue());
 		} 
@@ -101,37 +105,32 @@ public class HumanNameParser implements DatatypeParser<HumanName> {
 	static HumanName parse(Type[] types, int offset, int nameTypeLoc) {
 		HumanName hn = new HumanName();
 		for (int i = 0; i < 6; i++) {
-			if (types[i + offset] instanceof Primitive pt) {
-				if (ParserUtils.isEmpty(pt)) {
-					continue;
-				}
-				String part = pt.getValue();
-				if (StringUtils.isBlank(part)) {
-					continue;
-				}
-				switch (i) {
-					case 0 : // Family Name
-						hn.setFamily(part);
-						break;
-					case 1 : // Given Name
-						hn.addGiven(part);
-						break;
-					case 2 : // Second and Further Given Name or Initials
-								// Thereof
-						hn.addGiven(part);
-						break;
-					case 3 : // Suffix
-						hn.addSuffix(part);
-						break;
-					case 4 : // Prefix
-						hn.addPrefix(part);
-						break;
-					case 5 : // Degree
-						hn.addSuffix(part);
-						break;
-					default :
-						break;
-				}
+			String part = ParserUtils.toString(types[i + offset]);
+			if (StringUtils.isBlank(part)) {
+				continue;
+			}
+			switch (i) {
+				case 0 : // Family Name (as ST in HL7 2.3)
+					hn.setFamily(part);
+					break;
+				case 1 : // Given Name
+					hn.addGiven(part);
+					break;
+				case 2 : // Second and Further Given Name or Initials
+							// Thereof
+					hn.addGiven(part);
+					break;
+				case 3 : // Suffix
+					hn.addSuffix(part);
+					break;
+				case 4 : // Prefix
+					hn.addPrefix(part);
+					break;
+				case 5 : // Degree
+					hn.addSuffix(part);
+					break;
+				default :
+					break;
 			}
 		}
 		if (nameTypeLoc >= 0 && nameTypeLoc < types.length
@@ -139,7 +138,10 @@ public class HumanNameParser implements DatatypeParser<HumanName> {
 			String nameType = pt.getValue();
 			hn.setUse(toNameUse(nameType));
 		}
-		return null;
+		if (hn.isEmpty()) {
+			return null;
+		}
+		return hn;
 	}
 
 	/*

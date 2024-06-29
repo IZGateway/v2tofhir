@@ -10,6 +10,7 @@ import org.hl7.fhir.r4.model.Address.AddressUse;
 import ca.uhn.hl7v2.model.Composite;
 import ca.uhn.hl7v2.model.Primitive;
 import ca.uhn.hl7v2.model.Type;
+import ca.uhn.hl7v2.model.Varies;
 import gov.cdc.izgw.v2tofhir.converter.ParserUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -173,11 +174,16 @@ public class AddressParser implements DatatypeParser<Address> {
 	@Override
 	public Address convert(Type type) {
 		Address addr = null;
+		if (type instanceof Varies v) {
+			type = v.getData();
+		}
 		if (type instanceof Primitive pt) {
 			addr = fromString(pt.getValue());
 		} else if (type instanceof Composite comp && Arrays.asList("AD", "XAD")
 				.contains(type.getName())) {
 			addr = parse(comp.getComponents());
+		} else if (type instanceof Composite comp && "SAD".equals(type.getName())) {
+			addr = new Address().addLine(ParserUtils.toString(comp, 0));
 		}
 		if (addr == null || addr.isEmpty()) {
 			return null;

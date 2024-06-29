@@ -175,7 +175,7 @@ public class TestUtils {
 		}
 	}
 
-	private static boolean isEmpty(Object o) {
+	public static boolean isEmpty(Object o) {
 		try {
 			return o == null || 
 				(o instanceof String s && StringUtils.isEmpty(s)) ||
@@ -199,11 +199,11 @@ public class TestUtils {
 	}
 
 	public static String toString(org.hl7.fhir.r4.model.Resource a) {
-		return fhirParser.encodeResourceToString(a);
+		return a == null ? null : fhirParser.encodeResourceToString(a);
 	}
 
 	public static String toString(org.hl7.fhir.r4.model.Type a) {
-		return fhirParser.encodeToString(a);
+		return a == null ? null : fhirParser.encodeToString(a);
 	}
 
 	public static String toString(Visitable a) throws HL7Exception {
