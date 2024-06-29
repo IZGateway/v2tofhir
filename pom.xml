@@ -7,8 +7,15 @@
 	</parent>
 	<groupId>cdc.gov.izgw</groupId>
 	<artifactId>v2tofhir</artifactId>
-	<version>0.0.1-IZGW-RELEASE</version>
+	<version>0.0.1-v2tofhir-SNAPSHOT</version>
 	<name>HL7 Version 2 to FHIR Conversion</name>
+	<distributionManagement>
+		<repository>
+			<id>github</id>
+			<name>GitHub Packages</name>
+			<url>https://maven.pkg.github.com/IZGateway/v2tofhir</url>
+		</repository>
+	</distributionManagement>
 	<dependencies>
 		<dependency>
 			<groupId>ca.uhn.hapi</groupId>
