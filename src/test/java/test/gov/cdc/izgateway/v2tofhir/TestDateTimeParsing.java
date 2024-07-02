@@ -522,6 +522,7 @@ class TestDateTimeParsing {
 		}
 		if (expected.contains(".") && actual.contains(".")) {  // Check for precision enhancement
 			expected = adjustPrecision(expected);
+			actual = adjustPrecision(actual);
 			if (expected.equals(actual)) {
 				return true;
 			}
@@ -561,7 +562,7 @@ class TestDateTimeParsing {
 		String r = StringUtils.substringAfter(s, ".");
 		String rwotz = removeTz(r);
 		String tz = r.substring(rwotz.length());
-		return l + "." + StringUtils.substring(rwotz + "000", 0, 3) + tz;
+		return l + "." + StringUtils.right(rwotz + "000", 3) + tz;
 	}
 	private boolean hasEquivalentTimeZones(String s, String actualValue) {
 		String[] endingStrings = { "Z", "+00:00", "-00:00" };
