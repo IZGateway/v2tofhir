@@ -57,9 +57,10 @@ public class MSHParser extends AbstractSegmentParser {
 		}
 		Type messageType = ParserUtils.getField(msh, 9);
 		mh.setEvent(DatatypeConverter.toCodingFromTriggerEvent(messageType));
-		/*  TODO: It feels like this item may be desirable to have in the message header.
+		// It feels like this item may be desirable to have in the message header, but there's no mapping for it.
+		// Save it as a tage.
 		Coding messageCode = DatatypeConverter.toCodingFromMessageCode(messageType);
-		*/
+		mh.getMeta().addTag(messageCode);
 		Coding messageStructure = DatatypeConverter.toCodingFromMessageStructure(messageType);
 		if (messageStructure != null) {
 			// It's about as close as we get, and has the virtue of being a FHIR StructureDefinition

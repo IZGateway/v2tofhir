@@ -5,17 +5,12 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.TimeZone;
 import java.util.function.Consumer;
-import java.util.function.UnaryOperator;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.hl7.fhir.r4.model.Address;
@@ -23,6 +18,7 @@ import org.hl7.fhir.r4.model.BaseDateTimeType;
 import org.hl7.fhir.r4.model.CodeType;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.ContactPoint;
 import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.DateType;
 import org.hl7.fhir.r4.model.DecimalType;
@@ -47,18 +43,87 @@ import ca.uhn.hl7v2.model.Type;
 import ca.uhn.hl7v2.model.Varies;
 import ca.uhn.hl7v2.model.primitive.TSComponentOne;
 import gov.cdc.izgw.v2tofhir.converter.datatype.AddressParser;
+import gov.cdc.izgw.v2tofhir.converter.datatype.ContactPointParser;
 import gov.cdc.izgw.v2tofhir.converter.datatype.HumanNameParser;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class DatatypeConverter {
-	private static final String UNEXPECTED_EXCEPTION_MESSAGE = "Unexpected {}: {}";
 	private static final BigDecimal MAX_UNSIGNED_VALUE = new BigDecimal(Integer.MAX_VALUE);
 	private static final AddressParser addressParser = new AddressParser();
+	private static ContactPointParser contactPointParser;
 	private static final HumanNameParser nameParser = new HumanNameParser();
+
+	public interface Converter<F extends org.hl7.fhir.r4.model.Type> {
+		F convert(Type type);
+	}
 
 	private DatatypeConverter() {
 	}
+
+	public static <F extends org.hl7.fhir.r4.model.Type> Converter<F> getConverter(Class<F> clazz) {
+		return (Type t) -> convert(clazz, t);
+	}
+	public static <F extends org.hl7.fhir.r4.model.Type> Converter<F> getConverter(String className) {
+		return (Type t) -> convert(className, t);
+	}
+	
+	public static <F extends org.hl7.fhir.r4.model.Type> F convert(String className, Type t) {
+		className =  "org.hl7.fhir.r4.model." + className;
+		try {
+			@SuppressWarnings("unchecked")
+			Class<F> clazz = (Class<F>) Type.class.getClassLoader().loadClass(className);
+			return convert(clazz, t);
+		} catch (ClassNotFoundException e) {
+			throw new IllegalArgumentException(className + " is not a supported FHIR type");
+		}
+	}
+
+	public static <F extends org.hl7.fhir.r4.model.Type> F convert(Class<F> clazz, Type t) {
+		switch (clazz.getSimpleName()) {
+		case "Address":
+			return clazz.cast(toAddress(t));
+		case "CodeableConcept":
+			return clazz.cast(toCodeableConcept(t));
+		case "CodeType":
+			return clazz.cast(toCodeType(t));
+		case "Coding":
+			return clazz.cast(toCoding(t));
+		case "ContactPoint":
+			return clazz.cast(toContactPoint(t));
+		case "DateTimeType":
+			return clazz.cast(toDateTimeType(t));
+		case "DateType":
+			return clazz.cast(toDateType(t));
+		case "DecimalType":
+			return clazz.cast(toDecimalType(t));
+		case "HumanName":
+			return clazz.cast(toHumanName(t));
+		case "Identifier":
+			return clazz.cast(toIdentifier(t));
+		case "IdType":
+			return clazz.cast(toIdType(t));
+		case "InstantType":
+			return clazz.cast(toInstantType(t));
+		case "IntegerType":
+			return clazz.cast(toIntegerType(t));
+		case "PositiveIntType":
+			return clazz.cast(toPositiveIntType(t));
+		case "Quantity":
+			return clazz.cast(toQuantity(t));
+		case "StringType":
+			return clazz.cast(toStringType(t));
+		case "TimeType":
+			return clazz.cast(toTimeType(t));
+		case "UnsignedIntType":
+			return clazz.cast(toUnsignedIntType(t));
+		case "UriType":
+			return clazz.cast(toUriType(t));
+		default:
+			throw new IllegalArgumentException(clazz.getName() + " is not a supported FHIR type");
+		}
+	}
+
 
 	public static Address toAddress(Type codedElement) {
 		return addressParser.convert(codedElement);
@@ -68,6 +133,24 @@ public class DatatypeConverter {
 		return toCodeableConcept(codedElement, null);
 	}
 
+	/**
+	 * Used to add an element V to a field of type T in a FHIR type.
+	 * 
+	 * Example usage: 
+	 *   CodeableConcept cc = new CodeableConcept();
+	 *   Coding c = new Coding();
+	 *   addValue(cc:addCoding, c);
+	 *   
+	 * @param <T>	The type to add or set
+	 * @param consumer	An adder or setter method, e.g., cc::addCoding or cc::setValue
+	 * @param t	The object to add or set.
+	 */
+	public static <T extends org.hl7.fhir.r4.model.Type> void addIfNotEmpty(Consumer<T> consumer, T t
+	) {
+		if (t != null && !t.isEmpty()) {
+			consumer.accept(t);
+		}
+	}
 	public static CodeableConcept toCodeableConcept(Type codedElement, String table) {
 		if ((codedElement = adjustIfVaries(codedElement)) == null) {
 			return null;
@@ -79,16 +162,14 @@ public class DatatypeConverter {
 		case "CE", "CF", "CNE", "CWE":
 			comp = (Composite) codedElement;
 			for (int i = 0; i <= 3; i += 3) {
-				addCoding(cc, getCoding(comp, i, true));
+				addIfNotEmpty(cc::addCoding, getCoding(comp, i, true));
 			}
 			setValue(cc::setText, comp.getComponents(), 8);
 			break;
 		case "CX":
 			Identifier ident = toIdentifier(codedElement);
 			if (ident != null && !ident.isEmpty()) {
-				// Get the coding from the identifier
-				Coding coding = new Coding(ident.getSystem(), ident.getValue(), null);
-				addCoding(cc, coding);
+				addIfNotEmpty(cc::addCoding, new Coding(ident.getSystem(), ident.getValue(), null));
 			}
 			break;
 		case "CQ":
@@ -100,16 +181,19 @@ public class DatatypeConverter {
 			break;
 		case "EI", "EIP", "HD":
 			ident = toIdentifier(codedElement);
-			addCoding(cc, new Coding(ident.getSystem(), ident.getValue(), null));
+			if (ident == null) {
+				return null;
+			}
+			addIfNotEmpty(cc::addCoding, new Coding(ident.getSystem(), ident.getValue(), null));
 			break;
 		case "ID":
 			st = (Primitive) codedElement;
-			addCoding(cc, new Coding("http://terminology.hl7.org/CodeSystem/v2-0301", st.getValue(), null));
+			addIfNotEmpty(cc::addCoding, new Coding("http://terminology.hl7.org/CodeSystem/v2-0301", st.getValue(), null));
 			break;
 
 		case "IS", "ST":
 			st = (Primitive) codedElement;
-			addCoding(cc, Mapping.mapSystem(new Coding(table, st.getValue(), null)));
+			addIfNotEmpty(cc::addCoding, Mapping.mapSystem(new Coding(table, st.getValue(), null)));
 			break;
 		default:
 			break;
@@ -120,12 +204,20 @@ public class DatatypeConverter {
 		return cc;
 	}
 
-	private static Type adjustIfVaries(Type codedElement) {
-		if (codedElement instanceof Varies v) {
+	public static Type adjustIfVaries(Type type) {
+		if (type instanceof Varies v) {
 			return v.getData();
 		}
-		return codedElement;
+		return type;
 	}
+	
+	public static Type adjustIfVaries(Type[] types, int index) {
+		if (types == null || index < 0 || index >= types.length) {
+			return null;
+		}
+		return adjustIfVaries(types[index]);
+	}
+	
 
 	private static Identifier extractAsIdentifier(Composite comp, int idLocation, int checkDigitLoc, int idTypeLoc,
 			int... systemValues) {
@@ -149,8 +241,8 @@ public class DatatypeConverter {
 				}
 			}
 		}
-		if (idTypeLoc >= 0 && types.length > idTypeLoc && types[idTypeLoc] instanceof Primitive pt
-				&& !ParserUtils.isEmpty(pt)) {
+		Type type = adjustIfVaries(types, idTypeLoc);
+		if (type instanceof Primitive pt && !ParserUtils.isEmpty(pt)) {
 			Coding coding = new Coding(Systems.IDENTIFIER_TYPE, pt.getValue(), null);
 			Mapping.setDisplay(coding);
 			CodeableConcept cc = new CodeableConcept();
@@ -164,9 +256,7 @@ public class DatatypeConverter {
 	}
 
 	private static String getSystemOfIdentifier(Type type) {
-		if (type instanceof Varies v) {
-			type = v.getData();
-		}
+		type = adjustIfVaries(type);
 		if (type instanceof Primitive pt) {
 			return pt.getValue();
 		} else if (type instanceof Composite comp2 && "HD".equals(comp2.getName()) // NOSONAR Name check is correct here
@@ -180,14 +270,13 @@ public class DatatypeConverter {
 	}
 
 	private static String getValueOfIdentifier(int idLocation, int checkDigitLoc, Type[] types) {
-		if (idLocation >= 0 && types.length > idLocation && types[idLocation] instanceof Primitive pt
-				&& !ParserUtils.isEmpty(pt)) {
-			if (checkDigitLoc > 0 && types.length > checkDigitLoc && types[checkDigitLoc] instanceof Primitive pt2
-					&& !ParserUtils.isEmpty(pt2)) {
-				return pt.getValue() + "-" + pt2.getValue();
-			} else {
-				return pt.getValue();
+		Type ident = adjustIfVaries(types, idLocation);
+		Type checkDigit = adjustIfVaries(types, checkDigitLoc);
+		if (ident != null && !ParserUtils.isEmpty(ident)) {
+			if (checkDigit != null && !ParserUtils.isEmpty(checkDigit)) {
+				return ParserUtils.toString(ident) + "-" + ParserUtils.toString(checkDigit);
 			}
+			return ParserUtils.toString(ident);
 		}
 		return null;
 	}
@@ -196,6 +285,7 @@ public class DatatypeConverter {
 		if (codedElement == null) {
 			return null;
 		}
+		codedElement = adjustIfVaries(codedElement);
 		if (codedElement instanceof Primitive pt) {
 			return new CodeType(StringUtils.strip(pt.getValue()));
 		}
@@ -267,6 +357,10 @@ public class DatatypeConverter {
 		}
 		return null;
 	}
+	
+	public static ContactPoint toContactPoint(Type type) {
+		return contactPointParser.convert(type);
+	}
 
 	public static DateTimeType toDateTimeType(Type type) {
 		InstantType instant = toInstantType(type);
@@ -302,7 +396,7 @@ public class DatatypeConverter {
 			// PositiveIntType and UnsignedIntType extend IntegerType, so this code works
 			// for those as well.
 			if (from instanceof DecimalType f) {
-				f.round(0, RoundingMode.DOWN); // Truncate to an Integer;
+				f.round(0, RoundingMode.DOWN); // Truncate to an Integer
 				i.setValue(f.getValue().intValueExact());
 			}
 		} else if (to instanceof DecimalType t) {
@@ -405,7 +499,7 @@ public class DatatypeConverter {
 				if (type.contains(":")) {
 					c.setSystem(Systems.IETF); // Type is a URI, so code gets to be IETF
 				} else if (Systems.ID_TYPES.contains(type)) {
-					c.setSystem(Systems.IDTYPE); 
+					c.setSystem(Systems.IDTYPE);
 					Mapping.setDisplay(c);
 				} else if (Systems.IDENTIFIER_TYPES.contains(type)) {
 					c.setSystem(Systems.IDENTIFIER_TYPE);
@@ -502,10 +596,8 @@ public class DatatypeConverter {
 		TSComponentOne ts1 = new MyTSComponentOne();
 		try {
 			ts1.setValue(value);
-			Calendar cal = ts1.getValueAsCalendar();
 			String valueWithoutZone = StringUtils.substringBefore(value.replace("+", "-"), "+");
 			TemporalPrecisionEnum prec = null;
-			InstantType t = new InstantType(cal);
 			String valueWithoutDecimal = StringUtils.substringBefore(value, ".");
 			int len = valueWithoutDecimal.length();
 			if (len < 5) {
@@ -519,9 +611,17 @@ public class DatatypeConverter {
 			} else if (len < 15) {
 				prec = TemporalPrecisionEnum.SECOND;
 			}
+			Calendar cal = ts1.getValueAsCalendar();
+			if (TemporalPrecisionEnum.YEAR.equals(prec)) {
+				// Fix V2 Calendar bug when only year is provided.
+				cal.set(Calendar.YEAR, Integer.parseInt(valueWithoutDecimal));
+				cal.set(Calendar.MONTH, 0);
+				cal.set(Calendar.DATE, 1);
+			}
 			if (valueWithoutDecimal.length() < valueWithoutZone.length()) {
 				prec = TemporalPrecisionEnum.MILLI;
 			}
+			InstantType t = new InstantType(cal);
 			t.setPrecision(prec);
 			return t;
 		} catch (Exception e) {
@@ -583,8 +683,8 @@ public class DatatypeConverter {
 				}
 				return null;
 			} catch (DataTypeException e) {
-				warnException("Unexpected {} parsing {} as InstantType: {}", e.getClass().getSimpleName(), type,
-						e.getMessage(), e);
+				warn("Unexpected {} parsing {} as InstantType: {}", e.getClass().getSimpleName(), type,
+						e.getMessage());
 			}
 		}
 		return toInstantType(ParserUtils.toString(type));
@@ -627,7 +727,7 @@ public class DatatypeConverter {
 			i.setValue(i.getValue()); // Force normalization of string value
 			return i;
 		} catch (ArithmeticException ex) {
-			warnException("Integer overflow value in field {}", pt.toString(), ex);
+			warn("Integer overflow value in field {}", pt.toString());
 			return null;
 		}
 	}
@@ -646,9 +746,10 @@ public class DatatypeConverter {
 
 	public static Quantity toQuantity(Type type) {
 		Quantity qt = null;
-		if (type instanceof Varies v) {
-			type = v.getData();
+		if ((type = adjustIfVaries(type)) == null) {
+			return null;
 		}
+		
 		if (type instanceof Primitive pt) {
 			qt = getQuantity(pt);
 		}
@@ -687,6 +788,7 @@ public class DatatypeConverter {
 		if (type == null) {
 			return null;
 		}
+		type = adjustIfVaries(type);
 		if (type instanceof Primitive pt) {
 			return new StringType(pt.getValue());
 		}
@@ -725,9 +827,28 @@ public class DatatypeConverter {
 		if (StringUtils.isBlank(value)) {
 			return null;
 		}
+		value = value.replace(":", "").replace(" ", "");
+		if (!value.matches(
+			"^\\d{2}"
+			+ "("
+				+ "\\d{2}"
+				+ "("
+					+ "\\.\\d{1,4}"
+				+ ")?"
+			+ ")?"
+			+ "("
+				+ "\\[\\-+]\\d{2}"
+				+ "("
+					+ "\\d{2}"
+				+ ")?"
+			+ ")?$"
+		)) {
+			warn("Value does not match date pattern for V2 HH[MM[SS[.S[S[S[S]]]]]][+/-ZZZZ]");
+			return null;
+		}
 		// Parse according to V2 rule: HH[MM[SS[.S[S[S[S]]]]]][+/-ZZZZ]
 		// Remove any inserted : or space values.
-		String timePart = value.replace(":", "").replace(" ", "").split("[\\-+]")[0];
+		String timePart = value.split("[\\-+]")[0];
 		String zonePart = StringUtils.right(value, value.length() - (timePart.length() + 1));
 		String wholePart = StringUtils.substringBefore(timePart, ".");
 		try {
@@ -824,9 +945,7 @@ public class DatatypeConverter {
 		if (type == null) {
 			return null;
 		}
-		if (type instanceof Varies v) {
-			type = v.getData();
-		}
+		type = adjustIfVaries(type);
 		if (type instanceof Primitive pt) {
 			return new UriType(StringUtils.strip(pt.getValue()));
 		}
@@ -843,13 +962,6 @@ public class DatatypeConverter {
 			}
 		}
 		return null;
-	}
-
-	private static void addCoding(CodeableConcept cc, Coding coding) {
-		if (coding == null || coding.isEmpty()) {
-			return;
-		}
-		cc.addCoding(coding);
 	}
 
 	private static int compareUnitsBySystem(Coding c1, Coding c2) {
@@ -888,7 +1000,7 @@ public class DatatypeConverter {
 			setValue(coding::setSystem, types, index++);
 			setValue(coding::setVersion, types, versionIndex);
 			setValue(coding::setSystem, types, codeSystemOID);
-			
+
 			Mapping.mapSystem(coding);
 			if (!coding.hasDisplay() || coding.getDisplay().equals(coding.getCode())) {
 				// See if we can do better for display names
@@ -942,8 +1054,12 @@ public class DatatypeConverter {
 	}
 
 	private static void setValue(Consumer<String> consumer, Type[] types, int i) {
-		if (i < types.length && types[i] instanceof Primitive st) {
-			consumer.accept(st.getValue());
+		Type type = adjustIfVaries(types, i);
+		if (type instanceof Primitive st) {
+			String value = ParserUtils.toString(st);
+			if (StringUtils.isNotEmpty(value)) {
+				consumer.accept(st.getValue());
+			}
 		}
 	}
 

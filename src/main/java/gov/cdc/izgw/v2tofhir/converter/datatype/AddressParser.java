@@ -10,7 +10,7 @@ import org.hl7.fhir.r4.model.Address.AddressUse;
 import ca.uhn.hl7v2.model.Composite;
 import ca.uhn.hl7v2.model.Primitive;
 import ca.uhn.hl7v2.model.Type;
-import ca.uhn.hl7v2.model.Varies;
+import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
 import gov.cdc.izgw.v2tofhir.converter.ParserUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -174,9 +174,8 @@ public class AddressParser implements DatatypeParser<Address> {
 	@Override
 	public Address convert(Type type) {
 		Address addr = null;
-		if (type instanceof Varies v) {
-			type = v.getData();
-		}
+		type = DatatypeConverter.adjustIfVaries(type);
+
 		if (type instanceof Primitive pt) {
 			addr = fromString(pt.getValue());
 		} else if (type instanceof Composite comp && Arrays.asList("AD", "XAD")
@@ -189,6 +188,11 @@ public class AddressParser implements DatatypeParser<Address> {
 			return null;
 		}
 		return addr;
+	}
+	
+	@Override 
+	public Type convert(Address addr) {
+		return null;
 	}
 	@Override
 	public Address fromString(String value) {
@@ -278,12 +282,16 @@ public class AddressParser implements DatatypeParser<Address> {
 	}
 	
 	public static Address parse(Type[] types) {
-		int offset = 0;
 		Address addr = new Address();
 		for (int i = 0; i < 14; i++) {
+			
+			if (types.length <= i) {
+				break;
+			}
+			Type t = DatatypeConverter.adjustIfVaries(types, i);
 			if (i == 0) {
-				addr.addLine(ParserUtils.toString(types[i + offset]));
-			} else if (types[i + offset] instanceof Primitive part) {
+				addr.addLine(ParserUtils.toString(t));
+			} else if (t instanceof Primitive part) {
 				switch (i) {
 					case 1 :
 						addr.addLine(part.getValue());
@@ -317,6 +325,9 @@ public class AddressParser implements DatatypeParser<Address> {
 		return addr;
 	}
 	private static AddressUse getUse(String value) {
+		if (StringUtils.isBlank(value)) {
+			return null;
+		}
 		switch (value.trim().toUpperCase()) {
 			case "B", // Firm/Business
 				 "O" : // Office/Business

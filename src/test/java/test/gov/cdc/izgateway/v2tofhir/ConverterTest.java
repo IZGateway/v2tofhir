@@ -18,7 +18,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Supplier;
 
 import org.apache.commons.io.IOUtils;
@@ -46,7 +45,6 @@ import ca.uhn.fhir.parser.IParser;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Composite;
 import ca.uhn.hl7v2.model.Primitive;
-import ca.uhn.hl7v2.model.Segment;
 import ca.uhn.hl7v2.model.Type;
 import ca.uhn.hl7v2.model.Varies;
 import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
@@ -73,6 +71,9 @@ class ConverterTest extends TestBase {
 			+ "\n}";
 	private static final FhirContext ctx = FhirContext.forR4();
 	private static final IParser fhirParser = ctx.newJsonParser().setPrettyPrint(true);
+	// Force load of Mapping class before any testing starts.
+	@SuppressWarnings("unused")
+	private static final Class<Mapping> MAPPING_CLASS = Mapping.class; 
 	@ParameterizedTest
 	@MethodSource("getTestMessages")
 	@Disabled("Used for testing a local microsoft V2 converter")
@@ -124,24 +125,29 @@ class ConverterTest extends TestBase {
 				assertEquals(first, code);
 			}
 		}
-		if (coding != null && hasDisplay(t) && hasComponent(t, 2)) {
-			// Either both are blank or both are filled.
-			assertEquals(StringUtils.isBlank(getComponent(t, 2)), StringUtils.isBlank(coding.getDisplay()));
-			if (!StringUtils.isBlank(first)) {
-				// If both are filled, check values.
-				String[] a = { getComponent(t, 2), Mapping.getDisplay(coding) };
-				List<String> l = Arrays.asList(a);
-				Supplier<Boolean> test = null;
-				
-				if (StringUtils.isNotBlank(coding.getDisplay())) {
-					// Display came from component 2, or it was properly mapped.
-					test = () -> l.contains(coding.getDisplay());
-				} else {
-					// Display is empty and there are no good values to use.
-					test = () -> StringUtils.isAllEmpty(a);
+		
+		if (coding != null) {
+			String display = coding.hasUserData("originalDisplay") ? (String) coding.getUserData("originalDisplay") : coding.getDisplay();
+			assertEquals(StringUtils.isBlank(getComponent(t, 2)), StringUtils.isBlank(display));
+		
+			if (hasDisplay(t) && hasComponent(t, 2)) {
+				// Either both are blank or both are filled.
+				if (!StringUtils.isBlank(first)) {
+					// If both are filled, check values.
+					String[] a = { getComponent(t, 2), Mapping.getDisplay(coding) };
+					List<String> l = Arrays.asList(a);
+					Supplier<Boolean> test = null;
+					
+					if (StringUtils.isNotBlank(coding.getDisplay())) {
+						// Display came from component 2, or it was properly mapped.
+						test = () -> l.contains(coding.getDisplay());
+					} else {
+						// Display is empty and there are no good values to use.
+						test = () -> StringUtils.isAllEmpty(a);
+					}
+					assertEquals(Boolean.TRUE, test.get(),
+						"Display value " + coding.getDisplay() + " expected to be from " + l);
 				}
-				assertEquals(Boolean.TRUE, test.get(),
-					"Display value " + coding.getDisplay() + " expected to be from " + l);
 			}
 		}
 		String encoded = ParserUtils.unescapeV2Chars(t.encode());
@@ -149,14 +155,21 @@ class ConverterTest extends TestBase {
 			if (coding.getSystem().contains(":")) {
 				// There is a proper URI, verify we got it correctly.
 				Collection<String> names = Systems.getSystemNames(coding.getSystem());
+				if (coding.hasUserData("originalSystem")) {
+					String originalSystem = (String)coding.getUserData("originalSystem");
+					originalSystem = StringUtils.trim(originalSystem); 
+					if (!names.contains(originalSystem)) {
+						names.add(originalSystem);
+					}
+				}
+				names = names.stream().map(StringUtils::upperCase).toList();
 				// We know about this URI
 				assertNotNull(names);
-				// At only one of the names for the system is in the message fields.
-				// NOTE: We might need to make the "only one" part more lax as test 
-				// data improves
-				List<String> fields = Arrays.asList(encoded.split("\\^"));
+				List<String> fields = Arrays.asList(encoded.split("\\^")).stream()
+						.map(StringUtils::trim).map(StringUtils::upperCase).toList();
 				List<String> f = names.stream().filter(n -> fields.contains(n)).toList();
-				assertEquals(1, f.size(), "Could not find any of " + names + " in " + encoded);
+				// At least one of the names for the system is in the message fields.
+				assertTrue(f.size() > 0, "Could not find any of " + names + " in " + fields);
 				
 			} else {
 				assertTrue(
@@ -183,6 +196,9 @@ class ConverterTest extends TestBase {
 		return false;
 	}
 	private String getComponent(Type t, int index) throws HL7Exception {
+		if (t instanceof Varies v) {
+			t = v.getData();
+		}
 		if (t instanceof Composite comp) {
 			Type types[] = comp.getComponents();
 			return ParserUtils.unescapeV2Chars(types[index-1].encode());
@@ -232,7 +248,7 @@ class ConverterTest extends TestBase {
 	}
 	
 	private static String normalizeNumbers(String nm) {
-		nm = StringUtils.substringBefore(nm, ".");
+		nm = StringUtils.substringBeforeLast(nm, ".");
 		return nm.split("\\s+")[0];
 	}
 	@ParameterizedTest
@@ -269,14 +285,19 @@ class ConverterTest extends TestBase {
 	@ParameterizedTest
 	@MethodSource("getTestPrimitives")
 	void testPrimitiveConversionsCodeType(Type t) throws HL7Exception {
-		TestUtils.compareStringValues(DatatypeConverter::toCodeType, s -> new CodeType(StringUtils.strip(s)), StringUtils::strip, t, CodeType.class);
+		TestUtils.compareStringValues(
+				DatatypeConverter::toCodeType, 
+				s -> new CodeType(StringUtils.strip(s)), 
+				StringUtils::strip, t, 
+				CodeType.class
+		);
 	}
 	
 	@ParameterizedTest
 	@MethodSource("getTestSegments")
 	void testSegmentConversions(NamedSegment segment) throws HL7Exception {
 		MessageParser p = new MessageParser();
-		System.out.println(segment);
+		System.out.println(segment.segment());
 		Bundle b = p.createBundle(Collections.singleton(segment.segment()));
 		System.out.println(fhirParser.encodeResourceToString(b));
 	}
@@ -351,23 +372,4 @@ class ConverterTest extends TestBase {
 		con.setDoOutput(true);
 		return con;
 	}
-	
-	public static class NamedSegment {
-		private final Segment segment;
-		public NamedSegment(Segment segment) {
-			this.segment = segment;
-		}
-		public Segment segment() {
-			return segment;
-		}
-		public String toString() {
-			try {
-				return segment.encode();
-			} catch (HL7Exception e) {
-				throw new AssertionError("Cannot convert " + segment + " to String");
-			}
-		}
-	}
-	
-	
 }

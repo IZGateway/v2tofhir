@@ -2,7 +2,6 @@ package test.gov.cdc.izgateway.v2tofhir;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.util.Collections;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -24,19 +23,26 @@ import test.gov.cdc.izgateway.TestUtils;
 class CompositeStringTypeTests extends TestBase {
 
 	protected <FT extends org.hl7.fhir.r4.model.Type, V2 extends Type> void testFhirType(FT actual, V2 input, boolean isTextComparable) {
-		// Both are empty, or both have values.
-		assertEquals(TestUtils.isEmpty(input), TestUtils.isEmpty(actual));
 		String inputString = TextUtils.toString(input);
 		String actualString = TextUtils.toString(actual);
+		// Both are empty, or both have USEFUL values, where useful
+		// is defined as generating text output on TextUtils.toString.
+		assertEquals(
+			TestUtils.isEmpty(input) || StringUtils.isEmpty(inputString), 
+			TestUtils.isEmpty(actual) || StringUtils.isEmpty(actualString)
+		);
 		if (!isTextComparable) {
 			return;
 		}
 		try {
 			// Triming and capitalization don't matter in the string conversions
-			assertEquals(StringUtils.trim(inputString).toUpperCase(), StringUtils.trim(actualString).toUpperCase());
+			assertEquals(
+				StringUtils.trim(inputString).toUpperCase(), 
+				StringUtils.trim(actualString).toUpperCase()
+			);
 		} catch (AssertionError err) {
 			// Remove any converter added extra data.
-			@SuppressWarnings("unchecked")
+			@SuppressWarnings({ "unchecked", "unused" })
 			FT save = actual == null ? null : (FT)actual.copy();  // Save the old data
 			Mapping.reset(actual);
 			actualString = TextUtils.toString(actual);
@@ -69,6 +75,12 @@ class CompositeStringTypeTests extends TestBase {
 	@MethodSource("getTestDataForCoding")
 	void testCodings(Type type) throws DataTypeException {
 		testFhirType(DatatypeConverter.toCodeableConcept(type), type, IS_CODING.contains(type.getName()));
+	}
+	
+	@ParameterizedTest
+	@MethodSource("getTestDataForContactPoint")
+	void testContactPoint(Type type) throws DataTypeException {
+		testFhirType(DatatypeConverter.toCodeableConcept(type), type, IS_CONTACT.contains(type.getName()));
 	}
 	
 	@ParameterizedTest

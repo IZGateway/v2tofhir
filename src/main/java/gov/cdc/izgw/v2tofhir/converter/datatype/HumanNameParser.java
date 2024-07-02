@@ -12,6 +12,7 @@ import ca.uhn.hl7v2.model.Composite;
 import ca.uhn.hl7v2.model.Primitive;
 import ca.uhn.hl7v2.model.Type;
 import ca.uhn.hl7v2.model.Varies;
+import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
 import gov.cdc.izgw.v2tofhir.converter.ParserUtils;
 
 public class HumanNameParser implements DatatypeParser<HumanName> {
@@ -78,9 +79,7 @@ public class HumanNameParser implements DatatypeParser<HumanName> {
 	
 	@Override
 	public HumanName convert(Type t) {
-		if (t instanceof Varies v) {
-			t = v.getData();
-		}
+		t = DatatypeConverter.adjustIfVaries(t);
 		if (t instanceof Primitive pt) {
 			return fromString(pt.getValue());
 		} 
@@ -101,6 +100,10 @@ public class HumanNameParser implements DatatypeParser<HumanName> {
 		return null;
 	}
 
+	@Override 
+	public Type convert(HumanName name) {
+		return null;
+	}
 
 	static HumanName parse(Type[] types, int offset, int nameTypeLoc) {
 		HumanName hn = new HumanName();
@@ -133,8 +136,9 @@ public class HumanNameParser implements DatatypeParser<HumanName> {
 					break;
 			}
 		}
-		if (nameTypeLoc >= 0 && nameTypeLoc < types.length
-				&& types[nameTypeLoc] instanceof Primitive pt) {
+		Type type = DatatypeConverter.adjustIfVaries(types, nameTypeLoc); 
+				
+		if (type instanceof Primitive pt) {
 			String nameType = pt.getValue();
 			hn.setUse(toNameUse(nameType));
 		}

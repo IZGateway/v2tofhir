@@ -24,6 +24,16 @@
 		</dependency>
 		<dependency>
 			<groupId>ca.uhn.hapi</groupId>
+			<artifactId>hapi-structures-v231</artifactId>
+			<version>2.3</version>
+		</dependency>
+		<dependency>
+			<groupId>ca.uhn.hapi</groupId>
+			<artifactId>hapi-structures-v25</artifactId>
+			<version>2.3</version>
+		</dependency>
+		<dependency>
+			<groupId>ca.uhn.hapi</groupId>
 			<artifactId>hapi-structures-v251</artifactId>
 			<version>2.3</version>
 		</dependency>
@@ -71,6 +81,11 @@
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
 			<version>[2.15.0,)</version>
+		</dependency>
+		<dependency>
+			<groupId>commons-validator</groupId>
+			<artifactId>commons-validator</artifactId>
+			<version>1.9.0</version>
 		</dependency>
 		<dependency>
 			<groupId>io.azam.ulidj</groupId>

@@ -65,10 +65,11 @@ public class Mapping {
 		Resource[] conceptFiles;
 		Resource[] codeSystemFiles;
 		try {
-			conceptFiles = resolver.getResources("/coding/HL7 Concept*.csv");
-			codeSystemFiles = resolver.getResources("/coding/HL7 CodeSystem*.csv");
+			conceptFiles = resolver.getResources("coding/HL7 Concept*.csv");
+			codeSystemFiles = resolver.getResources("coding/HL7 CodeSystem*.csv");
 		} catch (IOException e) {
 			log.error("Cannot load coding resources");
+			e.printStackTrace();
 			throw new ServiceConfigurationError("Cannot load coding resources", e);
 
 		}
@@ -318,7 +319,7 @@ public class Mapping {
 		if (string.startsWith("HL7")) {
 			string = string.substring(3);
 		}
-		return "http://terminology.hl7.org/CodeSystem/v2-" + string;
+		return "http://terminology.hl7.org/CodeSystem/v2-" + StringUtils.right("000" + string, 4);
 	}
 
 	/**
@@ -340,6 +341,8 @@ public class Mapping {
 		if (StringUtils.isBlank(table)) {
 			return null;
 		}
+		
+		table = Mapping.getPreferredCodeSystem(table);
 		if (Systems.IDENTIFIER_TYPE.equals(table)) {
 			return Systems.idTypeToDisplayMap.get(code);
 		}
@@ -392,7 +395,9 @@ public class Mapping {
 		if (coding.hasUserData("originalDisplay")) {
 			coding.setDisplay((String)coding.getUserData("originalDisplay"));
 		}
-		
+		if (coding.hasUserData("originalSystem")) {
+			coding.setSystem((String)coding.getUserData("originalSystem"));
+		}
 	}
 	public static void reset(CodeableConcept cc) {
 		if (cc == null) {
@@ -412,12 +417,15 @@ public class Mapping {
 	}
 
 	public static Coding mapSystem(Coding coding) {
+		if (coding == null) {
+			return null;
+		}
 		if (!coding.hasSystem()) {
 			return coding;
 		}
 		String system = coding.getSystem();
 		coding.setSystem(Mapping.getPreferredCodeSystem(system));
-		if (!system.equals(coding.getSystem())) {
+		if (!system.equals(coding.getSystem()) && !coding.hasUserData("originalSystem")) {
 			coding.setUserData("originalSystem", system);
 		}
 		return coding;
@@ -429,7 +437,7 @@ public class Mapping {
 		}
 		String system = ident.getSystem();
 		ident.setSystem(Mapping.getPreferredIdSystem(system));
-		if (!system.equals(ident.getSystem())) {
+		if (!system.equals(ident.getSystem()) && !ident.hasUserData("originalSystem")) {
 			ident.setUserData("originalSystem", system);
 		}
 		return ident;
@@ -442,16 +450,18 @@ public class Mapping {
 		}
 		
 		// Handle mapping for HL7 V2 tables
-		if (system.startsWith("HL7") || system.startsWith("hl7")) {
+		if ("HL7".equalsIgnoreCase(system)) {
+			return "http://terminology.hl7.org/CodeSystem/v2-0003";
+		} else if (system.startsWith("HL7") || system.startsWith("hl7")) {
 			system = system.substring(3);
 			if (system.startsWith("-")) {
 				system = system.substring(1);
 			}
-			return "http://terminology.hl7.org/CodeSystem/v2-" + system;
-		} else if (system.length() == 4 && StringUtils.isNumeric(system)) {
-			return "http://terminology.hl7.org/CodeSystem/v2-" + system;
+			return "http://terminology.hl7.org/CodeSystem/v2-" + StringUtils.right("000" + system, 4);
+		} else if (StringUtils.isNumeric(system)) {
+			return "http://terminology.hl7.org/CodeSystem/v2-" + StringUtils.right("000" + system, 4);
 		}
-		return value;
+		return system;
 	}
 
 	private static String getPreferredIdSystem(String value) {

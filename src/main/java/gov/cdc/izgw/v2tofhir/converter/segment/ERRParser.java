@@ -15,7 +15,6 @@ import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Segment;
 import ca.uhn.hl7v2.model.Type;
 import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
-import gov.cdc.izgw.v2tofhir.converter.Mapping;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
 import gov.cdc.izgw.v2tofhir.converter.ParserUtils;
 import gov.cdc.izgw.v2tofhir.converter.PathUtils;
@@ -47,7 +46,7 @@ public class ERRParser extends AbstractSegmentParser {
 	public ERRParser(MessageParser messageParser) {
 		super(messageParser, "ERR");
 	}
-	@Override
+
 	public void parse(Segment err) throws HL7Exception {
 		// Create a new OperationOutcome for each ERR resource
 		OperationOutcome oo = getFirstResource(OperationOutcome.class);
@@ -130,12 +129,5 @@ public class ERRParser extends AbstractSegmentParser {
 			return diagnostics.toString();
 		} 
 		return userMessage == null || userMessage.isBooleanPrimitive() ? null : userMessage.toString();
-	}
-	
-	private void warn(String msg, Object ...args) {
-		log.warn(msg, args);
-	}
-	private void warnException(String msg, Object ...args) {
-		log.warn(msg, args);
 	}
 }

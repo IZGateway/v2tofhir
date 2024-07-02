@@ -124,10 +124,12 @@ public class TextUtils {
 				if (StringUtils.contains(system, ":")) {
 					List<String> l = Systems.getSystemNames(system);
 					// First name is always preferred name, second is the V2 common name
-					system = l.get(0);
-					if (l.size() > 1) {
-						// If there is a V2 name, use that.
-						system = l.get(1);
+					if (l.size() > 0) {
+						system = l.get(0);
+						if (l.size() > 1) {
+							// If there is a V2 name, use that.
+							system = l.get(1);
+						}
 					}
 				}
 				b.append(" (").append(system).append(" ").append(code).append(")");
@@ -186,8 +188,8 @@ public class TextUtils {
 	 * @param unit The units
 	 * @return	text in the general form {value} {unit}
 	 */
-	public static String quantityToText(Number value, String unit) {
-		return quantityToText(value.toString(), unit);
+	public static String quantityToText(Number value, String code, String unit) {
+		return quantityToText(value.toString(), code, unit);
 	}
 
 	/**
@@ -197,7 +199,7 @@ public class TextUtils {
 	 * @param unit The units
 	 * @return	text in the general form {value} {unit}
 	 */
-	public static String quantityToText(String value, String unit) {
+	public static String quantityToText(String value, String code, String unit) {
 		StringBuilder b = new StringBuilder();
 		if (value != null) {
 			if (value.startsWith("-.")) {
@@ -209,7 +211,11 @@ public class TextUtils {
 			}
 		}
 		appendIfNonBlank(b, value, " ");
-		appendIfNonBlank(b, unit, null);
+		if (StringUtils.isBlank(unit)) {
+			appendIfNonBlank(b, code, null);
+		} else {
+			appendIfNonBlank(b, unit, null);
+		}
 		return rightTrim(b).toString();
 	}
 	
@@ -224,6 +230,13 @@ public class TextUtils {
 		Composite comp = null;
 		if (v2Type instanceof Varies v) {
 			v2Type = v.getData();
+		}
+		try {
+			if (v2Type == null || v2Type.isEmpty()) {
+				return "";
+			}
+		} catch (HL7Exception e1) {
+			return "";
 		}
 		if (v2Type instanceof Composite c) {
 			comp = c;
@@ -255,11 +268,15 @@ public class TextUtils {
 		case "CE", "CF", "CNE", "CWE":
 			return codingToText(ParserUtils.toStrings(comp, 8, 0, 1, 2, 3, 4, 5, 9, 10, 11));
 		case "CX":
-			return identifierToText(ParserUtils.toString(comp, 4), ParserUtils.toString(comp, 0), ParserUtils.toString(comp, 1));
+			String type = ParserUtils.toString(comp, 4);
+			if (StringUtils.isBlank(type)) {
+				type = ParserUtils.toString(comp, 3);
+			}
+			return identifierToText(type, ParserUtils.toString(comp, 0), ParserUtils.toString(comp, 1));
 		case "NM":
-			return quantityToText(ParserUtils.toString(v2Type), null);
+			return quantityToText(ParserUtils.toString(v2Type), null, null);
 		case "CQ":
-			return quantityToText(ParserUtils.toString(comp, 2), ParserUtils.toString(comp, 1));
+			return quantityToText(ParserUtils.toString(comp, 0), ParserUtils.toString(comp, 1), ParserUtils.toString(comp, 1, 1));
 		case "HD":
 			return Objects.toString(ParserUtils.toString(comp), ParserUtils.toString(comp, 1));
 		case "EI":
@@ -295,9 +312,8 @@ public class TextUtils {
 		if (fhirType == null || fhirType.isEmpty()) {
 			return "";
 		}
-		
 		if (fhirType instanceof PrimitiveType<?> pt) {
-			return pt.asStringValue();
+			return StringUtils.defaultIfBlank(pt.asStringValue(), "");
 		}
 		switch (fhirType.fhirType()) {
 		case "Address":
@@ -338,6 +354,9 @@ public class TextUtils {
 	 * @see codingToText
 	 */
 	public static String toText(CodeableConcept codeableConcept) {
+		if (codeableConcept == null || codeableConcept.isEmpty()) {
+			return "";
+		}
 		List<String> l = new ArrayList<>();
 		l.add(codeableConcept.hasText() ? codeableConcept.getText() : null);
 		for (Coding coding : codeableConcept.getCoding()) {
@@ -406,8 +425,7 @@ public class TextUtils {
 	 * @see quantityToText
 	 */
 	public static String toText(Quantity quantity) {
-		String unit = quantity.hasUnit() ? quantity.getUnit() : quantity.getCode();
-		return TextUtils.quantityToText(quantity.getValue(), unit);
+		return TextUtils.quantityToText(quantity.getValue(), quantity.getCode(), quantity.getUnit());
 	}
 	
 	/** 

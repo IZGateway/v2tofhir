@@ -52,7 +52,4 @@ public class QAKParser extends AbstractSegmentParser {
 			}
 		}
 	}
-	private static void warn(String msg, Object ...args) {
-		log.warn(msg, args);
-	}
 }

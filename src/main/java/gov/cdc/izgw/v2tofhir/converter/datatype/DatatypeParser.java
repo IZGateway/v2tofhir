@@ -25,4 +25,5 @@ public interface DatatypeParser<T extends org.hl7.fhir.r4.model.Type> {
 	 * @param fhirType	The FHIR type to convert
 	 * @return The HL7 v2 type.
 	 */
+	Type convert(T type);
 }

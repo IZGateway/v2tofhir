@@ -245,6 +245,7 @@ public class Systems {
 			return Collections.emptyList();
 		}
 		system = StringUtils.trim(system);
+		String original = system;
 		NamingSystem ns = getNamingSystem(system);
 		List<String> found = null;
 		if (ns == null) {
@@ -253,7 +254,13 @@ public class Systems {
 			found = ns.getUniqueId().stream().map(u -> u.getValue()).collect(Collectors.toCollection(ArrayList::new));
 		}
 		// Return a name for things that are obviously HL7 systems.
-		if (system.matches("^(?i)(HL7-?|http://terminology.hl7.org/CodeSystem/v2-|)\\d{4}$") || 
+		if ("HL7".equalsIgnoreCase(system)) {
+			// Used in QPD-1 is some queries.
+			if (found.isEmpty()) {
+				found.add("http://terminology.hl7.org/CodeSystem/v2-0003");
+			}
+		} else if (
+			system.matches("^(?i)(HL7-?|http://terminology.hl7.org/CodeSystem/v2-|)\\d{4}$") || 
 			system.startsWith("2.16.840.1.113883.12.")	// V2 Table OID
 		) {
 			String name = "HL7" + StringUtils.right("000" + system, 4);
@@ -261,6 +268,13 @@ public class Systems {
 				found.add("http://terminology.hl7.org/CodeSystem/v2-" + StringUtils.right(name, 4));
 			}
 			found.add(name);
+		}
+		// Special case for table name as HL7
+		if (found.contains("HL70003") && !found.contains("HL7")) {
+			found.add("HL7");
+		}
+		if (!found.contains(original)) {
+			found.add(original);
 		}
 		return found;
 	}

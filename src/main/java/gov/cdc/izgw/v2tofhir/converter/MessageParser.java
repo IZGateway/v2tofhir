@@ -7,11 +7,13 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.hl7.fhir.r4.model.Attachment;
 import org.hl7.fhir.r4.model.Binary;
 import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Bundle.BundleType;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
@@ -28,9 +30,10 @@ import org.hl7.fhir.r4.model.StringType;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.model.Segment;
+import ca.uhn.hl7v2.model.Structure;
 import ca.uhn.hl7v2.model.Type;
 import gov.cdc.izgw.v2tofhir.converter.segment.ERRParser;
-import gov.cdc.izgw.v2tofhir.converter.segment.SegmentParser;
+import gov.cdc.izgw.v2tofhir.converter.segment.StructureParser;
 import io.azam.ulidj.ULID;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -60,9 +63,11 @@ public class MessageParser {
 	/** The shared context for parse of this message */
 	private final Context context;
 	
-	private final LinkedHashMap<String, ? extends Resource> bag = new LinkedHashMap<>();
+	private final Map<String, ? extends Resource> bag = new LinkedHashMap<>();
 	private final Set<Resource> updated = new LinkedHashSet<>();
-	private final LinkedHashMap<String, Class<SegmentParser>> parsers = new LinkedHashMap<>();
+	private final Map<String, Class<StructureParser>> parsers = new LinkedHashMap<>();
+	private final Map<Structure, String> processed = new LinkedHashMap<>();
+	private StructureParser processor = null;
 	public MessageParser() {
 		context = new Context(this);
 		// Copy default values to context on creation.
@@ -108,38 +113,64 @@ public class MessageParser {
 	}
 	
 	private Bundle createBundle(Message msg) {
-		Set<Segment> segments = new LinkedHashSet<>();
-		ParserUtils.iterateSegments(msg, segments);
+		Set<Structure> segments = new LinkedHashSet<>();
+		ParserUtils.iterateStructures(msg, segments);
 		return createBundle(segments);
 	}
-	public Bundle createBundle(Iterable<Segment> segments) {
+	public Bundle createBundle(Iterable<Structure> structures) {
 		Bundle b = new Bundle();
 		getContext().setBundle(b);
 		b.setId(new IdType(b.fhirType(), ULID.random()));
 		b.setType(BundleType.MESSAGE);
-		for (Segment segment: segments) {
+		for (Structure structure: structures) {
 			updated.clear();
-			SegmentParser p = getParser(segment.getName());
-			if (p == null) {
-				warn("Cannot parse {} segment", segment.getName(), segment);
-			} else {
-				try {
-					p.parse(segment);
-				} catch (Exception e) {
-					warnException("Unexpected {} parsing {}: {}", e.getClass().getSimpleName(), segment.getName(), e.getMessage(), e);
+			processor = getParser(structure.getName());
+			if (processor == null) {
+				if (structure instanceof Segment) {
+					// Unprocessed segments indicate potential data loss, report them.
+					warn("Cannot parse {} segment", structure.getName(), structure);
 				}
+			} else if (!processed.containsKey(structure)) {
+				// Don't process any structures that haven't been processed yet
+				try {
+					processor.parse(structure);
+				} catch (Exception e) {
+					warnException("Unexpected {} parsing {}: {}", e.getClass().getSimpleName(), structure.getName(), e.getMessage(), e);
+				} finally {
+					addProcesssed(structure);
+				}
+			} else {
+				// Indicate processed structures that were skipped by other processors
+				log.info("{} processed by {}", structure.getName(), processed.get(structure));
 			}
-			if (getContext().isStoringProvenance()) {
+			if (getContext().isStoringProvenance() &&
+				structure instanceof Segment segment) {
+				// Provenence is updated by segments 
 				updateProvenance(segment);
 			}
 		}
 		return b;
+	}
+	
+	/**
+	 * StructureParsers which process contained substructures (segments and groups)
+	 * should call this method to avoid reprocessing the contents.
+	 * 
+	 * @param structure	The structure that was processed.
+	 */
+	public void addProcesssed(Structure structure) {
+		if (structure != null) {
+			processed.put(structure, processor.getClass().getSimpleName());
+		}
 	}
 	private static final CodeableConcept CREATE_ACTIVITY = new CodeableConcept().addCoding(new Coding("http://terminology.hl7.org/CodeSystem/v3-DataOperation", "CREATE", "create"));
 	private static final CodeableConcept ASSEMBLER_AGENT = new CodeableConcept().addCoding(new Coding("http://terminology.hl7.org/CodeSystem/provenance-participant-type", "assembler", "Assembler"));
 	private void updateProvenance(Segment segment) {
 		for (Resource r: updated) {
 			Provenance p = (Provenance) r.getUserData(Provenance.class.getName());
+			if (p == null) {
+				continue;
+			}
 			Reference what = p.getEntityFirstRep().getWhat();
 			try {
 				what.addExtension().setUrl("http://hl7.org/fhir/StructureDefinition/originalText").setValue(new StringType(context.getHl7DataId()+"#"+PathUtils.getTerserPath(segment)));
@@ -195,7 +226,8 @@ public class MessageParser {
 			}
 			resource = clazz.getDeclaredConstructor().newInstance();
 			resource.setId(new IdType(resource.fhirType(), id));
-			getContext().getBundle().addEntry().setResource(resource);
+			BundleEntryComponent entry = getContext().getBundle().addEntry().setResource(resource);
+			resource.setUserData(BundleEntryComponent.class.getName(), entry);
 			if (resource instanceof Provenance) {
 				return resource;
 			}
@@ -223,8 +255,8 @@ public class MessageParser {
 	 * @param segment The segment to get a parser for
 	 * @return The parser for that segment.
 	 */
-	public SegmentParser getParser(String segment) {
-		Class<SegmentParser> p = parsers.get(segment);
+	public StructureParser getParser(String segment) {
+		Class<StructureParser> p = parsers.get(segment);
 		if (p == null) {
 			p = loadParser(segment);
 			if (p == null) {
@@ -241,12 +273,12 @@ public class MessageParser {
 			return null;
 		}
 	}
-	public Class<SegmentParser> loadParser(String name) {
+	public Class<StructureParser> loadParser(String name) {
 		String packageName = ERRParser.class.getPackageName();
 		ClassLoader loader = ClassLoader.getSystemClassLoader();
 		try {
 			@SuppressWarnings("unchecked")
-			Class<SegmentParser> clazz = (Class<SegmentParser>) loader.loadClass(packageName + "." + name + "Parser");
+			Class<StructureParser> clazz = (Class<StructureParser>) loader.loadClass(packageName + "." + name + "Parser");
 			return clazz;
 		} catch (ClassNotFoundException ex) {
 			return null;

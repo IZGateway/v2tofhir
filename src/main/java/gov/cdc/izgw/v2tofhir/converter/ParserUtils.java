@@ -52,9 +52,7 @@ public class ParserUtils {
 			return null;
 		}
 		while (type != null) {
-			if (type instanceof Varies v) {
-				type = v.getData();
-			}
+			type = DatatypeConverter.adjustIfVaries(type);
 			if (type instanceof Primitive pt) {
 				return pt.getValue();
 			}
@@ -70,9 +68,31 @@ public class ParserUtils {
 		return null;
 	}
 	
+	public static String toString(Type[] types, int i) {
+		return types.length > i ? toString(types[i]) : "";
+		
+	}
 	public static String toString(Composite v2Type, int i) {
+		if (v2Type == null) {
+			return "";
+		}
+		return toString(v2Type.getComponents(), i);
+	}
+	
+	public static String toString(Composite v2Type, int i, int j) {
+		if (v2Type == null) {
+			return "";
+		}
+		
 		Type[] types = v2Type.getComponents();
-		return types.length > i ? toString(types[i]) : null;
+		Type t = types.length > i ? types[i] : null;
+		if (t instanceof Varies v) {
+			t = v.getData();
+		}
+		if (t instanceof Composite comp) {
+			return toString(comp, j);
+		}
+		return toString(t);
 	}
 	
 	public static String[] toStrings(Composite v2Type, int ...locations) {
@@ -205,6 +225,26 @@ public class ParserUtils {
 		value = value.replace("&", "\\T\\");
 		return value;
 	}
+	public static void iterateStructures(Group g, Set<Structure> testStructures) {
+		if (g == null) {
+			return;
+		}
+		for (String name: g.getNames()) {
+			try {
+				for (Structure s: g.getAll(name)) {
+					if (s instanceof Segment seg) {
+						testStructures.add(seg);
+					} else if (s instanceof Group group) {
+						testStructures.add(s);
+						iterateStructures(group, testStructures);
+					}
+				}
+			} catch (HL7Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
 	public static void iterateSegments(Group g, Set<Segment> testSegments) {
 		if (g == null) {
 			return;
@@ -223,6 +263,7 @@ public class ParserUtils {
 			}
 		}
 	}
+
 	public static Type getComponent(Type type, int number) {
 		if (type instanceof Varies v) {
 			type = v.getData();
