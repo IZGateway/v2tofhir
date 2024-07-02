@@ -566,11 +566,20 @@ class TestDateTimeParsing {
 	}
 	private boolean hasEquivalentTimeZones(String s, String actualValue) {
 		String[] endingStrings = { "Z", "+00:00", "-00:00" };
-		if (StringUtils.endsWithAny(s, endingStrings) && StringUtils.endsWithAny(actualValue, endingStrings)) {
-			// Both end in an equivalent timezone string and are otherwise equal.
-			return removeEnding(s, endingStrings).equals(removeEnding(actualValue, endingStrings));
+		
+		// There are four ways the time could end:
+		// With TZ of Z, +00:00, or -00:00, or without any of them.  If one of them
+		// is present, remove it on both sides.
+		if (StringUtils.endsWithAny(s, endingStrings)) {
+			s = removeEnding(s, endingStrings);
 		}
-		return false;
+		if (StringUtils.endsWithAny(actualValue, endingStrings)) {
+			actualValue = removeEnding(actualValue, endingStrings);
+		}
+		// Then compare the times without a time zone.
+		// This addresses the special case of an environment in UTC time zone,
+		// which is where the CI/CD build lives.
+		return s.equals(actualValue);
 	}
 
 	private String removeEnding(String s, String[] endingStrings) {
