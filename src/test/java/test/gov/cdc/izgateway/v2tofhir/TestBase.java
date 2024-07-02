@@ -70,6 +70,10 @@ public class TestBase {
 		return getTestData(t -> CODING_TYPES.contains(t.getName()));
 	}
 
+	static Set<Type> getTestDataForContactPoint() {
+		return getTestData(t -> IS_CONTACT.contains(t.getName()));
+	}
+	
 	static Set<Type> getTestDataForIdentifier() {
 		return getTestData(t -> ID_TYPES.contains(t.getName())
 				&& (!"XCN".equals(t.getName()) || !StringUtils.startsWith(encode(t), "^")));

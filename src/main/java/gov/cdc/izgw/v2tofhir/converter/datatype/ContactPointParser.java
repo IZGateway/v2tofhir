@@ -37,7 +37,7 @@ public static final String COUNTY_CODE = "\\+\\s*\\d{1,2}";
 	private static final String CONTACTPOINT_COMMENT = "http://hl7.org/fhir/StructureDefinition/contactpoint-comment";
 	
 	private static final EmailValidator EMAIL_VALIDATOR = EmailValidator.getInstance();
-	public StringBuilder appendIfNotBlank(StringBuilder b, String prefix, String string, String suffix) {
+	public static StringBuilder appendIfNotBlank(StringBuilder b, String prefix, String string, String suffix) {
 		if (StringUtils.isBlank(string)) {
 			return b;
 		}
@@ -52,7 +52,10 @@ public static final String COUNTY_CODE = "\\+\\s*\\d{1,2}";
 			cps.add(convert(types[0]));	// Convert XTN-1 to a phone number.
 		}
 		cps.add(fromEmail(ParserUtils.toString(types, 3)));
-		fromXTNparts(types, cps);
+		String value = fromXTNparts(types);
+		if (StringUtils.isNotBlank(value)) {
+			cps.add(new ContactPoint().setValue(value).setSystem(ContactPointSystem.PHONE));
+		}
 		String unformatted = ParserUtils.toString(types, 11);
 		if (StringUtils.isNotBlank(unformatted)) {
 			cps.add(new ContactPoint().setValue(unformatted).setSystem(ContactPointSystem.PHONE));
@@ -251,7 +254,7 @@ public static final String COUNTY_CODE = "\\+\\s*\\d{1,2}";
 		}
 	}
 	
-	private void fromXTNparts(Type[] types, List<ContactPoint> cps) {
+	public static String fromXTNparts(Type[] types) {
 		String country = ParserUtils.toString(types, 4);
 		String area = ParserUtils.toString(types, 5);
 		String local = ParserUtils.toString(types, 6);
@@ -264,8 +267,9 @@ public static final String COUNTY_CODE = "\\+\\s*\\d{1,2}";
 			appendIfNotBlank(b, "(", area, ") ");
 			appendIfNotBlank(b, null, local, null);
 			appendIfNotBlank(b, StringUtils.defaultIfBlank(extPrefix, "#"), extension, null);
-			cps.add(new ContactPoint().setValue(b.toString()).setSystem(ContactPointSystem.PHONE));
+			return b.toString();
 		}
+		return null;
 	}
 	private void mapTypeCode(String type, ContactPoint cp) {
 		switch (type) {

@@ -175,7 +175,7 @@ public class MessageParser {
 			try {
 				what.addExtension().setUrl("http://hl7.org/fhir/StructureDefinition/originalText").setValue(new StringType(context.getHl7DataId()+"#"+PathUtils.getTerserPath(segment)));
 			} catch (HL7Exception e) {
-				warnException("Unexpected {} updating provenance for {} segment: {}", e.getClass().getSimpleName(), segment.getName(), e.getMessage());
+				warn("Unexpected {} updating provenance for {} segment: {}", e.getClass().getSimpleName(), segment.getName(), e.getMessage());
 			}
 		}
 	}

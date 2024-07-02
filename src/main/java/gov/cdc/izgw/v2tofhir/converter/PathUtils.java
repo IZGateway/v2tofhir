@@ -5,6 +5,7 @@ import org.apache.commons.lang3.StringUtils;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Group;
 import ca.uhn.hl7v2.model.Message;
+import ca.uhn.hl7v2.model.Segment;
 import ca.uhn.hl7v2.model.Structure;
 import ca.uhn.hl7v2.model.Type;
 
@@ -30,6 +31,9 @@ public class PathUtils {
 		String myName = s.getName();
 		int myRep = 1;
 		Group g = s.getParent();
+		if (g == null) {
+			return s.getName();
+		}
 		Structure[] children = g.getAll(myName);
 		for (myRep = 0; myRep < children.length; myRep++) {
 			String path = getTerserPath(g) + "/" + myName;
@@ -40,6 +44,9 @@ public class PathUtils {
 					return path + "(" + (myRep+1) + ")";
 				}
 			}
+		}
+		if (s instanceof Segment) {
+			return g.getName() + "/" + myName;
 		}
 		throw new HL7Exception("Cannot find " + s.getName() + " in " + g.getName());
 	}

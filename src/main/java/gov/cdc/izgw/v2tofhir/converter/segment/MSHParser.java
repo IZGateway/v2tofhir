@@ -71,7 +71,7 @@ public class MSHParser extends AbstractSegmentParser {
 		// TODO: Deal with MSH-24 and MSH-25 when https://jira.hl7.org/browse/V2-25792 is resolved
 	}
 	private Organization getOrganizationFromMsh(Segment msh, boolean isSender) {
-		Organization org;
+		Organization org = null;
 		Type organization = ParserUtils.getField(msh, isSender ? 22 : 23);
 		Type facility = ParserUtils.getField(msh, isSender ? 4 : 6);
 		if (organization != null) {
@@ -84,7 +84,7 @@ public class MSHParser extends AbstractSegmentParser {
 					org.addIdentifier(ident);
 				}
 			}
-		} else {
+		} else if (facility != null) {
 			org = toOrganization(facility);
 		}
 		Type application = ParserUtils.getField(msh, isSender ? 3 : 5);
@@ -101,6 +101,9 @@ public class MSHParser extends AbstractSegmentParser {
 	}
 
 	public Organization toOrganization(Type t) {
+		if (t == null) {
+			return null;
+		}
 		if ("XON".equals(t.getName())) {
 			Organization org = createResource(Organization.class);
 			org.setName(ParserUtils.toString(t));

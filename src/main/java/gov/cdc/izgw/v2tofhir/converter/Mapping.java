@@ -34,6 +34,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Data
 public class Mapping {
+	public static final String ORIGINAL_SYSTEM = "originalSystem";
+
+	private static final String ORIGINAL_DISPLAY = "originalDisplay";
+
+	public static final String V2_TABLE_PREFIX = "http://terminology.hl7.org/CodeSystem/v2-";
+
 	private static final PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
 
 	private static Map<String, Mapping> codeMaps = new LinkedHashMap<>();
@@ -319,7 +325,7 @@ public class Mapping {
 		if (string.startsWith("HL7")) {
 			string = string.substring(3);
 		}
-		return "http://terminology.hl7.org/CodeSystem/v2-" + StringUtils.right("000" + string, 4);
+		return V2_TABLE_PREFIX + StringUtils.right("000" + string, 4);
 	}
 
 	/**
@@ -342,17 +348,26 @@ public class Mapping {
 			return null;
 		}
 		
-		table = Mapping.getPreferredCodeSystem(table);
 		if (Systems.IDENTIFIER_TYPE.equals(table)) {
 			return Systems.idTypeToDisplayMap.get(code);
 		}
 		
-		Map<String, Coding> cm = codingMaps.get(Mapping.getPreferredCodeSystem(table.trim()));
-		if (cm == null) {
-			warn("Unknown code system: {}", table);
+		table = Mapping.getPreferredCodeSystem(table);
+		if (table == null) {
 			return null;
 		}
-		Coding coding = cm.get(code);
+		
+		Coding coding = null;
+		if (Systems.UCUM.equals(table)) {
+			coding = Units.toUcum(code);
+		} else {
+			Map<String, Coding> cm = codingMaps.get(Mapping.getPreferredCodeSystem(table.trim()));
+			if (cm == null) {
+				warn("Unknown code system: {}", table);
+				return null;
+			}
+			coding = cm.get(code);
+		}
 		return coding != null ? coding.getDisplay() : null;
 	}
 
@@ -367,7 +382,7 @@ public class Mapping {
 	public static void setDisplay(Coding coding) {
 		String display = getDisplay(coding);
 		if (display != null) {
-			coding.setUserData("originalDisplay", coding.getDisplay());
+			coding.setUserData(ORIGINAL_DISPLAY, coding.getDisplay());
 			coding.setDisplay(display);
 		}
 	}
@@ -392,11 +407,11 @@ public class Mapping {
 		if (coding == null) {
 			return;
 		}
-		if (coding.hasUserData("originalDisplay")) {
-			coding.setDisplay((String)coding.getUserData("originalDisplay"));
+		if (coding.hasUserData(ORIGINAL_DISPLAY)) {
+			coding.setDisplay((String)coding.getUserData(ORIGINAL_DISPLAY));
 		}
-		if (coding.hasUserData("originalSystem")) {
-			coding.setSystem((String)coding.getUserData("originalSystem"));
+		if (coding.hasUserData(ORIGINAL_SYSTEM)) {
+			coding.setSystem((String)coding.getUserData(ORIGINAL_SYSTEM));
 		}
 	}
 	public static void reset(CodeableConcept cc) {
@@ -425,8 +440,8 @@ public class Mapping {
 		}
 		String system = coding.getSystem();
 		coding.setSystem(Mapping.getPreferredCodeSystem(system));
-		if (!system.equals(coding.getSystem()) && !coding.hasUserData("originalSystem")) {
-			coding.setUserData("originalSystem", system);
+		if (!system.equals(coding.getSystem()) && !coding.hasUserData(ORIGINAL_SYSTEM)) {
+			coding.setUserData(ORIGINAL_SYSTEM, system);
 		}
 		return coding;
 	}
@@ -437,8 +452,8 @@ public class Mapping {
 		}
 		String system = ident.getSystem();
 		ident.setSystem(Mapping.getPreferredIdSystem(system));
-		if (!system.equals(ident.getSystem()) && !ident.hasUserData("originalSystem")) {
-			ident.setUserData("originalSystem", system);
+		if (!system.equals(ident.getSystem()) && !ident.hasUserData(ORIGINAL_SYSTEM)) {
+			ident.setUserData(ORIGINAL_SYSTEM, system);
 		}
 		return ident;
 	}
@@ -457,9 +472,9 @@ public class Mapping {
 			if (system.startsWith("-")) {
 				system = system.substring(1);
 			}
-			return "http://terminology.hl7.org/CodeSystem/v2-" + StringUtils.right("000" + system, 4);
+			return V2_TABLE_PREFIX + StringUtils.right("000" + system, 4);
 		} else if (StringUtils.isNumeric(system)) {
-			return "http://terminology.hl7.org/CodeSystem/v2-" + StringUtils.right("000" + system, 4);
+			return V2_TABLE_PREFIX + StringUtils.right("000" + system, 4);
 		}
 		return system;
 	}

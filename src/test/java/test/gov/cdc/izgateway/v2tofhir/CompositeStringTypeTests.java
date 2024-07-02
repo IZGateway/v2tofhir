@@ -36,7 +36,7 @@ class CompositeStringTypeTests extends TestBase {
 		}
 		try {
 			// Triming and capitalization don't matter in the string conversions
-			assertEquals(
+			assertEquals( // NOSONAR : Enable catch for debugging
 				StringUtils.trim(inputString).toUpperCase(), 
 				StringUtils.trim(actualString).toUpperCase()
 			);
@@ -47,7 +47,7 @@ class CompositeStringTypeTests extends TestBase {
 			Mapping.reset(actual);
 			actualString = TextUtils.toString(actual);
 			assertEquals(StringUtils.trim(inputString).toUpperCase(), StringUtils.trim(actualString).toUpperCase());
-			log.warn("Assertion Error: {}", err.getMessage());
+			// log.warn("Assertion Error: {}", err.getMessage());
 		}
 	}
 	
@@ -80,7 +80,7 @@ class CompositeStringTypeTests extends TestBase {
 	@ParameterizedTest
 	@MethodSource("getTestDataForContactPoint")
 	void testContactPoint(Type type) throws DataTypeException {
-		testFhirType(DatatypeConverter.toCodeableConcept(type), type, IS_CONTACT.contains(type.getName()));
+		testFhirType(DatatypeConverter.toContactPoint(type), type, IS_CONTACT.contains(type.getName()));
 	}
 	
 	@ParameterizedTest

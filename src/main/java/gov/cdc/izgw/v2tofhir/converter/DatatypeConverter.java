@@ -51,7 +51,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DatatypeConverter {
 	private static final BigDecimal MAX_UNSIGNED_VALUE = new BigDecimal(Integer.MAX_VALUE);
 	private static final AddressParser addressParser = new AddressParser();
-	private static ContactPointParser contactPointParser;
+	private static final ContactPointParser contactPointParser = new ContactPointParser();
 	private static final HumanNameParser nameParser = new HumanNameParser();
 
 	public interface Converter<F extends org.hl7.fhir.r4.model.Type> {

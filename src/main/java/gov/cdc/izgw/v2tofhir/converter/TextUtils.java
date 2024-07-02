@@ -1,6 +1,7 @@
 package gov.cdc.izgw.v2tofhir.converter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -10,6 +11,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.ContactPoint;
 import org.hl7.fhir.r4.model.HumanName;
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.PrimitiveType;
@@ -19,6 +21,7 @@ import org.hl7.fhir.r4.model.Type;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Composite;
 import ca.uhn.hl7v2.model.Varies;
+import gov.cdc.izgw.v2tofhir.converter.datatype.ContactPointParser;
 
 /**
  * Utility class to convert FHIR and V2 Objects to and from strings used in text.
@@ -265,6 +268,10 @@ public class TextUtils {
 				
 		case "SAD":
 			return ParserUtils.toString(comp);
+		case "TN":
+			return ParserUtils.toString(comp);
+		case "XTN":
+			return xtnToText(comp.getComponents());
 		case "CE", "CF", "CNE", "CWE":
 			return codingToText(ParserUtils.toStrings(comp, 8, 0, 1, 2, 3, 4, 5, 9, 10, 11));
 		case "CX":
@@ -301,6 +308,16 @@ public class TextUtils {
 		}
 	}
 
+	private static String xtnToText(ca.uhn.hl7v2.model.Type[] types) {
+		for (int i : Arrays.asList(1, 4, 5, 12)) {
+			String value = i == 5 ? ContactPointParser.fromXTNparts(types) : ParserUtils.toString(types, i-1);
+			if (StringUtils.isNotBlank(value)) {
+				return value;
+			}
+		}
+		return "";
+	}
+
 	/**
 	 * Convert a FHIR Type to a standardized string output: case possible with
 	 * multiple lines of text representing the content of the type.
@@ -320,6 +337,8 @@ public class TextUtils {
 			return toText((Address) fhirType);
 		case "CodeableConcept":
 			return toText((CodeableConcept) fhirType);
+		case "ContactPoint":
+			return toText((ContactPoint) fhirType);
 		case "Coding":
 			return toText((Coding)fhirType);
 		case "HumanName":
@@ -377,6 +396,9 @@ public class TextUtils {
 		return codingToText(coding.getCode(), coding.getDisplay(), coding.getSystem());
 	}
 
+	public static String toText(ContactPoint cp) {
+		return cp.getValue();
+	}
 	/**
 	 * Convert a HumanName to text. 
 	 * @param humanName The name to convert
