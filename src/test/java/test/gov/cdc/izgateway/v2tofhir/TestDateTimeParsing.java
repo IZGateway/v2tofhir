@@ -519,15 +519,16 @@ class TestDateTimeParsing {
 			return true;
 		}
 		if (expected.contains(".") && actual.contains(".")) {  // Check for precision enhancement
-			expected = adjustPrecision(expected);
-			actual = adjustPrecision(actual);
-			log.info("Distance: actual {} {}", expected, actual); 
 			if (expected.contains(".999") && actual.contains(".000") &&
 				StringUtils.substringBefore(actual, "T").equals(StringUtils.substringBefore(expected, "T"))
 			) {
 				// Truncated to 3-4 digits of precision and rolled over to next second
 				return true;
 			}
+			log.info("Distance: actual {} {}", expected, actual); 
+			
+			expected = adjustPrecision(expected);
+			actual = adjustPrecision(actual);
 			if (expected.equals(actual)) {
 				return true;
 			}
