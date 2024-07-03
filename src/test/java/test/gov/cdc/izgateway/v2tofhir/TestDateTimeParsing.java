@@ -21,9 +21,11 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import ca.uhn.fhir.model.api.TemporalPrecisionEnum;
 import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
+import lombok.extern.slf4j.Slf4j;
 import test.gov.cdc.izgateway.TestUtils;
 import test.gov.cdc.izgateway.NamedArrayList;
 
+@Slf4j
 class TestDateTimeParsing {
 	private static final NamedArrayList validDates = NamedArrayList.l("validDates", "01", "08", "21", "28");
 
@@ -519,7 +521,7 @@ class TestDateTimeParsing {
 		if (expected.contains(".") && actual.contains(".")) {  // Check for precision enhancement
 			expected = adjustPrecision(expected);
 			actual = adjustPrecision(actual);
-			System.err.printf("Distance: %s %s%n", StringUtils.substringBefore(actual, "T"), StringUtils.substringBefore(expected, "T")); 
+			log.info("Distance: actual {} {}", expected, actual); 
 			if (expected.contains(".999") && actual.contains(".000") &&
 				StringUtils.substringBefore(actual, "T").equals(StringUtils.substringBefore(expected, "T"))
 			) {
