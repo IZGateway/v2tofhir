@@ -525,13 +525,14 @@ class TestDateTimeParsing {
 				// Truncated to 3-4 digits of precision and rolled over to next second
 				return true;
 			}
-			log.info("Distance: actual {} {}", expected, actual); 
+			log.debug("Unadjusted: actual {} {}", expected, actual); 
 			
 			expected = adjustPrecision(expected);
 			actual = adjustPrecision(actual);
 			if (expected.equals(actual)) {
 				return true;
 			}
+			log.debug("Precision Adjusted: actual {} {}", expected, actual); 
 		}
 		if (hasEquivalentTimeZones(expected, actual)) { // timestamp equal, time zones equivalent
 			return true;
