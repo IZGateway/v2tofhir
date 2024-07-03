@@ -518,13 +518,14 @@ class TestDateTimeParsing {
 			return true;
 		}
 		if (expected.contains(".") && actual.contains(".")) {  // Check for precision enhancement
-			if (StringUtils.containsAny(expected, ".9999", ".999") && actual.contains(".000") &&
-				LevenshteinDistance.getDefaultInstance().apply(expected, actual) >= 10) {
+			expected = adjustPrecision(expected);
+			actual = adjustPrecision(actual);
+			if (expected.contains(".999") && actual.contains(".000") &&
+				LevenshteinDistance.getDefaultInstance().apply(expected, actual) >= 10
+			) {
 				// Truncated to 3-4 digits of precision and rolled over to next second
 				return true;
 			}
-			expected = adjustPrecision(expected);
-			actual = adjustPrecision(actual);
 			if (expected.equals(actual)) {
 				return true;
 			}
