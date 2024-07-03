@@ -12,7 +12,6 @@ import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.hl7.fhir.r4.model.BaseDateTimeType;
 import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.InstantType;
@@ -521,7 +520,7 @@ class TestDateTimeParsing {
 			expected = adjustPrecision(expected);
 			actual = adjustPrecision(actual);
 			if (expected.contains(".999") && actual.contains(".000") &&
-				LevenshteinDistance.getDefaultInstance().apply(expected, actual) >= 10
+				StringUtils.substringBefore(actual, "T").equals(StringUtils.substringBefore(expected, "T"))
 			) {
 				// Truncated to 3-4 digits of precision and rolled over to next second
 				return true;
