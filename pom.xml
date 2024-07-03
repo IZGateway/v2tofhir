@@ -9,6 +9,17 @@
 	<artifactId>v2tofhir</artifactId>
 	<version>1.0.0-v2tofhir-SNAPSHOT</version>
 	<name>HL7 Version 2 to FHIR Conversion</name>
+	<properties>
+		<buildno>${timestamp}</buildno>
+		<image.tag>${project.build.finalName}</image.tag>
+		<java.version>17</java.version>
+		<maven.build.timestamp.format>yyyyMMddHHmm</maven.build.timestamp.format>
+		<project.build.finalName>${project.artifactId}-${project.version}-${timestamp}</project.build.finalName>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.java.package>${project.groupId}</project.java.package>
+		<!-- 17 needs a certified encryption module -->
+		<timestamp>${maven.build.timestamp}</timestamp>
+	</properties>
 	<distributionManagement>
 		<repository>
 			<id>github</id>
@@ -121,16 +132,126 @@
 			<plugins>
 				<plugin>
 					<artifactId>maven-compiler-plugin</artifactId>
-					<version>3.13.0</version>
-					<dependencies>
-						<dependency>
-							<groupId>org.projectlombok</groupId>
-							<artifactId>lombok</artifactId>
-							<version>${lombok.version}</version>
-						</dependency>
-					</dependencies>
+					<configuration>
+						<source>17</source>
+						<target>17</target>
+						<annotationProcessorPaths>
+							<path>
+								<groupId>org.projectlombok</groupId>
+								<artifactId>lombok</artifactId>
+								<version>${lombok.version}</version>
+							</path>
+						</annotationProcessorPaths>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-dependency-plugin</artifactId>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-enforcer-plugin</artifactId>
+					<executions>
+						<execution>
+							<id>enforce-java-version</id>
+						</execution>
+					</executions>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-jar-plugin</artifactId>
+					<executions>
+						<execution>
+							<id>default-jar</id>
+						</execution>
+						<execution>
+							<id>test-jar</id>
+						</execution>
+					</executions>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-source-plugin</artifactId>
+					<executions>
+						<execution>
+							<id>jar-sources</id>
+						</execution>
+						<execution>
+							<id>test-jar-sources</id>
+						</execution>
+					</executions>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-surefire-plugin</artifactId>
+					<configuration>
+						<useSystemClassLoader>true</useSystemClassLoader>
+						<reuseForks>true</reuseForks>
+						<testFailureIgnore>false</testFailureIgnore>
+						<systemPropertyVariables>
+							<elastic.api.key>${env.ELASTIC_API_KEY}</elastic.api.key>
+						</systemPropertyVariables>
+						<argLine>--add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED</argLine>
+						<includes>
+							<include>**/*Tests.java</include>
+						</includes>
+					</configuration>
+				</plugin>
+				<plugin>
+					<!-- Since all libraries are deliverable, this should in fact be
+                    the only dependency check required.
+                 -->
+					<groupId>org.owasp</groupId>
+					<artifactId>dependency-check-maven</artifactId>
+					<!-- 9.0 line uses NVD API and requires a key, which has flakey response right now -->
+					<version>8.4.3</version>
+					<configuration>
+						<!--nvdApiKey>${env.NVDAPIKEY}</nvdApiKey-->
+						<formats>
+							<format>html</format>
+							<format>json</format>
+						</formats>
+						<!-- Disable .NET Analyzer -->
+						<assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
+						<nugetconfAnalyzerEnabled>false</nugetconfAnalyzerEnabled>
+						<nuspecAnalyzerEnabled>false</nuspecAnalyzerEnabled>
+						<!-- Fail builds where this is used to 7 High to Critical -->
+						<failBuildOnCVSS>7</failBuildOnCVSS>
+						<!-- Don't fail on error (for cases where CVE REPO is bad) -->
+						<failOnError>false</failOnError>
+						<skip>${skipDependencyCheck}</skip>
+						<suppressionFile>${project.basedir}/dependency-suppression.xml</suppressionFile>
+					</configuration>
+					<executions>
+						<execution>
+							<goals>
+								<goal>check</goal>
+							</goals>
+						</execution>
+					</executions>
 				</plugin>
 			</plugins>
 		</pluginManagement>
 	</build>
+	<reporting>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>3.7.0</version>
+			</plugin>
+			<plugin>
+				<groupId>org.owasp</groupId>
+				<artifactId>dependency-check-maven</artifactId>
+				<version>10.0.1</version>
+				<reportSets>
+					<reportSet>
+						<reports>
+							<report>aggregate</report>
+						</reports>
+					</reportSet>
+				</reportSets>
+			</plugin>
+		</plugins>
+	</reporting>
 </project>

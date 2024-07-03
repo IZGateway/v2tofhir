@@ -2,8 +2,6 @@ package gov.cdc.izgw.v2tofhir.converter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
@@ -58,14 +56,23 @@ public class TextUtils {
 		appendIfNonBlank(b, district, "\n");
 		
 		if (StringUtils.equalsAny(StringUtils.upperCase(country), "MX", "MEX", "MEXICO")) {
-			appendIfNonBlank(b, city, ", ");
-			appendIfNonBlank(b, state, "  ");
 			appendIfNonBlank(b, postalCode, "  ");
+			appendIfNonBlank(b, city, ", ");
+			appendIfNonBlank(b, state, null);
 		} else {
 			appendIfNonBlank(b, city, ", ");
 			appendIfNonBlank(b, state, "  ");
-			appendIfNonBlank(b, postalCode, ", ");
+			appendIfNonBlank(b, postalCode, null);
 		}
+		if (StringUtils.endsWithAny(b, ", ", "  ")) {
+			b.setLength(b.length() - 2);
+		} else if (StringUtils.endsWith(b, " ")) {
+			b.setLength(b.length() - 1);
+		}
+		if (StringUtils.isNotBlank(b)) {
+			b.append("\n");
+		}
+		// Country goes on a line of its own.
 		appendIfNonBlank(b, country, "\n");
 		return b.toString();
 		

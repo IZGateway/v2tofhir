@@ -1,11 +1,15 @@
 package test.gov.cdc.izgateway.v2tofhir;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Set;
 import java.util.TreeSet;
 
 import org.apache.commons.lang3.StringUtils;
+import org.hl7.fhir.r4.model.Address;
+import org.hl7.fhir.r4.model.HumanName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -16,11 +20,16 @@ import ca.uhn.hl7v2.model.Varies;
 import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
 import gov.cdc.izgw.v2tofhir.converter.Mapping;
 import gov.cdc.izgw.v2tofhir.converter.TextUtils;
+import gov.cdc.izgw.v2tofhir.converter.datatype.AddressParser;
+import gov.cdc.izgw.v2tofhir.converter.datatype.HumanNameParser;
 import lombok.extern.slf4j.Slf4j;
 import test.gov.cdc.izgateway.TestUtils;
 
 @Slf4j
 class CompositeStringTypeTests extends TestBase {
+
+	private static final AddressParser addressParser = new AddressParser();
+	private static final HumanNameParser humanNameParser = new HumanNameParser();
 
 	protected <FT extends org.hl7.fhir.r4.model.Type, V2 extends Type> void testFhirType(FT actual, V2 input, boolean isTextComparable) {
 		String inputString = TextUtils.toString(input);
@@ -68,7 +77,20 @@ class CompositeStringTypeTests extends TestBase {
 	@ParameterizedTest
 	@MethodSource("getTestDataForAddress")
 	void testAddress(Type type) throws DataTypeException {
-		testFhirType(DatatypeConverter.toAddress(type), type, IS_ADDR.contains(type.getName()));
+		Address addr = DatatypeConverter.toAddress(type);
+		testFhirType(addr, type, IS_ADDR.contains(type.getName()));
+		
+		String text = TextUtils.toString(type);
+		Address addrFromText = addressParser.fromString(text);
+		
+		if (addrFromText != null) {
+			addrFromText.setText(null); // Remove text because addr will not have it.
+			addr.setUse(null); // Remove use because addrFromText won't know it
+			addr.setPeriod(null); // Remove period because addrFromText won't know it.
+			assertEquals(TestUtils.toString(addr), TestUtils.toString(addrFromText));
+		} else {
+			assertNull(addr);
+		}
 	}
 	
 	@ParameterizedTest
@@ -92,7 +114,18 @@ class CompositeStringTypeTests extends TestBase {
 	@ParameterizedTest
 	@MethodSource("getTestDataForName")
 	void testHumanName(Type type) throws DataTypeException {
-		testFhirType(DatatypeConverter.toHumanName(type), type, IS_NAME.contains(type.getName()));
+		HumanName hn = DatatypeConverter.toHumanName(type); 
+		testFhirType(hn, type, IS_NAME.contains(type.getName()));
+		String text = TextUtils.toString(type);
+		HumanName hnFromText = humanNameParser.fromString(text);
+		if (hnFromText != null) {
+			hnFromText.setText(null); // Remove text because hn will not have it.
+			hn.setUse(null); // Remove use because hnFromText won't know it
+			hn.setPeriod(null); // Remove period because hnFromText won't know it.
+			assertEquals(TestUtils.toString(hn), TestUtils.toString(hnFromText));
+		} else {
+			assertNull(hn);
+		}
 	}
 	
 	@ParameterizedTest

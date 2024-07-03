@@ -2,19 +2,23 @@ package gov.cdc.izgw.v2tofhir.converter.datatype;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.HumanName;
 import org.hl7.fhir.r4.model.HumanName.NameUse;
+import org.hl7.fhir.r4.model.StringType;
 
 import ca.uhn.hl7v2.model.Composite;
 import ca.uhn.hl7v2.model.Primitive;
 import ca.uhn.hl7v2.model.Type;
-import ca.uhn.hl7v2.model.Varies;
 import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
 import gov.cdc.izgw.v2tofhir.converter.ParserUtils;
 
+/**
+ * Parser for Human Names.
+ */
 public class HumanNameParser implements DatatypeParser<HumanName> {
 	private static Set<String> prefixes = new HashSet<>(
 	Arrays.asList("mr", "mrs", "miss", "sr", "br", "fr", "dr"));
@@ -23,58 +27,117 @@ public class HumanNameParser implements DatatypeParser<HumanName> {
 	// An affix is a prefix to a family name
 	// See https://en.wikipedia.org/wiki/List_of_family_name_affixes
 	private static Set<String> affixes = new HashSet<>(Arrays.asList("Abu",
-			"al", "bet", "bint", "el", "ibn", "ter", "fer", "ait", "aït", "at",
+			"al", "bet", "bint", "el", "ibn", "ter", "fer", "ait", "a\u00eft", "at",
 			"ath", "de", "'s", "'t", "ter", "van", "vande", "vanden", "vander",
 			"van't", "von", "bath", "bat", "ben", "bin", "del", "degli",
 			"della", "di", "a", "ab", "ap", "ferch", "verch", "verch", "erch",
-			"af", "alam", "ālam", "bar", "ch", "chaudhary", "da", "das", "de",
+			"af", "alam", "\u0101lam", "bar", "ch", "chaudhary", "da", "das", "de",
 			"dele", "dos", "du", "e", "fitz", "i", "ka", "kil", "gil", "mal",
 			"mul", "la", "le", "lu", "m'", "mac", "mc", "mck", "mhic", "mic",
-			"mala", "na", "nga", "ngā", "nic", "ni", "ní", "nin", "o", "ó",
-			"ua", "ui", "uí", "oz", "öz", "pour", "te", "tre", "war"));
+			"mala", "na", "nga", "ng\u0101", "nic", "ni", "n\u00ed", "nin", "o", "\u00f3",
+			"ua", "ui", "u\u00ed", "oz", "\u00f6z", "pour", "te", "tre", "war"));
 	private static Set<String> degrees = new HashSet<>(Arrays.asList("ab", "ba",
 	"bs", " be", "bfa", "btech", "llb", "bsc", "ma", "ms", "mfa", "llm",
 	"mla", "mba", "msc", "meng", "mbi", "jd", "md", "do", "pharmd",
 	"dmin", "phd", "edd", "dphil", "dba", "lld", "engd", "esq"));
 
+	public enum NamePart {
+		PREFIX,
+		PREFIXANDSUFFIX,
+		GIVEN,
+		AFFIX,
+		FAMILY,
+		SUFFIX,
+		NAME
+	}
 	@Override
 	public Class<HumanName> type() {
 		return HumanName.class;
 	}
 
 	@Override
+	/**
+	 * Parse a human name from a string. The parser recognizes common prefixes and suffixes and puts
+	 * them in the prefix and suffix fields of the human name.  It puts the first space separated string
+	 * into the first given name, and any susbsequent strings except the last 
+	 */
 	public HumanName fromString(String name) {
 		HumanName hn = new HumanName();
 		hn.setText(name);
 		String[] parts = name.split("\\s");
-		boolean hasGiven = false;
-		boolean hasPrefix = false;
 		boolean hasSuffix = false;
 		StringBuilder familyName = new StringBuilder();
 		for (String part : parts) {
-			if (!hasGiven && !hasPrefix && isPrefix(part)) {
-				hn.addPrefix(part);
-				hasPrefix = true;
-			} else if (!hasGiven && (hasPrefix || !isPrefix(part))) {
-				hn.addGiven(part);
-				hasGiven = true;
-				hasPrefix = true;
-			} else if (hasGiven && familyName.isEmpty() && isAffix(part)) {
-				familyName.append(part);
-			} else if (!familyName.isEmpty() && (isSuffix(part) || isDegree(part))) {
+			switch (classify(part)) {
+			case PREFIXANDSUFFIX:  
+				if (!hn.hasGiven() && familyName.isEmpty()) {
+					hn.addPrefix(part);
+					break;
+				} else if (!familyName.isEmpty()) {	// Some are both a prefix and a suffix
+					hn.addSuffix(part);
+				} else {
+					familyName.append(part).append(" ");
+				}
+			case PREFIX:  
+				if (!hn.hasGiven() && !hn.hasFamily()) {
+					hn.addPrefix(part);
+					break;
+				} else if (hn.hasFamily()) {	// Some are both a prefix and a suffix
+					hn.addSuffix(part);
+				}
+				break;
+			case AFFIX:
+				if (!hn.hasGiven()) {
+					hn.addGiven(part);
+				} else {
+					familyName.append(part).append(" ");
+				} 
+				break;
+			case FAMILY, GIVEN, NAME:
+				if (!familyName.isEmpty()) {
+					familyName.append(part).append(" ");
+				} else {
+					hn.addGiven(part);
+				}
+				break;
+			case SUFFIX:
 				hn.addSuffix(part);
-				hasSuffix = true;
-			} else if (hasSuffix) {
-				hn.addSuffix(part);
+				break;
+			default:
+				break;
+			
 			}
 		}
-		if (!familyName.isEmpty()) {
+		List<StringType> given = hn.getGiven();
+		if (familyName.isEmpty() && !given.isEmpty()) {
+			String family = given.get(given.size() - 1).toString();
+			hn.setFamily(family);
+			given.remove(given.size() - 1);
+			hn.setGiven(null);
+			for (StringType g: given) {
+				hn.addGiven(g.toString());
+			}
+		} else if (!familyName.isEmpty()) {
+			familyName.setLength(familyName.length()-1);  // Remove terminal " "
 			hn.setFamily(familyName.toString());
 		}
 		if (hn.isEmpty()) {
 			return null;
 		}
 		return hn;
+	}
+	
+	public NamePart classify(String part) {
+		if (isPrefix(part)) {
+			return isSuffix(part) ? NamePart.PREFIXANDSUFFIX : NamePart.PREFIX;
+		}
+		if (isAffix(part)) {
+			return NamePart.AFFIX;
+		}
+		if (isSuffix(part)) {
+			return NamePart.SUFFIX;
+		}
+		return NamePart.NAME;
 	}
 	
 	@Override

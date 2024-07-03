@@ -1,6 +1,7 @@
 package gov.cdc.izgw.v2tofhir.converter.datatype;
 
 import java.util.Arrays;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
@@ -199,21 +200,25 @@ public class AddressParser implements DatatypeParser<Address> {
 		if (StringUtils.isBlank(value)) {
 			return null;
 		}
-		value = StringUtils.normalizeSpace(value);
 		String[] parts = value.split("[\\n\\r]");
+		String[] originalParts = parts;
 		if (parts.length == 1) {
 			parts = value.split(",");
 		}
 		Address addr = new Address();
 		addr.setText(value);
 		for (int i = 0; i < parts.length; i++) {
-			String part = parts[i].trim();
-			if (part.isEmpty()) {
+			String part = StringUtils.normalizeSpace(parts[i]);
+ 			if (part.isEmpty()) {
 				continue;
 			}
 			if (!addr.hasLine()) {
 				// First line is usually an address line
-				addr.addLine(part);
+				if (isCszOnly(originalParts)) {
+					getCityStatePostalCode(addr, part);
+				} else {
+					addr.addLine(part);
+				}
 			} else if (streetPattern.matcher(part).matches()
 					|| directionalPattern.matcher(part).matches()
 					|| unitPattern.matcher(part).matches()) {
@@ -225,60 +230,107 @@ public class AddressParser implements DatatypeParser<Address> {
 				getCityStatePostalCode(addr, part);
 			}
 		}
-		return null;
+		return addr.isEmpty() ? null : addr;
 	}
 	
+	/**
+	 * Check for odd cases like:
+	 * Just CSZ: Chicago, IL, 65932
+	 * Just CS and Country: Myfaircity, GA\nUSA
+	 * Just State: Indiana
+	 * @return true if it's an odd case.
+	 */
+	private boolean isCszOnly(String[] parts) {
+		if (parts.length > 2) {
+			return false;
+		}
+		if (parts.length == 2 && 
+			!countryPattern.matcher(StringUtils.trim(parts[1])).matches()
+		) {
+			return false;
+		}
+		return isCszOnly(StringUtils.trim(parts[0]));
+	}
+	
+	private boolean isCszOnly(String line) {
+		boolean hasCa1Part = false;
+		boolean hasPostalCode = false;
+		boolean hasState = false;
+		boolean hasAnythingAfterState = false;
+		for (String part : line.split("[ ,]+")) {
+			if (postalCodePattern.matcher(part).matches()) {
+				hasPostalCode = true;
+			} else if (caPostalCode1.matcher(part).matches()) {
+				hasCa1Part = true;
+			} else if (caPostalCode2.matcher(part).matches()) {
+				hasPostalCode = hasCa1Part;
+			} else if (statePattern.matcher(part).matches()) {
+				hasState = true;
+			} else if (hasState) {
+				// Pennsylvania Ave would result in a false match if we didn't check
+				// for anything else on the line other that postalCode and state
+				hasAnythingAfterState = true;
+			}
+		}
+		return (hasState || hasPostalCode) && !hasAnythingAfterState;
+	}
+
 	private static void getCityStatePostalCode(Address addr, String part) {
 		// could be an address line, country, or some combination of
 		// city, state, and postal code
 
 		String[] lineParts = part.split("[, ]+");
-		int position = getPostalCode(addr, lineParts);
-		if (addr.hasPostalCode()) {
-			// Remove the postal code from the line wherever it is.
-			lineParts = ParserUtils.removeArrayElement(lineParts, position);
-		}
-		position = getState(addr, lineParts);
-		if (addr.hasState()) {
-			lineParts = ParserUtils.removeArrayElement(lineParts, position);
-		}
-		// If there was a postal code or state, city is anything lef.
-		if (addr.hasPostalCode() || addr.hasState()) {
-			addr.setCity(StringUtils.join(" ", lineParts));
+		lineParts = getPostalCode(addr, lineParts);
+		lineParts = getState(addr, lineParts);
+		lineParts = getCountry(addr, lineParts);
+		// City is anything left
+		if (lineParts.length != 0) {
+			addr.setCity(StringUtils.joinWith(" ", (Object[])lineParts));
 		}
 	}
-	private static int getState(Address addr, String[] lineParts) {
-		int position;
-		position = 0;
+	private static String[] getCountry(Address addr, String[] lineParts) {
+		int position = 0;
 		for (String linePart : lineParts) {
+			if (countryPattern.matcher(linePart).matches()) {
+				addr.setCountry(linePart);
+				return ParserUtils.removeArrayElement(lineParts, position);
+			}
 			++position;
+		}
+		return lineParts;
+	}
+	private static String[] getState(Address addr, String[] lineParts) {
+		int position = 0;
+		for (String linePart : lineParts) {
 			if (statePattern.matcher(linePart).matches()) {
 				addr.setState(linePart);
-				break;
+				return ParserUtils.removeArrayElement(lineParts, position);
 			}
+			++position;
 		}
-		return position;
+		return lineParts;
 	}
-	private static int getPostalCode(Address addr, String[] lineParts) {
+	private static String[] getPostalCode(Address addr, String[] lineParts) {
 		String postalPart1 = null;
 		int position = 0;
 		for (String linePart : lineParts) {
-			++position;
 			if (postalCodePattern.matcher(linePart).matches()) {
 				addr.setPostalCode(linePart);
-				break;
-			} else if (postalPart1 == null
-					&& caPostalCode1.matcher(linePart).matches()) {
+				return ParserUtils.removeArrayElement(lineParts, position);
+			} else if (postalPart1 == null && caPostalCode1.matcher(linePart).matches()) {
 				postalPart1 = linePart;
-			} else if (postalPart1 != null
-					&& caPostalCode2.matcher(linePart).matches()) {
+			} else if (postalPart1 != null && caPostalCode2.matcher(linePart).matches()) {
 				addr.setPostalCode(postalPart1 + " " + linePart);
-				break;
+				// Remove the part we just matched
+				lineParts = ParserUtils.removeArrayElement(lineParts, position);
+				// And it's predecessor.
+				return ParserUtils.removeArrayElement(lineParts, position - 1);
 			} else {
 				postalPart1 = null;
 			}
+			++position;
 		}
-		return position;
+		return lineParts;
 	}
 	
 	public static Address parse(Type[] types) {

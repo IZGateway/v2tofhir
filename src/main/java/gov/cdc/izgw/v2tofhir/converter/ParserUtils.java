@@ -24,17 +24,17 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ParserUtils {
 	private ParserUtils() {}
-	public static String[] removeArrayElement(String[] lineParts,
-			int position) {
+	public static String[] removeArrayElement(String[] lineParts, int position) {
+		if (lineParts.length <= 1 && position < lineParts.length) {
+			return new String[0];
+		} 
 		String[] newArray = new String[lineParts.length - 1];
-		if (position == 1) {
-			System.arraycopy(lineParts, 0, newArray, 1, lineParts.length - 1);
-		} else {
-			System.arraycopy(lineParts, 0, newArray, 0, position - 1);
-			if (lineParts.length > position) {
-				System.arraycopy(lineParts, position, newArray, position - 1,
-						lineParts.length - position);
-			}
+		if (position < lineParts.length) {
+			System.arraycopy(lineParts, 0, newArray, 0, position);
+		} 
+		if (lineParts.length > position + 1) {
+			System.arraycopy(lineParts, position + 1, newArray, position,
+				lineParts.length - position - 1);
 		}
 		return newArray;
 	}

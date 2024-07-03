@@ -1,4 +1,6 @@
 **/target
+**/doc
+**/*.log
 **/target/classes
 **/.mvn
 **/logs

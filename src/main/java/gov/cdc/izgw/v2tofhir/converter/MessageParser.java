@@ -112,7 +112,7 @@ public class MessageParser {
 		}
 	}
 	
-	private Bundle createBundle(Message msg) {
+	public Bundle createBundle(Message msg) {
 		Set<Structure> segments = new LinkedHashSet<>();
 		ParserUtils.iterateStructures(msg, segments);
 		return createBundle(segments);

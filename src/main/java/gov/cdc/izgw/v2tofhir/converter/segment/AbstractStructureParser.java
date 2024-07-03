@@ -16,6 +16,9 @@ import lombok.extern.slf4j.Slf4j;
 
 @Data
 @Slf4j
+/**
+ * This is an abstract implementation for StructureParser instances used by the MessageParser.
+ */
 public abstract class AbstractStructureParser implements StructureParser {
 	private final MessageParser messageParser;
 	private final String segmentName;
@@ -29,11 +32,19 @@ public abstract class AbstractStructureParser implements StructureParser {
 	public String segment() {
 		return segmentName;
 	}
-	
+
+	/**
+	 * @return The parsing context for the current message or structure being parsed.
+	 */
 	public Context getContext() {
 		return messageParser.getContext();
 	}
-	
+
+	/**
+	 * Get the bundle that is being prepared.
+	 * This method can be used by parsers to get additional information from the Bundle
+	 * @return The bundle that is being prepared during the parse.
+	 */
 	public Bundle getBundle() {
 		return getContext().getBundle();
 	}
