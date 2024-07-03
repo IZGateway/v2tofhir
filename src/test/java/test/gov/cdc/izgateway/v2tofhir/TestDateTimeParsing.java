@@ -12,6 +12,7 @@ import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.hl7.fhir.r4.model.BaseDateTimeType;
 import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.InstantType;
@@ -513,21 +514,18 @@ class TestDateTimeParsing {
 		// Let -0: == 00: be OK 
 		expected = expected.replace("-0:", "00:").replace(":-0", ":00");
 		
-		if (expected.equals(actual)) {
-			return true;
-		}
-		
 		if (expected.equals(actual)) {  // strings are equal
 			return true;
 		}
 		if (expected.contains(".") && actual.contains(".")) {  // Check for precision enhancement
+			if (StringUtils.containsAny(expected, ".9999", ".999") && actual.contains(".000") &&
+				LevenshteinDistance.getDefaultInstance().apply(expected, actual) >= 10) {
+				// Truncated to 3-4 digits of precision and rolled over to next second
+				return true;
+			}
 			expected = adjustPrecision(expected);
 			actual = adjustPrecision(actual);
 			if (expected.equals(actual)) {
-				return true;
-			}
-			if (expected.contains(".999") && actual.contains(".000")) {
-				// Truncated to 3 digits of precision and rolled over to next second
 				return true;
 			}
 		}
