@@ -519,6 +519,7 @@ class TestDateTimeParsing {
 		if (expected.contains(".") && actual.contains(".")) {  // Check for precision enhancement
 			expected = adjustPrecision(expected);
 			actual = adjustPrecision(actual);
+			System.err.printf("Distance: %s %s%n", StringUtils.substringBefore(actual, "T"), StringUtils.substringBefore(expected, "T")); 
 			if (expected.contains(".999") && actual.contains(".000") &&
 				StringUtils.substringBefore(actual, "T").equals(StringUtils.substringBefore(expected, "T"))
 			) {
