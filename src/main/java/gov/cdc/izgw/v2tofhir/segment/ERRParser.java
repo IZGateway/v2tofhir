@@ -1,4 +1,4 @@
-package gov.cdc.izgw.v2tofhir.converter.segment;
+package gov.cdc.izgw.v2tofhir.segment;
 
 import java.util.LinkedHashMap;
 
@@ -17,16 +17,16 @@ import ca.uhn.hl7v2.model.Segment;
 import ca.uhn.hl7v2.model.Type;
 import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
-import gov.cdc.izgw.v2tofhir.converter.ParserUtils;
-import gov.cdc.izgw.v2tofhir.converter.PathUtils;
+import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
+import gov.cdc.izgw.v2tofhir.utils.PathUtils;
 import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 /**
  * Parser for an ERR segment.
  * 
  * @author Audacious Inquiry
  */
+@Slf4j
 public class ERRParser extends AbstractSegmentParser {
 	static {
 		log.debug("{} loaded", ERRParser.class.getName());

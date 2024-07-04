@@ -1,4 +1,4 @@
-package gov.cdc.izgw.v2tofhir.converter.segment;
+package gov.cdc.izgw.v2tofhir.segment;
 
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
@@ -10,10 +10,9 @@ import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Segment;
 import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
-import gov.cdc.izgw.v2tofhir.converter.ParserUtils;
+import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 /**
  * Parser for QAK Segments
  * 
@@ -22,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
  * 
  * @author Audacious Inquiry
  */
+@Slf4j
 public class QAKParser extends AbstractSegmentParser {
 	static {
 		log.debug("{} loaded", QAKParser.class.getName());

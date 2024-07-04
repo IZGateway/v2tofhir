@@ -1,4 +1,4 @@
-package gov.cdc.izgw.v2tofhir.converter;
+package gov.cdc.izgw.v2tofhir.utils;
 
 import java.io.IOException;
 import java.io.InputStreamReader;

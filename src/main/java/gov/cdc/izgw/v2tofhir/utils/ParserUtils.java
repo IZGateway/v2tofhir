@@ -1,4 +1,4 @@
-package gov.cdc.izgw.v2tofhir.converter;
+package gov.cdc.izgw.v2tofhir.utils;
 import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
@@ -20,6 +20,7 @@ import ca.uhn.hl7v2.model.Segment;
 import ca.uhn.hl7v2.model.Structure;
 import ca.uhn.hl7v2.model.Type;
 import ca.uhn.hl7v2.model.Varies;
+import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
 import lombok.extern.slf4j.Slf4j;
 
 /**

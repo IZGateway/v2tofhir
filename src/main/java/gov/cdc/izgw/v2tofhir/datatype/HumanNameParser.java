@@ -1,4 +1,4 @@
-package gov.cdc.izgw.v2tofhir.converter.datatype;
+package gov.cdc.izgw.v2tofhir.datatype;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -14,7 +14,7 @@ import ca.uhn.hl7v2.model.Composite;
 import ca.uhn.hl7v2.model.Primitive;
 import ca.uhn.hl7v2.model.Type;
 import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
-import gov.cdc.izgw.v2tofhir.converter.ParserUtils;
+import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 
 /**
  * Parser for Human Names.
@@ -49,6 +49,13 @@ public class HumanNameParser implements DatatypeParser<HumanName> {
 		FAMILY,
 		SUFFIX,
 		NAME
+	}
+	
+	/**
+	 * Construct a HumanNameParser
+	 */
+	public HumanNameParser() {
+		// Construct a default HumanNameParser
 	}
 	@Override
 	public Class<HumanName> type() {

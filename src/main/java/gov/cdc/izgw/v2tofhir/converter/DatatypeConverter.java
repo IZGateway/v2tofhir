@@ -45,9 +45,13 @@ import ca.uhn.hl7v2.model.Primitive;
 import ca.uhn.hl7v2.model.Type;
 import ca.uhn.hl7v2.model.Varies;
 import ca.uhn.hl7v2.model.primitive.TSComponentOne;
-import gov.cdc.izgw.v2tofhir.converter.datatype.AddressParser;
-import gov.cdc.izgw.v2tofhir.converter.datatype.ContactPointParser;
-import gov.cdc.izgw.v2tofhir.converter.datatype.HumanNameParser;
+import gov.cdc.izgw.v2tofhir.datatype.AddressParser;
+import gov.cdc.izgw.v2tofhir.datatype.ContactPointParser;
+import gov.cdc.izgw.v2tofhir.datatype.HumanNameParser;
+import gov.cdc.izgw.v2tofhir.utils.Mapping;
+import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
+import gov.cdc.izgw.v2tofhir.utils.Systems;
+import gov.cdc.izgw.v2tofhir.utils.Units;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -55,8 +59,7 @@ import lombok.extern.slf4j.Slf4j;
  * 
  * Operations in DatatypeConverter
  * 
- * <ul>
- * <li><b>convert</b>
+ * <ul><li><b>convert</b>
  * 		- Generic methods</li>
  * <li><b>getConverter/converter</b>
  * 		- Generic Functional Interfaces</li>
@@ -68,8 +71,7 @@ import lombok.extern.slf4j.Slf4j;
  * 
  * Supported FHIR Types:
  * 
- * <ul>
- * <li>Address</li>
+ * <ul><li>Address</li>
  * <li>CodeableConcept</li>
  * <li>CodeType</li>
  * <li>Coding</li>
@@ -88,7 +90,7 @@ import lombok.extern.slf4j.Slf4j;
  * <li>TimeType</li>
  * <li>UnsignedIntType</li>
  * <li>UriType</li>
- * <ul>
+ * </ul>
  * 
  * @see <a href="https://build.fhir.org/ig/HL7/v2-to-fhir/datatype_maps.html">HL7 Version 2 to FHIR - Datatype Maps</a>
  * @author Audacious Inquiry
@@ -144,6 +146,7 @@ public class DatatypeConverter {
 
 	/**
 	 * Get a converter for a FHIR datatype
+	 * @param <F>	The FHIR datatype
 	 * @param className	The name of the FHIR datatype
 	 * @return The converter
 	 */

@@ -1,4 +1,4 @@
-package gov.cdc.izgw.v2tofhir.converter.datatype;
+package gov.cdc.izgw.v2tofhir.datatype;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,15 +21,15 @@ import ca.uhn.hl7v2.model.Composite;
 import ca.uhn.hl7v2.model.Primitive;
 import ca.uhn.hl7v2.model.Type;
 import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
-import gov.cdc.izgw.v2tofhir.converter.ParserUtils;
+import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 /**
  * Parser that supports parsing a String, or HL7 Version into a FHIR ContactPoint.
  * 
  * @author Audacious Inquiry
  */
+@Slf4j
 public class ContactPointParser implements DatatypeParser<ContactPoint> {
 	static {
 		log.debug("{} loaded", ContactPointParser.class.getName());
@@ -53,6 +53,13 @@ public class ContactPointParser implements DatatypeParser<ContactPoint> {
 		return b.append(StringUtils.defaultString(prefix))
 				.append(StringUtils.defaultString(string))
 				.append(StringUtils.defaultString(suffix));
+	}
+	
+	/**
+	 * Construct a ContactPointParser
+	 */
+	public ContactPointParser() {
+		// Construct the default ContactPointParser
 	}
 	
 	/**
@@ -257,7 +264,7 @@ public class ContactPointParser implements DatatypeParser<ContactPoint> {
 	
 	/**
 	 * Create a ContactPoint from a URL
-	 * @param url
+	 * @param url The URL to convert to a contact point
 	 * @return A ContactPoint object representing the URL.
 	 */
 	public ContactPoint fromUrl(String url) {

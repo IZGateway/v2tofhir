@@ -1,4 +1,4 @@
-package gov.cdc.izgw.v2tofhir.converter.datatype;
+package gov.cdc.izgw.v2tofhir.datatype;
 
 import java.util.Arrays;
 import java.util.regex.Pattern;
@@ -11,7 +11,7 @@ import ca.uhn.hl7v2.model.Composite;
 import ca.uhn.hl7v2.model.Primitive;
 import ca.uhn.hl7v2.model.Type;
 import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
-import gov.cdc.izgw.v2tofhir.converter.ParserUtils;
+import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -174,6 +174,13 @@ public class AddressParser implements DatatypeParser<Address> {
 			"SW", "SUROESTE", "SOUTHWEST", "E", "ESTE", "EAST", "W", "OESTE",
 			"WEST");
 
+	/**
+	 * Construct a new AddressParser
+	 */
+	public AddressParser() {
+		// Construct the default address parser
+	}
+	
 	@Override
 	public Class<Address> type() {
 		return Address.class;

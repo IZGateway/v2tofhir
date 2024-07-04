@@ -1,4 +1,4 @@
-package gov.cdc.izgw.v2tofhir.converter.segment;
+package gov.cdc.izgw.v2tofhir.segment;
 
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Segment;

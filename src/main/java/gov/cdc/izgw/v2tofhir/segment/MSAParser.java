@@ -1,4 +1,4 @@
-package gov.cdc.izgw.v2tofhir.converter.segment;
+package gov.cdc.izgw.v2tofhir.segment;
 
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.MessageHeader;
@@ -13,21 +13,23 @@ import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Segment;
 import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
-import gov.cdc.izgw.v2tofhir.converter.ParserUtils;
+import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 /**
  * Parse an MSA segment into MessageHeader and OperationOutcome resources.
  * 
  * @author Audacious Inquiry
  */
+@Slf4j
 public class MSAParser extends AbstractSegmentParser {
-
+	static {
+		log.debug("{} loaded", MSAParser.class.getName());
+	}
 	/**
 	 * Construct a SegmentParser for MSA Segments
 	 * 
-	 * @param messageParser
+	 * @param messageParser	The messageParser using this MSAParser
 	 */
 	public MSAParser(MessageParser messageParser) {
 		super(messageParser, "MSA");

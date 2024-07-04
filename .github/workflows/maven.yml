@@ -181,11 +181,17 @@ jobs:
         ELASTIC_API_KEY: ${{ secrets.ELASTIC_API_KEY }}
 
       run: |
-        env && mvn -B clean package install deploy -Dbuildno=${{github.run_number}} \
+        env && mvn -B clean package install deploy site -Dbuildno=${{github.run_number}} \
             -DdoRevisionCheck=${{env.DO_REVISION_CHECK}} \
             -DskipDependencyCheck=${{env.SKIP_DEPENDENCY_CHECK}} \
             -Dimage.tag=$IMAGE_BRANCH_TAG 
-            
+
+    - name: Publish Site
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        destination-dir: ./target/site
+
     - name: Upload build environment as artifact for failed build
       uses: actions/upload-artifact@v4
       if: ${{ failure() }}

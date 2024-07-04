@@ -1,4 +1,4 @@
-package gov.cdc.izgw.v2tofhir.converter.datatype;
+package gov.cdc.izgw.v2tofhir.datatype;
 
 import ca.uhn.hl7v2.model.Type;
 

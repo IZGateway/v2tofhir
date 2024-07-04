@@ -1,4 +1,4 @@
-package gov.cdc.izgw.v2tofhir.converter.segment;
+package gov.cdc.izgw.v2tofhir.segment;
 
 import java.util.List;
 

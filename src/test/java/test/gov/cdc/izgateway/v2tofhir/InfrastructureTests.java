@@ -14,7 +14,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import ca.uhn.hl7v2.model.Type;
-import gov.cdc.izgw.v2tofhir.converter.Systems;
+import gov.cdc.izgw.v2tofhir.utils.Systems;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

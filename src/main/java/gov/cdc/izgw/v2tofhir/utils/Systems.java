@@ -1,4 +1,4 @@
-package gov.cdc.izgw.v2tofhir.converter;
+package gov.cdc.izgw.v2tofhir.utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,13 +17,13 @@ import org.hl7.fhir.r4.model.NamingSystem.NamingSystemUniqueIdComponent;
 
 import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 /**
  * Utility class containing OIDs, URIs and names for various coding and identifier systems
  *  
  * @author Audacious Inquiry
  *
  */
+@Slf4j
 public class Systems {
 	static {
 		log.debug("{} loaded", Systems.class.getName());
@@ -135,13 +135,14 @@ public class Systems {
 		}
 	}
 	/** 
-	 * All the types from 
+	 * All the HL7 V2 identifier types from http://terminology.hl7.org/CodeSystem/v2-0203
 	 * Official URL: http://terminology.hl7.org/CodeSystem/v2-0203	Version: 4.0.0
 	 * Active as of 2022-12-07	Responsible: Health Level Seven International	Computable Name: IdentifierType
 	 * Other Identifiers: urn:ietf:rfc:3986#Uniform Resource Identifier (URI)#urn:oid:2.16.840.1.113883.18.108
 	 **/
-	public static final Set<String> IDENTIFIER_TYPES = idTypeToDisplayMap.keySet(); 
-	static final Set<String> ID_TYPES = new LinkedHashSet<>(
+	public static final Set<String> IDENTIFIER_TYPES = Collections.unmodifiableSet(idTypeToDisplayMap.keySet());
+	/** All the FHIR identifier types */
+	public static final Set<String> ID_TYPES = new LinkedHashSet<>(
 		Arrays.asList("AC", "ACSN", "AIN", "AM", "AMA", "AN",
 			"ANC", "AND", "ANON", "ANT", "APRN", "ASID", "BA", "BC", "BCFN", "BCT", "BR", "BRN", "BSNR", "CAAI", "CC",
 			"CONM", "CY", "CZ", "DC", "DCFN", "DDS", "DEA", "DFN", "DI", "DL", "DN", "DO", "DP", "DPM", "DR", "DS",
@@ -154,12 +155,12 @@ public class Systems {
 			"VP", "VS", "WC", "WCN", "WP", "XV", "XX")
 	);
 
-	// See https://hl7-definition.caristix.com/v2/HL7v2.8/Tables/0396
+	// See https://terminology.hl7.org/5.5.0/CodeSystem-v2-0396.html
 	private static final String[][] stringToUri = {
 		{ CDCGS1VIS, "CDCGS1VIS", CDCGS1VIS_OID },
 		{ CDCPHINVS, "CDCPHINVS", CDCPHINVS_OID },
 		{ CDCREC, "CDCREC", CDCREC_OID },
-		{ CPT, "CPT", "C4", "CPT4", CPT_OID},
+		{ CPT, "C4", "CPT", "CPT4", CPT_OID},
 		{ CVX, "CVX", CVX_OID },
 		{ DICOM, "DCM", "DICOM", DICOM_OID },
 		{ HSLOC, "HSLOC", HSLOC_OID },
@@ -220,6 +221,12 @@ public class Systems {
 		uid.setType(NamingSystemIdentifierType.URI);
 		uid.setValue(uri);
 		uid.setPreferred(true);
+		uid = ns.addUniqueId();
+		if (StringUtils.isNotBlank(name)) {
+			uid.setType(NamingSystemIdentifierType.OTHER);
+			uid.setValue(name.trim());
+			uid.setPreferred(false);
+		}
 		return ns;
 	}
 	
@@ -246,7 +253,7 @@ public class Systems {
 
 	/**
 	 * Given a URI, get the associated OID
-	 * @param uri
+	 * @param uri	The URI to get the OID for
 	 * @return the associated OID or null if none is known (without the urn:oid: prefix).
 	 */
 	public static String toOid(String uri) {

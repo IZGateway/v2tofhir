@@ -16,10 +16,10 @@ import ca.uhn.hl7v2.model.DataTypeException;
 import ca.uhn.hl7v2.model.Type;
 import ca.uhn.hl7v2.model.Varies;
 import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
-import gov.cdc.izgw.v2tofhir.converter.Mapping;
-import gov.cdc.izgw.v2tofhir.converter.TextUtils;
-import gov.cdc.izgw.v2tofhir.converter.datatype.AddressParser;
-import gov.cdc.izgw.v2tofhir.converter.datatype.HumanNameParser;
+import gov.cdc.izgw.v2tofhir.datatype.AddressParser;
+import gov.cdc.izgw.v2tofhir.datatype.HumanNameParser;
+import gov.cdc.izgw.v2tofhir.utils.Mapping;
+import gov.cdc.izgw.v2tofhir.utils.TextUtils;
 import lombok.extern.slf4j.Slf4j;
 import test.gov.cdc.izgateway.TestUtils;
 

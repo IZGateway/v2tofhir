@@ -32,13 +32,14 @@ import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.model.Segment;
 import ca.uhn.hl7v2.model.Structure;
 import ca.uhn.hl7v2.model.Type;
-import gov.cdc.izgw.v2tofhir.converter.segment.ERRParser;
-import gov.cdc.izgw.v2tofhir.converter.segment.StructureParser;
+import gov.cdc.izgw.v2tofhir.segment.ERRParser;
+import gov.cdc.izgw.v2tofhir.segment.StructureParser;
+import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
+import gov.cdc.izgw.v2tofhir.utils.PathUtils;
 import io.azam.ulidj.ULID;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 /**
  * MessageParser provide the necessary methods to convert messages and segments into FHIR Bundles and Resources
  * respectively.
@@ -53,8 +54,8 @@ import lombok.extern.slf4j.Slf4j;
  * @see <a href="https://hl7.org/fhir/uv/v2mappings/2024Jan/">V2toFHIR Jan-2024</a>
  * 
  * @author Audacious Inquiry
- *
  */
+@Slf4j
 public class MessageParser {
 	
 	private static final Context defaultContext = new Context(null);
@@ -112,14 +113,23 @@ public class MessageParser {
 	 * 
 	 * @param msg The message to convert.
 	 * @return A FHIR Bundle containing the relevant resources. 
-	 * @throws HL7Exception 
 	 */
-	public Bundle convert(Message msg) throws HL7Exception {
-		initContext((Segment) msg.get("MSH"));
+	public Bundle convert(Message msg) {
+		try {
+			initContext((Segment) msg.get("MSH"));
+		} catch (HL7Exception e) {
+			warn("Cannot retrieve MSH segment from message");
+		}
 		Binary messageData = createResource(Binary.class);
 		// See https://confluence.hl7.org/display/V2MG/HL7+locally+registered+V2+Media+Types
 		messageData.setContentType("application/x.hl7v2+er7; charset=utf-8");
-		byte[] data = msg.encode().getBytes(StandardCharsets.UTF_8);
+		byte[] data;
+		try {
+			data = msg.encode().getBytes(StandardCharsets.UTF_8);
+		} catch (HL7Exception e) {
+			warn("Cannnot get encoded message");
+			data = new byte[0];
+		}
 		messageData.setData(data);
 		messageData.setId(new IdType(messageData.fhirType(), ULID.random()));
 		DocumentReference dr = createResource(DocumentReference.class);
@@ -130,11 +140,19 @@ public class MessageParser {
 		getContext().setHl7DataId(messageData.getIdElement().toString());
 		return createBundle(msg);
 	}
-	private void initContext(Segment msh) throws HL7Exception {
+	private void initContext(Segment msh) {
 		if (msh != null) {
-			getContext().setEventCode(ParserUtils.toString(msh.getField(9, 0)));
-			for (Type profile : msh.getField(21)) {
-				getContext().addProfileId(ParserUtils.toString(profile));
+			try {
+				getContext().setEventCode(ParserUtils.toString(msh.getField(9, 0)));
+			} catch (HL7Exception e) {
+				warn("Unexpected HL7Exception parsing MSH-9: {}", e.getMessage());
+			}
+			try {
+				for (Type profile : msh.getField(21)) {
+					getContext().addProfileId(ParserUtils.toString(profile));
+				}
+			} catch (HL7Exception e) {
+				warn("Unexpected HL7Exception parsing MSH-21: {}", e.getMessage());
 			}
 		}
 	}

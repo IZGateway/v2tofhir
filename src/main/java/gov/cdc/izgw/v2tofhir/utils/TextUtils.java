@@ -1,4 +1,4 @@
-package gov.cdc.izgw.v2tofhir.converter;
+package gov.cdc.izgw.v2tofhir.utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,7 +19,7 @@ import org.hl7.fhir.r4.model.Type;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Composite;
 import ca.uhn.hl7v2.model.Varies;
-import gov.cdc.izgw.v2tofhir.converter.datatype.ContactPointParser;
+import gov.cdc.izgw.v2tofhir.datatype.ContactPointParser;
 
 /**
  * Utility class to convert FHIR and V2 Objects to and from strings used in text.
