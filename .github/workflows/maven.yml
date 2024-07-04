@@ -190,7 +190,7 @@ jobs:
       uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        public_dir: ./target/site
+        publish_dir: ./target/site
         destination_dir: current
 
     - name: Upload build environment as artifact for failed build
