@@ -14,6 +14,7 @@ import org.hl7.fhir.r4.model.Reference;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Composite;
 import ca.uhn.hl7v2.model.Group;
+import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.model.Primitive;
 import ca.uhn.hl7v2.model.Segment;
 import ca.uhn.hl7v2.model.Structure;
@@ -21,9 +22,22 @@ import ca.uhn.hl7v2.model.Type;
 import ca.uhn.hl7v2.model.Varies;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * ParserUtils is a utility class supporting Parsing of V2 messages into FHIR
+ * 
+ * @author Audacious Inquiry
+ *
+ */
 @Slf4j
 public class ParserUtils {
 	private ParserUtils() {}
+	
+	/**
+	 * Remove the string at the given position from the array
+	 * @param lineParts	The String array
+	 * @param position	The position
+	 * @return	The new array with the specified string removed
+	 */
 	public static String[] removeArrayElement(String[] lineParts, int position) {
 		if (lineParts.length <= 1 && position < lineParts.length) {
 			return new String[0];
@@ -38,6 +52,16 @@ public class ParserUtils {
 		}
 		return newArray;
 	}
+	
+	/**
+	 * Convert a list of values into a Pattern that matches it (case insensitively)
+	 * 
+	 * This method is used to create Matchers to match sets of known values (e.g., states, countries,
+	 * street name abbreviations, et cetera).
+	 * 
+	 * @param values	The values to convert
+	 * @return	A compiled pattern that matches the specified string
+	 */
 	public static Pattern toPattern(String... values) {
 		StringBuilder b = new StringBuilder();
 		for (String value : values) {
@@ -47,7 +71,12 @@ public class ParserUtils {
 		return Pattern.compile(b.toString(), Pattern.CASE_INSENSITIVE);
 	}
 	
-	public static String toString(Type type) {
+	/**
+     * Convert a HAPI V2 datatype to a String
+     * @param type The Type to convert
+     * @return The string conversion
+     */
+    public static String toString(Type type) {
 		if (type == null) {
 			return null;
 		}
@@ -68,10 +97,22 @@ public class ParserUtils {
 		return null;
 	}
 	
+	/**
+     * Convert a component of a HAPI V2 datatype to a String
+     * @param types Components of the composite type to convert
+     * @param i The index of the component to convert
+     * @return The string conversion
+     */
 	public static String toString(Type[] types, int i) {
 		return types.length > i ? toString(types[i]) : "";
 		
 	}
+	/**
+     * Convert a HAPI V2 Composite component to a String
+     * @param v2Type The composite type containing the component to convert
+     * @param i The index of the component to convert
+     * @return The string conversion
+     */
 	public static String toString(Composite v2Type, int i) {
 		if (v2Type == null) {
 			return "";
@@ -79,6 +120,13 @@ public class ParserUtils {
 		return toString(v2Type.getComponents(), i);
 	}
 	
+	/**
+     * Convert a HAPI V2 Composite subcomponent to a String
+     * @param v2Type The composite type containing the subcomponent to convert
+     * @param i The index of the component to convert
+     * @param j The index of the subcomponent within the component to convert
+     * @return The string conversion
+     */
 	public static String toString(Composite v2Type, int i, int j) {
 		if (v2Type == null) {
 			return "";
@@ -94,7 +142,14 @@ public class ParserUtils {
 		}
 		return toString(t);
 	}
-	
+
+	/**
+     * Convert HAPI V2 Composite components to an array of Strings
+     * @param v2Type The composite type containing the components to convert
+     * @param locations The locations within the component to convert
+     * @return The string conversion
+     */
+
 	public static String[] toStrings(Composite v2Type, int ...locations) {
 		String[] strings = new String[locations.length];
 		
@@ -107,6 +162,11 @@ public class ParserUtils {
 		return strings;
 	}
 	
+	/**
+	 * Detect (without exceptions) if HAPI V2 type is empty
+	 * @param type	The type to check
+	 * @return true if the component is empty or throws an exception, false if it has data.
+	 */
 	public static boolean isEmpty(Type type) {
 		try {
 			return type.isEmpty();
@@ -116,6 +176,12 @@ public class ParserUtils {
 		}
 	}
 	
+	/**
+	 * Convert an ISO-8601 string to one with punctuation
+	 * @param value	The string to cleanup
+	 * @param hasDate True if this string has a date, false if just the time
+	 * @return	The cleaned up ISO-8601 string suitable for use in FHIR
+	 */
 	public static String cleanupIsoDateTime(String value, boolean hasDate) {
 		if (StringUtils.substringBefore(value, ".").length() < (hasDate ? 4 : 2)) {
 			return null;
@@ -148,7 +214,15 @@ public class ParserUtils {
 		// We finished reading, but there was more data.
 		return null;
 	}
-	private static boolean hasLegalIso8601Chars(String value, boolean hasDate) {
+	
+	/**
+	 * Check to see if a string contains only legal counts of ISO-8601 characters
+	 * @param value	The string to check
+	 * @param hasDate True if this string has a date, false if just the time
+	 * @return	True if the string looks like an ISO-8601 string, false otherwise.
+	 */
+	
+	public static boolean hasLegalIso8601Chars(String value, boolean hasDate) {
 		// Check for legal ISO characters
 		String legalChars = hasDate ? "0123456789T:-+.Z" : "0123456789:-+.Z";
 		if (!StringUtils.containsOnly(value, legalChars)) {
@@ -209,6 +283,14 @@ public class ParserUtils {
 		}
 		return state;
 	}
+	
+	/**
+	 * Given a string containing escaped HL7 Version 2 characters, translate them
+	 * to the standard values.
+	 * 
+	 * @param value	The string to translated
+	 * @return	The translated string
+	 */
 	public static String unescapeV2Chars(String value) {
 		value = value.replace("\\F\\", "|");
 		value = value.replace("\\S\\", "^");
@@ -217,6 +299,14 @@ public class ParserUtils {
 		value = value.replace("\\E\\", "\\");
 		return value;
 	}
+	
+	/**
+	 * Given a string possibly containing V2 reserved characters, translate
+	 * the reserved characters to their standard escape sequences.
+	 * 
+	 * @param value	The string to escape
+	 * @return	The escaped string
+	 */
 	public static String escapeV2Chars(String value) {
 		value = value.replace("\\", "\\E\\");
 		value = value.replace("|", "\\F\\");
@@ -225,7 +315,20 @@ public class ParserUtils {
 		value = value.replace("&", "\\T\\");
 		return value;
 	}
-	public static void iterateStructures(Group g, Set<Structure> testStructures) {
+	
+	/**
+	 * Iterate over a set of structures and add them to a set
+	 * 
+	 * This is primarily used by testing components to get a set of segments
+	 * for testing from test messages, by may also be useful in StructureParser objects
+	 * to enumerate the message components in a message or group.
+	 *  
+	 * NOTE: Use a LinkedHashSet to get the structures in order.
+	 * 
+	 * @param g	The group to traverse
+	 * @param structures The set of structures to add to.
+	 */
+	public static void iterateStructures(Group g, Set<Structure> structures) {
 		if (g == null) {
 			return;
 		}
@@ -233,10 +336,10 @@ public class ParserUtils {
 			try {
 				for (Structure s: g.getAll(name)) {
 					if (s instanceof Segment seg) {
-						testStructures.add(seg);
+						structures.add(seg);
 					} else if (s instanceof Group group) {
-						testStructures.add(s);
-						iterateStructures(group, testStructures);
+						structures.add(s);
+						iterateStructures(group, structures);
 					}
 				}
 			} catch (HL7Exception e) {
@@ -245,7 +348,20 @@ public class ParserUtils {
 		}
 	}
 	
-	public static void iterateSegments(Group g, Set<Segment> testSegments) {
+	/**
+	 * Iterate over a set of structures and the segments within them to a set
+	 * 
+	 * This is primarily used by testing components to get a set of segments
+	 * for testing from test messages, by may also be useful in StructureParser objects
+	 * to enumerate the message components in a message or group.
+	 *  
+	 * NOTE: Use a LinkedHashSet to get the segments in order.
+	 * 
+	 * @see #iterateStructures(Group, Set)
+	 * @param g	The group to traverse
+	 * @param structures The set of structures to add to.
+	 */
+	public static void iterateSegments(Group g, Set<Segment> structures) {
 		if (g == null) {
 			return;
 		}
@@ -253,17 +369,23 @@ public class ParserUtils {
 			try {
 				for (Structure s: g.getAll(name)) {
 					if (s instanceof Segment seg) {
-						testSegments.add(seg);
+						structures.add(seg);
 					} else if (s instanceof Group group) {
-						iterateSegments(group, testSegments);
+						iterateSegments(group, structures);
 					}
 				}
 			} catch (HL7Exception e) {
-				e.printStackTrace();
+				log.error("Unexpected HL7Exception: {}", e.getMessage(), e);
 			}
 		}
 	}
 
+	/**
+	 * Get a component from a composite
+	 * @param type	The composite to get the component from
+	 * @param number The zero-indexed component to get 
+	 * @return	The component, or null if type doesn't represent a Composite 
+	 */
 	public static Type getComponent(Type type, int number) {
 		if (type instanceof Varies v) {
 			type = v.getData();
@@ -275,6 +397,14 @@ public class ParserUtils {
 		return null;
 	}
 	
+	/**
+	 * Get the first occurrence of a field in a segment, nor null if it does not exist or an exception is
+	 * thrown.
+	 * 
+	 * @param segment	The segment to get the field from
+	 * @param field	The zero-index field number
+	 * @return	The first occurence of the field
+	 */
 	public static Type getField(Segment segment, int field) {
 		try {
 			Type[] types = segment.getField(field); 
@@ -283,11 +413,26 @@ public class ParserUtils {
 			return null;
 		} 
 	}
+	
+	/**
+	 * Test if a segment has a value in a given field
+	 * @param segment	The segment to test
+	 * @param field		The field to look for
+	 * @return	true if the field is present, false otherwise
+	 */
 	public static  boolean hasField(Segment segment, int field) {
 		return getField(segment, field) != null; 
 	}
 
-	
+	/**
+	 * Get the type of a field in a segment
+	 * 
+	 * Used in path conversions to determine the type of a component
+	 * 
+	 * @param segment	The segment to check
+	 * @param number	The field within the segment
+	 * @return The first occurrence of the field
+	 */
 	public static Type getFieldType(String segment, int number) {
 		Segment seg = getSegment(segment);
 		if (seg == null) {
@@ -300,14 +445,24 @@ public class ParserUtils {
 		}
 		return null;
 	}
-	@SuppressWarnings("unchecked")
+	/**
+	 * The the class representing the specified segment type
+	 * 
+	 * Classes are taken preferentially from HAPI V2 2.8.1 models, but some withdrawn classes will
+	 * come from earlier model versions (usually HAPI V2 2.5.1).
+	 * 
+	 * @param segment	The HL7 V2 segment name
+	 * @return	A HAPI V2 class representing the segment.
+	 */
 	private static Class<Segment> getSegmentClass(String segment) {
 		String name = null;
 		Exception saved = null;
 		for (Class<?> errClass : Arrays.asList(ca.uhn.hl7v2.model.v281.segment.ERR.class, ca.uhn.hl7v2.model.v251.segment.ERR.class)) {
 			name = errClass.getPackageName() +  segment;
 			try {
-				return (Class<Segment>) ClassLoader.getSystemClassLoader().loadClass(name);
+				@SuppressWarnings("unchecked")
+				Class<Segment> clazz = (Class<Segment>) ClassLoader.getSystemClassLoader().loadClass(name);
+				return clazz;
 			} catch (ClassNotFoundException e) {
 				saved = e;
 			}
@@ -316,19 +471,29 @@ public class ParserUtils {
 		return null;
 	}
 	
+	/**
+	 * Create a segment of the specified type
+	 * @param segment	The type of segment to create 
+	 * @return	The constructed segment, or null if the segment type is unknown.
+	 */
 	public static Segment getSegment(String segment) {
 		Class<Segment> segClass = getSegmentClass(segment);
 		if (segClass == null) {
 			return null;
 		}
 		try {
-			return segClass.getDeclaredConstructor().newInstance();
+			return segClass.getDeclaredConstructor(Message.class).newInstance((Message)null);
 		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException
 				| InvocationTargetException | NoSuchMethodException | SecurityException e) {
 			warnException("Unexpected {} loading {}", e.getClass().getSimpleName(), segClass.getName(), e);
 			return null;
 		}
 	}
+	/**
+	 * Create a reference to a resource
+	 * @param resource	The resource to create the reference to
+	 * @return	The created Reference
+	 */
 	public static Reference toReference(DomainResource resource) {
 		IdType id = resource.getIdElement();
 		if (id != null) {

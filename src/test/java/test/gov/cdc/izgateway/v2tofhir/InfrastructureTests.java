@@ -19,6 +19,9 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 class InfrastructureTests extends TestBase {
+	static {
+		log.debug("{} loaded", InfrastructureTests.class.getName());
+	}
 	@ParameterizedTest
 	@MethodSource("getCodeSystemAliases")
 	void testCodeSystemAliases(List<String> aliases) {

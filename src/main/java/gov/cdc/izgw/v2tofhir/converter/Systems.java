@@ -18,48 +18,99 @@ import org.hl7.fhir.r4.model.NamingSystem.NamingSystemUniqueIdComponent;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+/**
+ * Utility class containing OIDs, URIs and names for various coding and identifier systems
+ *  
+ * @author Audacious Inquiry
+ *
+ */
 public class Systems {
+	static {
+		log.debug("{} loaded", Systems.class.getName());
+	}
+	/** Code System URI for the code system used for Vaccine Information Statements */
 	public static final String CDCGS1VIS = "urn:oid:2.16.840.1.114222.4.5.307";
+	/** OID for the code system used for Vaccine Information Statements */
 	public static final String CDCGS1VIS_OID = "2.16.840.1.114222.4.5.307";
+	/** Code System URI for the code system used in the CDC V2.5.1 Immunization Guide */
 	public static final String CDCPHINVS = "urn:oid:2.16.840.1.113883.12.471";
+	/** OID for the code system used in the CDC V2.5.1 Immunization Guide */
 	public static final String CDCPHINVS_OID = "2.16.840.1.113883.12.471";
+	/** Code System URI for the code system used for CDC Race and Ethnicity */
 	public static final String CDCREC = "urn:oid:2.16.840.1.113883.6.238";
+	/** OID for the code system used for CDC Race and Ethnicity */
 	public static final String CDCREC_OID = "2.16.840.1.113883.6.238";
+	/** Code System URI for the code system used for AMA's Current Procedure Terminology codes */
 	public static final String CPT = "http://www.ama-assn.org/go/cpt";
+	/** OID for the code system used for AMA's Current Procedure Terminology codes  */
 	public static final String CPT_OID = "2.16.840.1.113883.6.12";
+	/** Code System URI for the code system used for CDC Vaccine Codes */
 	public static final String CVX = "http://hl7.org/fhir/sid/cvx";
+	/** OID for the code system used for CDC Vaccine Codes */
 	public static final String CVX_OID = "2.16.840.1.113883.12.292";
+	/** Code System URI for the code system used for DICOM codes */
 	public static final String DICOM = "http://dicom.nema.org/resources/ontology/DCM";
+	/** OID for the code system used for DICOM codes */
 	public static final String DICOM_OID = "1.2.840.10008.2.16.4";
+	/** Code System URI for the code system used for the URL namespace */
 	public static final String IETF = "urn:ietf:rfc:3986";
+	/** OID for the code system used for the URL namespace */
 	public static final String IETF_OID = "urn:ietf:rfc:3986";
+	/** Code System URI for the code system used by CDC's NHSN for Facility Locations */
 	public static final String HSLOC = "https://www.cdc.gov/nhsn/cdaportal/terminology/codesystem/hsloc.html";
+	/** OID for the code system used for Vaccine Information Statements */
 	public static final String HSLOC_OID = "2.16.840.1.113883.6.259";
-	public static final String ICD10CM = "http://hl7.org/fhir/sid/icd-10";
+	/** Code System URI for the code system used by CDC's NHSN for Facility Locations */
+	public static final String ICD10CM = "http://hl7.org/fhir/sid/icd-10-cm";
+	/** OID for the code system used for ICD-10-CM codes */
 	public static final String ICD10CM_OID = "2.16.840.1.113883.6.3";
+	/** Code System URI for the code system used for ICD-9-CM codes */
 	public static final String ICD9CM = "http://hl7.org/fhir/sid/icd-9-cm";
+	/** OID for the code system used for ICD-9-CM codes */
 	public static final String ICD9CM_OID = "2.16.840.1.113883.6.103";
+	/** Code System URI for the code system used for ICD-9 Procedure Codes */
 	public static final String ICD9PCS = "http://hl7.org/fhir/sid/icd-9-cm";
+	/** OID for the code system used for ICD-9 Procedure Codes */
 	public static final String ICD9PCS_OID = "2.16.840.1.113883.6.104";
+	/** Code System URI for the code system used for V2 Identifier types */
 	public static final String IDENTIFIER_TYPE = "http://terminology.hl7.org/CodeSystem/v2-0301";
+	/** OID for the code system used for V2 Identifier types */
 	public static final String IDENTIFIER_TYPE_OID = "2.16.840.1.113883.18.108";
+	/** Code System URI for the code system used for FHIR identifier types */
 	public static final String IDTYPE = "http://terminology.hl7.org/CodeSystem/v2-0203";
+	/** OID for the code system used for FHIR identifier types */
 	public static final String IDTYPE_OID = "2.16.840.1.113883.18.186";
+	/** Code System URI for the code system used for LOINC codes */
 	public static final String LOINC = "http://loinc.org";
+	/** OID for the code system used for LOINC codes */
 	public static final String LOINC_OID = "2.16.840.1.113883.6.1";
+	/** Code System URI for the code system used for CDC's Vaccine Manufacturer codes */
 	public static final String MVX = "http://hl7.org/fhir/sid/mvx";
+	/** OID for the code system used for CDC's Vaccine Manufacturer codes */
 	public static final String MVX_OID = "2.16.840.1.113883.12.227";
+	/** Code System URI for the code system used for US National Drug Codes */
 	public static final String NDC = "http://hl7.org/fhir/sid/ndc";
+	/** OID for the code system used for US National Drug Codes */
 	public static final String NDC_OID = "2.16.840.1.113883.6.69";
-	public static final String NCI_OID = "2.16.840.1.113883.3.26.1.1";
+	/** OID for the code system used for NCI Thesaurus Codes */
 	public static final String NCI = "http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl";
+	/** Code System URI for the code system used for NCI Thesaurus Codes */
+	public static final String NCI_OID = "2.16.840.1.113883.3.26.1.1";
+	/** Code System URI for the code system used for FDA's National Drug File */
 	public static final String NDFRT = "http://hl7.org/fhir/ndfrt";
+	/** OID for the code system used for FDA's National Drug File */
 	public static final String NDFRT_OID = "2.16.840.1.113883.6.209";
+	/** Code System URI for the code system used for RxNORM codes */
 	public static final String RXNORM = "http://www.nlm.nih.gov/research/umls/rxnorm";
+	/** OID for the code system used for RxNORM codes */
 	public static final String RXNORM_OID = "2.16.840.1.113883.6.88";
+	/** Code System URI for the code system used for SNOMED codes */
 	public static final String SNOMED = "http://snomed.info/sct";
+	/** OID for the code system used for SNOMED codes */
 	public static final String SNOMED_OID = "2.16.840.1.113883.6.96";
+	/** Code System URI for the code system used for UCUM unit codes */
 	public static final String UCUM = "http://unitsofmeasure.org";
+	/** OID for the code system used for UCUM unit codes */
 	public static final String UCUM_OID = "2.16.840.1.113883.6.8";
 
 
@@ -127,6 +178,15 @@ public class Systems {
 		{ UCUM, "UCUM", UCUM_OID },
 	};
 	
+	/** 
+	 * Get a list of aliases known by the V2 Converter for different coding and identifier systems.
+	 * 
+	 * Returns a list of string lists containing aliases for systems.  For each system,  
+	 * the FHIR preferred system URI is first in its sublist, the commonly used V2 namespace is second,
+	 * and the OID for the system is last.
+	 * 
+	 * @return	A list of string lists containing aliases for a coding or identifier system.  
+	 */
 	public static List<List<String>> getCodeSystemAliases() {
 		List<List<String>> a = new ArrayList<>();
 		for (String[] s : stringToUri) {
@@ -205,6 +265,12 @@ public class Systems {
 		return null;
 	}
 	
+	/** 
+	 * Get the commonly used V2 name for a coding or identifier system.
+	 *  
+	 * @param uri	The system name
+	 * @return	The commonly used V2 name, or null if name is unknown. 
+	 */
 	public static String toTextName(String uri) {
 		if (StringUtils.isEmpty(uri)) {
 			return "";
@@ -240,6 +306,11 @@ public class Systems {
 		return ns.getUrl();
 	}
 
+	/**
+	 * Get the aliases for any given system.
+	 * @param system	The system
+	 * @return	A list of names the system is known by.
+	 */
 	public static List<String> getSystemNames(String system) {
 		if (StringUtils.isBlank(system)) {
 			return Collections.emptyList();

@@ -14,8 +14,23 @@ import gov.cdc.izgw.v2tofhir.converter.ParserUtils;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+/**
+ * Parser for QAK Segments
+ * 
+ * The QAK segment populates OperationOutcome.issue referenced by any generated MessageHeader.response.details
+ * with the code from QAK-2 field.
+ * 
+ * @author Audacious Inquiry
+ */
 public class QAKParser extends AbstractSegmentParser {
-
+	static {
+		log.debug("{} loaded", QAKParser.class.getName());
+	}
+	/**
+	 * Construct a new QAKParser
+	 * 
+	 * @param messageParser	The messageParser to construct this parser for.
+	 */
 	public QAKParser(MessageParser messageParser) {
 		super(messageParser, "QAK");
 	}

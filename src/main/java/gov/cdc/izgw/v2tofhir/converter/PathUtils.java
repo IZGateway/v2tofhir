@@ -9,8 +9,16 @@ import ca.uhn.hl7v2.model.Segment;
 import ca.uhn.hl7v2.model.Structure;
 import ca.uhn.hl7v2.model.Type;
 
+/**
+ * This utility class contains methods for manipulating and converting between
+ * HAPI V2 Terser and FhirPath paths (as applied over V2 models). 
+ */
 public class PathUtils {
-
+	/**
+	 * Convert a FhirPath to a TerserPath
+	 * @param path	The FhirPath expression to convert
+	 * @return	A Terser path representation
+	 */
 	public static String fhirPathToTerserPath(String path) {
 		path = "/" + path;
 		// Replace . with /
@@ -24,6 +32,12 @@ public class PathUtils {
 		return path;
 	}
 
+	/**
+	 * Given a structure, get a Terser path for it
+	 * @param s The structure to get a Terser path for
+	 * @return The terser path to the specified structure within a message.
+	 * @throws HL7Exception If a path to the structure cannot be found in its message.
+	 */
 	public static String getTerserPath(Structure s) throws HL7Exception {
 		if (s instanceof Message) {
 			return "";
@@ -51,6 +65,11 @@ public class PathUtils {
 		throw new HL7Exception("Cannot find " + s.getName() + " in " + g.getName());
 	}
 
+	/**
+	 * Convert a Terser path to a FhirPath
+	 * @param path	The Terser path expression to convert
+	 * @return	A FhirPath representation
+	 */
 	public static String terserPathToFhirPath(String path) {
 		// Remove initial / 
 		if (path.startsWith("/")) {
@@ -68,6 +87,11 @@ public class PathUtils {
 		return path;
 	}
 
+	/**
+	 * Convert a Path in V2 encoding of an ERL data type to a FhirPath
+	 * @param path	The V2 encoding of an ERL data type.
+	 * @return	The converted FhirPath
+	 */
 	public static String v2ToFHIRPath(String path) {
 		
 		String[] parts = path.split("^");

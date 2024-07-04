@@ -22,7 +22,15 @@ import gov.cdc.izgw.v2tofhir.converter.PathUtils;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+/**
+ * Parser for an ERR segment.
+ * 
+ * @author Audacious Inquiry
+ */
 public class ERRParser extends AbstractSegmentParser {
+	static {
+		log.debug("{} loaded", ERRParser.class.getName());
+	}
 	private static final LinkedHashMap<String, String[]> errorCodeMap = new LinkedHashMap<>();
 	private static final String NOT_SUPPORTED = "not-supported";
 	private static final String[][] errorCodeMapping = {
@@ -45,10 +53,35 @@ public class ERRParser extends AbstractSegmentParser {
 			errorCodeMap.put(mapping[1], mapping);
 		}
 	}
+	
+	/**
+	 * Construct the ERR Segment parser for the given MessageParser
+	 * 
+	 * @param messageParser	The messageParser that is using this segment parser.
+	 */
 	public ERRParser(MessageParser messageParser) {
 		super(messageParser, "ERR");
 	}
 
+	/**
+	 * Parse an ERR segment into an OperationOutcome resource.
+	 * 
+	 * If no OperationOutcome already exists for this message, a new one is created.
+	 * One OperationOutcome.issue is created for each ERR segment.
+	 * 
+	 * OperationOutcome.issue.location is set from ERR-2
+	 * 
+	 * OperationOutcome.issue.code is set from ERR-3
+	 * 
+	 * OperationOutcome.issue.severity is set from ERR-4
+	 * 
+	 * OperationOutcome.issue.detail is set from ERR-3 and ERR-5
+	 * 
+	 * OperationOutcome.issue.diagnostics is set from ERR-7 and ERR-8 if present.
+	 *  
+	 * @param err	The ERR segment to parse
+	 */
+	@Override
 	public void parse(Segment err) throws HL7Exception {
 		// Create a new OperationOutcome for each ERR resource
 		OperationOutcome oo = getFirstResource(OperationOutcome.class);

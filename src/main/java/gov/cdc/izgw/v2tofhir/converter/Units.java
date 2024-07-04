@@ -7,8 +7,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.hl7.fhir.r4.model.Coding;
 
+/**
+ * Utility class for parsing and converting V2 ANSI, ISO+ or UCUM unit codes
+ * 
+ * @author Audacious Inquiry
+ *
+ */
 public class Units {
-	public static final String UCUM = "http://unitsofmeasure.org/";
 	// See http://hl7.org/fhir/R4/valueset-ucum-common.html and https://motorcycleguy.blogspot.com/search?q=ucum 
 	// TODO: Add display name values to this table.
 	private static String[][] mapData = {
@@ -1402,6 +1407,11 @@ public class Units {
 	private Units() {
 	}
 	
+	/**
+	 * Convert a string in ANSI, ISO+ or UCUM units to UCUM
+	 * @param unit	The string to convert to a UCUM code
+	 * @return	The Coding representing the UCUM unit
+	 */
 	public static Coding toUcum(String unit) {
 		if (unit == null || StringUtils.isBlank(unit)) {
 			return null;
@@ -1409,14 +1419,14 @@ public class Units {
 		unit = unit.replace("\s+", "");	// Remove any whitespace for lookup
 		String display = commonUcum.get(unit);
 		if (display != null) {
-			return new Coding(UCUM, unit, display);
+			return new Coding(Systems.UCUM, unit, display);
 		}
 		unit = StringUtils.upperCase(unit);  // Convert to Uppercase for lookup
 		Pair<String,String> ucumValue = ucumMap.get(unit);
 		if (ucumValue == null) {
 			return null;
 		}
-		Coding coding = new Coding(UCUM, ucumValue.getKey(), ucumValue.getValue());
+		Coding coding = new Coding(Systems.UCUM, ucumValue.getKey(), ucumValue.getValue());
 		// If found in commonUcum, set display name.
 		display = commonUcum.get(coding.getCode());
 		if (display != null) {
@@ -1425,6 +1435,16 @@ public class Units {
 		return coding;
 	}
 	
+	/**
+	 * Check whether a unit string is an actual UCUM code
+	 * 
+	 * NOTE: UCUM is a code system with a grammar, which means that codes are effectively infinite
+	 * in number. This method only checks for UCUM units commonly used in medicine. The lists are extensive,
+	 * but it's also possible that some value UCUM codes will be missed by this method.
+	 *   
+	 * @param unit	A string to check
+	 * @return	true if the unit is known to be UCUM, or false otherwise.
+	 */
 	public static boolean isUcum(String unit) {
 		if (StringUtils.isBlank(unit)) {
 			return false;

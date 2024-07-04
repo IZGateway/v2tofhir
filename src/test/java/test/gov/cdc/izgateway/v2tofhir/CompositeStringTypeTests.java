@@ -2,8 +2,6 @@ package test.gov.cdc.izgateway.v2tofhir;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -27,6 +25,9 @@ import test.gov.cdc.izgateway.TestUtils;
 
 @Slf4j
 class CompositeStringTypeTests extends TestBase {
+	static {
+		log.debug("{} loaded", CompositeStringTypeTests.class.getName());
+	}
 
 	private static final AddressParser addressParser = new AddressParser();
 	private static final HumanNameParser humanNameParser = new HumanNameParser();

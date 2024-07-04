@@ -31,13 +31,20 @@ import com.opencsv.enums.CSVReaderNullFieldIndicator;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * This utility class supports mapping between coded values and system names in V2 and FHIR
+ * 
+ * @author Audacious Inquiry
+ */
 @Slf4j
 @Data
 public class Mapping {
+	/** constant used to store the original system in Type.userData for types with a System */
 	public static final String ORIGINAL_SYSTEM = "originalSystem";
+	/** constant used to store the original display name in Type.userData for types with a display name */
+	public static final String ORIGINAL_DISPLAY = "originalDisplay";
 
-	private static final String ORIGINAL_DISPLAY = "originalDisplay";
-
+	/** The prefix for V2 tables in HL7 Terminology */
 	public static final String V2_TABLE_PREFIX = "http://terminology.hl7.org/CodeSystem/v2-";
 
 	private static final PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
@@ -54,11 +61,17 @@ public class Mapping {
 	private Map<String, Coding> from = new LinkedHashMap<>();
 	private Map<String, Coding> to = new LinkedHashMap<>();
 
-
+	/**
+	 * Construct a new mapping with the given name
+	 * @param name	The name of the mapping.
+	 */
 	public Mapping(final String name) {
 		this.name = name;
 	}
 
+	/**
+	 * Lock the mapping values after initialization to prevent modification.
+	 */
 	void lock() {
 		from = Collections.unmodifiableMap(from);
 		to = Collections.unmodifiableMap(to);
@@ -75,7 +88,6 @@ public class Mapping {
 			codeSystemFiles = resolver.getResources("coding/HL7 CodeSystem*.csv");
 		} catch (IOException e) {
 			log.error("Cannot load coding resources");
-			e.printStackTrace();
 			throw new ServiceConfigurationError("Cannot load coding resources", e);
 
 		}
@@ -87,7 +99,7 @@ public class Mapping {
 		}
 		for (Resource file : codeSystemFiles) {
 			fileno++;
-			// loadCodeSystemFile(fileno, file);
+			loadCodeSystemFile(fileno, file);
 		}
 	}
 
@@ -117,7 +129,6 @@ public class Mapping {
 		return m;
 	}
 	
-	// TODO: This
 	private static void loadCodeSystemFile(int fileno, Resource file) {
 		String name = file.getFilename().split("_ ")[1].split(" ")[0];
 		Mapping m = new Mapping(name);
@@ -189,6 +200,11 @@ public class Mapping {
 		}
 	}
 	
+	/**
+	 * Updates display name resolution table for a coding.
+	 * @param coding	A coding with code, display and system all populated
+	 * @return	The updated code lookup map where the given coding is stored.
+	 */
 	public static Map<String, Coding> updateCodeLookup(Coding coding) {
 		Map<String, Coding> cm = codingMaps.computeIfAbsent(coding.getSystem(), k -> new LinkedHashMap<>());
 		cm.put(coding.getCode(), coding);
@@ -339,10 +355,25 @@ public class Mapping {
 		return getDisplay(coding.getCode(), coding.getSystem());
 	}
 	
+	
+	/**
+	 * Indicates if a display name is known for coding with given code and table or system name
+	 * 
+	 * @param code The code to search for.
+	 * @param table The HL7 V2 table or FHIR System uri to look for.
+	 * @return true if a display name is know for this code and table
+	 */
 	public static boolean hasDisplay(String code, String table) {
 		return getDisplay(code, table) != null;
 	}
 
+	/**
+	 * The the display name for coding with given code and table or system name
+	 * 
+	 * @param code The code to search for.
+	 * @param table The HL7 V2 table or FHIR System uri to look for.
+	 * @return The display name this code and table, or null if not found.
+	 */
 	public static String getDisplay(String code, String table) {
 		if (StringUtils.isBlank(table)) {
 			return null;
@@ -403,6 +434,16 @@ public class Mapping {
 			reset(cc);
 		}
 	}
+	
+	/**
+	 * Reset a Coding produced during conversion to its original, unmapped values for display and system
+	 * 
+	 * During the conversion process, the V2 to FHIR converter will store the original values in the 
+	 * message in user data found in the datatypes.  The reset method restores those values to the
+	 * data type.
+	 * 
+	 * @param coding A coding produced by DatatypeConverter to reset
+	 */
 	public static void reset(Coding coding) {
 		if (coding == null) {
 			return;
@@ -414,6 +455,16 @@ public class Mapping {
 			coding.setSystem((String)coding.getUserData(ORIGINAL_SYSTEM));
 		}
 	}
+	
+	/**
+	 * Reset a CodeableConcept produced during conversion to its original, unmapped values for display and system
+	 * 
+	 * During the conversion process, the V2 to FHIR converter will store the original values in the 
+	 * message in user data found in the datatypes.  The reset method restores those values to the
+	 * datatype.
+	 * 
+	 * @param cc A CodeableConcept produced by DatatypeConverter to reset
+	 */
 	public static void reset(CodeableConcept cc) {
 		if (cc == null) {
 			return;
@@ -431,6 +482,15 @@ public class Mapping {
 		log.warn(msg, args);
 	}
 
+	/**
+	 * Map the V2 system value found in coding.system to the system URI expected in FHIR.
+	 * 
+	 * If the system is changed, the original value will be stored and can later be retrieved by calling
+	 * coding.getUserData(Mapping.ORIGINAL_SYSTEM)
+	 *  
+	 * @param coding	The coding to adjust the system for
+	 * @return	The updated coding
+	 */
 	public static Coding mapSystem(Coding coding) {
 		if (coding == null) {
 			return null;
@@ -446,6 +506,15 @@ public class Mapping {
 		return coding;
 	}
 
+	/**
+	 * Map the V2 system value found in ident.system to the system URI expected in FHIR.
+	 * 
+	 * If the system is changed, the original value will be stored and can later be retrieved by calling
+	 * ident.getUserData(Mapping.ORIGINAL_SYSTEM)
+	 *  
+	 * @param ident The coding to adjust the system for
+	 * @return	The updated Identifier
+	 */
 	public static Identifier mapSystem(Identifier ident) {
 		if (!ident.hasSystem()) {
 			return ident;

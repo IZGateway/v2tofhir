@@ -40,27 +40,49 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 /**
- * MessageConverter provide the necessary methods to convert messages and segments into FHIR Bundles and Resources
+ * MessageParser provide the necessary methods to convert messages and segments into FHIR Bundles and Resources
  * respectively.
  * 
  * The methods in any instance this class are not thread safe, but multiple threads can perform conversions
- * on different messages.
+ * on different messages by using different instances of the MessageParser. The MessageParser class is 
+ * intentionally cheap to create.
  * 
- * MessageConverters are intentionally cheap to create.
- * @author boonek
+ * Parsers and Converters in this package follow as best as possible the mapping advice provided
+ * in the HL7 V2 to FHIR Implementation Guide.
+ * 
+ * @see <a href="https://hl7.org/fhir/uv/v2mappings/2024Jan/">V2toFHIR Jan-2024</a>
+ * 
+ * @author Audacious Inquiry
  *
  */
 public class MessageParser {
 	
 	private static final Context defaultContext = new Context(null);
+	
+	/**
+	 * Enable or disable storing of Provenance information for created resources.
+	 * 
+	 * When enabled, the MessageParser will create Provenance resources for each created resource
+	 * that document the sources of information used to create resources in the generated bundle.
+	 * These provenance records tie the information in the resource back to the specific segments
+	 * or groups within the message that sourced the data in the generated resource. 
+	 * 
+	 * @param storingProvidence	Set to true to enable generation of Provenance resources, or false to disable them.
+	 */
 	public static void setStoringProvenance(boolean storingProvidence) {
 		defaultContext.setStoringProvenance(storingProvidence);
 	}
+	
+	/**
+	 * Returns true if Provenance resources are to be created, false otherwise.
+	 * @return true if Provenance resources are to be created, false otherwise.
+	 */
 	public static boolean isStoringProvenance() {
 		return defaultContext.isStoringProvenance();
 	}
 	@Getter
-	/** The shared context for parse of this message */
+	/** The shared context for parse of this message 
+	 */
 	private final Context context;
 	
 	private final Map<String, ? extends Resource> bag = new LinkedHashMap<>();
@@ -68,11 +90,16 @@ public class MessageParser {
 	private final Map<String, Class<StructureParser>> parsers = new LinkedHashMap<>();
 	private final Map<Structure, String> processed = new LinkedHashMap<>();
 	private StructureParser processor = null;
+	
+	/**
+	 * Construct a new MessageParser.
+	 */
 	public MessageParser() {
 		context = new Context(this);
 		// Copy default values to context on creation.
 		context.setStoringProvenance(defaultContext.isStoringProvenance());
 	}
+	
 	/**
 	 * Convert an HL7 V2 message into a Bundle of FHIR Resources.
 	 * 
@@ -112,11 +139,22 @@ public class MessageParser {
 		}
 	}
 	
+	/**
+	 * Create a Bundle by parsing a given message
+	 * @param msg	The given message
+	 * @return	The generated Bundle resource
+	 */
 	public Bundle createBundle(Message msg) {
 		Set<Structure> segments = new LinkedHashSet<>();
 		ParserUtils.iterateStructures(msg, segments);
 		return createBundle(segments);
 	}
+	
+	/**
+	 * Create a Bundle by parsing a group of structures
+	 * @param structures	The structures to parse.
+	 * @return	The generated Bundle
+	 */
 	public Bundle createBundle(Iterable<Structure> structures) {
 		Bundle b = new Bundle();
 		getContext().setBundle(b);
@@ -180,18 +218,47 @@ public class MessageParser {
 		}
 	}
 	
+	/**
+	 * Get the generated resource with the given identifier.
+	 * @param id	The resource id
+	 * @return	The resource that was generated for the bundle with that identifier, or null if no such resource exists.
+	 */
 	public Resource getResource(String id) {
 		return bag.get(id);
 	}
+	/**
+	 * Get the generated resource of the specific class and identifier.
+	 * 
+	 * @param <R>	The type of resource
+	 * @param clazz	The class of the resource
+	 * @param id	The identifier of the resource
+	 * @return	The generated resource, or null if not found.
+	 * @throws ClassCastException if the resource with the specified id is not of the specified resource type.
+	 */
 	public <R extends Resource> R getResource(Class<R> clazz, String id) {
 		return clazz.cast(getResource(id));
 	}
+	
+	/**
+	 * Get all the generated resources of the specified class.
+	 * 
+	 * @param <R>	The type of resource
+	 * @param clazz	The class of the resource
+	 * @return A list containing the generated resources or an empty list if none found.
+	 */
 	public <R extends Resource> List<R> getResources(Class<R> clazz) {
 		List<R> resources = new ArrayList<>();
 		bag.values().stream().filter(clazz::isInstance).forEach(r -> resources.add(clazz.cast(resources)));
 		return resources;
 	}
 	
+	/**
+	 * Get the first generated resource of the specified type.
+	 * 
+	 * @param <R>	The type of resource
+	 * @param clazz	The class of the resource
+	 * @return The generated resource or null if not found.
+	 */
 	public <R extends Resource> R getFirstResource(Class<R> clazz) {
 		List<R> resources = getResources(clazz);
 		if (resources.isEmpty()) {
@@ -199,6 +266,14 @@ public class MessageParser {
 		}
 		return resources.get(0);
 	}
+
+	/**
+	 * Get the last generated resource of the specified type.
+	 * 
+	 * @param <R>	The type of resource
+	 * @param clazz	The class of the resource
+	 * @return The generated resource or null if not found.
+	 */
 	public <R extends Resource> R getLastResource(Class<R> clazz) {
 		List<R> resources = getResources(clazz);
 		if (resources.isEmpty()) {
@@ -206,11 +281,24 @@ public class MessageParser {
 		}
 		return resources.get(resources.size() - 1);
 	}
-	
+
+	/**
+	 * Create a resource of the specified type
+	 * @param <R>	The type of resource
+	 * @param clazz	The class of the resource
+	 * @return The newly created resource.
+	 */
 	public <R extends Resource> R createResource(Class<R> clazz) {
 		return findResource(clazz, null);
 	}
 	
+	/**
+	 * Find or create a resource of the specified type and identifier
+	 * @param <R>	The type of resource
+	 * @param clazz	The class of the resource
+	 * @param id	The identifier of the resource, or null to just create a new resource.
+	 * @return The existing or a newly created resource if none already exists.
+	 */
 	public <R extends Resource> R findResource(Class<R> clazz, String id) {
 		R resource;
 		if (id != null) {
@@ -273,9 +361,14 @@ public class MessageParser {
 			return null;
 		}
 	}
+	/**
+	 * Load a parser for the specified segment or group
+	 * @param name	The name of the segment or group to find a parser for
+	 * @return	A StructureParser for the segment or group, or null if none found. 
+	 */
 	public Class<StructureParser> loadParser(String name) {
 		String packageName = ERRParser.class.getPackageName();
-		ClassLoader loader = ClassLoader.getSystemClassLoader();
+		ClassLoader loader = MessageParser.class.getClassLoader();
 		try {
 			@SuppressWarnings("unchecked")
 			Class<StructureParser> clazz = (Class<StructureParser>) loader.loadClass(packageName + "." + name + "Parser");

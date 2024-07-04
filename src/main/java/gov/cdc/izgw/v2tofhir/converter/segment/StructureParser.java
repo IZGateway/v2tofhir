@@ -13,11 +13,11 @@ public interface StructureParser {
 	 * The name of the segment this parser works on.
 	 * @return The name of the segment this parser works on
 	 */
-	String segment();
+	String structure();
 
 	/**
 	 * Parses an HL7 Message structure into FHIR Resources.
-	 * @param seg	The structure to parse
+	 * @param structure	The structure to parse
 	 * @throws HL7Exception A structure to parse.
 	 */
 	void parse(Structure structure) throws HL7Exception;

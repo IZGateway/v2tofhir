@@ -41,7 +41,7 @@ public class HumanNameParser implements DatatypeParser<HumanName> {
 	"mla", "mba", "msc", "meng", "mbi", "jd", "md", "do", "pharmd",
 	"dmin", "phd", "edd", "dphil", "dba", "lld", "engd", "esq"));
 
-	public enum NamePart {
+	enum NamePart {
 		PREFIX,
 		PREFIXANDSUFFIX,
 		GIVEN,
@@ -59,16 +59,18 @@ public class HumanNameParser implements DatatypeParser<HumanName> {
 	/**
 	 * Parse a human name from a string. The parser recognizes common prefixes and suffixes and puts
 	 * them in the prefix and suffix fields of the human name.  It puts the first space separated string
-	 * into the first given name, and any susbsequent strings except the last 
+	 * into the first given name, and any susbsequent strings except the last.
+	 * 
+	 * @param name The name to parse
+	 * @return The parsed name in a HumanName object
 	 */
 	public HumanName fromString(String name) {
 		HumanName hn = new HumanName();
 		hn.setText(name);
 		String[] parts = name.split("\\s");
-		boolean hasSuffix = false;
 		StringBuilder familyName = new StringBuilder();
 		for (String part : parts) {
-			switch (classify(part)) {
+			switch (classifyNamePart(part)) {
 			case PREFIXANDSUFFIX:  
 				if (!hn.hasGiven() && familyName.isEmpty()) {
 					hn.addPrefix(part);
@@ -127,14 +129,14 @@ public class HumanNameParser implements DatatypeParser<HumanName> {
 		return hn;
 	}
 	
-	public NamePart classify(String part) {
+	private NamePart classifyNamePart(String part) {
 		if (isPrefix(part)) {
 			return isSuffix(part) ? NamePart.PREFIXANDSUFFIX : NamePart.PREFIX;
 		}
 		if (isAffix(part)) {
 			return NamePart.AFFIX;
 		}
-		if (isSuffix(part)) {
+		if (isSuffix(part) || isDegree(part)) {
 			return NamePart.SUFFIX;
 		}
 		return NamePart.NAME;
@@ -211,8 +213,6 @@ public class HumanNameParser implements DatatypeParser<HumanName> {
 		return hn;
 	}
 
-	/*
-	 */
 	private static NameUse toNameUse(String nameType) {
 		if (nameType == null) {
 			return null;

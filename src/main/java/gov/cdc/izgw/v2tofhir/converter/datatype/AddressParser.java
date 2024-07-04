@@ -1,7 +1,6 @@
 package gov.cdc.izgw.v2tofhir.converter.datatype;
 
 import java.util.Arrays;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
@@ -15,9 +14,16 @@ import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
 import gov.cdc.izgw.v2tofhir.converter.ParserUtils;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * AddressParser is a parser for addresses.
+ * 
+ * @author Audacious Inquiry
+ */
 @Slf4j
 public class AddressParser implements DatatypeParser<Address> {
-
+	static {
+		log.debug("{} loaded", AddressParser.class.getName());
+	}
 	private static final Pattern caPostalCode1 = Pattern
 			.compile("^[a-zA-Z]\\d[a-zA-Z]$");
 
@@ -213,24 +219,59 @@ public class AddressParser implements DatatypeParser<Address> {
 				continue;
 			}
 			if (!addr.hasLine()) {
-				// First line is usually an address line
-				if (isCszOnly(originalParts)) {
-					getCityStatePostalCode(addr, part);
-				} else {
-					addr.addLine(part);
-				}
-			} else if (streetPattern.matcher(part).matches()
-					|| directionalPattern.matcher(part).matches()
-					|| unitPattern.matcher(part).matches()) {
+				getLineOrCsz(originalParts, addr, part);
+				continue;
+			} 
+			
+			if (isAddressLine(part)) {
 				addr.addLine(part);
-			} else if (!addr.hasCountry()
-					&& countryPattern.matcher(part).matches()) {
+				continue;
+			} 
+			
+			if (isCountry(addr, part)) {
 				addr.setCountry(part);
-			} else if (!addr.hasPostalCode()) {
+				continue;
+			} 
+			
+			if (!addr.hasPostalCode()) {
 				getCityStatePostalCode(addr, part);
 			}
 		}
 		return addr.isEmpty() ? null : addr;
+	}
+	private void getLineOrCsz(String[] originalParts, Address addr, String part) {
+		// First line is usually an address line, but
+		// sometimes it might just be a city, state and postal code
+		// in cases of partial representations.
+		if (isCszOnly(originalParts)) {
+			getCityStatePostalCode(addr, part);
+		} else {
+			addr.addLine(part);
+		}
+	}
+	
+	/**
+	 * Returns true if part is a possible country name
+	 * @param addr	The addr that may need a country
+	 * @param part	The part to examine
+	 * @return	true if addr needs country and part is a country name
+	 */
+	private boolean isCountry(Address addr, String part) {
+		return !addr.hasCountry()
+				&& countryPattern.matcher(part).matches();
+	}
+	/**
+	 * Returns true if an address part matches patterns indicating it is an address line.
+	 * 
+	 * NOTE: Not all address lines will be matched, only those containing certain patterns
+	 * that match (e.g., those with a street name or abbreviation, a directional indicator, or a unit number)
+	 * @param part	The string to match
+	 * @return true if it appears to be an address line, false if it doesn't match any known patterns.
+	 */
+	private boolean isAddressLine(String part) {
+		return streetPattern.matcher(part).matches()
+				|| directionalPattern.matcher(part).matches()
+				|| unitPattern.matcher(part).matches();
 	}
 	
 	/**
@@ -333,6 +374,11 @@ public class AddressParser implements DatatypeParser<Address> {
 		return lineParts;
 	}
 	
+	/**
+	 * Parse a composite made up of types into an address.
+	 * @param types	The components of the address
+	 * @return	A new FHIR Address populated from the values in types.
+	 */
 	public static Address parse(Type[] types) {
 		Address addr = new Address();
 		for (int i = 0; i < 14; i++) {

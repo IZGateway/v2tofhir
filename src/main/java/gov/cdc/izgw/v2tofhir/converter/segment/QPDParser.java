@@ -37,8 +37,29 @@ import gov.cdc.izgw.v2tofhir.converter.ParserUtils;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+/**
+ * The QPD Parser generates a Parameters resource documenting the QPD parameters found in QPD-3 to QPD-*
+ * 
+ * For queries (message type of QBP):
+ * 
+ * The Bundle.entry containing this Parameters resource in Bundle.entry.resource will contain a 
+ * Bundle.entry.request element with the method set to GET and the url set to the FHIR _search URL which would perform the query.
+ * 
+ * For responses to queries (message type of RSP):
+ * 
+ * The Bundle.entry containing this Parameters resource in Bundle.entry.resource will contain a 
+ * Bundle.entry.response element with the location set to the FHIR _search URL which would perform the query.
+ *
+ * @author Audacious Inquiry
+ *
+ */
 public class QPDParser extends AbstractSegmentParser {
 
+	/**
+	 * Construct a new QPD Parser for the given messageParser.
+	 * 
+	 * @param messageParser
+	 */
 	public QPDParser(MessageParser messageParser) {
 		super(messageParser, "QPD");
 	}

@@ -11,15 +11,24 @@ import org.hl7.fhir.r4.model.OperationOutcome.OperationOutcomeIssueComponent;
 
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Segment;
-import ca.uhn.hl7v2.model.Structure;
 import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
 import gov.cdc.izgw.v2tofhir.converter.ParserUtils;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+/**
+ * Parse an MSA segment into MessageHeader and OperationOutcome resources.
+ * 
+ * @author Audacious Inquiry
+ */
 public class MSAParser extends AbstractSegmentParser {
 
+	/**
+	 * Construct a SegmentParser for MSA Segments
+	 * 
+	 * @param messageParser
+	 */
 	public MSAParser(MessageParser messageParser) {
 		super(messageParser, "MSA");
 	}

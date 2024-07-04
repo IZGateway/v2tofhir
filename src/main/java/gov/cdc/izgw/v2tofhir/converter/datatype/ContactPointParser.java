@@ -25,19 +25,28 @@ import gov.cdc.izgw.v2tofhir.converter.ParserUtils;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class ContactPointParser implements DatatypeParser<ContactPoint> {public static final String AREA_CODE = "\\(\\s*\\d{3}\s*\\)";
-public static final String COUNTY_CODE = "\\+\\s*\\d{1,2}";
+/**
+ * Parser that supports parsing a String, or HL7 Version into a FHIR ContactPoint.
+ * 
+ * @author Audacious Inquiry
+ */
+public class ContactPointParser implements DatatypeParser<ContactPoint> {
+	static {
+		log.debug("{} loaded", ContactPointParser.class.getName());
+	}
 
-	public static final String PHONE_CHAR = "\\-+0123456789(). []{},#";
-	public static final String PHONE_NUMBER = "(-|\\.|\\d+)+";
+	static final String AREA_CODE = "\\(\\s*\\d{3}\s*\\)";
+	static final String COUNTRY_CODE = "\\+\\s*\\d{1,3}";
+	static final String PHONE_CHAR = "\\-+0123456789(). []{},#";
+	static final String PHONE_NUMBER = "(-|\\.|\\d+)+";
 	// [NN] [(999)]999-9999[X99999][B99999][C any text]
-	public static final Pattern TN_PATTERN = Pattern.compile(
+	static final Pattern TN_PATTERN = Pattern.compile(
 		"((\\d{2,3})?(\\(\\d{3}\\))?\\d{3}-?\\d{4}(X\\d{1,5})?(B\\d1,5)?)(C.*)?$"
 	);
-	private static final String CONTACTPOINT_COMMENT = "http://hl7.org/fhir/StructureDefinition/contactpoint-comment";
+	static final String CONTACTPOINT_COMMENT = "http://hl7.org/fhir/StructureDefinition/contactpoint-comment";
 	
 	private static final EmailValidator EMAIL_VALIDATOR = EmailValidator.getInstance();
-	public static StringBuilder appendIfNotBlank(StringBuilder b, String prefix, String string, String suffix) {
+	static StringBuilder appendIfNotBlank(StringBuilder b, String prefix, String string, String suffix) {
 		if (StringUtils.isBlank(string)) {
 			return b;
 		}
@@ -45,6 +54,12 @@ public static final String COUNTY_CODE = "\\+\\s*\\d{1,2}";
 				.append(StringUtils.defaultString(string))
 				.append(StringUtils.defaultString(suffix));
 	}
+	
+	/**
+	 * Convert an HL7 V2 XTN into a list of contacts.
+	 * @param xtn	The HL7 V2 xtn (or similarly shaped composite).
+	 * @return	A list of ContactPoint objects from the XTN.
+	 */
 	public List<ContactPoint> convert(Composite xtn) {
 		Type[] types = xtn.getComponents();
 		List<ContactPoint> cps = new ArrayList<>();
@@ -117,6 +132,15 @@ public static final String COUNTY_CODE = "\\+\\s*\\d{1,2}";
 		return null;
 	}
 	
+	/**
+	 * Create a ContactPoint from a string representing an e-mail address.
+	 * 
+	 * This method recognizes mailto: urls, and RFC-2822 email addresses
+	 * @see #fromEmail(String)
+	 * 
+	 * @param value	The email address.
+	 * @return	A ContactPoint object representing this e-mail address. 
+	 */
 	public ContactPoint fromEmail(String value) {
 		if (StringUtils.isBlank(value)) {
 			return null;
@@ -162,12 +186,17 @@ public static final String COUNTY_CODE = "\\+\\s*\\d{1,2}";
 		return null;
 	}
 	
+	/**
+	 * Create a list of ContactPoints 
+	 * @param values	A string providing the list of email addresses, separated by semi-colons, commas, or newlines.
+	 * @return	The list of contact points.
+	 */
 	public List<ContactPoint> fromEmails(String values) {
 		if (StringUtils.isBlank(values)) {
 			return Collections.emptyList();
 		}
 		List<ContactPoint> cps = new ArrayList<>();
-		for (String value: StringUtils.strip(values).split("[;,]")) {
+		for (String value: StringUtils.strip(values).split("[;,\n\r]+")) {
 			ContactPoint cp = fromEmail(value);
 			if (cp != null && !cp.isEmpty()) {
 				cps.add(cp);
@@ -176,6 +205,15 @@ public static final String COUNTY_CODE = "\\+\\s*\\d{1,2}";
 		return cps;
 	}
 
+	/**
+	 * Create a ContactPoint from a string representing a phone number.
+	 * 
+	 * This method recognizes tel: urls and other strings containing phone dialing
+	 * characters and punctuation.
+	 * 
+	 * @param value	The phone number.
+	 * @return	A ContactPoint object representing the phone number. 
+	 */
 	public ContactPoint fromPhone(String value) {
 		if (StringUtils.isBlank(value)) {
 			return null;
@@ -184,6 +222,12 @@ public static final String COUNTY_CODE = "\\+\\s*\\d{1,2}";
 		value = StringUtils.strip(value);
 		if (value.startsWith("tel:")) {
 			return new ContactPoint().setValue(value.substring(4)).setSystem(ContactPointSystem.PHONE);
+		}
+		if (value.startsWith("fax:")) {
+			return new ContactPoint().setValue(value.substring(4)).setSystem(ContactPointSystem.FAX);
+		}
+		if (value.startsWith("sms:")) {
+			return new ContactPoint().setValue(value.substring(4)).setSystem(ContactPointSystem.SMS);
 		}
 		
 		Matcher m = TN_PATTERN.matcher(value);
@@ -201,7 +245,7 @@ public static final String COUNTY_CODE = "\\+\\s*\\d{1,2}";
 			return cp;
 		}
 		if (StringUtils.containsOnly(value, PHONE_CHAR) ||
-			value.matches(COUNTY_CODE) || value.matches(AREA_CODE) || value.matches(PHONE_NUMBER)
+			value.matches(COUNTRY_CODE) || value.matches(AREA_CODE) || value.matches(PHONE_NUMBER)
 		) {
 			cp = new ContactPoint();
 			cp.setSystem(ContactPointSystem.PHONE);
@@ -211,23 +255,50 @@ public static final String COUNTY_CODE = "\\+\\s*\\d{1,2}";
 		return null;
 	}
 	
+	/**
+	 * Create a ContactPoint from a URL
+	 * @param url
+	 * @return A ContactPoint object representing the URL.
+	 */
 	public ContactPoint fromUrl(String url) {
 		url = StringUtils.strip(url);
 		if (StringUtils.isEmpty(url)) {
 			return null;
 		}
 		String scheme = StringUtils.substringBefore(url, ":");
+		ContactPointSystem system = ContactPointSystem.URL;
 		if (StringUtils.isNotEmpty(scheme)) {
+			if ("mailto".equalsIgnoreCase(scheme))
+				system = ContactPointSystem.EMAIL;
+			else if ("tel".equalsIgnoreCase(scheme))
+				system = ContactPointSystem.PHONE;
+			else if ("fax".equalsIgnoreCase(scheme))
+				system = ContactPointSystem.FAX;
+			else if ("sms".equalsIgnoreCase(scheme))
+				system = ContactPointSystem.SMS;
 			return new ContactPoint()
 					.setValue(url)
-					.setSystem("email".equalsIgnoreCase(scheme) ? ContactPointSystem.EMAIL : ContactPointSystem.URL);
+					.setSystem(system);
+		}
+		if (url.matches("^([\\-a-zA-Z0-9]+|[0-9]{1,3})([.\\-a-zA-Z0-9]+|[0-9]{1-3})+(/.*)?$")) {
+			if (url.startsWith("www") || url.contains("/")) {
+				url = "http://" + url;
+				system = ContactPointSystem.URL;
+			} else {
+				system = ContactPointSystem.OTHER;
+			}
+			return new ContactPoint()
+					.setValue(url)
+					.setSystem(system);
 		}
 		return null;
 	}
+	
 	@Override
-		public Class<? extends ContactPoint> type() {
-			return ContactPoint.class;
-		}
+	public Class<? extends ContactPoint> type() {
+		return ContactPoint.class;
+	}
+	
 	private void cleanupContactPoints(List<ContactPoint> cps, String comment, String use, String type,
 			IntegerType order, Period period) {
 		// Cleanup list after parsing.
@@ -254,6 +325,11 @@ public static final String COUNTY_CODE = "\\+\\s*\\d{1,2}";
 		}
 	}
 	
+	/**
+	 * Create a phone number as a String from the components of XTN datatype.
+	 * @param types	The components of the XTN datatype
+	 * @return	The phone number as a string.
+	 */
 	public static String fromXTNparts(Type[] types) {
 		String country = ParserUtils.toString(types, 4);
 		String area = ParserUtils.toString(types, 5);
@@ -271,6 +347,7 @@ public static final String COUNTY_CODE = "\\+\\s*\\d{1,2}";
 		}
 		return null;
 	}
+	
 	private void mapTypeCode(String type, ContactPoint cp) {
 		switch (type) {
 		case "BP": cp.setSystem(ContactPointSystem.PAGER); break;

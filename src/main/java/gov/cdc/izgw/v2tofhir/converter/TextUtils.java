@@ -46,7 +46,7 @@ public class TextUtils {
 	 * @param postalCode	The postalCode
 	 * @param district	The district, county or other geographic designator for the address
 	 * @param lines	The address lines
-	 * @return
+	 * @return A string representing the address
 	 */
 	public static String addressToText(String country, String city, String state, String postalCode, String district, Object ... lines) {
 		StringBuilder b = new StringBuilder();
@@ -102,11 +102,10 @@ public class TextUtils {
 	 * 
 	 * If the Display name is missing is missing for any code only the text between () is written for each code found 
 	 * e.g., (ICD9CM 410.41), (SNOMEDCT 22298006)
-	 * If the coding system is missing for any value, only the code is , this would be written as (410.41)
-	 * If the code is missing, this would be written as (ICD9CM <unknown>)
-	 * If both coding system and code are missing, nothing appears 
+	 * If the coding system is missing for any value, and the code is present, this would be written as (410.41)
+	 * If the code is missing, this would be written as (ICD9CM ) (note the trailing space).
+	 * If both coding system and code are missing, nothing appears. 
 	 * 
-	 * @param parts	The parts of the coding(s)
 	 * @return	A string representation of the coding(s)
 	 */
 
@@ -177,7 +176,7 @@ public class TextUtils {
 	 * Convert an identifier to text in the general form: {type}# {identifier}-{checkDigit}
 	 * 
 	 * @param type	The type of identifier (e.g., DLN, SSN, MR) or null if not present
-	 * @param identifier	The identifier or null if not present
+	 * @param value	The identifier or null if not present
 	 * @param checkDigit	A check digit to append to the identifier if present
 	 * @return a string in the general form: {type}# {identifier}-{checkDigit}
 	 */
@@ -195,6 +194,7 @@ public class TextUtils {
 	 * Convert a quantity to text in the general form {value} {unit}
 	 * 
 	 * @param value	The value
+	 * @param code	The code (presently not used)
 	 * @param unit The units
 	 * @return	text in the general form {value} {unit}
 	 */
@@ -206,6 +206,7 @@ public class TextUtils {
 	 * Convert a quantity to text in the general form {value} {unit}
 	 * 
 	 * @param value	The value
+	 * @param code The code (presently not used)
 	 * @param unit The units
 	 * @return	text in the general form {value} {unit}
 	 */
@@ -330,7 +331,7 @@ public class TextUtils {
 	 * multiple lines of text representing the content of the type.
 	 * 
 	 * @param fhirType The type to convert
-	 * @return
+	 * @return A string representation of the FHIR type.
 	 */
 	public static String toString(Type fhirType) {
 		if (fhirType == null || fhirType.isEmpty()) {
@@ -364,7 +365,7 @@ public class TextUtils {
 	 * Convert an Address to text. 
 	 * @param addr	The address to convert
 	 * @return	A text representation of the address
-	 * @see addressToText
+	 * @see #addressToText(String,String,String,String,String,Object...)
 	 */
 	public static String toText(Address addr) {
 		if (addr == null || addr.isEmpty()) {
@@ -377,7 +378,7 @@ public class TextUtils {
 	 * Convert a CodeableConcept to text. 
 	 * @param codeableConcept The concept to convert
 	 * @return	A text representation of the concept
-	 * @see codingToText
+	 * @see #codingToText
 	 */
 	public static String toText(CodeableConcept codeableConcept) {
 		if (codeableConcept == null || codeableConcept.isEmpty()) {
@@ -397,20 +398,25 @@ public class TextUtils {
 	 * Convert a Coding to text. 
 	 * @param coding The concept to convert.
 	 * @return	A text representation of the coding
-	 * @see codingToText
+	 * @see #codingToText
 	 */
 	public static String toText(Coding coding) {
 		return codingToText(coding.getCode(), coding.getDisplay(), coding.getSystem());
 	}
 
+	/**
+	 * Convert a contact point to a text string
+	 * @param cp	The contact point to convert
+	 * @return	The text string representing that contact point.
+	 */
 	public static String toText(ContactPoint cp) {
 		return cp.getValue();
 	}
 	/**
 	 * Convert a HumanName to text. 
-	 * @param humanName The name to convert
+	 * @param name The name to convert
 	 * @return	A text representation of the name
-	 * @see humanNameToText
+	 * @see #humanNameToText
 	 */
 	public static String toText(HumanName name) {
 		return humanNameToText(name.getPrefixAsSingleString(), name.getFamily(), name.getSuffixAsSingleString(), name.getGiven().toArray());
@@ -420,7 +426,7 @@ public class TextUtils {
 	 * Convert an Identifier to text. 
 	 * @param identifier The identifier to convert
 	 * @return	A text representation of the identifier
-	 * @see identifierToText
+	 * @see #identifierToText
 	 */
 	public static String toText(Identifier identifier) {
 		if (identifier == null || identifier.isEmpty()) {
@@ -451,7 +457,7 @@ public class TextUtils {
 	 * Convert a Quantity to text. 
 	 * @param quantity The quantity to convert
 	 * @return	A text representation of the quantity
-	 * @see quantityToText
+	 * @see #quantityToText(String,String,String)
 	 */
 	public static String toText(Quantity quantity) {
 		return TextUtils.quantityToText(quantity.getValue(), quantity.getCode(), quantity.getUnit());
@@ -486,6 +492,13 @@ public class TextUtils {
 		return b;
 	}
 
+	/** 
+	 * Convert a string generated from {@link #toText(CodeableConcept)} back to
+	 * a CodeableConcept
+	 *   
+	 * @param actualString	The string to convert
+	 * @return	A CodeableConcept created by parsing the string
+	 */
 	public static CodeableConcept toCodeableConcept(String actualString) {
 		String[] parts = actualString.split(", ");
 		CodeableConcept cc = new CodeableConcept();
