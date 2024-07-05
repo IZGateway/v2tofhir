@@ -9,6 +9,23 @@
 	<artifactId>v2tofhir</artifactId>
 	<version>1.0.0-v2tofhir-SNAPSHOT</version>
 	<name>HL7 Version 2 to FHIR Conversion</name>
+	<description>This is the v2tofhir Converter core code for the IZ Gateway Transformation Service</description>
+	<url>http://github.com/IZGateway/v2tofhir</url>
+	<inceptionYear>2024</inceptionYear>
+	<licenses>
+		<license>
+			<name>MIT-LICENSE</name>
+			<url>https://opensource.org/license/MIT</url>
+			<distribution>repo</distribution>
+			<comments>A short and simple permissive license with conditions only requiring preservation of copyright and 
+				license notices. Licensed works, modifications, and larger works may be distributed under different 
+				terms and without source code.</comments>
+		</license>
+	</licenses>
+	<organization>
+		<name>Audacious Inquiry</name>
+		<url>https://pointclickcare.com/industry-solutions/federal-government/</url>
+	</organization>
 	<properties>
 		<buildno>${timestamp}</buildno>
 		<image.tag>${project.build.finalName}</image.tag>
@@ -268,6 +285,7 @@
 					<failOnError>false</failOnError>
 					<skip>${skipDependencyCheck}</skip>
 					<suppressionFile>${project.basedir}/dependency-suppression.xml</suppressionFile>
+					<outputDirectory>target/site</outputDirectory>
 				</configuration>
 				<reportSets>
 					<reportSet>
