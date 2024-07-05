@@ -186,6 +186,9 @@ jobs:
             -DskipDependencyCheck=${{env.SKIP_DEPENDENCY_CHECK}} \
             -Dimage.tag=$IMAGE_BRANCH_TAG 
 
+    - name: Copy depencency-check-report.html to site
+      run: cp ./target/dependency-check-report.html ./target/site
+
     - name: Publish Site
       uses: peaceiris/actions-gh-pages@v4
       with:
@@ -199,9 +202,6 @@ jobs:
       with:
         name: build-failure
         path: .
-
-    - name: Copy depencency-check-report.html to site
-      run: cp ./target/dependency-check-report.html ./target/site
 
     - name: Upload dependency check log
       uses: actions/upload-artifact@v4
