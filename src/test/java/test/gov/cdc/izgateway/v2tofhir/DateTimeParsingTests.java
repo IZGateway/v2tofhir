@@ -26,7 +26,7 @@ import test.gov.cdc.izgateway.TestUtils;
 import test.gov.cdc.izgateway.NamedArrayList;
 
 @Slf4j
-class TestDateTimeParsing {
+class DateTimeParsingTests {
 	private static final NamedArrayList validDates = NamedArrayList.l("validDates", "01", "08", "21", "28");
 
 	private static final NamedArrayList shortMonths = NamedArrayList.l("shortMonths", "09", "11");
@@ -118,7 +118,7 @@ class TestDateTimeParsing {
 		return invalidTests;
 	}
 
-	private static Map<List<String>, Integer> choices = new TreeMap<>(TestDateTimeParsing::listComparator);
+	private static Map<List<String>, Integer> choices = new TreeMap<>(DateTimeParsingTests::listComparator);
 
 	static int listComparator(List<String> a, List<String> b) {
 		if (a == b) {
@@ -261,8 +261,8 @@ class TestDateTimeParsing {
 		if (!allTimes.isEmpty()) {
 			return allTimes;
 		}
-		BiFunction<Integer, Boolean, List<String>> f = isValid ? TestDateTimeParsing::getValidTimes
-				: TestDateTimeParsing::getInvalidTimes;
+		BiFunction<Integer, Boolean, List<String>> f = isValid ? DateTimeParsingTests::getValidTimes
+				: DateTimeParsingTests::getInvalidTimes;
 		for (int prec : precisions) {
 			allTimes.addAll(f.apply(prec, withPunct));
 		}
@@ -414,8 +414,8 @@ class TestDateTimeParsing {
 			dates = getInvalidDates(withPunct);
 			break;
 		case FUZZED_DATE_AND_VALID_TIME:
-			dates = fuzzStrings(getValidDates(withPunct), TestDateTimeParsing::deleteOne, TestDateTimeParsing::doubleUp,
-					TestDateTimeParsing::transpose);
+			dates = fuzzStrings(getValidDates(withPunct), DateTimeParsingTests::deleteOne, DateTimeParsingTests::doubleUp,
+					DateTimeParsingTests::transpose);
 			break;
 		default:
 			dates = null;
@@ -433,8 +433,8 @@ class TestDateTimeParsing {
 			times = getTimes(withPunct, false, -1, 0, 1, 2, 3, 4);
 			break;
 		case VALID_DATE_AND_FUZZED_TIME:
-			times = fuzzStrings(getTimes(withPunct, true, -1, 0, 1, 2, 3, 4), TestDateTimeParsing::deleteOne,
-					TestDateTimeParsing::doubleUp, TestDateTimeParsing::transpose);
+			times = fuzzStrings(getTimes(withPunct, true, -1, 0, 1, 2, 3, 4), DateTimeParsingTests::deleteOne,
+					DateTimeParsingTests::doubleUp, DateTimeParsingTests::transpose);
 			break;
 		default:
 			times = null;

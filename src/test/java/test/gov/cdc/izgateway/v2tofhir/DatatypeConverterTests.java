@@ -60,7 +60,7 @@ import test.gov.cdc.izgateway.TestUtils;
  * This test checks a V2 conversion for FHIR Parsing and validates the result against the FHIR US Core
  * It requires a running CDC / Microsoft generated FHIR Converter at localhost:8080 
  */
-class ConverterTest extends TestBase {
+class DatatypeConverterTests extends TestBase {
 	private static final String base = "http://localhost:8080/fhir-converter/convert-to-fhir";
 	private static final String messageTemplate = 
 			  "{"
@@ -234,17 +234,17 @@ class ConverterTest extends TestBase {
 	@ParameterizedTest
 	@MethodSource("getTestPrimitives")
 	void testPrimitiveConversionsIntegerType(Type t) throws HL7Exception {
-		TestUtils.compareStringValues(DatatypeConverter::toIntegerType, IntegerType::new, ConverterTest::normalizeNumbers, t, IntegerType.class);
+		TestUtils.compareStringValues(DatatypeConverter::toIntegerType, IntegerType::new, DatatypeConverterTests::normalizeNumbers, t, IntegerType.class);
 	}
 	@ParameterizedTest
 	@MethodSource("getTestPrimitives")
 	void testPrimitiveConversionsPositiveIntType(Type t) throws HL7Exception {
-		TestUtils.compareStringValues(DatatypeConverter::toPositiveIntType, PositiveIntType::new, ConverterTest::normalizeNumbers, t, PositiveIntType.class);
+		TestUtils.compareStringValues(DatatypeConverter::toPositiveIntType, PositiveIntType::new, DatatypeConverterTests::normalizeNumbers, t, PositiveIntType.class);
 	}
 	@ParameterizedTest
 	@MethodSource("getTestPrimitives")
 	void testPrimitiveConversionsUnsignedIntType(Type t) throws HL7Exception {
-		TestUtils.compareStringValues(DatatypeConverter::toUnsignedIntType, UnsignedIntType::new, ConverterTest::normalizeNumbers, t, UnsignedIntType.class); 
+		TestUtils.compareStringValues(DatatypeConverter::toUnsignedIntType, UnsignedIntType::new, DatatypeConverterTests::normalizeNumbers, t, UnsignedIntType.class); 
 	}
 	
 	private static String normalizeNumbers(String nm) {

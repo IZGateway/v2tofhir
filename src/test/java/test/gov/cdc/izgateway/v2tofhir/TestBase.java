@@ -31,8 +31,17 @@ import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 import lombok.extern.slf4j.Slf4j;
 import test.gov.cdc.izgateway.TestUtils;
 
+/**
+ * Base class for many tests, providing support methods to get test data.
+ * 
+ * @author Audacious Inquiry
+ *
+ */
 @Slf4j
 public class TestBase {
+	static {
+		log.debug("{} loaded", TestBase.class.getName());
+	}
 	static final Parser v2Parser = new PipeParser();
 
 	static void explodeComposite(Composite comp, Set<Type> set) {
@@ -155,8 +164,19 @@ public class TestBase {
 		return testFields;
 	}
 	
+	/**
+	 *	This class is use to enable better reporting in JUnit tests
+	 *	giving each segment being tested a name and string representation
+	 *	better than the existing Segment.toString() implementation. 
+	 * 
+	 * @author Audacious Inquiry
+	 */
 	public static class NamedSegment {
 		private final Segment segment;
+		/**
+		 * Construct a NamedSegment from an existing segment
+		 * @param segment The segment to use
+		 */
 		public NamedSegment(Segment segment) {
 			this.segment = segment;
 		}
@@ -173,6 +193,10 @@ public class TestBase {
 			}
 			return String.format("%s[%s]", segment.getName(), encoded);
 		}
+		/**
+		 * Get the segment
+		 * @return the segment
+		 */
 		public Segment segment() {
 			return segment;
 		}

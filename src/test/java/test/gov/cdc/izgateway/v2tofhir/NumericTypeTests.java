@@ -24,7 +24,7 @@ import ca.uhn.hl7v2.model.DataTypeException;
 import ca.uhn.hl7v2.model.Type;
 import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
 
-class TestNumericTypes {
+class NumericTypeTests {
 	private <P, T extends PrimitiveType<P>> void testNumbers(String inputString, BigDecimal low, BigDecimal high, Class<T> clazz, Function<Type, T> creator) throws DataTypeException {
 		T expected = null;
 		String expectedString = inputString.trim().replace("+", "").split("\\s+")[0];

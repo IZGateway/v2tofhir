@@ -27,7 +27,7 @@ import ca.uhn.hl7v2.model.Type;
 import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
 import test.gov.cdc.izgateway.TestUtils;
 
-class TestStringTypes {
+class StringTypeTests {
 	
 	protected <P, T extends PrimitiveType<P>> void testStrings(String inputString, UnaryOperator<String> normalize, Predicate<String> rangeTest, Class<T> clazz, Function<Type, T> creator) throws DataTypeException {
 		T expected = null;
