@@ -200,6 +200,9 @@ jobs:
         name: build-failure
         path: .
 
+    - name: Copy depencency-check-report.html to site
+      run: cp ./target/dependency-check-report.html ./target/site
+
     - name: Upload dependency check log
       uses: actions/upload-artifact@v4
       if: ${{ ! env.SKIP_DEPENDENCY_CHECK }}

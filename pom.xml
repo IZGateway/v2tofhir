@@ -242,7 +242,6 @@
 						<failOnError>false</failOnError>
 						<skip>${skipDependencyCheck}</skip>
 						<suppressionFile>${project.basedir}/dependency-suppression.xml</suppressionFile>
-						<outputDirectory>target/site</outputDirectory>
 					</configuration>
 					<executions>
 						<execution>
@@ -272,7 +271,6 @@
 							<report>index</report>
 							<report>dependencies</report>
 							<report>dependency-info</report>
-							<report>dependency-check</report>
 							<report>dependency-management</report>
 							<report>distribution-management</report>
 							<report>licenses</report>
