@@ -27,6 +27,11 @@
 			<url>https://maven.pkg.github.com/IZGateway/v2tofhir</url>
 		</repository>
 	</distributionManagement>
+	<scm>
+		<connection>scm:git:https://github.com/IZGateway/v2tofhir</connection>
+		<developerConnection>scm:git:https://github.com/IZGateway/v2tofhir</developerConnection>
+		<url>https://github.com/IZGateway/v2tofhir</url>
+	</scm>
 	<dependencies>
 		<dependency>
 			<groupId>ca.uhn.hapi</groupId>
@@ -208,8 +213,7 @@
 					<configuration>
 						<!--nvdApiKey>${env.NVDAPIKEY}</nvdApiKey-->
 						<formats>
-							<format>html</format>
-							<format>json</format>
+							<format>HTML</format>
 						</formats>
 						<!-- Disable .NET Analyzer -->
 						<assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
@@ -249,10 +253,26 @@
 				<groupId>org.owasp</groupId>
 				<artifactId>dependency-check-maven</artifactId>
 				<version>8.4.3</version>
+				<configuration>
+					<!--nvdApiKey>${env.NVDAPIKEY}</nvdApiKey-->
+					<formats>
+						<format>HTML</format>
+					</formats>
+					<!-- Disable .NET Analyzer -->
+					<assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
+					<nugetconfAnalyzerEnabled>false</nugetconfAnalyzerEnabled>
+					<nuspecAnalyzerEnabled>false</nuspecAnalyzerEnabled>
+					<!-- Fail builds where this is used to 7 High to Critical -->
+					<failBuildOnCVSS>7</failBuildOnCVSS>
+					<!-- Don't fail on error (for cases where CVE REPO is bad) -->
+					<failOnError>false</failOnError>
+					<skip>${skipDependencyCheck}</skip>
+					<suppressionFile>${project.basedir}/dependency-suppression.xml</suppressionFile>
+				</configuration>
 				<reportSets>
 					<reportSet>
 						<reports>
-							<report>aggregate</report>
+							<report>check</report>
 						</reports>
 					</reportSet>
 				</reportSets>
