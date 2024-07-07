@@ -5,9 +5,6 @@ import java.util.List;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Resource;
 
-import ca.uhn.hl7v2.HL7Exception;
-import ca.uhn.hl7v2.model.Segment;
-import ca.uhn.hl7v2.model.Type;
 import gov.cdc.izgw.v2tofhir.converter.Context;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
 import lombok.Data;
@@ -141,52 +138,6 @@ public abstract class AbstractStructureParser implements StructureParser {
 		return messageParser.findResource(clazz, id);
 	}
 
-	/**
-	 * Get the first occurrence of the specified field from an HL7 V2 segment.
-	 * @param segment	The segment to get the field for.
-	 * 
-	 * This is a convenience method to get a field that does not throw exceptions
-	 * the way that segment.getField() does.
-	 * 
-	 * @param field	The field number
-	 * @return	The specified field, or null of the field does not exist or is empty.
-	 */
-	public static Type getField(Segment segment, int field) {
-		if (segment == null) {
-			return null;
-		}
-		try {
-			Type[] types = segment.getField(field); 
-			if (types.length == 0) {
-				return null;
-			}
-			return types[0].isEmpty() ? null : types[0];
-		} catch (HL7Exception e) {
-			return null;
-		}
-	}
-
-	/**
-	 * Get all occurrences of the specified field from an HL7 V2 segment.
-	 * @param segment	The segment to get the field for.
-	 * 
-	 * This is a convenience method to get a field that does not throw exceptions
-	 * the way that segment.getField() does.
-	 * 
-	 * @param field	The field number
-	 * @return	An array containing all occurrences of the specified field. 
-	 */
-	public static Type[] getFields(Segment segment, int field) {
-		if (segment == null) {
-			return new Type[0];
-		}
-		try {
-			return segment.getField(field);
-		} catch (HL7Exception e) {
-			return new Type[0];
-		}
-	}
-	
 	/**
 	 * Get a property value from the context.
 	 * 

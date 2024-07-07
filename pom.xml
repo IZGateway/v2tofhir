@@ -85,6 +85,24 @@
 			<artifactId>hapi-fhir-structures-r4</artifactId>
 			<version>7.2.1</version>
 		</dependency>
+		<!-- Needed for FHIRPath -->
+		<dependency>
+			<groupId>ca.uhn.hapi.fhir</groupId>
+			<artifactId>hapi-fhir-validation</artifactId>
+			<version>7.2.1</version>
+		</dependency>
+		<!-- Needed for FHIRPath -->
+		<dependency>
+			<groupId>ca.uhn.hapi.fhir</groupId>
+			<artifactId>hapi-fhir-validation-resources-r4</artifactId>
+			<version>7.2.1</version>
+		</dependency>
+		<!-- Needed by FHIRPath -->
+		<dependency>
+			<groupId>ca.uhn.hapi.fhir</groupId>
+			<artifactId>hapi-fhir-caching-caffeine</artifactId>
+			<version>7.2.1</version>
+		</dependency>
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
@@ -104,6 +122,10 @@
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-yaml</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>com.opencsv</groupId>

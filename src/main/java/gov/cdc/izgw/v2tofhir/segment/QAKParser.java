@@ -2,6 +2,7 @@ package gov.cdc.izgw.v2tofhir.segment;
 
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.OperationOutcome;
 import org.hl7.fhir.r4.model.OperationOutcome.IssueSeverity;
 import org.hl7.fhir.r4.model.OperationOutcome.IssueType;
 import org.hl7.fhir.r4.model.OperationOutcome.OperationOutcomeIssueComponent;
@@ -21,6 +22,11 @@ import lombok.extern.slf4j.Slf4j;
  * 
  * @author Audacious Inquiry
  */
+@ComesFrom(path="OperationOutcome[1].meta.tag.code", source="QAK-1")
+@ComesFrom(path="OperationOutcome[1].meta.tag.system", fixed="QueryTag")
+@ComesFrom(path="OperationOutcome[1].issue.code", source="QAK-2")
+@ComesFrom(path="OperationOutcome[1].issue.severity", source="QAK-2")
+@ComesFrom(path="OperationOutcome[1].issue.details", source="QAK-2")
 @Slf4j
 public class QAKParser extends AbstractSegmentParser {
 	static {
@@ -39,7 +45,13 @@ public class QAKParser extends AbstractSegmentParser {
 	public void parse(Segment qak) throws HL7Exception {
 		Coding responseStatus = DatatypeConverter.toCoding(ParserUtils.getField(qak, 2), "0208");
 		if (responseStatus != null) {
-			OperationOutcomeIssueComponent issue = getProperty(OperationOutcomeIssueComponent.class);
+			// QAK Creates its own OperationOutcome resource.
+			OperationOutcome oo = createResource(OperationOutcome.class);
+			
+			String queryTag = ParserUtils.toString(getField(qak, 1));
+			oo.getMeta().addTag("QueryTag", queryTag, null);
+			
+			OperationOutcomeIssueComponent issue = oo.addIssue();
 			if (issue != null) {
 				if (responseStatus.hasCode()) {
 					switch (responseStatus.getCode().toUpperCase()) {

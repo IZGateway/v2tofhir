@@ -57,7 +57,9 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class MessageParser {
-	
+	/** The originalText extension */
+	public static final String ORIGINAL_TEXT = "http://hl7.org/fhir/StructureDefinition/originalText";
+
 	private static final Context defaultContext = new Context(null);
 	
 	/**
@@ -86,7 +88,6 @@ public class MessageParser {
 	 */
 	private final Context context;
 	
-	private final Map<String, ? extends Resource> bag = new LinkedHashMap<>();
 	private final Set<Resource> updated = new LinkedHashSet<>();
 	private final Map<String, Class<StructureParser>> parsers = new LinkedHashMap<>();
 	private final Map<Structure, String> processed = new LinkedHashMap<>();
@@ -99,6 +100,21 @@ public class MessageParser {
 		context = new Context(this);
 		// Copy default values to context on creation.
 		context.setStoringProvenance(defaultContext.isStoringProvenance());
+	}
+	
+	/**
+	 * Get the bundle being constructed.
+	 * @return The bundle being constructed, or a new bundle if none exists
+	 */
+	public Bundle getBundle() {
+		Bundle b = getContext().getBundle();
+		if (b == null) {
+			b = new Bundle();
+			getContext().setBundle(b);
+			b.setId(new IdType(b.fhirType(), ULID.random()));
+			b.setType(BundleType.MESSAGE);
+		}
+		return b;
 	}
 	
 	/**
@@ -116,6 +132,7 @@ public class MessageParser {
 	 */
 	public Bundle convert(Message msg) {
 		try {
+			getContext().clear();
 			initContext((Segment) msg.get("MSH"));
 		} catch (HL7Exception e) {
 			warn("Cannot retrieve MSH segment from message");
@@ -130,17 +147,36 @@ public class MessageParser {
 			warn("Cannnot get encoded message");
 			data = new byte[0];
 		}
+		String encoded = null;
+		try {
+			encoded = msg.encode();
+		} catch (HL7Exception e) {
+			warnException("Could not encode the message: {}", e.getMessage(), e);
+		}
 		messageData.setData(data);
 		messageData.setId(new IdType(messageData.fhirType(), ULID.random()));
 		DocumentReference dr = createResource(DocumentReference.class);
 		dr.setStatus(DocumentReferenceStatus.CURRENT);
 		Attachment att = dr.addContent().getAttachment().setContentType("application/x.hl7v2+er7; charset=utf-8");
+				
 		att.setUrl(messageData.getIdElement().toString());
 		att.setData(data);
 		getContext().setHl7DataId(messageData.getIdElement().toString());
+
+		// Add the encoded message as the original text for the content in both the binary
+		// and document reference resources.
+		if (encoded != null) {
+			StringType e = new StringType(encoded);
+			messageData.getContentElement().addExtension(ORIGINAL_TEXT, e);
+			dr.getContentFirstRep().addExtension(ORIGINAL_TEXT, e);
+		}
+
 		return createBundle(msg);
 	}
+	
 	private void initContext(Segment msh) {
+		getContext().clear();
+		getBundle();
 		if (msh != null) {
 			try {
 				getContext().setEventCode(ParserUtils.toString(msh.getField(9, 0)));
@@ -162,7 +198,7 @@ public class MessageParser {
 	 * @param msg	The given message
 	 * @return	The generated Bundle resource
 	 */
-	public Bundle createBundle(Message msg) {
+	protected Bundle createBundle(Message msg) {
 		Set<Structure> segments = new LinkedHashSet<>();
 		ParserUtils.iterateStructures(msg, segments);
 		return createBundle(segments);
@@ -174,20 +210,18 @@ public class MessageParser {
 	 * @return	The generated Bundle
 	 */
 	public Bundle createBundle(Iterable<Structure> structures) {
-		Bundle b = new Bundle();
-		getContext().setBundle(b);
-		b.setId(new IdType(b.fhirType(), ULID.random()));
-		b.setType(BundleType.MESSAGE);
+		Bundle b = getBundle();
+		boolean didWork = false;
 		for (Structure structure: structures) {
 			updated.clear();
 			processor = getParser(structure.getName());
-			if (processor == null) {
+			if (processor == null && !processed.containsKey(structure)) {
 				if (structure instanceof Segment) {
 					// Unprocessed segments indicate potential data loss, report them.
 					warn("Cannot parse {} segment", structure.getName(), structure);
 				}
-			} else if (!processed.containsKey(structure)) {
-				// Don't process any structures that haven't been processed yet
+			} else if (!processed.containsKey(structure)) { // Process any structures that haven't been processed yet
+				didWork = true;	// We did some work. It may have failed, but we did something.
 				try {
 					processor.parse(structure);
 				} catch (Exception e) {
@@ -199,10 +233,34 @@ public class MessageParser {
 				// Indicate processed structures that were skipped by other processors
 				log.info("{} processed by {}", structure.getName(), processed.get(structure));
 			}
-			if (getContext().isStoringProvenance() &&
-				structure instanceof Segment segment) {
-				// Provenence is updated by segments 
+			if (didWork && getContext().isStoringProvenance() && structure instanceof Segment segment) {
+				// Provenance is updated by segments when we did work and are storing provenance
 				updateProvenance(segment);
+			}
+		}
+		return sortProvenance(b);
+	}
+	
+	/**
+	 * This method sorts Provenance resources to the end.
+	 * @param b	The bundle to sort
+	 * @return	The sorted bundle
+	 */
+	public Bundle sortProvenance(Bundle b) {
+		if (getContext().isStoringProvenance()) {
+			List<BundleEntryComponent> list = b.getEntry();
+			int len = list.size();
+			for (int i = 0; i < len; ++i) {
+				BundleEntryComponent c = list.get(i);
+				if (c == null || !c.hasResource()) {
+					continue;
+				}
+				if ("Provenance".equals(c.getResource().fhirType())) {
+					list.add(c);	// Add this provenance to the end
+					list.remove(i);	// And remove it from the current position
+					--i;			// And backup a step to reprocess the new resource in this position.
+					--len;			// We don't need to look at entries we just shuffled around to the end
+				}
 			}
 		}
 		return b;
@@ -229,7 +287,7 @@ public class MessageParser {
 			}
 			Reference what = p.getEntityFirstRep().getWhat();
 			try {
-				what.addExtension().setUrl("http://hl7.org/fhir/StructureDefinition/originalText").setValue(new StringType(context.getHl7DataId()+"#"+PathUtils.getTerserPath(segment)));
+				what.addExtension().setUrl(ORIGINAL_TEXT).setValue(new StringType(context.getHl7DataId()+"#"+PathUtils.getTerserPath(segment)));
 			} catch (HL7Exception e) {
 				warn("Unexpected {} updating provenance for {} segment: {}", e.getClass().getSimpleName(), segment.getName(), e.getMessage());
 			}
@@ -242,7 +300,12 @@ public class MessageParser {
 	 * @return	The resource that was generated for the bundle with that identifier, or null if no such resource exists.
 	 */
 	public Resource getResource(String id) {
-		return bag.get(id);
+		for (BundleEntryComponent entry: getContext().getBundle().getEntry()) {
+			if (id.equals(entry.getResource().getIdPart())) {
+				return entry.getResource();
+			}
+		}
+		return null;
 	}
 	/**
 	 * Get the generated resource of the specific class and identifier.
@@ -266,7 +329,12 @@ public class MessageParser {
 	 */
 	public <R extends Resource> List<R> getResources(Class<R> clazz) {
 		List<R> resources = new ArrayList<>();
-		bag.values().stream().filter(clazz::isInstance).forEach(r -> resources.add(clazz.cast(resources)));
+		for (BundleEntryComponent entry : getBundle().getEntry()) {
+			Resource r = entry.getResource();
+			if (clazz.isInstance(r)) {
+				resources.add(clazz.cast(r));
+			}
+		}
 		return resources;
 	}
 	

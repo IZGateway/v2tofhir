@@ -18,6 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.BaseDateTimeType;
+import org.hl7.fhir.r4.model.BooleanType;
 import org.hl7.fhir.r4.model.CodeType;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
@@ -193,6 +194,8 @@ public class DatatypeConverter {
 		switch (clazz.getSimpleName()) {
 		case "Address":
 			return clazz.cast(toAddress(t));
+		case "BooleanType":
+			return clazz.cast(toBooleanType(t));
 		case "CodeableConcept":
 			return clazz.cast(toCodeableConcept(t));
 		case "CodeType":
@@ -312,15 +315,11 @@ public class DatatypeConverter {
 			}
 			addIfNotEmpty(cc::addCoding, new Coding(ident.getSystem(), ident.getValue(), null));
 			break;
-		case "ID":
+		case "ID", "IS", "ST":
 			st = (Primitive) codedElement;
-			addIfNotEmpty(cc::addCoding, new Coding("http://terminology.hl7.org/CodeSystem/v2-0301", st.getValue(), null));
+			addIfNotEmpty(cc::addCoding, Mapping.map(new Coding(table, st.getValue(), null)));
 			break;
 
-		case "IS", "ST":
-			st = (Primitive) codedElement;
-			addIfNotEmpty(cc::addCoding, Mapping.mapSystem(new Coding(table, st.getValue(), null)));
-			break;
 		default:
 			break;
 		}
@@ -389,7 +388,7 @@ public class DatatypeConverter {
 		}
 		Type type = adjustIfVaries(types, idTypeLoc);
 		if (type instanceof Primitive pt && !ParserUtils.isEmpty(pt)) {
-			Coding coding = new Coding(Systems.IDENTIFIER_TYPE, pt.getValue(), null);
+			Coding coding = new Coding(Systems.ID_TYPE, pt.getValue(), null);
 			Mapping.setDisplay(coding);
 			CodeableConcept cc = new CodeableConcept();
 			cc.addCoding(coding);
@@ -425,6 +424,29 @@ public class DatatypeConverter {
 			return ParserUtils.toString(ident);
 		}
 		return null;
+	}
+	
+	/**
+	 * This class converts ID elements using Table 0136 (Yes/no Indicator) to a Boolean value
+	 * @param type	The ID type (it also works with other types)
+	 * @return	A BooleanType set to TRUE if value = "Y", or false if set to "N", or null if no values matched.
+	 */
+	public static BooleanType toBooleanType(Type type) {
+		type = adjustIfVaries(type);
+		String value = ParserUtils.toString(type);
+		if (StringUtils.isBlank(value)) {
+			return null;
+		}
+		value = value.toUpperCase();
+		switch (value.charAt(0)) {
+		case 'Y':
+			return new BooleanType(true);
+		case 'N':
+			return new BooleanType(false);
+		default:
+			warn("Unexpected value {} for Boolean", value);
+			return null;
+		}
 	}
 
 	/**
@@ -473,7 +495,7 @@ public class DatatypeConverter {
 		}
 		if (table != null && !coding.hasSystem()) {
 			coding.setSystem(table);
-			Mapping.mapSystem(coding);
+			Mapping.map(coding);
 		}
 		return coding;
 	}
@@ -528,7 +550,7 @@ public class DatatypeConverter {
 			if (field < types.length) {
 				String code = ParserUtils.toString(types[field]);
 				if (StringUtils.isNotBlank(code)) {
-					return Mapping.mapSystem(new Coding(table, code, Mapping.getDisplay(code, "HL7" + table)));
+					return Mapping.map(new Coding(table, code, null));
 				}
 			}
 		}
@@ -543,6 +565,19 @@ public class DatatypeConverter {
     public static ContactPoint toContactPoint(Type type) {
 		return contactPointParser.convert(type);
 	}
+    
+	/**
+     * Convert a HAPI V2 datatype to a list of FHIR ContactPoint objects
+     * @param type The HAPI V2 type to convert
+     * @return A list of ContactPoints converted from the V2 datatype
+     */
+    public static List<ContactPoint> toContactPoints(Type type) {
+    	type = adjustIfVaries(type);
+    	if (type instanceof Composite comp) {
+    		return contactPointParser.convert(comp);
+    	}
+    	return Collections.singletonList(contactPointParser.convert(type));
+    }
 
 	/**
      * Convert a HAPI V2 datatype to a FHIR DateTimeType
@@ -554,7 +589,7 @@ public class DatatypeConverter {
 		if (instant == null || instant.isEmpty()) {
 			return null;
 		}
-		return castInto(new DateTimeType(), instant);
+		return castInto(instant, new DateTimeType());
 	}
 
     
@@ -568,7 +603,7 @@ public class DatatypeConverter {
      * @param from	The time object to convert into
      * @return	The converted time object
      */
-	public static <T extends BaseDateTimeType, U extends BaseDateTimeType> U castInto(U to, T from) {
+	public static <T extends BaseDateTimeType, U extends BaseDateTimeType> U castInto(T from, U to) {
 		to.setValue(from.getValue());
 		to.setPrecision(from.getPrecision());
 		return to;
@@ -617,7 +652,7 @@ public class DatatypeConverter {
 		if (instant == null || instant.isEmpty()) {
 			return null;
 		}
-		return castInto(new DateType(), instant);
+		return castInto(instant, new DateType());
 	}
 
 	/**
@@ -717,10 +752,10 @@ public class DatatypeConverter {
 				if (type.contains(":")) {
 					c.setSystem(Systems.IETF); // Type is a URI, so code gets to be IETF
 				} else if (Systems.ID_TYPES.contains(type)) {
-					c.setSystem(Systems.IDTYPE);
+					c.setSystem(Systems.ID_TYPE);
 					Mapping.setDisplay(c);
 				} else if (Systems.IDENTIFIER_TYPES.contains(type)) {
-					c.setSystem(Systems.IDENTIFIER_TYPE);
+					c.setSystem(Systems.UNIVERSAL_ID_TYPE);
 					Mapping.setDisplay(c);
 				}
 				id.setType(new CodeableConcept().addCoding(c));
@@ -1283,7 +1318,7 @@ public class DatatypeConverter {
 			setValue(coding::setVersion, types, versionIndex);
 			setValue(coding::setSystem, types, codeSystemOID);
 
-			Mapping.mapSystem(coding);
+			Mapping.map(coding);
 			if (!coding.hasDisplay() || coding.getDisplay().equals(coding.getCode())) {
 				// See if we can do better for display names
 				Mapping.setDisplay(coding);

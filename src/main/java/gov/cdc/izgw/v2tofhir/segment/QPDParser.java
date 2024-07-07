@@ -52,6 +52,11 @@ import lombok.extern.slf4j.Slf4j;
  * @author Audacious Inquiry
  *
  */
+@ComesFrom(path="Parameters.meta.tag", source="QPD-1", comment="Query Name")
+@ComesFrom(path="Parameters.meta.tag[1].code", source="QPD-2", comment="Query Tag")
+@ComesFrom(path="Parameters.meta.tag[1].system", fixed="QueryTag")
+@ComesFrom(path="Parameters.parameter.name", source= { "QPD-3", "QPD-*" }, comment="Varies by query")
+@ComesFrom(path="Parameters.parameter.value", source= { "QPD-3", "QPD-*" }, comment="Varies by query")
 @Slf4j
 public class QPDParser extends AbstractSegmentParser {
 	static {
@@ -94,7 +99,7 @@ public class QPDParser extends AbstractSegmentParser {
 			"ClientLastUpdateDate", "TS", null, InstantType.class.getSimpleName(),
 			"ClientLastUpdateFacility", "HD", null, Identifier.class.getSimpleName()
 		},
-		{	// IHZ PDQ Query
+		{	// IHE PDQ Query
 			"Q22", "FindCandidates", "HL7", "Patient",
 			"PID.3", "CX", "identifier", Identifier.class.getSimpleName(),
 			"PID.5", "XPN", "name", HumanName.class.getSimpleName(),
@@ -105,7 +110,7 @@ public class QPDParser extends AbstractSegmentParser {
 			"PID.13", "XTN", "phone", ContactPoint.class.getSimpleName(),
 			"PID.18", "ID", null, Identifier.class.getSimpleName()
 		},
-		{	// IHZ PIX Query
+		{	// IHE PIX Query
 			"IHE PIX Query", "", "", Identifier.class.getSimpleName(),
 			"Person Identifier", "CX", "identifier", Identifier.class.getSimpleName(), 
 			"What Domains Returned", "CX", "name", HumanName.class.getSimpleName()
@@ -114,16 +119,20 @@ public class QPDParser extends AbstractSegmentParser {
 	
 	@Override
 	public void parse(Segment seg) throws HL7Exception {
+		Parameters params = createResource(Parameters.class);
+		
 		Type query = getField(seg, 1);
 		CodeableConcept queryName = DatatypeConverter.toCodeableConcept(query);
 		if (queryName == null) {
 			log.warn("Cannot parse unnamed query for: " + seg.encode());
 			return;
 		}
+		params.getMeta().addTag(queryName.getCodingFirstRep());
+		
 		String queryTag = ParserUtils.toString(getField(seg, 2));
 		String[] parameters = getQueryParameters(queryName);
-		Parameters params = createResource(Parameters.class);
-		params.getMeta().addTag("QueryTag", queryTag, null).addTag(queryName.getCodingFirstRep());
+		params.getMeta().addTag("QueryTag", queryTag, null);
+
 		if (parameters.length == 0) {
 			log.warn("Cannot parse {} query", query);
 			return;
@@ -148,7 +157,7 @@ public class QPDParser extends AbstractSegmentParser {
 			Boolean isResponse = null;
 			if (mh != null) {
 				if (mh.getMeta().hasTag()) {
-					if (mh.getMeta().getTag().stream().anyMatch(c -> c.hasCode() && "QPB".equals(c.getCode()))) {
+					if (mh.getMeta().getTag().stream().anyMatch(c -> c.hasCode() && "QBP".equals(c.getCode()))) {
 						isResponse = true;
 					} else if (mh.getMeta().getTag().stream().anyMatch(c -> c.hasCode() && "RSP".equals(c.getCode()))) {
 						isResponse = false;
@@ -162,7 +171,9 @@ public class QPDParser extends AbstractSegmentParser {
 					BundleEntryRequestComponent req = entry.getRequest();
 					req.setMethod(HTTPVerb.GET);
 					req.setUrl(request.toString());
-				} 
+				} else {
+					// It was something other than a QBP or RSP
+				}
 			} else {
 				params.addParameter("_search", request.toString());
 			}

@@ -1,15 +1,8 @@
 package test.gov.cdc.izgateway.v2tofhir;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.ServiceConfigurationError;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Predicate;
@@ -43,19 +36,8 @@ public class TestBase {
 		log.debug("{} loaded", TestBase.class.getName());
 	}
 	static final Parser v2Parser = new PipeParser();
-
-	static void explodeComposite(Composite comp, Set<Type> set) {
-		for (Type part : comp.getComponents()) {
-			if (part instanceof Varies v) {
-				part = v.getData();
-			}
-			if (part instanceof Primitive) {
-				set.add(part);
-			} else if (part instanceof Composite comp2) {
-				explodeComposite(comp2, set);
-			}
-		}
-	}
+	protected static final List<TestData> TEST_MESSAGES = loadTestMessages();
+	protected static final List<TestData> TEST_SEGMENTS = loadTestSegments();
 
 	// These are defined constants which indicate which V2 types should be used for
 	// testing.
@@ -203,11 +185,18 @@ public class TestBase {
 	}
 
 	static List<NamedSegment> getTestSegments() {
+		// TODO: Load segments as well.  We'll need to figure out how to get them
+		// parsed, because an MSH is the bare minimum necessary
 		Set<Segment> testSegments = new TreeSet<Segment>(TestUtils::compare);
-		for (Message msg : testV2Messages().toList()) {
+		for (Message msg : getTestMessages().toList()) {
 			ParserUtils.iterateSegments(msg, testSegments);
 		}
 		return testSegments.stream().map(s -> new NamedSegment(s)).toList();
+	}
+	
+	static List<NamedSegment> getTestSegments(String ...names) {
+		List<String> l = Arrays.asList(names);
+		return getTestSegments().stream().filter(n -> l.contains(n.segment().getName())).toList();
 	}
 
 	static Message parse(String message) {
@@ -220,80 +209,37 @@ public class TestBase {
 		}
 	}
 
-	static List<String> testMessages() {
-		return Arrays.asList(TEST_MESSAGES);
+	static Stream<String> testMessages() {
+		return TEST_MESSAGES.stream().map(td -> td.getTestData());
 	}
 
-	static Stream<Message> testV2Messages() {
-		return testMessages().stream().map(TestBase::parse);
+	static Stream<Message> getTestMessages() {
+		return testMessages().map(TestBase::parse);
 	}
 	
-	private static final String[] TEST_MESSAGES = loadTestMessages();
-	static String[] loadTestMessages() {
-		return loadTestData("messages.txt", true);
+	private static List<TestData> loadTestMessages() {
+		return TestData.load("messages.txt", true);
 	}
 	
-	static String[] loadTestSegments() {
-		return loadTestData("segments.txt", false);
+	private static List<TestData> loadTestSegments() {
+		// Load test messages as segments.
+		List<TestData> data = TestData.load("messages.txt", false);
+		// Add test Segments to the list
+		data.addAll(TestData.load("segments.txt", false));
+		return data;
 	}
 	
-	static String[] loadTestData(String name, boolean isMessageFile) {
-		List<String> data = new ArrayList<>();
-		try (
-			BufferedReader br = new BufferedReader(new InputStreamReader(getResource(name), StandardCharsets.UTF_8))
-		) {
-			StringBuilder b = new StringBuilder();
-			String line = null;
-			int lineno = 0;
-			while ((line = br.readLine()) != null) {
-				lineno ++;
-				line = line.trim();
-				if (line.startsWith("#")) {
-					continue;	// Ignore comment lines
-				}
-				if (isMessageFile) {
-					if (StringUtils.isBlank(line)) {
-						if (!b.isEmpty()) {
-							String message = b.toString();
-							if (message.startsWith("MSH|")) {
-								data.add(message);	// Add the message.
-							} else {
-								log.error("{}({}) is not a valid message: {}", name, lineno, StringUtils.left(message, 40));
-							}
-						}
-						b.setLength(0);
-					} else {
-						if (line.matches("^[A-Z123]{3}\\|.*$")) {
-							b.append(line).append("\r");	// Append the segment
-						} else {
-							log.error("{}({}) is not a valid segment: {}", name, lineno, line);
-						}
-					}
-				} else {
-					if (line.matches("^[A-Z123]{3}\\|.*$")) {
-						data.add(line);	// Append the segment
-					} else {
-						log.error("{}({}) is not a valid segment: {}", name, lineno, line);
-					}
-				}
+	static void explodeComposite(Composite comp, Set<Type> set) {
+		for (Type part : comp.getComponents()) {
+			if (part instanceof Varies v) {
+				part = v.getData();
 			}
-			if (isMessageFile && !b.isEmpty()) {
-				data.add(b.toString());
+			if (part instanceof Primitive) {
+				set.add(part);
+			} else if (part instanceof Composite comp2) {
+				explodeComposite(comp2, set);
 			}
-			return data.toArray(new String[0]);
-		} catch (Exception ioex) {
-			log.error("Error loading test file " + name, ioex);
-			ioex.printStackTrace();
-			throw new ServiceConfigurationError("Cannot load test file " + name);
 		}
-	}
-
-	private static InputStream getResource(String name) throws IOException {
-		InputStream s = TestBase.class.getClassLoader().getResourceAsStream(name);
-		if (s == null) {
-			throw new IOException("Cannot find " + name);
-		}
-		return s;
 	}
 
 }

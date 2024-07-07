@@ -26,6 +26,22 @@ import lombok.extern.slf4j.Slf4j;
  * 
  * @author Audacious Inquiry
  */
+@ComesFrom(path="MessageHeader.source.sender", source = { "MSH-22", "MSH-4", "MSH-3" })
+@ComesFrom(path="MessageHeader.destination.receiver", source = { "MSH-23", "MSH-6", "MSH-5" })
+@ComesFrom(path="MessageHeader.source.sender.name", source = "MSH-4")
+@ComesFrom(path="MessageHeader.source.sender.endpoint", source = "MSH-3")
+@ComesFrom(path="MessageHeader.destination.reciever.name", source = "MSH-6")
+@ComesFrom(path="MessageHeader.destination.reciever.endpoint", source = "MSH-5")
+@ComesFrom(path="Bundle.timestamp", source = "MSH-7")
+@ComesFrom(path="MessageHeader.meta.security", source = { "MSH-8", "MSH-26", "MSH-28" })
+@ComesFrom(path="MessageHeader.meta.tag", source = "MSH-9-1")
+@ComesFrom(path="MessageHeader.event", source="MSH-9-2")
+@ComesFrom(path="MessageHeader.definition", source="MSH-9-3")
+@ComesFrom(path="Bundle.identifier", source="MSH-10")
+@ComesFrom(path="Bundle.meta.implicitRules", source="MSH-21")
+@ComesFrom(path="MessageHeader.meta.security", source="MSH-26")
+@ComesFrom(path="MessageHeader.meta.security", source="MSH-27")
+@ComesFrom(path="MessageHeader.meta.security", source="MSH-28")
 @Slf4j
 public class MSHParser extends AbstractSegmentParser {
 	static {
@@ -44,32 +60,21 @@ public class MSHParser extends AbstractSegmentParser {
 	@Override
 	/**
 	 * Parse an MSH segment into MessageHeader and Organization resources.
-	 * 
-	 * MessageHeader.source.sender is the Organization created from MSH-22, MSH-4, and MSH-3
-	 * MessageHeader.destination.reciever is the Organization created from MSH-23, MSH-6, and MSG-5
-	 * sender.identifier will come from MSH-4
-	 * sender.endpoint will come from MSH-3
-	 * reciever.identifier will come from MSH-6
-	 * reciever.endpoint will come from MSH-5
-	 * 
-	 * Bundle.timestamp will be set to MSH-7
-	 * MessageHeader.meta.security will be set from MSH-8, and MSH-26 to MSH-28
-	 * MessageHeader.meta.tag will be set from MSH-9
-	 * MessageHeader.event will be set from MSH-9
-	 * MessageHeader.definition will be set from MSH-9
-	 * Bundle.identifier will be set to MSH-10
 	 */
 	public void parse(Segment msh) throws HL7Exception {
 		// Create a new MessageHeader for each ERR resource
 		MessageHeader mh = createResource(MessageHeader.class);
 		Provenance provenance = (Provenance) mh.getUserData(Provenance.class.getName());
 		provenance.getActivity().addCoding(new Coding(null, "v2-FHIR transformation", "HL7 V2 to FHIR transformation"));
+		
+		
 		Organization sourceOrg = getOrganizationFromMsh(msh, true);
 		if (sourceOrg != null) {
 			Reference ref = ParserUtils.toReference(sourceOrg);
 			mh.setResponsible(ref);
 			provenance.addAgent().addRole(AUTHOR_AGENT).setWho(ref);
 		}
+		
 		Organization destOrg = getOrganizationFromMsh(msh, false);
 		if (destOrg != null) {
 			mh.getDestinationFirstRep().setReceiver(ParserUtils.toReference(destOrg));
@@ -82,7 +87,9 @@ public class MSHParser extends AbstractSegmentParser {
 		MessageDestinationComponent destination = mh.getDestinationFirstRep();
 		destination.setName(getSystem(DatatypeConverter.toCoding(ParserUtils.getField(msh, 5))));	// Receiving Application
 		destination.setEndpoint(getSystem(DatatypeConverter.toCoding(ParserUtils.getField(msh, 6))));  // Receiving Facility
-		DateTimeType ts = DatatypeConverter.toDateTimeType(ParserUtils.getField(msh, 7));
+		Type tm = ParserUtils.getField(msh, 7);
+		
+		DateTimeType ts = DatatypeConverter.toDateTimeType(ParserUtils.getComponent(tm, 0));
 		if (ts != null) {
 			getBundle().setTimestamp(ts.getValue());
 		}
@@ -102,17 +109,39 @@ public class MSHParser extends AbstractSegmentParser {
 			// It's about as close as we get, and has the virtue of being a FHIR StructureDefinition
 			mh.setDefinition("http://v2plus.hl7.org/2021Jan/message-structure/" + messageStructure.getCode());
 		}
-		Identifier messageId = DatatypeConverter.toIdentifier(ParserUtils.getField(msh, 10));
-		getBundle().setIdentifier(messageId);
 		
-		// TODO: Deal with MSH-24 and MSH-25 when https://jira.hl7.org/browse/V2-25792 is resolved
-		for (int i = 26; i <= 28; i++) {
-			Coding coding = DatatypeConverter.toCoding(ParserUtils.getField(msh, i));
-			if (coding != null && !coding.isEmpty()) {
-				mh.getMeta().addSecurity(coding);
-			}
+		addField(msh, 10, Identifier.class, getBundle()::setIdentifier);
+		
+		addField(msh, 21, Identifier.class, this::addDefinition);
+		
+		// Security Classification Tag 
+		addField(msh, 26, CodeableConcept.class, this::addSecurity);
+		// Security Handling Instructions 
+		addField(msh, 27, CodeableConcept.class, this::addSecurity);
+		// Special Access Restriction Instructions 
+		addField(msh, 28, CodeableConcept.class, this::addSecurity);
+		
+	}
+	
+	private void addDefinition(Identifier ident) {
+		String rules = "";
+		if (ident.hasSystem()) {
+			rules = ident.getSystem();
+		}
+		if (ident.hasValue()) {
+			rules = rules + "#" + ident.getValue();
+		}
+		getContext().getBundle().getMeta().addProfile(rules);
+	}
+	
+	private void addSecurity(CodeableConcept cc) {
+		MessageHeader mh = getFirstResource(MessageHeader.class);
+		for (Coding coding: cc.getCoding()) {
+			mh.getMeta().addSecurity(coding);
 		}
 	}
+	
+
 	private Organization getOrganizationFromMsh(Segment msh, boolean isSender) {
 		Organization org = null;
 		Type organization = ParserUtils.getField(msh, isSender ? 22 : 23);

@@ -164,7 +164,7 @@ public class HumanNameParser implements DatatypeParser<HumanName> {
 				case "XCN" :
 					return HumanNameParser.parse(types, 1, 9);
 				case "XPN" :
-					return HumanNameParser.parse(types, 0, 9);
+					return HumanNameParser.parse(types, 0, 6);
 				default :
 					break;
 			}

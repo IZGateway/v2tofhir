@@ -379,7 +379,7 @@ public class Mapping {
 			return null;
 		}
 		
-		if (Systems.IDENTIFIER_TYPE.equals(table)) {
+		if (Systems.UNIVERSAL_ID_TYPE.equals(table)) {
 			return Systems.idTypeToDisplayMap.get(code);
 		}
 		
@@ -487,11 +487,12 @@ public class Mapping {
 	 * 
 	 * If the system is changed, the original value will be stored and can later be retrieved by calling
 	 * coding.getUserData(Mapping.ORIGINAL_SYSTEM)
-	 *  
+	 *
+	 * @see #map(Coding)
 	 * @param coding	The coding to adjust the system for
 	 * @return	The updated coding
 	 */
-	public static Coding mapSystem(Coding coding) {
+	private static Coding mapSystem(Coding coding) {
 		if (coding == null) {
 			return null;
 		}
@@ -505,6 +506,20 @@ public class Mapping {
 		}
 		return coding;
 	}
+	
+	/**
+	 * Given a coding and system, set the system and display values
+	 * to expected values in FHIR.
+	 * 
+	 * @param coding	The coding to adjust
+	 * @return	The mapped coding.
+	 */
+	public static Coding map(Coding coding) {
+		mapSystem(coding);
+		setDisplay(coding);
+		return coding;
+	}
+
 
 	/**
 	 * Map the V2 system value found in ident.system to the system URI expected in FHIR.
@@ -564,5 +579,4 @@ public class Mapping {
 		} 
 		return value;
 	}
-
 }

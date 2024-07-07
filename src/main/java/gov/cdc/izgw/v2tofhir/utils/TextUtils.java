@@ -6,14 +6,17 @@ import java.util.List;
 import java.util.Objects;
 
 import org.apache.commons.lang3.StringUtils;
+import org.hl7.fhir.instance.model.api.IBase;
 import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.ContactPoint;
+import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.HumanName;
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.PrimitiveType;
 import org.hl7.fhir.r4.model.Quantity;
+import org.hl7.fhir.r4.model.Resource;
 import org.hl7.fhir.r4.model.Type;
 
 import ca.uhn.hl7v2.HL7Exception;
@@ -87,6 +90,7 @@ public class TextUtils {
 	 * 
 	 * The next, and each subsequent group of parts is in the form code, display, system
 	 * 
+	 * @param text	The original text that was coded
 	 * @param parts	The parts of the coding(s). Each coding can have three strings, any of which can be null; the display name,
 	 * the code, and the system.  These are written in the form:
 	 * 
@@ -109,15 +113,15 @@ public class TextUtils {
 	 * @return	A string representation of the coding(s)
 	 */
 
-	public static String codingToText(String ... parts) {
+	public static String codingToText(String text, String ... parts) {
 		StringBuilder b = new StringBuilder();
 	
 		if (parts.length > 0) {
 			appendIfNonBlank(b, parts[0], null);
 		}
 		
-		for (int i = 1; i < parts.length; i += 3) {
-			String code = parts.length > i ? parts[i] : "";
+		for (int i = 0; i < parts.length; i += 3) {
+			String code = parts[i];	// guaranteed by loop termination.
 			String display = parts.length > (i+1) ? parts[i+1] : ""; 
 			String system = parts.length > (i+2) ? parts[i+2] : "";
 			if (StringUtils.isAllEmpty(code, display, system)) {
@@ -133,7 +137,7 @@ public class TextUtils {
 				if (StringUtils.contains(system, ":")) {
 					List<String> l = Systems.getSystemNames(system);
 					// First name is always preferred name, second is the V2 common name
-					if (l.size() > 0) {
+					if (!l.isEmpty()) {
 						system = l.get(0);
 						if (l.size() > 1) {
 							// If there is a V2 name, use that.
@@ -279,9 +283,13 @@ public class TextUtils {
 		case "TN":
 			return ParserUtils.toString(comp);
 		case "XTN":
+			assert comp != null;
 			return xtnToText(comp.getComponents());
 		case "CE", "CF", "CNE", "CWE":
-			return codingToText(ParserUtils.toStrings(comp, 8, 0, 1, 2, 3, 4, 5, 9, 10, 11));
+			return codingToText(
+				ParserUtils.toString(comp, 8),
+				ParserUtils.toStrings(comp, 0, 1, 2, 3, 4, 5, 9, 10, 11)
+			);
 		case "CX":
 			String type = ParserUtils.toString(comp, 4);
 			if (StringUtils.isBlank(type)) {
@@ -356,6 +364,21 @@ public class TextUtils {
 		case "Quantity":
 			Quantity quantity = (Quantity)fhirType;
 			return toText(quantity);
+		case "Extension":
+			StringBuilder b = new StringBuilder();
+			Extension ext = (Extension)fhirType;
+			b.append("extension[")
+			 .append(StringUtils.substringAfterLast("/" + ext.getUrl(),"/"))
+			 .append("]");
+			if (ext.hasValue()) {
+				b.append("=").append(toString(ext.getValue())).append(" ");
+			} else if (ext.hasExtension()) {
+				// Walk the tree
+				for (Extension ext2: ext.getExtension()) {
+					b.append(toString(ext2));
+				}
+			}
+			return b.toString();
 		default:
 			return "";
 		}
@@ -385,13 +408,12 @@ public class TextUtils {
 			return "";
 		}
 		List<String> l = new ArrayList<>();
-		l.add(codeableConcept.hasText() ? codeableConcept.getText() : null);
 		for (Coding coding : codeableConcept.getCoding()) {
 			l.add(coding.hasCode() ? coding.getCode() : null);
 			l.add(coding.hasDisplay() ? coding.getDisplay() : null);
 			l.add(coding.hasSystem() ? coding.getSystem() : null);
 		}
-		return codingToText(l.toArray(new String[0]));
+		return codingToText(codeableConcept.getText(), l.toArray( new String[0]));
 	}
 
 	/**
@@ -401,7 +423,7 @@ public class TextUtils {
 	 * @see #codingToText
 	 */
 	public static String toText(Coding coding) {
-		return codingToText(coding.getCode(), coding.getDisplay(), coding.getSystem());
+		return codingToText(null, coding.getCode(), coding.getDisplay(), coding.getSystem());
 	}
 
 	/**

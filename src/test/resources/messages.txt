@@ -1,10 +1,126 @@
 # RSP Response Messages
-MSH|^~\\&|TEST|MOCK|IZGW|IZGW|20240618083101-0400||RSP^K11^RSP_K11|RESULT-01|P|2.5.1|||ER|AL|||||Z32^CDCPHINVS
+MSH|^~\&|\
+	TEST|MOCK|\
+	DEST|DEST|\
+	20240618083101-0400||\
+	RSP^K11^RSP_K11|\
+	RESULT-01|\
+	P|2.5.1|||\
+	ER|AL|\
+	||||Z32^CDCPHINVS
+	@MessageHeader.count() = 1 // It has one message header	
+	@MessageHeader.source.name = "TEST"
+	@MessageHeader.source.endpoint = "MOCK"
+	@MessageHeader.destination.name = "IZGW"
+	@MessageHeader.destination.endpoint = "IZGW"
+	@Bundle.timestamp = "2024-06-18T08:31:01.000-04:00" 
+	@MessageHeader.event.code.exists($this = "K11") // The event code is K11
+	@MessageHeader.meta.tag.code.exists($this = "RSP")   // The message type is RSP
+	@MessageHeader.meta.tag.count() = 1   // There's but one message tag
+	@MessageHeader.definition.exists($this.endsWith("RSP_K11")) // The profile is RSP_K11
+	@MessageHeader.definition.count() = 1   // There's but one definition
 MSA|AA|QUERY-01
+	@OperationOutcome.count() >= 1	// There's at least one OperationOutcome resource
+	@MessageHeader.response.code.exists($this="ok")	// Response code is OK (FHIR coded value translation from AA)
+	@MessageHeader.response.identifier.exists($this="QUERY-01")	// response identifier is QUERY-01
+	@OperationOutcome.issue.code.exists($this = "informational")	// issue.code is INFORMATIONAL
+	@OperationOutcome.issue.severity.exists($this = "information")	// issue.severity is INFORMATION
+	@OperationOutcome.issue.details.coding.exists($this.code = "AA" and $this.system.endsWith("0008")) \
+		// issues.details.coding has a code of AA from HL7-0008 
 QAK|QUERY-01|OK|Z34^Request Immunization History^CDCPHINVS
+	@OperationOutcome.count() >= 2	// There's at least two OperationOutcome resources
+	@OperationOutcome[1].issue.code.exists($this = "informational")	// issue.code is INFORMATIONAL
+	@OperationOutcome[1].issue.severity.exists($this = "information") // issue.code is INFORMATION
+	@OperationOutcome[1].issue.details.coding.exists($this.code = "OK" and $this.system.endsWith("0208")) \
+		// issues.details.coding has a code of OK from HL7-0208
 ERR|||0^Message Accepted^HL70357|I||||3 of 3 immunizations have been added to IIS
+	@OperationOutcome[0].issue.location.empty() // No location set
+	@OperationOutcome[0].issue.details.coding  \
+		.exists($this.code = "0" and $this.system.endsWith("0357") and $this.display = "Message Accepted") \
+		// Code is OK (Message Accepted) from table HL70357
+	@OperationOutcome[0].issue.code.exists($this = "informational") // Code is informational
+	@OperationOutcome[0].issue.severity.exists($this = "information") // Severity is information
+	@OperationOutcome[0].issue.details.coding.exists($this.code="I" and $this.system.endsWith("0516")) \
+		// Error code is I from Table 0516
+	@OperationOutcome[0].issue.diagnostics.exists($this = "3 of 3 immunizations have been added to IIS") \
+		// details.text is 3 of 3 immunizations ...
 QPD|Z34^Request Immunization History^CDCPHINVS|QUERY-01|234814^^^MYEHR^MR
-PID|1||234814^^^MYEHR^MR||FagenAIRA^TheodoricAIRA^ElbertAIRA^^^^L|FagenAIRA^TheodoricAIRA^^^^^M|19631226|M||ASIAN|1517 Huth Ave^^Wyndmere^ND^58081^^L||{{Telephone Number}}|||||||||not HISPANIC
+	@Parameters.meta.tag[0].exists( \
+		$this.code = "Z34" and \ 
+		$this.display = "Request Immunization History" and \
+		$this.system = "urn:oid:2.16.840.1.113883.12.471") \
+		// tag[1] is Z34 (Request Immunization History) from CDVPHINVS system
+	@Parameters.meta.tag[0].system.exists($this = "urn:oid:2.16.840.1.113883.12.471") // What is the actual value of CDCPHINVS
+	@Parameters.meta.tag[1].exists($this.code = "QUERY-01" and $this.system = "QueryTag") \
+		// tag[1] is QUERY-01 from QueryTag system
+	@Parameters.parameter
+		.exists( \
+			name = "PatientList" and \
+			value.ofType(Identifier).exists( \
+				value = "234814" and \
+				system = "MYEHR" and \
+				type.exists($this.code = "MR") \
+			) \ 
+		)  // The PatientList parameter is an identifier with a value of 234814 from the MYEHR system \
+		  	  and the type is MR (Medical Record Number)
+	@%context.entry.where(resource.ofType(Parameters)).request.url.exists($this = "/fhir/Immunization?patient.identifier=MYEHR%7C234814")
+PID|1||234814^^^MYEHR^MR||\
+	FagenAIRA^TheodoricAIRA^ElbertAIRA^^^^L|\
+	DifferentAIRA^TheodoricAIRA^^^^^M|\
+	19631226|M||ASIAN|\
+	1517 Huth Ave^^Wyndmere^ND^58081^^L||\
+	8005551212|||||||||\
+	not HISPANIC
+	@Patient.identifier.exists(value = "234814" and system = "MYEHR" and type.coding.code = "MR") \
+	// Patient MR# is 234814 from MYEHR
+	@Patient.identifier.system.exists($this = "MYEHR") \
+	// identifier system is MYEHR
+	@Patient.name.count() = 1
+	@Patient.name.given[0] = 'TheodoricAIRA'
+	@Patient.name.given[1] = 'ElbertAIRA' 
+	@Patient.name.family = 'FagenAIRA'
+	@Patient.name.exists($this.use = "official")
+	@Patient.extension.exists(\
+		$this.url = "http://hl7.org/fhir/StructureDefinition/patient-mothersMaidenName" and \
+		$this.value = 'DifferentAIRA') \
+		// Mother's maiden name is DifferentAIRA
+	// 19631226|M||ASIAN|
+	@Patient.birthDate = "1963-12-26"
+	@Patient.gender='male'
+	@Patient.extension	\
+		.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension \
+		.exists(url="ombCategory" and value.code="2028-9") \
+		// Translated from legacy code for ASIAN to CDCREC 2028-9 
+	@Patient.extension	\
+		.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension \
+		.exists(url="text" and value="ASIAN") \
+		// The actual text was ASIAN
+	@Patient.extension	\
+		.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension \
+		.exists(url="detailed").not() \
+		// There is no detailed race value.
+	// 1517 Huth Ave^^Wyndmere^ND^58081^^L||\
+	@Patient.address.count() = 1
+	@Patient.address.line.count().where(1=1).exists($this = 1)
+	@Patient.address.line = '1517 Huth Ave'
+	@Patient.address.city = 'Wyndmere'
+	@Patient.address.state = 'ND'
+	@Patient.address.postalCode='58081'
+	@Patient.address.use.empty()
+	@Patient.telecom.count() = 1
+	@Patient.telecom.value='8005551212' 	
+	@Patient.extension	\
+		.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension \
+		.exists(url="ombCategory" and value.code="2028-9") \
+		// Translated from legacy code for not HISPANIC to CDCREC 2028-9 
+	@Patient.extension	\
+		.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension \
+		.exists(url="text" and value="not HISPANIC") \
+		// The actual text was not HISPANIC
+	@Patient.extension	\
+		.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension \
+		.exists(url="detailed").not() \
+		// There is no detailed ethnicity.  
 NK1|1|FagenAIRA^TheodoricAIRA^^^^^L|MTH^Mom^HL70063|1517 Huth Ave^^Wyndmere^ND^58081^^L
 ORC|RE||65930^DCS||||||20120113|^FagenAIRA^TheodoricAIRA||^FagenAIRA^TheodoricAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
 RXA|0|1|20210516||208^208^CVX|0.3|ml||01^historical^NIP001|||||||||||CP|A
@@ -17,7 +133,7 @@ OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^
 OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
 OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
 
-MSH|^~\\&|TEST|MOCK|IZGW|IZGW|20240618083102-0400||RSP^K11^RSP_K11|RESULT-02|P|2.5.1|||ER|AL|||||Z32^CDCPHINVS
+MSH|^~\&|TEST|MOCK|IZGW|IZGW|20240618083102-0400||RSP^K11^RSP_K11|RESULT-02|P|2.5.1|||ER|AL|||||Z32^CDCPHINVS
 MSA|AA|QUERY-02
 QAK|QUERY-02|OK|Z34^Request Immunization History^CDCPHINVS
 ERR||PD1^^16|101^Required field missing^HL70357|W||||patient immunization registry status is missing|
@@ -215,7 +331,7 @@ OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^
 OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
 OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
 
-MSH|^~\\&|TEST|MOCK|IZGW|IZGW|20240618083103-0400||RSP^K11^RSP_K11|RESULT-03|P|2.5.1|||ER|AL|||||Z32^CDCPHINVS
+MSH|^~\&|TEST|MOCK|IZGW|IZGW|20240618083103-0400||RSP^K11^RSP_K11|RESULT-03|P|2.5.1|||ER|AL|||||Z32^CDCPHINVS
 MSA|AA|QUERY-03
 QAK|QUERY-03|OK|Z34^Request Immunization History^CDCPHINVS
 ERR||PID^1^24|101^Required field missing^HL70357|W||||patient multiple birth indicator is missing|
@@ -243,7 +359,7 @@ OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^
 OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
 OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
 
-MSH|^~\\&|TEST|MOCK|IZGW|IZGW|20240618083104-0400||RSP^K11^RSP_K11|RESULT-04|P|2.5.1|||ER|AL|||||Z32^CDCPHINVS
+MSH|^~\&|TEST|MOCK|IZGW|IZGW|20240618083104-0400||RSP^K11^RSP_K11|RESULT-04|P|2.5.1|||ER|AL|||||Z32^CDCPHINVS
 MSA|AA|QUERY-04
 QAK|QUERY-04|OK|Z34^Request Immunization History^CDCPHINVS
 ERR||PID^1^7|101^required field missing^HL70357|E||||Birth Date is required.
@@ -271,7 +387,7 @@ OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^
 OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
 OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
 
-MSH|^~\\&|TEST|MOCK|IZGW|IZGW|20240618083105-0400||RSP^K11^RSP_K11|RESULT-05|P|2.5.1|||ER|AL|||||Z32^CDCPHINVS
+MSH|^~\&|TEST|MOCK|IZGW|IZGW|20240618083105-0400||RSP^K11^RSP_K11|RESULT-05|P|2.5.1|||ER|AL|||||Z32^CDCPHINVS
 MSA|AA|QUERY-05
 QAK|QUERY-05|OK|Z34^Request Immunization History^CDCPHINVS
 QPD|Z34^Request Immunization History^CDCPHINVS|QUERY-05|234818^^^MYEHR^MR
@@ -298,7 +414,7 @@ OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^
 OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
 OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
 
-MSH|^~\\&|TEST|MOCK|IZGW|IZGW|20240618083106-0400||RSP^K11^RSP_K11|RESULT-06|P|2.5.1|||ER|AL|||||Z32^CDCPHINVS
+MSH|^~\&|TEST|MOCK|IZGW|IZGW|20240618083106-0400||RSP^K11^RSP_K11|RESULT-06|P|2.5.1|||ER|AL|||||Z32^CDCPHINVS
 MSA|AA|QUERY-06
 QAK|QUERY-06|OK|Z34^Request Immunization History^CDCPHINVS
 ERR||MSH^1^11|202^Unsupported Processing ID^HL70357|E||||The only Processing ID used to submit HL7 messages to the IIS is \"P\". Debug mode cannot be used. - Message Rejected|
@@ -496,7 +612,7 @@ OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^
 OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
 OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
 
-MSH|^~\\&|TEST|MOCK|IZGW|IZGW|20240618083107-0400||RSP^K11^RSP_K11|RESULT-07|P|2.5.1|||ER|AL|||||Z32^CDCPHINVS
+MSH|^~\&|TEST|MOCK|IZGW|IZGW|20240618083107-0400||RSP^K11^RSP_K11|RESULT-07|P|2.5.1|||ER|AL|||||Z32^CDCPHINVS
 MSA|AA|QUERY-07
 QAK|QUERY-07|OK|Z34^Request Immunization History^CDCPHINVS
 ERR||PID^1^11^5|999^Application error^HL70357|W|1^illogical date error^HL70533|||12345 is not a valid zip code in MYIIS
@@ -524,7 +640,7 @@ OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^
 OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
 OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
 
-MSH|^~\\&|TEST|MOCK|IZGW|IZGW|20240618083108-0400||RSP^K11^RSP_K11|RESULT-08|P|2.5.1|||ER|AL|||||Z32^CDCPHINVS
+MSH|^~\&|TEST|MOCK|IZGW|IZGW|20240618083108-0400||RSP^K11^RSP_K11|RESULT-08|P|2.5.1|||ER|AL|||||Z32^CDCPHINVS
 MSA|AA|QUERY-08
 QAK|QUERY-08|OK|Z34^Request Immunization History^CDCPHINVS
 ERR||RXA^1^5^^1|103^Table value not found^HL70357|W||||vaccination cvx code is unrecognized|
@@ -542,7 +658,7 @@ OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^
 OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
 OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
 
-MSH|^~\\&|TEST|MOCK|IZGW|IZGW|20240618083109-0400||RSP^K11^RSP_K11|RESULT-09|P|2.5.1|||ER|AL|||||Z32^CDCPHINVS
+MSH|^~\&|TEST|MOCK|IZGW|IZGW|20240618083109-0400||RSP^K11^RSP_K11|RESULT-09|P|2.5.1|||ER|AL|||||Z32^CDCPHINVS
 MSA|AA|QUERY-09
 QAK|QUERY-09|OK|Z34^Request Immunization History^CDCPHINVS
 ERR||MSH^1^12|203^unsupported version id^HL70357|E||||Unsupported HL7 Version ID
@@ -570,7 +686,7 @@ OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^
 OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
 OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
 
-MSH|^~\\&|TEST|MOCK|IZGW|IZGW|20240618083110-0400||RSP^K11^RSP_K11|RESULT-10|P|2.5.1|||ER|AL|||||Z32^CDCPHINVS
+MSH|^~\&|TEST|MOCK|IZGW|IZGW|20240618083110-0400||RSP^K11^RSP_K11|RESULT-10|P|2.5.1|||ER|AL|||||Z32^CDCPHINVS
 MSA|AA|QUERY-10
 QAK|QUERY-10|OK|Z34^Request Immunization History^CDCPHINVS
 ERR||ORC^^3|101^Required field missing^HL70357|W||||vaccination id is missing|

@@ -20,8 +20,13 @@ import lombok.extern.slf4j.Slf4j;
  * Parse an MSA segment into MessageHeader and OperationOutcome resources.
  * 
  * @author Audacious Inquiry
+ * @see <a href="https://hl7.org/fhir/uv/v2mappings/2024Jan/ConceptMap-segment-msa-to-messageheader.html">V2 to FHIR: MSA to MessageHeader</a>
  */
 @Slf4j
+@ComesFrom(path="MessageHeader.reponse.code", source="MSA-1")
+@ComesFrom(path="MessageHeader.response.identifier", source="MSA-2")
+@ComesFrom(path="OperationOutcome(0).issue.code", source="MSA-2")
+@ComesFrom(path="OperationOutcome(0).issue.severity", source="MSA-2")
 public class MSAParser extends AbstractSegmentParser {
 	static {
 		log.debug("{} loaded", MSAParser.class.getName());
@@ -45,7 +50,6 @@ public class MSAParser extends AbstractSegmentParser {
 		}
 		Coding acknowledgementCode = DatatypeConverter.toCoding(ParserUtils.getField(msa, 1), "0008");
 		MessageHeaderResponseComponent response = mh.getResponse();
-		
 		OperationOutcomeIssueComponent issue = createIssue();
 		
 		if (acknowledgementCode == null) {

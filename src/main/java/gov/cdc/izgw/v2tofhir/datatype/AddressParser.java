@@ -1,11 +1,13 @@
 package gov.cdc.izgw.v2tofhir.datatype;
 
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.Address.AddressUse;
+import org.hl7.fhir.r4.model.StringType;
 
 import ca.uhn.hl7v2.model.Composite;
 import ca.uhn.hl7v2.model.Primitive;
@@ -198,6 +200,17 @@ public class AddressParser implements DatatypeParser<Address> {
 		} else if (type instanceof Composite comp && "SAD".equals(type.getName())) {
 			addr = new Address().addLine(ParserUtils.toString(comp, 0));
 		}
+		
+		if (addr != null && addr.hasLine()) {
+			Iterator<StringType> it = addr.getLine().iterator();
+			while (it.hasNext()) {
+				StringType line = it.next(); 
+				if (line == null || line.isEmpty()) {
+					it.remove();
+				}
+			}
+		}
+		
 		if (addr == null || addr.isEmpty()) {
 			return null;
 		}

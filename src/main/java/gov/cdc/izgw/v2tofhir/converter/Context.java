@@ -60,6 +60,16 @@ public class Context {
 		this.messageParser = messageParser;
 	}
 	
+	/**
+	 * Reset the context for a new message parse.
+	 */
+	public void clear() {
+		properties.clear();
+		setHl7DataId(null);
+		setBundle(null);
+		setEventCode(null);
+	}
+	
 	void addProfileId(String profileId) {
 		if (profileId == null || StringUtils.isEmpty(profileId)) {
 			return;

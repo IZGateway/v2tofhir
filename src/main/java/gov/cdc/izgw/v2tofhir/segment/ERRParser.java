@@ -26,6 +26,13 @@ import lombok.extern.slf4j.Slf4j;
  * 
  * @author Audacious Inquiry
  */
+@ComesFrom(path="OperationOutcome.issue.location", source="ERR-2")
+@ComesFrom(path="OperationOutcome.issue.code", source="ERR-3")
+@ComesFrom(path="OperationOutcome.issue.severity", source="ERR-4")
+@ComesFrom(path="OperationOutcome.issue.detail", source="ERR-3")
+@ComesFrom(path="OperationOutcome.issue.detail", source="ERR-5")
+@ComesFrom(path="OperationOutcome.issue.diagnostics", source= { "ERR-7", "ERR-8" })
+
 @Slf4j
 public class ERRParser extends AbstractSegmentParser {
 	static {
@@ -70,20 +77,16 @@ public class ERRParser extends AbstractSegmentParser {
 	 * One OperationOutcome.issue is created for each ERR segment.
 	 * 
 	 * OperationOutcome.issue.location is set from ERR-2
-	 * 
 	 * OperationOutcome.issue.code is set from ERR-3
-	 * 
 	 * OperationOutcome.issue.severity is set from ERR-4
-	 * 
 	 * OperationOutcome.issue.detail is set from ERR-3 and ERR-5
-	 * 
 	 * OperationOutcome.issue.diagnostics is set from ERR-7 and ERR-8 if present.
 	 *  
 	 * @param err	The ERR segment to parse
 	 */
 	@Override
 	public void parse(Segment err) throws HL7Exception {
-		// Create a new OperationOutcome for each ERR resource
+		// Create a new OperationOutcome.issue for each ERR resource
 		OperationOutcome oo = getFirstResource(OperationOutcome.class);
 		if (oo == null) {
 			oo = createResource(OperationOutcome.class);
@@ -118,7 +121,7 @@ public class ERRParser extends AbstractSegmentParser {
 	}
 
 	private void setErrorCodeAndSeverity(OperationOutcomeIssueComponent issue, Segment err, CodeableConcept errorCode) {
-		Coding severity = DatatypeConverter.toCoding(getField(err, 4), "HL70516");  // "HL70516"
+		Coding severity = DatatypeConverter.toCoding(getField(err, 4), "HL70516");
 		if (severity != null && severity.hasCode()) {
 			switch (severity.getCode().toUpperCase()) {
 			
@@ -133,6 +136,7 @@ public class ERRParser extends AbstractSegmentParser {
 			}
 			errorCode.addCoding(severity);
 		}
+		addField(err, 5, CodeableConcept.class, issue::setDetails);
 	}
 
 	private CodeableConcept setErrorCode(OperationOutcomeIssueComponent issue, Segment err) {
@@ -175,12 +179,12 @@ public class ERRParser extends AbstractSegmentParser {
 	private String getDiagnostics(Segment err) {
 		StringType diagnostics = DatatypeConverter.toStringType(getField(err, 7)); // Diagnostics: TX
 		StringType userMessage = DatatypeConverter.toStringType(getField(err, 8)); // User Message
-		if (diagnostics != null) {
-			if (userMessage != null) {
+		if (diagnostics != null && !diagnostics.isEmpty()) {
+			if (userMessage != null && !userMessage.isEmpty()) {
 				return diagnostics + "\n" + userMessage;
 			} 
 			return diagnostics.toString();
 		} 
-		return userMessage == null || userMessage.isBooleanPrimitive() ? null : userMessage.toString();
+		return (userMessage == null || userMessage.isEmpty()) ? null : userMessage.toString();
 	}
 }

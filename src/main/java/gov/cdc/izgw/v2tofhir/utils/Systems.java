@@ -73,13 +73,13 @@ public class Systems {
 	/** OID for the code system used for ICD-9 Procedure Codes */
 	public static final String ICD9PCS_OID = "2.16.840.1.113883.6.104";
 	/** Code System URI for the code system used for V2 Identifier types */
-	public static final String IDENTIFIER_TYPE = "http://terminology.hl7.org/CodeSystem/v2-0301";
+	public static final String UNIVERSAL_ID_TYPE = "http://terminology.hl7.org/CodeSystem/v2-0301";
 	/** OID for the code system used for V2 Identifier types */
-	public static final String IDENTIFIER_TYPE_OID = "2.16.840.1.113883.18.108";
+	public static final String UNIVERSAL_ID_TYPE_OID = "2.16.840.1.113883.18.108";
 	/** Code System URI for the code system used for FHIR identifier types */
-	public static final String IDTYPE = "http://terminology.hl7.org/CodeSystem/v2-0203";
+	public static final String ID_TYPE = "http://terminology.hl7.org/CodeSystem/v2-0203";
 	/** OID for the code system used for FHIR identifier types */
-	public static final String IDTYPE_OID = "2.16.840.1.113883.18.186";
+	public static final String ID_TYPE_OID = "2.16.840.1.113883.18.186";
 	/** Code System URI for the code system used for LOINC codes */
 	public static final String LOINC = "http://loinc.org";
 	/** OID for the code system used for LOINC codes */
@@ -108,14 +108,28 @@ public class Systems {
 	public static final String SNOMED = "http://snomed.info/sct";
 	/** OID for the code system used for SNOMED codes */
 	public static final String SNOMED_OID = "2.16.840.1.113883.6.96";
+	/** System for US Social Security Numbers */
+	public static final String SSN = "http://hl7.org/fhir/sid/us-ssn";
+	/** OID for US Social Security Numbers */
+	public static final String SSN_OID = "2.16.840.1.113883.4.1";
 	/** Code System URI for the code system used for UCUM unit codes */
 	public static final String UCUM = "http://unitsofmeasure.org";
 	/** OID for the code system used for UCUM unit codes */
 	public static final String UCUM_OID = "2.16.840.1.113883.6.8";
 
+	/** Code System URI for the code system used for Data Absent Reason */
+	public static final String DATA_ABSENT = "http://terminology.hl7.org/CodeSystem/data-absent-reason";
+	/** Code System OID for the code system used for Data Absent Reason */
+	public static final String DATA_ABSENT_OID = "2.16.840.1.113883.4.642.4.1048";
 
-	static final String[] IDTYPE_NAMES =  { IDTYPE, "HL70203", "0203", "IDTYPE", "2.16.840.1.113883.12.203", IDTYPE_OID };
-	static final String[] IDENTIFIER_TYPE_NAMES = { IDENTIFIER_TYPE, "HL70301", "0301", "2.16.840.1.113883.12.301", IDENTIFIER_TYPE_OID };
+	/** Code System URI for the code system used for Null Flavors */
+	public static final String NULL_FLAVOR = "http://terminology.hl7.org/CodeSystem/v3-NullFlavor";
+	/** Code System OID for the code system used for Null Flavors */
+	public static final String NULL_FLAVOR_OID = "2.16.840.1.113883.5.1008";
+
+
+	static final String[] IDTYPE_NAMES =  { ID_TYPE, "HL70203", "0203", "IDTYPE", "2.16.840.1.113883.12.203", ID_TYPE_OID };
+	static final String[] IDENTIFIER_TYPE_NAMES = { UNIVERSAL_ID_TYPE, "HL70301", "0301", "2.16.840.1.113883.12.301", UNIVERSAL_ID_TYPE_OID };
 	
 	private static final String[][] idTypeToDisplay = { { "CLIA", "Clinical Laboratory Improvement Amendments" },
 			{ "CLIP", "Clinical laboratory Improvement Program" }, { "DNS", "An Internet host name" },
@@ -175,8 +189,11 @@ public class Systems {
 		{ NDC, "NDC", NDC_OID },
 		{ NDFRT, "NDFRT", "NDF-RT", NDFRT_OID },
 		{ RXNORM, "RXNORM", RXNORM_OID },
-		{ SNOMED, "SNOMEDCT", "SNOMED", "SNM", "SCT", SNOMED_OID },
+		{ SNOMED, "SNOMEDCT", "SNOMED-CT", "SNOMED", "SNM", "SCT", SNOMED_OID },
+		{ SSN, "SSN", SSN_OID },
 		{ UCUM, "UCUM", UCUM_OID },
+		{ NULL_FLAVOR, "NULLFLAVOR", NULL_FLAVOR_OID },
+		{ DATA_ABSENT, "DATAABSENTREASON", DATA_ABSENT_OID }
 	};
 	
 	/** 
@@ -347,7 +364,7 @@ public class Systems {
 			}
 			found.add(name);
 		}
-		// Special case for table name as HL7
+		// Special case for table name as HL7 in IHE PIX/PDQ profile
 		if (found.contains("HL70003") && !found.contains("HL7")) {
 			found.add("HL7");
 		}
