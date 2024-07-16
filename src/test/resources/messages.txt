@@ -36,11 +36,11 @@ QAK|QUERY-01|OK|Z34^Request Immunization History^CDCPHINVS
 ERR|||0^Message Accepted^HL70357|I||||3 of 3 immunizations have been added to IIS
 	@OperationOutcome[0].issue.location.empty() // No location set
 	@OperationOutcome[0].issue.details.coding  \
-		.exists($this.code = "0" and $this.system.endsWith("0357") and $this.display = "Message Accepted") \
+		.where($this.code = "0" and $this.system.endsWith("0357") and $this.display = "Message Accepted") \
 		// Code is OK (Message Accepted) from table HL70357
 	@OperationOutcome[0].issue.code.exists($this = "informational") // Code is informational
 	@OperationOutcome[0].issue.severity.exists($this = "information") // Severity is information
-	@OperationOutcome[0].issue.details.coding.exists($this.code="I" and $this.system.endsWith("0516")) \
+	@OperationOutcome[0].issue.details.coding.where(code="I" and system.endsWith("0516")) \
 		// Error code is I from Table 0516
 	@OperationOutcome[0].issue.diagnostics.exists($this = "3 of 3 immunizations have been added to IIS") \
 		// details.text is 3 of 3 immunizations ...
@@ -53,16 +53,19 @@ QPD|Z34^Request Immunization History^CDCPHINVS|QUERY-01|234814^^^MYEHR^MR
 	@Parameters.meta.tag[0].system.exists($this = "urn:oid:2.16.840.1.113883.12.471") // What is the actual value of CDCPHINVS
 	@Parameters.meta.tag[1].exists($this.code = "QUERY-01" and $this.system = "QueryTag") \
 		// tag[1] is QUERY-01 from QueryTag system
-	@Parameters.parameter \
-		.exists( \
-			name = "PatientList" and \
-			value.ofType(Identifier).exists( \
-				value = "234814" and \
-				system = "MYEHR" and \
-				type.exists($this.code = "MR") \
-			) \ 
-		)  // The PatientList parameter is an identifier with a value of 234814 from the MYEHR system \
-		  	  and the type is MR (Medical Record Number)
+	@Parameters.parameter.where(\
+		"patient.identifier" = name and \
+		value.ofType(Identifier) \
+			 .where(value = "234814" and system = "MYEHR") \
+			 .where("MR" in type.coding.code) \
+	) \
+	// The patient.identifier parameter is an identifier with a value of 234814 from the MYEHR system and the type is MR (Medical Record Number)
+	//  .parameter.where("PatientList" = $this.name) \
+	//	.exists($this.name = "PatientList") \
+	// 	.value.ofType(Identifier).exists() \
+	//	.where(value = "234814") \
+	//	.where(system = "MYEHR") \
+	//	.where("MR" in type.coding.code).exists() \
 	@%context.entry.where(resource.ofType(Parameters)).request.url.exists($this = "/fhir/Immunization?patient.identifier=MYEHR%7C234814")
 PID|1||234814^^^MYEHR^MR||\
 	FagenAIRA^TheodoricAIRA^ElbertAIRA^^^^L|\

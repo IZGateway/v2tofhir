@@ -188,6 +188,7 @@ public class TestData {
 			return;
 		}
 		List<IBase> result = engine.evaluate(b, expr, IBase.class);
+		// log.info("Value: {} = {}", this.getInnerAsString(expr), result)
 		String testValue = "";
 		if (result == null || result.isEmpty()) {
 			testValue = getTestValue(b, position);
@@ -312,11 +313,13 @@ public class TestData {
 		int len = getAssertions().size();
 		Throwable cause = null;
 		StringBuilder message = new StringBuilder();
+		String name = null; 
 		for (int i = 0; i < len; i++) {
 			try {
+				name = getName(i);
 				evaluate(b, i);
 			} catch (AssertionError | Exception e) {
-				message.append(String.format("Assertion %s failed: %s%n", getName(i), e.getMessage()));
+				message.append(String.format("Assertion %s failed: %s%n", name, e.getMessage()));
 				if (cause == null) {
 					cause = e;
 				}

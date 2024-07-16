@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
  * @author Audacious Inquiry
  */
 @Slf4j
-public class FieldHandler {
+public class FieldHandler implements Comparable<FieldHandler> {
 	/** Set VERIFY_METHODS to true to check method initialization */
 	private static final boolean VERIFY_METHODS = false;
 	/** Set GET_PROPERTY to true to get the property during initialization */
@@ -161,7 +161,7 @@ public class FieldHandler {
 			if (t instanceof Composite comp && from.component() != 0) {
 				// Check for component
 				Type[] t2 = comp.getComponents();
-				if (from.component() >= t2.length) {
+				if (from.component() > t2.length) {
 					continue;
 				}
 				t = t2[from.component()-1];
@@ -216,7 +216,7 @@ public class FieldHandler {
 		StringBuilder b = new StringBuilder();
 		b.append("\n@ComesFrom(path = \"").append(from.path()).append("\"");
 		appendField(b, "field", from.field());
-		appendField(b, "component", from.field());
+		appendField(b, "component", from.component());
 		appendField(b, "fixed", from.fixed());
 		appendField(b, "table", from.table());
 		appendField(b, "map", from.map());
@@ -247,5 +247,51 @@ public class FieldHandler {
 			return;
 		}
 		b.append(", ").append(name).append(" = \"").append(string).append("\"");
+	}
+	
+	/**
+	 * @param fh1	The first field handler to compare
+	 * @param fh2	The second field handler to compare
+	 * @return < 0 if fh1 < fh2, 0 if equal, > 0 if fh1 > fh2
+	 */
+	public static int compare(FieldHandler fh1, FieldHandler fh2) {
+		if (fh1 == fh2)
+			return 0;
+		if (fh1 == null) 
+			return -1;
+		if (fh2 == null)
+			return 1;
+		// Priority comparison is reversed
+		int comp = -Integer.compare(fh1.from.priority(), fh2.from.priority());
+		if (comp != 0) 
+			return comp;
+		comp = Integer.compare(fh1.from.field(), fh2.from.field());
+		if (comp != 0) 
+			return comp;
+		comp = Integer.compare(fh1.from.component(), fh2.from.component());
+		if (comp != 0) 
+			return comp;
+		comp = fh1.toString().compareTo(fh2.toString());
+		if (comp != 0) 
+			return comp;
+		return fh1.method.toString().compareTo(fh2.toString());
+	}
+
+	@Override
+	public int compareTo(FieldHandler that) {
+		return compare(this, that);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof FieldHandler that) {
+			return compareTo(that) == 0;
+		}
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return from.hashCode() ^ method.hashCode();
 	}
 }

@@ -18,6 +18,7 @@ import org.hl7.fhir.r4.model.OperationOutcome.OperationOutcomeIssueComponent;
 import gov.cdc.izgw.v2tofhir.annotation.ComesFrom;
 import gov.cdc.izgw.v2tofhir.annotation.Produces;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
+import gov.cdc.izgw.v2tofhir.utils.Mapping;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -92,7 +93,7 @@ public class ERRParser extends AbstractSegmentParser {
 	
 	@Override 
 	public IBaseResource setup() {
-  OperationOutcome oo;
+		OperationOutcome oo;
 		// Create a new OperationOutcome.issue for each ERR resource
 		oo = getFirstResource(OperationOutcome.class);
 		if (oo == null) {
@@ -131,9 +132,12 @@ public class ERRParser extends AbstractSegmentParser {
 		if (errorCode == null) {
 			return;
 		}
+		for (Coding coding: errorCode.getCoding()) {
+			issue.getDetails().addCoding(coding);
+		}
 		for (Coding c: errorCode.getCoding()) {
 			// If from table 0357
-			if (!"http://terminology.hl7.org/CodeSystem/v2-0357".equals(c.getSystem())) {  // Check the system.
+			if (!Mapping.v2Table("0357").equals(c.getSystem())) {  // Check the system.
 				continue;
 			}
 			String[] map = errorCodeMap.get(c.getCode());
@@ -146,7 +150,8 @@ public class ERRParser extends AbstractSegmentParser {
 					// Some versions of FHIR support "success", others don't.
 					issue.setCode(IssueType.INFORMATIONAL);
 				} else {
-					issue.setCode(IssueType.fromCode(map[0]));
+					IssueType type = IssueType.fromCode(map[0]); 
+					issue.setCode(type);
 				}
 			} catch (FHIRException fex) {
 				warnException("Unexpected FHIRException: {}", fex.getMessage(), fex);
@@ -160,6 +165,9 @@ public class ERRParser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path="OperationOutcome.issue.severity", field = 4, table = "0516")
 	public void setSeverity(CodeableConcept severity) {
+		for (Coding coding: severity.getCoding()) {
+			issue.getDetails().addCoding(coding);
+		}
 		for (Coding sev : severity.getCoding()) {
 			if (sev == null || !sev.hasCode()) {
 				continue;

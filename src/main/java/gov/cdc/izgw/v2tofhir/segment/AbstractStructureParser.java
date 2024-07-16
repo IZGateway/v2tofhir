@@ -1,6 +1,7 @@
 package gov.cdc.izgw.v2tofhir.segment;
 
 import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.List;
 
 import org.hl7.fhir.instance.model.api.IBaseResource;
@@ -49,9 +50,10 @@ public abstract class AbstractStructureParser implements StructureParser {
 					fieldHandlers.add(new FieldHandler(method, from, p));
 				}
 			}
+			Collections.sort(fieldHandlers);
 		}
 	}
-	
+
 	/**
 	 * Returns the current segment being parsed.
 	 * @return the current segment being parsed.
@@ -258,7 +260,8 @@ public abstract class AbstractStructureParser implements StructureParser {
 			// setup() returned nothing, there must be nothing to do
 			return;
 		}
-		for (FieldHandler fieldHandler : getFieldHandlers()) {
+		List<FieldHandler> handlers = getFieldHandlers();
+		for (FieldHandler fieldHandler : handlers) {
 			fieldHandler.handle(this, segment, r);
 		}
 	}

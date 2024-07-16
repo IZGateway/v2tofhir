@@ -31,13 +31,13 @@ public @interface ComesFrom {
 	 * The FHIR Paths of other content in the bundle
 	 * @return	The FHIR Path expressions that extract the content from the Bundle
 	 */
-	String[] also() default "";
+	String[] also() default {};
 
 	/**
 	 * The terser paths of the objects that construct the object referenced in path
 	 * @return	HAPI V2 terser path expressions indicating where the data came from
 	 */
-	String[] source() default "";
+	String[] source() default {};
 	
 	/**
 	 * The 1-based index of the field to extract from.
@@ -98,4 +98,3 @@ public @interface ComesFrom {
         ComesFrom[] value();
     }
 }
-

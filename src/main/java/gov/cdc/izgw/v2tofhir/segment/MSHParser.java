@@ -187,7 +187,6 @@ public class MSHParser extends AbstractSegmentParser {
 	@ComesFrom(path="MessageHeader.meta.tag", field = 9, component = 1, table="0076", comment="Message Code")
 	public void setMetaTag(Coding messageCode) {
 		mh.getMeta().addTag(messageCode);
-
 	}
 	
 	/**

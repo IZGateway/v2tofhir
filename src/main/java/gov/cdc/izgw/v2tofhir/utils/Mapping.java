@@ -49,9 +49,9 @@ public class Mapping {
 	public static final String V2_TABLE_PREFIX = "http://terminology.hl7.org/CodeSystem/v2-";
 
 	private static final PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
-
-	private static Map<String, Mapping> codeMaps = new LinkedHashMap<>();
-	private static Map<String, Map<String, Coding>> codingMaps = new LinkedHashMap<>();
+	private static final Map<String, String> v2TablesUsed = new LinkedHashMap<>();
+	private static final Map<String, Mapping> codeMaps = new LinkedHashMap<>();
+	private static final Map<String, Map<String, Coding>> codingMaps = new LinkedHashMap<>();
 	static {
 		initConceptMaps();
 		initVocabulary();
@@ -604,6 +604,7 @@ public class Mapping {
 		if (table.startsWith("-") || table.startsWith("_")) {
 			table = table.substring(1);
 		}
-		return Mapping.V2_TABLE_PREFIX + StringUtils.right("000" + table, 4);
+		String key = StringUtils.right("000" + table, 4);
+		return v2TablesUsed.computeIfAbsent(key, (k) -> Mapping.V2_TABLE_PREFIX + key);
 	}
 }

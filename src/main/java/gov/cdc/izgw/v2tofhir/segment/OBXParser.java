@@ -13,8 +13,6 @@ import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.ContactPoint;
 import org.hl7.fhir.r4.model.DateTimeType;
-import org.hl7.fhir.r4.model.DateType;
-import org.hl7.fhir.r4.model.DecimalType;
 import org.hl7.fhir.r4.model.Device;
 import org.hl7.fhir.r4.model.DomainResource;
 import org.hl7.fhir.r4.model.HumanName;
@@ -32,6 +30,7 @@ import org.hl7.fhir.r4.model.PositiveIntType;
 import org.hl7.fhir.r4.model.Practitioner;
 import org.hl7.fhir.r4.model.PractitionerRole;
 import org.hl7.fhir.r4.model.PrimitiveType;
+import org.hl7.fhir.r4.model.Quantity;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.RelatedPerson;
 import org.hl7.fhir.r4.model.StringType;
@@ -164,7 +163,6 @@ public class OBXParser extends AbstractSegmentParser {
 			}
 		}
 		String getDisplay() {
-			// TODO Auto-generated method stub
 			return display;
 		}
 	}
@@ -186,10 +184,8 @@ public class OBXParser extends AbstractSegmentParser {
 	@ComesFrom(path = "Observation.code", field = 3, comment = "Observation Identifier") 
 	public void redirectTo(CodeableConcept observationCode) {
 		observation.setCode(observationCode);
-		if (izDetail.hasImmunization()) {
+		if (izDetail.hasImmunization() || izDetail.hasRecommendation()) {
 			redirect = VisCode.match(observationCode);
-		} else if (izDetail.hasRecommendation()){
-			
 		} else {
 			redirect = null;
 		}
@@ -215,12 +211,12 @@ public class OBXParser extends AbstractSegmentParser {
 		case "CNE":	target = CodeableConcept.class; break;	//	Coded with No Exceptions	
 		case "CWE":	target = CodeableConcept.class; break;	//	Coded Entry	
 		case "CX":	target = Identifier.class; break;	//	Extended Composite ID With Check Digit	
-		case "DT":	target = DateType.class; break;	//	Date	
+		case "DT":	target = DateTimeType.class; break;	//	Observation doesn't like DateType	
 		case "DTM":	target = DateTimeType.class; break;	//	Time Stamp (Date & Time)	
 		case "FT":	target = StringType.class; break; //	Formatted Text (Display)	
 		case "ID":	target = CodeType.class; break; //	Coded Value for HL7 Defined Tables	
 		case "IS":	target = CodeType.class; break; //	Coded Value for User-Defined Tables	
-		case "NM":	target = DecimalType.class; break; //	Numeric	
+		case "NM":	target = Quantity.class; break; //	Numeric	(Observation only accepts Quantity)
 		case "PN":	target = HumanName.class; break; //	Person Name	
 		case "ST":	target = StringType.class; break; //	String Data.	
 		case "TM":	target = TimeType.class; break; //	Time	
@@ -241,7 +237,7 @@ public class OBXParser extends AbstractSegmentParser {
 			 "RP",	//	Reference Pointer	
 			 "SN":	//	Structured Numeric
 		default:
-				 break;
+			break;
 		}
 		
 		if (target == null) {
@@ -308,14 +304,17 @@ public class OBXParser extends AbstractSegmentParser {
 			return;
 		}
 		ImmunizationRecommendationRecommendationDateCriterionComponent criterion = null;
+		int value = 0;
 		switch (redirect) {
 		case DOSE_VALIDITY:
 			break;
 		case FORECAST_DOSE_NUMBER:
-			recommendation.setDoseNumber(DatatypeConverter.castInto((DecimalType)converted, new PositiveIntType()));
+			value = ((Quantity)converted).getValue().intValue(); 
+			recommendation.setDoseNumber(new PositiveIntType(value));
 			break;
 		case FORECAST_NUMBER_DOSES:
-			recommendation.setSeriesDoses(DatatypeConverter.castInto((DecimalType)converted, new PositiveIntType()));
+			value = ((Quantity)converted).getValue().intValue(); 
+			recommendation.setSeriesDoses(new PositiveIntType(value));
 			break;
 		case FORECAST_SCHEDULE:
 			break;
