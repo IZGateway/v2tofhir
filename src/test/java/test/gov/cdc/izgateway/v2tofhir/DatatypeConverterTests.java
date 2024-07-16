@@ -75,7 +75,7 @@ class DatatypeConverterTests extends TestBase {
 	@SuppressWarnings("unused")
 	private static final Class<Mapping> MAPPING_CLASS = Mapping.class; 
 	@ParameterizedTest
-	@MethodSource("getTestMessages")
+	@MethodSource("getTestMessages") // should be getTestMessages, other possible values are for localized testing
 	@Disabled("Used for testing a local microsoft V2 converter")
 	void testConversion(String hl7Message) throws IOException, ParseException {
 		HttpURLConnection con = getUrlConnection();
@@ -294,7 +294,7 @@ class DatatypeConverterTests extends TestBase {
 	}
 	
 	@ParameterizedTest
-	@MethodSource("getTestMSHs")
+	@MethodSource("getTestSegments") // should be getTestSegments, other possible values are for localized testing 
 	void testSegmentConversions(NamedSegment segment) throws HL7Exception {
 		MessageParser p = new MessageParser();
 		System.out.println(segment.segment().encode());

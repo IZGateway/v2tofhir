@@ -208,7 +208,7 @@ class MessageParserTests extends TestBase {
 	
 	
 	@ParameterizedTest
-	@MethodSource("getTestMessages1")
+	@MethodSource("getTestMessages")  // should be getTestMessages, other possible values are for localized testing
 	void testMessageConversion(Message hl7Message) throws IOException, ParseException {
 		MessageParser p = new MessageParser();
 		Bundle b = p.convert(hl7Message);

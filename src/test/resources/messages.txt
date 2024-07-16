@@ -9,10 +9,10 @@ MSH|^~\&|\
 	ER|AL|\
 	||||Z32^CDCPHINVS
 	@MessageHeader.count() = 1 // It has one message header	
-	@MessageHeader.source.name = "TEST"
-	@MessageHeader.source.endpoint = "MOCK"
-	@MessageHeader.destination.name = "DEST"
-	@MessageHeader.destination.endpoint = "DAPP"
+	@MessageHeader.source.name = "MOCK"
+	@MessageHeader.source.endpoint = "TEST"
+	@MessageHeader.destination.name = "DAPP"
+	@MessageHeader.destination.endpoint = "DEST"
 	@Bundle.timestamp = "2024-06-18T08:31:01.000-04:00" 
 	@MessageHeader.event.code.exists($this = "K11") // The event code is K11
 	@MessageHeader.meta.tag.code.exists($this = "RSP")   // The message type is RSP

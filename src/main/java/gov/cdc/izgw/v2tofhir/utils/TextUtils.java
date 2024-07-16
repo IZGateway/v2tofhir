@@ -309,9 +309,12 @@ public class TextUtils {
 			offset = 1;
 			// fall through, CNN and XCN are like XPN but start one component later
 		case "XPN":
-			String[] sufixes = { ParserUtils.toString(comp, offset + 3), ParserUtils.toString(comp, offset + 5) };
+			int professional = "XPN".equals(v2Type.getName()) ? 13 : 20;
+			String[] sufixes = { ParserUtils.toString(comp, offset + 3), ParserUtils.toString(comp, offset + 5), ParserUtils.toString(comp, professional) };
 			Object[] givens = { ParserUtils.toString(comp, offset + 1), ParserUtils.toString(comp, offset + 2) };
-			return TextUtils.humanNameToText(ParserUtils.toString(comp, offset + 4), ParserUtils.toString(comp, offset + 0), StringUtils.join(sufixes, " "), givens);
+			
+			return TextUtils.humanNameToText(ParserUtils.toString(comp, offset + 4), ParserUtils.toString(comp, offset + 0), 
+					StringUtils.normalizeSpace(StringUtils.join(sufixes, " ")), givens);
 		case "ERL", "MSG":
 		default:
 			try {
