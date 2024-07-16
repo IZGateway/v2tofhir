@@ -162,7 +162,12 @@ public class HumanNameParser implements DatatypeParser<HumanName> {
 				case "CNN" :
 					return HumanNameParser.parse(types, 1, -1);
 				case "XCN" :
-					return HumanNameParser.parse(types, 1, 9);
+					HumanName hn = HumanNameParser.parse(types, 1, 9);
+					if (hn != null && types.length > 20 && types[20] != null) {
+						String suffix = ParserUtils.toString(types[20]);
+						hn.addSuffix(suffix);
+					}
+					return hn;
 				case "XPN" :
 					return HumanNameParser.parse(types, 0, 6);
 				default :

@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Objects;
 
 import org.apache.commons.lang3.StringUtils;
-import org.hl7.fhir.instance.model.api.IBase;
 import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
@@ -16,7 +15,6 @@ import org.hl7.fhir.r4.model.HumanName;
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.PrimitiveType;
 import org.hl7.fhir.r4.model.Quantity;
-import org.hl7.fhir.r4.model.Resource;
 import org.hl7.fhir.r4.model.Type;
 
 import ca.uhn.hl7v2.HL7Exception;
@@ -117,7 +115,7 @@ public class TextUtils {
 		StringBuilder b = new StringBuilder();
 	
 		if (parts.length > 0) {
-			appendIfNonBlank(b, parts[0], null);
+			appendIfNonBlank(b, text, null);
 		}
 		
 		for (int i = 0; i < parts.length; i += 3) {

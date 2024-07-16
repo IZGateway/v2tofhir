@@ -3,8 +3,11 @@ package gov.cdc.izgw.v2tofhir.segment;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
+import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.BaseDateTimeType;
 import org.hl7.fhir.r4.model.BooleanType;
@@ -31,6 +34,8 @@ import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.model.Segment;
 import ca.uhn.hl7v2.model.Type;
 import ca.uhn.hl7v2.model.Varies;
+import gov.cdc.izgw.v2tofhir.annotation.ComesFrom;
+import gov.cdc.izgw.v2tofhir.annotation.Produces;
 import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
@@ -52,6 +57,7 @@ import lombok.extern.slf4j.Slf4j;
  * @author Audacious Inquiry
  *
  */
+@Produces(segment="QPD", resource=Parameters.class)
 @ComesFrom(path="Parameters.meta.tag", source="QPD-1", comment="Query Name")
 @ComesFrom(path="Parameters.meta.tag[1].code", source="QPD-2", comment="Query Tag")
 @ComesFrom(path="Parameters.meta.tag[1].system", fixed="QueryTag")
@@ -59,6 +65,9 @@ import lombok.extern.slf4j.Slf4j;
 @ComesFrom(path="Parameters.parameter.value", source= { "QPD-3", "QPD-*" }, comment="Varies by query")
 @Slf4j
 public class QPDParser extends AbstractSegmentParser {
+	private Parameters params;
+	private MessageHeader mh;
+	private static List<FieldHandler> fieldHandlers = new ArrayList<>();
 	static {
 		log.debug("{} loaded", QPDParser.class.getName());
 	}
@@ -69,6 +78,14 @@ public class QPDParser extends AbstractSegmentParser {
 	 */
 	public QPDParser(MessageParser messageParser) {
 		super(messageParser, "QPD");
+		if (fieldHandlers.isEmpty()) {
+			initFieldHandlers(this, fieldHandlers);
+		}
+	}
+	
+	@Override
+	public List<FieldHandler> getFieldHandlers() {
+		return fieldHandlers;
 	}
 	
 	private static final String[][] v2QueryNames = {
@@ -117,16 +134,26 @@ public class QPDParser extends AbstractSegmentParser {
 		}
 	};
 	
+	public IBaseResource setup() {
+		params = createResource(Parameters.class);
+		mh = this.getFirstResource(MessageHeader.class);
+		return params;
+	}
+	
 	@Override
-	public void parse(Segment seg) throws HL7Exception {
-		Parameters params = createResource(Parameters.class);
-		
+	public void parse(Segment seg) {
 		Type query = getField(seg, 1);
 		CodeableConcept queryName = DatatypeConverter.toCodeableConcept(query);
 		if (queryName == null) {
-			log.warn("Cannot parse unnamed query for: " + seg.encode());
+			try {
+				warn("Cannot parse unnamed query for: " + seg.encode());
+			} catch (HL7Exception e) {
+				// Ignore it.
+			}
 			return;
 		}
+		setup();
+		
 		params.getMeta().addTag(queryName.getCodingFirstRep());
 		
 		String queryTag = ParserUtils.toString(getField(seg, 2));
@@ -137,51 +164,53 @@ public class QPDParser extends AbstractSegmentParser {
 			log.warn("Cannot parse {} query", query);
 			return;
 		}
-		StringBuilder request = new StringBuilder("/fhir/");
+		String request = getSearchRequest(seg, parameters);
+		
+		BundleEntryComponent entry = (BundleEntryComponent) params.getUserData(BundleEntryComponent.class.getName());
+		Boolean isResponse = isResponse();
+		if (entry != null && Boolean.TRUE.equals(isResponse)) {
+			// Was this QPD in response to a query message, or was it the query itself.
+			BundleEntryResponseComponent resp = entry.getResponse();
+			resp.setLocation(request);
+			resp.setLastModified(getBundle().getTimestamp());
+		} else if (entry != null && Boolean.FALSE.equals(isResponse)) {
+			BundleEntryRequestComponent req = entry.getRequest();
+			req.setMethod(HTTPVerb.GET);
+			req.setUrl(request);
+		} else {
+			params.addParameter("_search", request);
+		}
+	}
+
+	private String getSearchRequest(Segment seg, String[] parameters) {
+		StringBuilder request = null;
+		request = new StringBuilder("/fhir/");
 		request.append(parameters[3]).append("?");
 		for (int i = 3, offset = 4; i <= seg.numFields() && offset < parameters.length; i++, offset += 4) {
 			Type[] types = getFields(seg, i); // Get the fields
 			for (Type t : types) {
 				String fhirType = parameters[offset + 3];
 				t = adjustIfVaries(t, parameters[offset + 1]);
-				org.hl7.fhir.r4.model.Type converted = DatatypeConverter.convert(fhirType, t);
+				org.hl7.fhir.r4.model.Type converted = DatatypeConverter.convert(fhirType, t, null);
 				addQueryParameter(request, params, parameters[offset + 2], converted);
 			}
 		}
 		// Remove any trailing ? or &
 		request.setLength(request.length() - 1);
-		BundleEntryComponent entry = (BundleEntryComponent) params.getUserData(BundleEntryComponent.class.getName());
-		if (entry != null) {
-			// Was this QPD in response to a query message, or was it the query itself.
-			MessageHeader mh = this.getFirstResource(MessageHeader.class);
-			Boolean isResponse = null;
-			if (mh != null) {
-				if (mh.getMeta().hasTag()) {
-					if (mh.getMeta().getTag().stream().anyMatch(c -> c.hasCode() && "QBP".equals(c.getCode()))) {
-						isResponse = true;
-					} else if (mh.getMeta().getTag().stream().anyMatch(c -> c.hasCode() && "RSP".equals(c.getCode()))) {
-						isResponse = false;
-					}
-				}
-				if (Boolean.TRUE.equals(isResponse)) {
-					BundleEntryResponseComponent resp = entry.getResponse();
-					resp.setLocation(request.toString());
-					resp.setLastModified(getBundle().getTimestamp());
-				} else if (Boolean.FALSE.equals(isResponse)) {
-					BundleEntryRequestComponent req = entry.getRequest();
-					req.setMethod(HTTPVerb.GET);
-					req.setUrl(request.toString());
-				} else {
-					// It was something other than a QBP or RSP
-				}
-			} else {
-				params.addParameter("_search", request.toString());
-			}
-		} else {
-			params.addParameter("_search", request.toString());
-		}
+		return request.toString();
 	}
 	
+	private Boolean isResponse() {
+		if (mh != null && mh.getMeta().hasTag()) {
+			if (mh.getMeta().getTag().stream().anyMatch(c -> c.hasCode() && "QBP".equals(c.getCode()))) {
+				return true;
+			} else if (mh.getMeta().getTag().stream().anyMatch(c -> c.hasCode() && "RSP".equals(c.getCode()))) {
+				return false;
+			}
+		}
+		return null; // NOSONAR: null = unknown
+	}
+
 	/**
 	 * Some segments can have varying field types, for example, QPD.  This method
 	 * allows the field values to be adjusted to the appropriate V2 type.
@@ -243,28 +272,23 @@ public class QPDParser extends AbstractSegmentParser {
 			for (StringType line: addr.getLine()) {
 				appendParameter(request, line, name);
 			}
-			used = appendParameter(request, addr.getCity(), name + "-city");
-			used = used || appendParameter(request, addr.getState(), name + "-state");
-			used = used || appendParameter(request, addr.getPostalCode(), name + "-postalCode");
-			used = used || appendParameter(request, addr.getCountry(), name + "-country");
+			used = appendParameter(request, addr.getCity(), name + "-city")
+				|| appendParameter(request, addr.getState(), name + "-state")
+				|| appendParameter(request, addr.getPostalCode(), name + "-postalCode")
+				|| appendParameter(request, addr.getCountry(), name + "-country");
 			break;
 		case "HumanName":
 			HumanName hn = (HumanName) converted;
-			used = appendParameter(request, hn.getFamily(), StringUtils.replace(name, "name", "family"));
-			used = used || appendParameter(request, hn.getGivenAsSingleString(), StringUtils.replace(name, "name", "given"));
+			used = appendParameter(request, hn.getFamily(), StringUtils.replace(name, "name", "family")) || 
+				   appendParameter(request, hn.getGivenAsSingleString(), StringUtils.replace(name, "name", "given"));
 			break;
 		case "Identifier":
 			Identifier ident = (Identifier) converted;
-			String value = "";
-			if (ident.hasSystem()) {
-				value = ident.getSystem() + "|";
-			}
+			String value = ident.hasSystem() ? ident.getSystem() + "|" : "";
 			if (ident.hasValue()) {
 				value += ident.getValue();
 			}
-			if (value.length() != 0) {
-				used = appendParameter(request, value, name);
-			}
+			used = appendParameter(request, value, name);
 			break;
 		case "DateType":
 			DateType dt = new DateType(((BaseDateTimeType)converted).getValue());

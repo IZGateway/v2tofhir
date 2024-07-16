@@ -1,9 +1,11 @@
 package gov.cdc.izgw.v2tofhir.segment;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.UnaryOperator;
 
 import org.apache.commons.lang3.StringUtils;
+import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Account;
 import org.hl7.fhir.r4.model.Account.AccountStatus;
 import org.hl7.fhir.r4.model.Address;
@@ -27,13 +29,13 @@ import org.hl7.fhir.r4.model.RelatedPerson;
 import org.hl7.fhir.r4.model.StringType;
 
 import ca.uhn.fhir.model.api.TemporalPrecisionEnum;
-import ca.uhn.hl7v2.HL7Exception;
-import ca.uhn.hl7v2.model.Segment;
-import ca.uhn.hl7v2.model.Type;
-import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
+import gov.cdc.izgw.v2tofhir.annotation.ComesFrom;
+import gov.cdc.izgw.v2tofhir.annotation.Produces;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
+import gov.cdc.izgw.v2tofhir.utils.Codes;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 import gov.cdc.izgw.v2tofhir.utils.Systems;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * PIDParser handles PID segments and creates Patient, Account and Related Person resources.  It works
@@ -46,41 +48,13 @@ import gov.cdc.izgw.v2tofhir.utils.Systems;
  * @author Audacious Inquiry
  *
  */
-@ComesFrom(path="Patient.identifier", source = "PID-2")
-@ComesFrom(path="Patient.identifier", source = "PID-3")
-@ComesFrom(path="Patient.identifier", source = "PID-4")
-@ComesFrom(path="Patient.name", source = "PID-5")
-@ComesFrom(path="Patient.extension('"+PIDParser.MOTHERS_MAIDEN_NAME+"')", source = "PID-6")
-@ComesFrom(path="Patient.birthDate", source = "PID-7")
-@ComesFrom(path="Patient.extension('"+PIDParser.PATIENT_BIRTH_TIME+"')", source = "PID-7")
-@ComesFrom(path="Patient.gender", source = "PID-8")
-@ComesFrom(path="Patient.name", source = "PID-9")
-@ComesFrom(path="Patient.extension("+PIDParser.US_CORE_RACE+")", source="PID-10")
-@ComesFrom(path="Patient.address", source="PID-11")
-@ComesFrom(path="Patient.address.district", source="PID-12")
-@ComesFrom(path="Patient.telecom", source="PID-13", comment = "Home Phone")
-@ComesFrom(path="Patient.telecom", source="PID-14", comment = "Work Phone")
-@ComesFrom(path="Patient.communication.language", source="PID-15")
-@ComesFrom(path="Patient.maritalStatus", source="PID-16")
-@ComesFrom(path="Patient.extension('"+PIDParser.RELIGION+"')", source="PID-17")
-@ComesFrom(path="Account.identifier", source="PID-18", comment = "Patient Account")
-@ComesFrom(path="Patient.identifier", source="PID-19", comment = "Social Security Number")
-@ComesFrom(path="Patient.identifier", source="PID-20", comment = "Driver's License Number")
-@ComesFrom(path="RelatedPerson.identifier", source="PID-21", comment="Mother's identifier")
-@ComesFrom(path="Patient.extension('"+PIDParser.US_CORE_ETHNICITY+"')", source="PID-22")
-@ComesFrom(path="Patient.extension('http://hl7.org/fhir/StructureDefinition/patient-birthPlace')", source="PID-23")
-@ComesFrom(path="Patient.multipleBirthBoolean", source="PID-24", comment="Multiple Birth Indicator")
-@ComesFrom(path="Patient.multipleBirthInteger", source="PID-25", comment="Multiple Birth Order")
-@ComesFrom(path="Patient.extension('"+PIDParser.PATIENT_CITIZENSHIP+"')", source="PID-26", comment="Citizenship")
-@ComesFrom(path="Patient.extension('"+PIDParser.PATIENT_NATIONALITY+"')", source="PID-28", comment="Nationality")
-@ComesFrom(path="Patient.deceasedBoolean", source="PID-30", comment="Deceased Indicator")
-@ComesFrom(path="Patient.deceasedDateTime", source="PID-29", comment="Deceased Date Time")
-@ComesFrom(path="Patient.meta.lastUpdated", source="PID-33")
-@ComesFrom(path="Patient.extension('"+PIDParser.PATIENT_CITIZENSHIP+"')", source="PID-39", comment="Tribal Citizenship")
-@ComesFrom(path="Patient.telecom", source="PID-40", comment="Tribal Citizenship")
-
+@Produces(segment="PID", resource = Patient.class, extra = { RelatedPerson.class, Account.class })
+@Slf4j
 public class PIDParser extends AbstractSegmentParser {
-
+	private Patient patient = null;
+	static {
+		log.debug("Loaded PIDParser");
+	}
 	/** Extension for Patient mother's maiden name */
 	public static final String MOTHERS_MAIDEN_NAME = "http://hl7.org/fhir/StructureDefinition/patient-mothersMaidenName";
 	/** Extension for OMB Category in US Core Race and Ethnicity Extensions */
@@ -99,146 +73,57 @@ public class PIDParser extends AbstractSegmentParser {
 	public static final String PATIENT_CITIZENSHIP = "http://hl7.org/fhir/StructureDefinition/patient-citizenship";
 	/** Extension for Nationality */
 	public static final String PATIENT_NATIONALITY = "http://hl7.org/fhir/StructureDefinition/patient-nationality";
-
+	private static List<FieldHandler> fieldHandlers = new ArrayList<>();
 	/**
 	 * Create a PID parser for the specified message parser
 	 * @param p The message parser to create this PID parser for
 	 */
 	public PIDParser(MessageParser p) {
 		super(p, "PID");
+		if (fieldHandlers.isEmpty()) {
+			initFieldHandlers(this, fieldHandlers);
+		}
+	}
+	
+	@Override
+	public List<FieldHandler> getFieldHandlers() {
+		return fieldHandlers;
 	}
 
-	@Override
-	public void parse(Segment pid) throws HL7Exception {
-		if (isEmpty(pid)) {
-			return;
-		}
-		
-		Patient patient = this.createResource(Patient.class);
-		
-		// Patient identifier
-		addField(pid, 2, Identifier.class, patient::addIdentifier);
-		
-		// Patient identifier list
-		addFields(pid, 3, Identifier.class, patient::addIdentifier);
-		
-		// Patient alternate identifier
-		addField(pid, 4, Identifier.class, patient::addIdentifier);
-		
-		// Patient name 
-		addFields(pid, 5, HumanName.class, patient::addName);
-
-		// Mother's maiden name
-		addFields(pid, 6, patient, HumanName.class, this::addMothersMaidenName);
-		
-		// Patient Birth Time
-		addField(pid, 7, patient, DateTimeType.class, this::addBirthDateTime);
-		
-		// Gender (using HL7 0001 table)
-		CodeableConcept gender = DatatypeConverter.toCodeableConcept(getField(pid, 8), "0001"); 
-		setGender(patient, gender);
-
-		// Alias
-		addFields(pid, 9, patient, HumanName.class, this::addAlias);
-		
-		// Race
-		addFields(pid, 10, patient, CodeableConcept.class, this::addRace);
-		
-		// Address
-		addFields(pid, 11, Address.class, patient::addAddress);
-		
-		Type county = getField(pid, 12);
-		StringType countyName = DatatypeConverter.toStringType(county);
-		if (patient.hasAddress()) {
-			if (!patient.getAddressFirstRep().hasDistrict()) {
-				// Set county on first address
-				patient.getAddressFirstRep().setDistrictElement(countyName);
-			} else if (!patient.getAddressFirstRep().getDistrict().equals(countyName.getValue()) ) {
-				// The county doesn't match district of first address, add a new address containing only the county
-				patient.addAddress().setDistrictElement(countyName);
-			} else {
-				// They match so we can ignore this case.
-			}
-		}
-		
-		for (Type homePhone: getFields(pid, 13)) {
-			addPhone(homePhone, ContactPointUse.HOME, patient);
-		}
-		for (Type workPhone: getFields(pid, 14)) {
-			addPhone(workPhone, ContactPointUse.WORK, patient);
-		}
-		
-		// Language
-		addField(pid, 15, CodeableConcept.class, cc -> patient.addCommunication().setLanguage(cc));
-		
-		// Marital Status
-		addField(pid, 16, CodeableConcept.class, patient::setMaritalStatus);
-		
-		// Religion
-		addField(pid, 17, patient, CodeableConcept.class, this::addReligion);
-		
-		// Account number
-		addField(pid, 18, patient, Identifier.class, this::addAccount);
-		
-		// Social Security Number
-		addField(pid, 19, patient, Identifier.class, this::addSSN);
-		
-		// Drivers License Number
-		addField(pid, 20, Identifier.class, patient::addIdentifier);
-		
-		// Mother's identifier
-		addFields(pid, 21, patient, Identifier.class, this::addMother);
-		
-		// Ethnicity
-		addFields(pid, 22, patient, CodeableConcept.class, this::addEthnicity);
-		
-		// Birthplace
-		addField(pid, 23, patient, StringType.class, this::addBirthPlace);
-		
-		// Multiple Birth indicator
-		addField(pid, 24, BooleanType.class, patient::setMultipleBirth);
-		
-		// Multiple Birth Order.  NOTE: If PID-25 is set, it will overwrite multiBirthBoolean, which should be fine.
-		addField(pid, 25, IntegerType.class, patient::setMultipleBirth);
-
-		// Citizenship
-		addFields(pid, 26, CodeableConcept.class, cc -> 
-			patient.addExtension(PATIENT_CITIZENSHIP, new Extension("code", cc)));
-
-		// Veteran Status (Not done yet in V2toFHIR)
-		
-		// Nationality
-		addField(pid, 28, CodeableConcept.class, cc -> patient.addExtension(PATIENT_NATIONALITY, 
-				new Extension("code", cc)));
-
-		// Deceased Indicator, NOTE: Take this one first.  
-		addField(pid, 30, BooleanType.class, patient::setDeceased);
-		
-		// Deceased Date Time, NOTE: This overwrites the indicator above
-		addField(pid, 29, DateTimeType.class, patient::setDeceased);
-		
-		// Last Updated Time
-		addField(pid, 33, InstantType.class, patient.getMeta()::setLastUpdatedElement);
-
-		// Last Updated Facility
-		addField(pid, 34, patient, Identifier.class, this::addLastUpdatedFacility);
-
-		// Tribal Citizenship
-		addFields(pid, 39, CodeableConcept.class, cc -> 
-			patient.addExtension(PATIENT_CITIZENSHIP, new Extension("code", cc)));
-	
-		// Patient Telecommunication Information
-		addFields(pid, 40, ContactPoint.class, patient::addTelecom);
-		
+	@Override 
+	public IBaseResource setup() {
+		patient = this.createResource(Patient.class);
+		return patient;
 	}
 	
 	/**
+	 * Add an identifier to the patient
+	 * @param ident	The identifier to add
+	 */
+	@ComesFrom(path="Patient.identifier", field = 2)
+	@ComesFrom(path="Patient.identifier", field = 3)
+	@ComesFrom(path="Patient.identifier", field = 4)
+	@ComesFrom(path="Patient.identifier", field = 20, comment = "Driver's License Number")
+
+	public void addIdentifier(Identifier ident) {
+		patient.addIdentifier(ident);
+	}
+	
+	/**
+	 * Add a name to the patient
+	 * @param name	The name to add
+	 */
+	@ComesFrom(path="Patient.name", field = 5)
+	public void addName(HumanName name) {
+		patient.addName(name);
+	}
+	/**
 	 * Add a mothers maiden name to a patient using the mothersMaidenName extension.
 	 * 
-	 * @param patient	The patient to add the name to
 	 * @param hn	The mother's maiden name
 	 */
-	public void addMothersMaidenName(Patient patient, HumanName hn) {
+	@ComesFrom(path="Patient.patient-mothersMaidenName", field = 6, type = HumanName.class)
+	public void addMothersMaidenName(HumanName hn) {
 		if (isNotEmpty(hn) && hn.hasFamily()) {
 			patient.addExtension()
 				.setUrl(MOTHERS_MAIDEN_NAME)
@@ -252,10 +137,10 @@ public class PIDParser extends AbstractSegmentParser {
 	 * If the precision of the datetime is greater than to the day, a birthTime extension
 	 * will be added to the patient.birthDate element.
 	 * 
-	 * @param patient	The patient to add the datetime to.
 	 * @param dt	The datetime
 	 */
-	public void addBirthDateTime(Patient patient, DateTimeType dt) {
+	@ComesFrom(path="Patient.patient-birthTime", field = 7, type = DateTimeType.class)
+	public void addBirthDateTime(DateTimeType dt) {
 		if (isNotEmpty(dt)) {
 			patient.setBirthDate(dt.getValue());
 			if (dt.getPrecision().compareTo(TemporalPrecisionEnum.DAY) > 0) {
@@ -268,15 +153,15 @@ public class PIDParser extends AbstractSegmentParser {
 
 	/**
 	 * Set a gender on a patient based on a Codeable Concept
-	 * @param patient	The patient to set the gender for
 	 * @param gender	A Codeable Concept representing the patient gender
 	 */
-	public void setGender(Patient patient, CodeableConcept gender) {
+	@ComesFrom(path="Patient.gender", field = 8, table="0001", type = CodeableConcept.class)
+	public void setGender(CodeableConcept gender) {
 		for (Coding coding: gender.getCoding()) {
 			if (coding.hasCode() && coding.hasSystem()) {
 				String system = coding.getSystem();
 				if (system.endsWith("0001")) {
-					setGenderFromTable0001(patient, coding);
+					setGenderFromTable0001(coding);
 				} else if (Systems.getSystemNames(system).contains(Systems.DATA_ABSENT)) {
 					setDataAbsentReasonFromDataAbsent(patient.getGenderElement(), coding.getCode());
 				} else if (Systems.getSystemNames(system).contains(Systems.NULL_FLAVOR)) {
@@ -289,11 +174,10 @@ public class PIDParser extends AbstractSegmentParser {
 
 	/**
 	 * Set gender from HL7 Table 0001
-	 * @param patient
-	 * @param coding
+	 * @param gender	The gender code
 	 */
-	public void setGenderFromTable0001(Patient patient, Coding coding) {
-		switch (coding.getCode()) {
+	public void setGenderFromTable0001(Coding gender) {
+		switch (gender.getCode()) {
 		case "A":	patient.setGender(AdministrativeGender.OTHER); break;
 		case "F":	patient.setGender(AdministrativeGender.FEMALE); break;
 		case "M":	patient.setGender(AdministrativeGender.MALE); break;
@@ -339,10 +223,10 @@ public class PIDParser extends AbstractSegmentParser {
 	
 	/**
 	 * Add an alias to the list of patient names.
-	 * @param patient	The patient to add the alias for
 	 * @param alias	The alias
 	 */
-	public void addAlias(Patient patient, HumanName alias) {
+	@ComesFrom(path="Patient.name", field = 9)
+	public void addAlias(HumanName alias) {
 		if (isNotEmpty(alias)) {
 			// Aliases are NOT official names.
 			if (!alias.hasUse()) { alias.setUse(NameUse.USUAL); }
@@ -352,21 +236,35 @@ public class PIDParser extends AbstractSegmentParser {
 
 	/**
 	 * Add a race code to the patient using the US Core Race extension
-	 * @param patient	The patient to add the race to.
 	 * @param race	The race to add.
 	 */
-	public void addRace(Patient patient, CodeableConcept race) {
+	@ComesFrom(path="Patient.us-core-race", field = 10)
+	public void addRace(CodeableConcept race) {
 		if (isEmpty(race)) {
 			return;
 		}
 		
 		Extension raceExtension = patient.addExtension().setUrl(US_CORE_RACE);
 		getContext().setProperty(raceExtension.getUrl(), raceExtension);
+		Extension text = setRaceText(race, raceExtension);
+		
+		if (!setCDCREC(race, raceExtension) &&  	// Didn't find CDCREC
+			!setLegacy(race, raceExtension, text)	// Didn't find a Legacy code
+		) {
+			setUnknown(raceExtension, "UNK");		// Then set value as unknown.
+		}
+	}
+	
+	private Extension setRaceText(CodeableConcept race, Extension raceExtension) {
 		Extension text = null;
 		if (race.hasText()) {
 			text = new Extension("text", new StringType(race.getText()));
 			raceExtension.addExtension(text);
 		}
+		return text;
+	}
+	
+	private boolean setCDCREC(CodeableConcept race, Extension raceExtension) {
 		for (Coding coding: race.getCoding()) {
 			String code = coding.getCode();
 			if (StringUtils.isBlank(code)) {
@@ -378,13 +276,15 @@ public class PIDParser extends AbstractSegmentParser {
 			if (systemNames.contains(Systems.CDCREC) &&
 				setCategoryAndDetail(raceExtension, coding, code, this::getRaceCategory)
 			) {
-				return;
+				return true;
 			} 
 			if (setUnknown(raceExtension, code)) {
-				return;
+				return true;
 			}
 		}
-		// Didn't find CDCREC
+		return false;
+	}
+	private boolean setLegacy(CodeableConcept race, Extension raceExtension, Extension text) {
 		for (Coding coding: race.getCoding()) {
 			String code = coding.getCode();
 			
@@ -400,14 +300,42 @@ public class PIDParser extends AbstractSegmentParser {
 			// Deal with common legacy codes
 			Coding c = new Coding(Systems.CDCREC, getRaceCategory(code), null);
 			if (c.hasCode()) {
-				raceExtension.addExtension("ombCategory", c);
-				return;
+				raceExtension.addExtension(OMB_CATEGORY, c);
+				return true;
 			} 
 		}
-		setUnknown(raceExtension, "UNK");
-
+		return false;
 	}
 
+	/**
+	 * Add an address to the patient
+	 * @param address The address
+	 */
+	@ComesFrom(path="Patient.address", field = 11)
+	public void addAddress(Address address) {
+		patient.addAddress(address);
+	}
+	
+	/**
+	 * Add the county name to the patient address
+	 * @param countyName The name of the county
+	 */
+	
+	@ComesFrom(path="Patient.address.district", field = 12)
+	public void addCounty(StringType countyName) {
+		if (patient.hasAddress()) {
+			if (!patient.getAddressFirstRep().hasDistrict()) {
+				// Set county on first address
+				patient.getAddressFirstRep().setDistrictElement(countyName);
+			} else if (!patient.getAddressFirstRep().getDistrict().equals(countyName.getValue()) ) {
+				// The county doesn't match district of first address, add a new address containing only the county
+				patient.addAddress().setDistrictElement(countyName);
+			} else {
+				// They match so we can ignore this case.
+			}
+		}
+	}
+	
 	private boolean setCategoryAndDetail(Extension extension, Coding coding, String code, UnaryOperator<String> categorize) {
 		if ("ASKU".equals(code) || "UNK".equals(code)) {
 			// Set OMB category to code and quit
@@ -431,10 +359,10 @@ public class PIDParser extends AbstractSegmentParser {
 
 	/**
 	 * Add an ethnicity code to the patient using the US Core Ethnicity extension
-	 * @param patient	The patient to add the ethnicity to.
 	 * @param ethnicity	The ethnicity to add.
 	 */
-	public void addEthnicity(Patient patient, CodeableConcept ethnicity) {
+	@ComesFrom(path="Patient.us-core-ethnicity" , field = 22)
+	public void addEthnicity(CodeableConcept ethnicity) {
 		if (isEmpty(ethnicity)) {
 			return;
 		}
@@ -473,7 +401,7 @@ public class PIDParser extends AbstractSegmentParser {
 			// Deal with common legacy codes
 			Coding c = new Coding(Systems.CDCREC, getEthnicityCategory(code), null);
 			if (c.hasCode()) {
-				ethnicityExtension.addExtension("ombCategory", c);
+				ethnicityExtension.addExtension(OMB_CATEGORY, c);
 				return;
 			}
 		}
@@ -514,41 +442,38 @@ public class PIDParser extends AbstractSegmentParser {
 	public String getRaceCategory(String raceCode) {
 		raceCode = raceCode.toUpperCase();
 		// American Indian or Alaska Native
-		if ("1002".compareTo(raceCode) >= 0 && "2027".compareTo(raceCode) < 0) {
-			return "1002-5";
-		}
-		if ("INDIAN".equals(raceCode) || "I".equals(raceCode)) {
+		if (("1002".compareTo(raceCode) >= 0 && "2027".compareTo(raceCode) < 0) ||
+			"INDIAN".equals(raceCode) || 
+			"I".equals(raceCode)
+		) {
 			return "1002-5";
 		}
 		// Asian
-		if ("2028".compareTo(raceCode) >= 0 && "2053".compareTo(raceCode) < 0) {
-			return "2028-9";
-		}
-		if ("ASIAN".equals(raceCode) || "A".equals(raceCode)) {
+		if (("2028".compareTo(raceCode) >= 0 && "2053".compareTo(raceCode) < 0) ||
+			"ASIAN".equals(raceCode) || 
+			"A".equals(raceCode)
+		) {
 			return "2028-9";
 		}
 		// Black or African American
-		if ("2054".compareTo(raceCode) >= 0 && "2076".compareTo(raceCode) < 0) {
+		if (("2054".compareTo(raceCode) >= 0 && "2076".compareTo(raceCode) < 0) ||
+			"BLACK".equals(raceCode) || 
+			"B".equals(raceCode)
+		) {
 			return "2054-5";
 		}
-		if ("BLACK".equals(raceCode) || "B".equals(raceCode)) {
-			return "2028-9";
-		}
 		// Native Hawaiian or Other Pacific Islander
-		if ("2076".compareTo(raceCode) >= 0 && "2105".compareTo(raceCode) < 0) {
-			return "2076-8";
-		}
-		if ("2500-7".equals(raceCode)) { 
-			return "2076-8";
-		}
-		if ("HAWIIAN".equals(raceCode) || "H".equals(raceCode)) {
+		if (("2076".compareTo(raceCode) >= 0 && "2105".compareTo(raceCode) < 0) ||
+			"2500-7".equals(raceCode) ||
+			"HAWIIAN".equals(raceCode) || "H".equals(raceCode)
+		) { 
 			return "2076-8";
 		}
 		// White
-		if ("2106".compareTo(raceCode) >= 0 && "2130".compareTo(raceCode) < 0) {
-			return "2106-3";
-		}
-		if ("WHITE".equals(raceCode) || "W".equals(raceCode)) {
+		if (("2106".compareTo(raceCode) >= 0 && "2130".compareTo(raceCode) < 0) ||
+			"WHITE".equals(raceCode) || 
+			"W".equals(raceCode)
+		) {
 			return "2106-3";
 		}
 		return null;
@@ -563,16 +488,12 @@ public class PIDParser extends AbstractSegmentParser {
 	 */
 	public String getEthnicityCategory(String ethnicityCode) {
 		ethnicityCode = ethnicityCode.toUpperCase();
-		if ("2135".compareTo(ethnicityCode) >= 0 && "2186".compareTo(ethnicityCode) < 0) {
+		if (("2135".compareTo(ethnicityCode) >= 0 && "2186".compareTo(ethnicityCode) < 0) ||
+			ethnicityCode.charAt(0) == 'H'
+		) {
 			return "2135-2";
 		}
-		if (ethnicityCode.charAt(0) == 'H') {
-			return "2135-2";
-		}
-		if ("2186-5".equals(ethnicityCode)) {
-			return "2186-5";
-		}
-		if (ethnicityCode.charAt(0) == 'N') {
+		if ("2186-5".equals(ethnicityCode) || ethnicityCode.charAt(0) == 'N') {
 			return "2186-5";
 		}
 		return null;
@@ -581,26 +502,68 @@ public class PIDParser extends AbstractSegmentParser {
 	
 	/**
 	 * Add a phone number to a patient
-	 * @param phone	The phone number (or other telecommmuncations address)
+	 * @param phone	The phone number (or other telecommuncations address)
 	 * @param use	The use if unspecified
-	 * @param patient	The patient to add it to.
 	 */
-	public void addPhone(Type phone, ContactPointUse use, Patient patient) {
-		List<ContactPoint> l = DatatypeConverter.toContactPoints(phone);
-		for (ContactPoint cp: l) {
-			if (!cp.hasUse()) {
-				cp.setUse(use);
-			}
-			patient.addTelecom(cp);
+	public void addPhone(ContactPoint phone, ContactPointUse use) {
+		if (!phone.hasUse() && use != null) {
+			phone.setUse(use);
 		}
+		patient.addTelecom(phone);
+	}
+	
+	/**
+	 * Add a Home contact point to the patient
+	 * @param homePhone The contact point
+	 */
+	@ComesFrom(path="Patient.telecom", field = 13, comment = "Home Phone")
+	public void addHomePhone(ContactPoint homePhone) {
+		addPhone(homePhone, ContactPointUse.HOME);
+	}
+	/**
+	 * Add a Work contact point to the patient
+	 * @param workPhone		The contact point
+	 */
+	@ComesFrom(path="Patient.telecom", field = 14, comment = "Work Phone")
+	public void addWorkPhone(ContactPoint workPhone) {
+		addPhone(workPhone, ContactPointUse.WORK);
+	}
+	
+	/**
+	 * Add a contact point to the patient
+	 * @param telecom The contact point
+	 */
+	@ComesFrom(path="Patient.telecom", field = 40, comment="Patient Telecommunication Information")
+	public void addTelecom(ContactPoint telecom) {
+		addPhone(telecom, null);
 	}
 
+	
+	/**
+	 * Add a language for the patient.
+	 * @param language The language
+	 */
+	@ComesFrom(path="Patient.communication.language", field = 15)
+	public void addLanguage(CodeableConcept language) {
+		patient.addCommunication().setLanguage(language);
+	}
+
+	
+	/**
+	 * Set the marital status for the patient.
+	 * @param maritalStatus	The marital status
+	 */
+	@ComesFrom(path="Patient.maritalStatus", field = 16)
+	public void setMaritalStatus(CodeableConcept maritalStatus) {
+		patient.setMaritalStatus(maritalStatus);
+	}
+	
 	/**
 	 * Add a religion to the patient
-	 * @param patient	The patient
 	 * @param religion	The religion
 	 */
-	public void addReligion(Patient patient, CodeableConcept religion) {
+	@ComesFrom(path="Patient.patient-religion", field = 17)
+	public void addReligion(CodeableConcept religion) {
 		patient.addExtension(RELIGION, religion);
 	}
 	
@@ -610,10 +573,10 @@ public class PIDParser extends AbstractSegmentParser {
 	 * Creates a new active account resource with the specified identifier, and ties it back to the 
 	 * patient via a reference.
 	 *  
-	 * @param patient	The patient to add the account to
 	 * @param accountId	The account identifier
 	 */
-	public void addAccount(Patient patient, Identifier accountId) {
+	@ComesFrom(path="Account.identifier", field = 18, comment = "Patient Account")
+	public void addAccount(Identifier accountId) {
 		if (isEmpty(accountId)) {
 			return;
 		}
@@ -625,22 +588,17 @@ public class PIDParser extends AbstractSegmentParser {
 		}
 	}
 
-	/** The code for a Social Security Number found on Identifier.type */
-	public static final CodeableConcept SSN_TYPE = new CodeableConcept().addCoding(
-			new Coding("http://terminology.hl7.org/CodeSystem/v2-0203", "SS", "Social Security Number")
-		);
-
 	/**
 	 * Add a social security number to a patient.
-	 * @param patient	The patient to add the SSN to
 	 * @param ssn	The social security number
 	 */
-	public void addSSN(Patient patient, Identifier ssn) {
+	@ComesFrom(path="Patient.identifier", field = 19, comment = "Social Security Number")
+	public void addSSN(Identifier ssn) {
 		if (isEmpty(patient) || isEmpty(ssn)) {
 			return;
 		}
 		if (!ssn.hasType()) {
-			ssn.setType(SSN_TYPE);
+			ssn.setType(Codes.SSN_TYPE);
 		}
 		if (!ssn.hasSystem()) {
 			ssn.setSystem(Systems.SSN);
@@ -648,17 +606,12 @@ public class PIDParser extends AbstractSegmentParser {
 		patient.addIdentifier(ssn);
 	}
 	
-	/** The concept of MOTHER */
-	public static final CodeableConcept MOTHER = new CodeableConcept().addCoding(
-			new Coding("http://terminology.hl7.org/CodeSystem/v3-RoleCode", "MTH", "Mother")
-		);
-
 	/**
 	 * Add the mothers identifier to a RelatedPerson for this patient.
-	 * @param patient	The patient to add the mothers identifier to
 	 * @param mother	The mother's identifier
 	 */
-	public void addMother(Patient patient, Identifier mother) {
+	@ComesFrom(path="RelatedPerson.identifier", field = 21, comment="Mother's identifier")
+	public void addMother(Identifier mother) {
 		if (isEmpty(patient) || isEmpty(mother)) {
 			return;
 		}
@@ -669,27 +622,87 @@ public class PIDParser extends AbstractSegmentParser {
 		}
 		rp.addIdentifier(mother);
 		rp.setPatient(ParserUtils.toReference(patient));
-		rp.addRelationship(MOTHER);
+		rp.addRelationship(Codes.MOTHER);
 	}
 	
 	/**
 	 * Add the patient's birth place
-	 * @param patient	The patient
 	 * @param birthPlace	The birthplace
 	 */
-	public void addBirthPlace(Patient patient, StringType birthPlace) {
+	@ComesFrom(path="Patient.patient-birthPlace", field = 23)
+	public void addBirthPlace(StringType birthPlace) {
 		if (isEmpty(patient) || isEmpty(birthPlace)) {
 			return;
 		}
 		patient.addExtension(PATIENT_BIRTH_PLACE, birthPlace);
 	}
+
+	/**
+	 * Add the patient's multiple birth indicator
+	 * @param indicator	The indicator
+	 */
+	@ComesFrom(path="Patient.multipleBirthBoolean", field = 24, comment="Multiple Birth Indicator")
+	public void setMultipleBirthIndicator(BooleanType indicator) {
+		patient.setMultipleBirth(indicator);
+	}
 	
 	/**
+	 * Add the patient's multiple birth order
+	 * @param order		The birth order
+	 */
+	@ComesFrom(path="Patient.multipleBirthInteger", field = 25, comment="Multiple Birth Order")
+	public void setMultipleBirthOrder(IntegerType order) {
+		patient.setMultipleBirth(order);
+	}
+	
+	/**
+	 * Add the patient's citizenship
+	 * @param cc	The citizenship
+	 */
+	@ComesFrom(path="Patient.patient-citizenship", field = 26, comment="Citizenship")
+	@ComesFrom(path="Patient.patient-citizenship", field = 39, comment="Tribal Citizenship")
+	public void addCitizenship(CodeableConcept cc) {
+		patient.addExtension(PATIENT_CITIZENSHIP, new Extension("code", cc));
+	}
+	/**
+	 * Add the patient's nationality
+	 * @param cc	The nationality
+	 */
+	@ComesFrom(path="Patient.patient-nationality", field = 28, comment="Nationality")
+	public void addNationality(CodeableConcept cc) {
+		patient.addExtension(PATIENT_NATIONALITY, new Extension("code", cc));
+	}
+
+	/**
+	 * Add the patient's deceased indicator
+	 * @param indicator	The indicator
+	 */
+	@ComesFrom(path="Patient.deceasedBoolean", field = 30, comment="Deceased Indicator")
+	public void setDeceasedIndicator(BooleanType indicator) {
+		patient.setDeceased(indicator);
+	}
+	
+	/**
+	 * Add the patient's deceased date
+	 * @param dateTime	The datetime
+	 */
+	@ComesFrom(path="Patient.deceasedDateTime", field = 29, comment="Deceased Date Time")
+	public void setDeceasedDateTime(DateTimeType dateTime) {
+		patient.setDeceased(dateTime);
+	}
+	/**
+	 * Set the patient's last updated tyime
+	 * @param instant	The last updated time
+	 */
+	@ComesFrom(path="Patient.meta.lastUpdated", field = 33)
+	public void setLastUpdated(InstantType instant) {
+		patient.getMeta().setLastUpdatedElement(instant);
+	}
+	/**
 	 * Add the last updated facility and date time to provenance information
-	 * @param patient	The patient to update
 	 * @param ident	The last updated facility identifier
 	 */
-	public void addLastUpdatedFacility(Patient patient, Identifier ident) {
+	public void addLastUpdatedFacility(Identifier ident) {
 		Provenance p = (Provenance) patient.getUserData(Provenance.class.getName());
 		if (p == null) {
 			return;

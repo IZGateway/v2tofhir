@@ -1,6 +1,5 @@
 package gov.cdc.izgw.v2tofhir.datatype;
 
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.regex.Pattern;
 
@@ -187,6 +186,7 @@ public class AddressParser implements DatatypeParser<Address> {
 	public Class<Address> type() {
 		return Address.class;
 	}
+	
 	@Override
 	public Address convert(Type type) {
 		Address addr = null;
@@ -194,13 +194,37 @@ public class AddressParser implements DatatypeParser<Address> {
 
 		if (type instanceof Primitive pt) {
 			addr = fromString(pt.getValue());
-		} else if (type instanceof Composite comp && Arrays.asList("AD", "XAD")
-				.contains(type.getName())) {
-			addr = parse(comp.getComponents());
-		} else if (type instanceof Composite comp && "SAD".equals(type.getName())) {
-			addr = new Address().addLine(ParserUtils.toString(comp, 0));
-		}
+		} else if (type instanceof Composite comp) {
+			switch (type.getName()) {
+			case "AD", "XAD":
+				addr = parse(comp.getComponents(), 0);
+				break;
+			case "SAD":
+				addr = new Address().addLine(ParserUtils.toString(comp, 0));
+				break;
+			case "LA1":
+				Type[] types = comp.getComponents();
+				if (types.length > 8) {
+					// Recursive call to parse LA1-8 which is of type AD
+					addr = convert(types[8]);
+				}
+				break;
+			case "LA2":
+				addr = parse(comp.getComponents(), 8);
+				break;
+			default:
+				break;
+			}
+		} 
 		
+		removeEmptyLines(addr);
+		if (addr == null || addr.isEmpty()) {
+			return null;
+		}
+		return addr;
+	}
+
+	private void removeEmptyLines(Address addr) {
 		if (addr != null && addr.hasLine()) {
 			Iterator<StringType> it = addr.getLine().iterator();
 			while (it.hasNext()) {
@@ -210,11 +234,6 @@ public class AddressParser implements DatatypeParser<Address> {
 				}
 			}
 		}
-		
-		if (addr == null || addr.isEmpty()) {
-			return null;
-		}
-		return addr;
 	}
 	
 	@Override 
@@ -397,16 +416,17 @@ public class AddressParser implements DatatypeParser<Address> {
 	/**
 	 * Parse a composite made up of types into an address.
 	 * @param types	The components of the address
+	 * @param offset The offset to the address line
 	 * @return	A new FHIR Address populated from the values in types.
 	 */
-	public static Address parse(Type[] types) {
+	public static Address parse(Type[] types, int offset) {
 		Address addr = new Address();
 		for (int i = 0; i < 14; i++) {
 			
-			if (types.length <= i) {
+			if (types.length + offset <= i) {
 				break;
 			}
-			Type t = DatatypeConverter.adjustIfVaries(types, i);
+			Type t = DatatypeConverter.adjustIfVaries(types, i + offset);
 			if (i == 0) {
 				addr.addLine(ParserUtils.toString(t));
 			} else if (t instanceof Primitive part) {

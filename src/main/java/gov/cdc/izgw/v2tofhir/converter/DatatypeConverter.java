@@ -16,6 +16,7 @@ import java.util.TimeZone;
 import java.util.function.Consumer;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
+import org.hl7.fhir.instance.model.api.IBase;
 import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.BaseDateTimeType;
 import org.hl7.fhir.r4.model.BooleanType;
@@ -26,14 +27,18 @@ import org.hl7.fhir.r4.model.ContactPoint;
 import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.DateType;
 import org.hl7.fhir.r4.model.DecimalType;
+import org.hl7.fhir.r4.model.Expression;
 import org.hl7.fhir.r4.model.HumanName;
 import org.hl7.fhir.r4.model.IdType;
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.InstantType;
 import org.hl7.fhir.r4.model.IntegerType;
+import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.PositiveIntType;
+import org.hl7.fhir.r4.model.Practitioner;
 import org.hl7.fhir.r4.model.PrimitiveType;
 import org.hl7.fhir.r4.model.Quantity;
+import org.hl7.fhir.r4.model.RelatedPerson;
 import org.hl7.fhir.r4.model.StringType;
 import org.hl7.fhir.r4.model.TimeType;
 import org.hl7.fhir.r4.model.UnsignedIntType;
@@ -51,6 +56,7 @@ import gov.cdc.izgw.v2tofhir.datatype.ContactPointParser;
 import gov.cdc.izgw.v2tofhir.datatype.HumanNameParser;
 import gov.cdc.izgw.v2tofhir.utils.Mapping;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
+import gov.cdc.izgw.v2tofhir.utils.PathUtils;
 import gov.cdc.izgw.v2tofhir.utils.Systems;
 import gov.cdc.izgw.v2tofhir.utils.Units;
 import lombok.extern.slf4j.Slf4j;
@@ -112,7 +118,7 @@ public class DatatypeConverter {
 	 * @param <F> A FHIR data type to convert to.
 	 */
 	@FunctionalInterface
-	public interface Converter<F extends org.hl7.fhir.r4.model.Type> {
+	public interface Converter<F extends IBase> {
 		/**
 		 * Convert a V2 datatype to a FHIR datatype
 		 * @param type	The V2 datatype to convert
@@ -141,18 +147,19 @@ public class DatatypeConverter {
 	 * @param clazz	The class representing the datatype
 	 * @return The converter
 	 */
-	public static <F extends org.hl7.fhir.r4.model.Type> Converter<F> getConverter(Class<F> clazz) {
-		return (Type t) -> convert(clazz, t);
+	public static <F extends IBase> Converter<F> getConverter(Class<F> clazz) {
+		return (Type t) -> convert(clazz, t, null);
 	}
 
 	/**
 	 * Get a converter for a FHIR datatype
 	 * @param <F>	The FHIR datatype
 	 * @param className	The name of the FHIR datatype
+	 * @param table The associated HL7 V2 table
 	 * @return The converter
 	 */
-	public static <F extends org.hl7.fhir.r4.model.Type> Converter<F> getConverter(String className) {
-		return (Type t) -> convert(className, t);
+	public static <F extends org.hl7.fhir.r4.model.Type> Converter<F> getConverter(String className, String table) {
+		return (Type t) -> convert(className, t, table);
 	}
 	
 	private static final Set<String> FHIR_PRIMITIVE_NAMES = new LinkedHashSet<>(
@@ -165,9 +172,10 @@ public class DatatypeConverter {
 	 * @param <F>	The FHIR type to convert to.
 	 * @param className	The name of the FHIR datatype
 	 * @param t	The HAP V2 type to convert
+	 * @param table The associated HL7 V2 table
 	 * @return The converter
 	 */
-	public static <F extends org.hl7.fhir.r4.model.Type> F convert(String className, Type t) {
+	public static <F extends IBase> F convert(String className, Type t, String table) {
 		className =  "org.hl7.fhir.r4.model." + className;
 		
 		if (FHIR_PRIMITIVE_NAMES.contains(className)) {
@@ -176,7 +184,7 @@ public class DatatypeConverter {
 		try {
 			@SuppressWarnings("unchecked")
 			Class<F> clazz = (Class<F>) Type.class.getClassLoader().loadClass(className);
-			return convert(clazz, t);
+			return convert(clazz, t, table);
 		} catch (ClassNotFoundException e) {
 			throw new IllegalArgumentException(className + " is not a supported FHIR type");
 		}
@@ -188,20 +196,21 @@ public class DatatypeConverter {
 	 * @param <F>	The FHIR datatype
 	 * @param clazz	The class representing the FHIR datatype
 	 * @param t	The HAPI V2 type to convert
+	 * @param table The associated HL7 V2 table
 	 * @return	The converted HAPI V2 type
 	 */
-	public static <F extends org.hl7.fhir.r4.model.Type> F convert(Class<F> clazz, Type t) {
+	public static <F extends IBase> F convert(Class<F> clazz, Type t, String table) {
 		switch (clazz.getSimpleName()) {
 		case "Address":
 			return clazz.cast(toAddress(t));
 		case "BooleanType":
 			return clazz.cast(toBooleanType(t));
 		case "CodeableConcept":
-			return clazz.cast(toCodeableConcept(t));
+			return clazz.cast(toCodeableConcept(t, table));
 		case "CodeType":
-			return clazz.cast(toCodeType(t));
+			return clazz.cast(toCodeType(t, table));
 		case "Coding":
-			return clazz.cast(toCoding(t));
+			return clazz.cast(toCoding(t, table));
 		case "ContactPoint":
 			return clazz.cast(toContactPoint(t));
 		case "DateTimeType":
@@ -232,6 +241,12 @@ public class DatatypeConverter {
 			return clazz.cast(toUnsignedIntType(t));
 		case "UriType":
 			return clazz.cast(toUriType(t));
+		case "Organization":
+			return clazz.cast(toOrganization(t));
+		case "Practitioner":
+			return clazz.cast(toPractitioner(t));
+		case "RelatedPerson":
+			return clazz.cast(toRelatedPerson(t));
 		default:
 			throw new IllegalArgumentException(clazz.getName() + " is not a supported FHIR type");
 		}
@@ -281,9 +296,13 @@ public class DatatypeConverter {
      * @return The CodeableConcept converted from the V2 datatype
      */
     public static CodeableConcept toCodeableConcept(Type codedElement, String table) {
+		if (table != null && table.length() == 0) {
+			table = null;
+		}
 		if ((codedElement = adjustIfVaries(codedElement)) == null) {
 			return null;
 		}
+		
 		CodeableConcept cc = new CodeableConcept();
 		Primitive st = null;
 		Composite comp = null;
@@ -455,18 +474,35 @@ public class DatatypeConverter {
      * @return The CodeType converted from the V2 datatype
      */
     public static CodeType toCodeType(Type codedElement) {
+    	return toCodeType(codedElement, null);
+    }
+	/**
+     * Convert a HAPI V2 datatype to a FHIR CodeType
+     * @param codedElement The HAPI V2 type to convert
+     * @param table The HL7 V2 table 
+     * @return The CodeType converted from the V2 datatype
+     */
+    public static CodeType toCodeType(Type codedElement, String table) {
 		if (codedElement == null) {
 			return null;
 		}
+		if (table != null && table.length() == 0) {
+			table = null;
+		}
 		codedElement = adjustIfVaries(codedElement);
+		CodeType code = null;
 		if (codedElement instanceof Primitive pt) {
-			return new CodeType(StringUtils.strip(pt.getValue()));
+			code = new CodeType(StringUtils.strip(pt.getValue()));
+		} else {
+			Coding coding = toCoding(codedElement, table);
+			if (coding != null && !coding.isEmpty()) {
+				code = new CodeType(coding.getCode());
+			}
 		}
-		Coding coding = toCoding(codedElement);
-		if (coding != null && !coding.isEmpty()) {
-			return new CodeType(coding.getCode());
+		if (code != null && table != null) {
+			code.setSystem(Mapping.mapTableNameToSystem(table));
 		}
-		return null;
+		return code;
 	}
 
 	/**
@@ -485,6 +521,10 @@ public class DatatypeConverter {
      * @return The Coding converted from the V2 datatype
      */
     public static Coding toCoding(Type type, String table) {
+		if (table != null && table.length() == 0) {
+			table = null;
+		}
+
 		CodeableConcept cc = toCodeableConcept(type, table);
 		if (cc == null || cc.isEmpty()) {
 			return null;
@@ -719,16 +759,16 @@ public class DatatypeConverter {
 			case "CX":
 				id = extractAsIdentifier(comp, 0, 1, 4, 3, 9, 8);
 				break;
-			case "CNN":
+			case "CNN":	// Also Practitioner
 				id = extractAsIdentifier(comp, 0, -1, 7, 9, 8);
 				break;
-			case "XCN":
+			case "XCN":	// Also Practitioner, RelatedPerson?
 				id = extractAsIdentifier(comp, 0, 10, 12, 22, 21, 8);
 				break;
-			case "XON":
+			case "XON":	// Also Organization
 				id = extractAsIdentifier(comp, 0, 9, 3, 6, 8, 6);
 				break;
-			case "XPN":
+			case "XPN":	// Also RelatedPerson?
 			default:
 				break;
 			}
@@ -738,7 +778,54 @@ public class DatatypeConverter {
 		}
 		return id;
 	}
+    
+    /**
+     * Create an organization from an XON or primitive
+     * @param t	The type
+     * @return	The new organization
+     */
+    public static Organization toOrganization(Type t) {
+    	t = adjustIfVaries(t);
+    	Organization org = new Organization();
+		org.setName(ParserUtils.toString(t));
 
+    	if ("XON".equals(t.getName())) {
+        	org.addIdentifier(toIdentifier(t));
+    	}
+		return org.isEmpty() ? null : org;
+    }
+    
+    private static final List<String> PEOPLE_TYPES = Arrays.asList("CNN", "XCN", "XPN");  
+    /**
+     * Create a practitioner from an CNN, XCN or XPN or primitive
+     * @param t	The type
+     * @return	The new organization
+     */
+    public static Practitioner toPractitioner(Type t) {
+    	t = adjustIfVaries(t);
+    	Practitioner pract = new Practitioner();
+		pract.addName(toHumanName(t));
+		if (PEOPLE_TYPES.contains(t.getName())) {
+    		pract.addIdentifier(toIdentifier(t));
+    	}
+		return pract.isEmpty() ? null : pract;
+    }
+    
+    /**
+     * Create a RelatedPerson from an CNN, XCN or XPN or primitive
+     * @param t	The type
+     * @return	The new RelatedPerson
+     */
+    public static RelatedPerson toRelatedPerson(Type t) {
+    	t = adjustIfVaries(t);
+    	RelatedPerson person = new RelatedPerson();
+    	person.addName(toHumanName(t));
+		if (PEOPLE_TYPES.contains(t.getName())) {
+    		person.addIdentifier(toIdentifier(t));
+    	}
+		return person.isEmpty() ? null : person;
+    }
+    
 	private static void setSystemFromHD(Identifier id, Type[] types, int offset) {
 		List<String> s = DatatypeConverter.getSystemsFromHD(offset, types);
 		if (!s.isEmpty()) {
@@ -855,9 +942,9 @@ public class DatatypeConverter {
 		try {
 			ts1.setValue(value);
 			String valueWithoutZone = StringUtils.substringBefore(value.replace("+", "-"), "+");
-			TemporalPrecisionEnum prec = null;
 			String valueWithoutDecimal = StringUtils.substringBefore(value, ".");
 			int len = valueWithoutDecimal.length();
+			TemporalPrecisionEnum prec;
 			if (len < 5) {
 				prec = TemporalPrecisionEnum.YEAR;
 			} else if (len < 7) {
@@ -868,6 +955,8 @@ public class DatatypeConverter {
 				prec = TemporalPrecisionEnum.MINUTE;
 			} else if (len < 15) {
 				prec = TemporalPrecisionEnum.SECOND;
+			} else {
+				prec = TemporalPrecisionEnum.MILLI;
 			}
 			Calendar cal = ts1.getValueAsCalendar();
 			if (TemporalPrecisionEnum.YEAR.equals(prec)) {
@@ -1073,6 +1162,27 @@ public class DatatypeConverter {
 	}
 
 	/**
+	 * Create a FHIRPath expression from an ERL data type.
+	 * @param type the ERL datatype
+	 * @return an Expression using FHIRPath for the error location.
+	 */
+	public static Expression toExpression(Type type) {
+		if (type == null) {
+			return null;
+		}
+		type = adjustIfVaries(type);
+		if ("ERL".equals(type.getName())) {
+			try {
+				return new Expression()
+						.setLanguage("text/fhirpath")
+						.setExpression(PathUtils.v2ToFHIRPath(type.encode()));
+			} catch (HL7Exception e) {
+				// Ignore the failure
+			}
+		}
+		return null;
+	}
+	/**
      * Convert a HAPI V2 datatype to a FHIR StringType
      * @param type The HAPI V2 type to convert
      * @return The StringType converted from the V2 datatype
@@ -1092,7 +1202,6 @@ public class DatatypeConverter {
 			s = toString(cc);
 			break;
 		case "ERL":
-			// TODO: Consider converting this type to a FHIRPath expression
 			try {
 				s = type.encode();
 			} catch (HL7Exception e) {
@@ -1359,7 +1468,18 @@ public class DatatypeConverter {
 	}
 
 	private static void setUnits(Quantity qt, Type unit) {
-		CodeableConcept cc = toCodeableConcept(unit);
+		setUnits(qt, toCodeableConcept(unit));
+	}
+	
+	/**
+	 * This method can be used to combine two separate fields
+	 * into a singular quantity.  Some segments (e.g., RXA) may
+	 * separate quantity and units into separate fields (e.g., RXA-6 and RXA-7).
+	 * 
+	 * @param qt	The quantity to set the units on.
+	 * @param cc	The concept representing the units.
+	 */
+	public static void setUnits(Quantity qt, CodeableConcept cc) {
 		if (cc != null && cc.hasCoding()) {
 			List<Coding> codingList = cc.getCoding();
 			Collections.sort(codingList, DatatypeConverter::compareUnitsBySystem);

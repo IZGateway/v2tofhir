@@ -10,6 +10,12 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.ainq.fhir.utils.YamlParser;
+
+import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.fhir.context.support.DefaultProfileValidationSupport;
+import ca.uhn.fhir.context.support.IValidationSupport;
+import ca.uhn.fhir.parser.IParser;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Composite;
 import ca.uhn.hl7v2.model.GenericSegment;
@@ -56,6 +62,14 @@ public class TestBase {
 	final static List<String> IS_NAME = NAME_TYPES;
 	final static List<String> IS_ADDR = ADDR_TYPES;
 	final static List<String> IS_QUANTITY = QUANTITY_TYPES;
+
+	protected static final FhirContext ctx = FhirContext.forR4();
+	protected static final IValidationSupport support = new DefaultProfileValidationSupport(ctx);
+	static {
+		ctx.setValidationSupport(support);
+	}
+	protected static final IParser fhirParser = ctx.newJsonParser().setPrettyPrint(true);
+	protected static final YamlParser yamlParser = new YamlParser(ctx);
 
 	static Set<Type> getTestDataForCoding() {
 		return getTestData(t -> CODING_TYPES.contains(t.getName()));
@@ -198,6 +212,19 @@ public class TestBase {
 		List<String> l = Arrays.asList(names);
 		return getTestSegments().stream().filter(n -> l.contains(n.segment().getName())).toList();
 	}
+
+	static List<NamedSegment> getTestPIDs() {
+		return getTestSegments("PID");
+	}
+	
+	static List<NamedSegment> getTestORCs() {
+		return getTestSegments("ORC");
+	}
+	
+	static List<NamedSegment> getTestMSHs() {
+		return getTestSegments("MSH");
+	}
+	
 
 	static Message parse(String message) {
 		try {

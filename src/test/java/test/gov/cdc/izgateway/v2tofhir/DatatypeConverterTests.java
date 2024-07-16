@@ -69,8 +69,8 @@ class DatatypeConverterTests extends TestBase {
 			  + "\n \"root_template\": \"VXU_V04\","
 			  + "\n \"rr_data\": null"
 			+ "\n}";
-	private static final FhirContext ctx = FhirContext.forR4();
-	private static final IParser fhirParser = ctx.newJsonParser().setPrettyPrint(true);
+	protected static final FhirContext ctx = FhirContext.forR4();
+	protected static final IParser fhirParser = ctx.newJsonParser().setPrettyPrint(true);
 	// Force load of Mapping class before any testing starts.
 	@SuppressWarnings("unused")
 	private static final Class<Mapping> MAPPING_CLASS = Mapping.class; 
@@ -294,12 +294,19 @@ class DatatypeConverterTests extends TestBase {
 	}
 	
 	@ParameterizedTest
-	@MethodSource("getTestSegments")
+	@MethodSource("getTestMSHs")
 	void testSegmentConversions(NamedSegment segment) throws HL7Exception {
 		MessageParser p = new MessageParser();
-		System.out.println(segment.segment());
-		Bundle b = p.createBundle(Collections.singleton(segment.segment()));
-		System.out.println(fhirParser.encodeResourceToString(b));
+		System.out.println(segment.segment().encode());
+		Bundle b1 = p.createBundle(Collections.singleton(segment.segment()));
+		if (!b1.hasEntry()) {
+			log.info("No parsers for {}", segment.segment().getName());
+		}
+		// Test with new Parser Structure
+		// AbstractStructureParser.useNew(false);
+		// Bundle b2 = p.createBundle(Collections.singleton(segment.segment()));
+		// assertEquals(yamlParser.encodeResourceToString(b2), yamlParser.encodeResourceToString(b1));
+		System.out.println(yamlParser.encodeResourceToString(b1));
 	}
 	
 	private String testMicrosoftConverterResponse(InputStream is) throws IOException, ParseException {

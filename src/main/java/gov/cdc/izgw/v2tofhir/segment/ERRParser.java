@@ -1,8 +1,11 @@
 package gov.cdc.izgw.v2tofhir.segment;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 import org.hl7.fhir.exceptions.FHIRException;
+import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.MessageHeader;
@@ -12,13 +15,10 @@ import org.hl7.fhir.r4.model.OperationOutcome.IssueSeverity;
 import org.hl7.fhir.r4.model.OperationOutcome.IssueType;
 import org.hl7.fhir.r4.model.OperationOutcome.OperationOutcomeIssueComponent;
 
-import ca.uhn.hl7v2.HL7Exception;
-import ca.uhn.hl7v2.model.Segment;
-import ca.uhn.hl7v2.model.Type;
-import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
+import gov.cdc.izgw.v2tofhir.annotation.ComesFrom;
+import gov.cdc.izgw.v2tofhir.annotation.Produces;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
-import gov.cdc.izgw.v2tofhir.utils.PathUtils;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -26,22 +26,33 @@ import lombok.extern.slf4j.Slf4j;
  * 
  * @author Audacious Inquiry
  */
-@ComesFrom(path="OperationOutcome.issue.location", source="ERR-2")
-@ComesFrom(path="OperationOutcome.issue.code", source="ERR-3")
-@ComesFrom(path="OperationOutcome.issue.severity", source="ERR-4")
-@ComesFrom(path="OperationOutcome.issue.detail", source="ERR-3")
-@ComesFrom(path="OperationOutcome.issue.detail", source="ERR-5")
-@ComesFrom(path="OperationOutcome.issue.diagnostics", source= { "ERR-7", "ERR-8" })
 
+/**
+ * Parse an ERR segment into an OperationOutcome resource.
+ * 
+ * If no OperationOutcome already exists for this message, a new one is created.
+ * One OperationOutcome.issue is created for each ERR segment.
+ * 
+ * OperationOutcome.issue.location is set from ERR-2
+ * OperationOutcome.issue.code is set from ERR-3
+ * OperationOutcome.issue.severity is set from ERR-4
+ * OperationOutcome.issue.detail is set from ERR-3 and ERR-5
+ * OperationOutcome.issue.diagnostics is set from ERR-7 and ERR-8 if present.
+ *  
+ */
+@Produces(segment="ERR", resource = OperationOutcome.class, extra = MessageHeader.class)
 @Slf4j
 public class ERRParser extends AbstractSegmentParser {
+	private static final String SUCCESS = "success";
+	private OperationOutcomeIssueComponent issue;
+	
 	static {
 		log.debug("{} loaded", ERRParser.class.getName());
 	}
 	private static final LinkedHashMap<String, String[]> errorCodeMap = new LinkedHashMap<>();
 	private static final String NOT_SUPPORTED = "not-supported";
 	private static final String[][] errorCodeMapping = {
-			{ "success", "0", "Message accepted", "Success. Optional, as the AA conveys success. Used for systems that must always return a status code." },
+			{ SUCCESS, "0", "Message accepted", "Success. Optional, as the AA conveys success. Used for systems that must always return a status code." },
 			{ "structure", "100", "Segment sequence error", "Error: The message segments were not in the proper order, or required segments are missing." },
 			{ "required", "101", "Required field missing", "Error: A required field is missing from a segment" },
 			{ "value", "102", "Data type error", "Error: The field contained data of the wrong data type, e.g. an NM field contained" },
@@ -55,6 +66,7 @@ public class ERRParser extends AbstractSegmentParser {
 			{ "lock-error", "206", "Application record locked", "Rejection: The transaction could not be performed at the application storage level, e.g., database locked." },
 			{ "exception", "207", "Application internal error", "Rejection: A catchall for internal errors not explicitly covered by other codes." }
 	};
+	private static final List<FieldHandler> fieldHandlers = new ArrayList<>();
 	static {
 		for (String[] mapping : errorCodeMapping) {
 			errorCodeMap.put(mapping[1], mapping);
@@ -68,83 +80,57 @@ public class ERRParser extends AbstractSegmentParser {
 	 */
 	public ERRParser(MessageParser messageParser) {
 		super(messageParser, "ERR");
+		if (fieldHandlers.isEmpty()) {
+			initFieldHandlers(this, fieldHandlers);
+		}
 	}
-
-	/**
-	 * Parse an ERR segment into an OperationOutcome resource.
-	 * 
-	 * If no OperationOutcome already exists for this message, a new one is created.
-	 * One OperationOutcome.issue is created for each ERR segment.
-	 * 
-	 * OperationOutcome.issue.location is set from ERR-2
-	 * OperationOutcome.issue.code is set from ERR-3
-	 * OperationOutcome.issue.severity is set from ERR-4
-	 * OperationOutcome.issue.detail is set from ERR-3 and ERR-5
-	 * OperationOutcome.issue.diagnostics is set from ERR-7 and ERR-8 if present.
-	 *  
-	 * @param err	The ERR segment to parse
-	 */
+	
 	@Override
-	public void parse(Segment err) throws HL7Exception {
+	public List<FieldHandler> getFieldHandlers() {
+		return fieldHandlers;
+	}
+	
+	@Override 
+	public IBaseResource setup() {
+  OperationOutcome oo;
 		// Create a new OperationOutcome.issue for each ERR resource
-		OperationOutcome oo = getFirstResource(OperationOutcome.class);
+		oo = getFirstResource(OperationOutcome.class);
 		if (oo == null) {
 			oo = createResource(OperationOutcome.class);
 			MessageHeader mh = getFirstResource(MessageHeader.class);
 			if (mh == null) {
 				mh = createResource(MessageHeader.class);
 			}
+			// If MessageHeader or OperationOutcome has to be created, 
+			// link them in MessageHeader.response.details
+			// Normally this is already done in MSAParser, but if processing
+			// an incomplete message (e.g., ERR segment but w/o MSA), this ensures 
+			// that the parser has the expected objects to work with.
 			mh.getResponse().setDetails(ParserUtils.toReference(oo));
 		}
-		
-		OperationOutcomeIssueComponent issue = oo.addIssue();
-		setLocation(issue, err);
-		setErrorCodeAndSeverity(issue, err, setErrorCode(issue, err));
-		issue.setDetails(getDetails(err, issue.getDetails()));
-		issue.setDiagnostics(getDiagnostics(err));
+		issue = oo.addIssue();
+		return oo;
 	}
-
-	private void setLocation(OperationOutcomeIssueComponent issue, Segment err) {
-		Type[] locations = getFields(err, 2); // Location: ERL (can repeat)
-		if (locations.length != 0) {
-			for (Type location: locations) {
-				try {
-					String encoded = location.encode();
-					issue.addLocation(encoded);
-					issue.addExpression(PathUtils.v2ToFHIRPath(encoded));  
-				} catch (HL7Exception ex) {
-					warnException("parsing {}-2", "ERR", err, ex);
-					// Quietly ignore this
-				}
-			}
-		}
+	
+	/**
+	 * Add the error location to the operation outcome.
+	 * @param location	The location
+	 */
+	@ComesFrom(path = "OperationOutcome.issue.location", field = 2)
+	public void setLocation(StringType location) {
+		issue.getLocation().add(location);
 	}
-
-	private void setErrorCodeAndSeverity(OperationOutcomeIssueComponent issue, Segment err, CodeableConcept errorCode) {
-		Coding severity = DatatypeConverter.toCoding(getField(err, 4), "HL70516");
-		if (severity != null && severity.hasCode()) {
-			switch (severity.getCode().toUpperCase()) {
-			
-			case "I":	issue.setSeverity(IssueSeverity.INFORMATION); break;
-			case "W":	issue.setSeverity(IssueSeverity.WARNING); break;
-			case "E":	// Fall through
-			default: 	issue.setSeverity(IssueSeverity.ERROR); break;
-			}
-			if (errorCode == null) {
-				errorCode = new CodeableConcept();
-				issue.setDetails(errorCode);
-			}
-			errorCode.addCoding(severity);
-		}
-		addField(err, 5, CodeableConcept.class, issue::setDetails);
-	}
-
-	private CodeableConcept setErrorCode(OperationOutcomeIssueComponent issue, Segment err) {
-		CodeableConcept errorCode = DatatypeConverter.toCodeableConcept(getField(err, 3), "HL70357");
+	
+	/**
+	 * Set the details on an operation outcome
+	 * @param errorCode	The error code
+	 */
+	@ComesFrom(path="OperationOutcome.issue.details", table="0357", field=3, comment="Also sets issue.code")
+	@ComesFrom(path="OperationOutcome.issue.details", table="0533", field=5)
+	public void setDetails(CodeableConcept errorCode) {
 		if (errorCode == null) {
-			return null;
+			return;
 		}
-		issue.setDetails(errorCode);
 		for (Coding c: errorCode.getCoding()) {
 			// If from table 0357
 			if (!"http://terminology.hl7.org/CodeSystem/v2-0357".equals(c.getSystem())) {  // Check the system.
@@ -156,35 +142,48 @@ public class ERRParser extends AbstractSegmentParser {
 				continue;
 			}
 			try {
-				issue.setCode(IssueType.fromCode(map[0]));
-			} catch (FHIRException fex) {
-				if ("success".equals(map[0])) {
+				if (SUCCESS.equals(map[0])) {
 					// Some versions of FHIR support "success", others don't.
 					issue.setCode(IssueType.INFORMATIONAL);
+				} else {
+					issue.setCode(IssueType.fromCode(map[0]));
 				}
+			} catch (FHIRException fex) {
+				warnException("Unexpected FHIRException: {}", fex.getMessage(), fex);
 			}
 		}
-		return errorCode;
 	}
-	private CodeableConcept getDetails(Segment err, CodeableConcept details) {
-		CodeableConcept appErrorCode = DatatypeConverter.toCodeableConcept(getField(err, 5)); // Application Error Code: CWE
-		if (appErrorCode != null) {
-			if (details == null || details.isEmpty()) {
-				return appErrorCode;
-			} 
-			appErrorCode.getCoding().forEach(details::addCoding);
+	
+	/**
+	 * Set the severity
+	 * @param severity	Severity
+	 */
+	@ComesFrom(path="OperationOutcome.issue.severity", field = 4, table = "0516")
+	public void setSeverity(CodeableConcept severity) {
+		for (Coding sev : severity.getCoding()) {
+			if (sev == null || !sev.hasCode()) {
+				continue;
+			}
+			switch (sev.getCode().toUpperCase()) {
+			case "I":	issue.setSeverity(IssueSeverity.INFORMATION); break;
+			case "W":	issue.setSeverity(IssueSeverity.WARNING); break;
+			case "E":	// Fall through
+			default: 	issue.setSeverity(IssueSeverity.ERROR); break;
+			}
 		}
-		return details;
 	}
-	private String getDiagnostics(Segment err) {
-		StringType diagnostics = DatatypeConverter.toStringType(getField(err, 7)); // Diagnostics: TX
-		StringType userMessage = DatatypeConverter.toStringType(getField(err, 8)); // User Message
-		if (diagnostics != null && !diagnostics.isEmpty()) {
-			if (userMessage != null && !userMessage.isEmpty()) {
-				return diagnostics + "\n" + userMessage;
-			} 
-			return diagnostics.toString();
-		} 
-		return (userMessage == null || userMessage.isEmpty()) ? null : userMessage.toString();
+	
+	/**
+	 * Set the diagnostic messages in MSA-7 and MSA-8 in the OperationOutcome
+	 * @param diagnostics	The diagnostics to report
+	 */
+	@ComesFrom(path="OperationOutcome.issue.diagnostics", field=7, comment="Diagnostics")
+	@ComesFrom(path="OperationOutcome.issue.diagnostics", field=8, comment="User Message")
+	public void setDiagnostics(StringType diagnostics) {
+		if (issue.hasDiagnostics()) {
+			issue.setDiagnostics(issue.getDiagnostics() + "\n" + diagnostics);
+		} else {
+			issue.setDiagnosticsElement(diagnostics);
+		}
 	}
 }

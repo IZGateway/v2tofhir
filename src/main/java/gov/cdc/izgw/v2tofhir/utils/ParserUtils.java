@@ -409,11 +409,39 @@ public class ParserUtils {
 	public static Type getField(Segment segment, int field) {
 		try {
 			Type[] types = segment.getField(field); 
-			return types == null || types.length == 0 ? null : types[0];
+			if (types == null || types.length == 0) {
+				return null;
+			}
+			if (types[0] == null || types[0].isEmpty()) {
+				return null;
+			}
+			return types[0];
 		} catch (HL7Exception e) {
 			return null;
 		} 
 	}
+	
+	/**
+	 * Get the all occurrences of a field in a segment, nor null if it does not exist or an exception is
+	 * thrown.
+	 * 
+	 * @param segment	The segment to get the field from
+	 * @param field	The zero-index field number
+	 * @return	The fields
+	 */
+	public static Type[] getFields(Segment segment, int field) {
+		try {
+			Type[] types = segment.getField(field); 
+			if (types == null || types.length == 0) {
+				return new Type[0];
+			}
+			return types;
+		} catch (HL7Exception e) {
+			return new Type[0];
+		} 
+	}
+	
+
 	
 	/**
 	 * Test if a segment has a value in a given field
@@ -422,7 +450,7 @@ public class ParserUtils {
 	 * @return	true if the field is present, false otherwise
 	 */
 	public static  boolean hasField(Segment segment, int field) {
-		return getField(segment, field) != null; 
+		return getField(segment, field) != null;
 	}
 
 	/**
@@ -468,7 +496,9 @@ public class ParserUtils {
 				saved = e;
 			}
 		}
-		warnException("Unexpected {} loading {}: {}", saved.getClass().getSimpleName(), segment, saved.getMessage(), saved);
+		if (saved != null) {
+			warnException("Unexpected {} loading {}: {}", saved.getClass().getSimpleName(), segment, saved.getMessage(), saved);
+		}
 		return null;
 	}
 	
@@ -491,21 +521,48 @@ public class ParserUtils {
 		}
 	}
 	/**
-	 * Create a reference to a resource
+	 * Create a reference to a resource.  
+	 * 
+	 * Set the reference id to the resource id, and make this reference point 
+	 * to the resource through getResource().
+	 * 
 	 * @param resource	The resource to create the reference to
 	 * @return	The created Reference
 	 */
 	public static Reference toReference(DomainResource resource) {
-		IdType id = resource.getIdElement();
-		if (id != null) {
-			return new Reference(id.toString());
+		if (resource == null) {
+			throw new NullPointerException("Resource cannot be null");
 		}
-		return null;
+		IdType id = resource.getIdElement();
+		Reference ref = new Reference();
+		if (id != null) {
+			ref.setId(id.getIdPart());
+		}
+		ref.setUserData("Resource", resource);
+		return ref;
 	}
+	
 	private static void warn(String msg, Object ...args) {
 		log.warn(msg, args);
 	}
 	private static void warnException(String msg, Object ...args) {
 		log.warn(msg, args);
+	}
+
+	/**
+	 * Return true if this datatypes string representation is of a date type 
+	 * and therefore needs to be restated to ISO with punctuation.
+	 * @param t	The data type
+	 * @return	true if cleanup is needed.
+	 */
+	public static Boolean needsIsoCleanup(Type t) {
+		String typeName = t.getName();
+		switch (typeName) {
+		case "TM": return Boolean.FALSE;
+		case "DIN", "DLD", "DR", "DT", "DTM": 
+			return Boolean.TRUE;
+		default:
+			return null;  // NOSONAR null = No cleanup needed
+		}
 	}
 }

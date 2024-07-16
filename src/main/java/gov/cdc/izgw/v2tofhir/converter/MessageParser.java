@@ -9,18 +9,20 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
+import org.hl7.fhir.instance.model.api.IBaseMetaType;
+import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Attachment;
 import org.hl7.fhir.r4.model.Binary;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Bundle.BundleType;
-import org.hl7.fhir.r4.model.CodeableConcept;
-import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.DocumentReference;
 import org.hl7.fhir.r4.model.DomainResource;
 import org.hl7.fhir.r4.model.Enumerations.DocumentReferenceStatus;
 import org.hl7.fhir.r4.model.IdType;
+import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Provenance;
 import org.hl7.fhir.r4.model.Provenance.ProvenanceEntityRole;
 import org.hl7.fhir.r4.model.Reference;
@@ -34,8 +36,8 @@ import ca.uhn.hl7v2.model.Structure;
 import ca.uhn.hl7v2.model.Type;
 import gov.cdc.izgw.v2tofhir.segment.ERRParser;
 import gov.cdc.izgw.v2tofhir.segment.StructureParser;
+import gov.cdc.izgw.v2tofhir.utils.Codes;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
-import gov.cdc.izgw.v2tofhir.utils.PathUtils;
 import io.azam.ulidj.ULID;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -88,11 +90,12 @@ public class MessageParser {
 	 */
 	private final Context context;
 	
-	private final Set<Resource> updated = new LinkedHashSet<>();
+	private final Set<IBaseResource> updated = new LinkedHashSet<>();
 	private final Map<String, Class<StructureParser>> parsers = new LinkedHashMap<>();
 	private final Map<Structure, String> processed = new LinkedHashMap<>();
 	private StructureParser processor = null;
-	
+	private Supplier<String> idGenerator = ULID::random;
+			
 	/**
 	 * Construct a new MessageParser.
 	 */
@@ -103,6 +106,24 @@ public class MessageParser {
 	}
 	
 	/**
+	 * Set the ID Generator for this MessageParser.
+	 * 
+	 * This is used during testing to get uniform ID Generation during tests
+	 * to enable comparison against a baseline.  If not set, ULID.random() is
+	 * used to generate identifiers for the resources created by this 
+	 * MessageParser. 
+	 * 
+	 * @param idGenerator	The idGenerator to use, or null to use the standard one.
+	 */
+	public void setIdGenerator(Supplier<String> idGenerator) {
+		if (idGenerator == null) {
+			this.idGenerator = ULID::random;
+		} else {
+			this.idGenerator = idGenerator;
+		}
+	}
+	
+	/**
 	 * Get the bundle being constructed.
 	 * @return The bundle being constructed, or a new bundle if none exists
 	 */
@@ -110,9 +131,9 @@ public class MessageParser {
 		Bundle b = getContext().getBundle();
 		if (b == null) {
 			b = new Bundle();
-			getContext().setBundle(b);
-			b.setId(new IdType(b.fhirType(), ULID.random()));
+			b.setId(new IdType(b.fhirType() + "/" + idGenerator.get()));
 			b.setType(BundleType.MESSAGE);
+			getContext().setBundle(b);
 		}
 		return b;
 	}
@@ -154,7 +175,6 @@ public class MessageParser {
 			warnException("Could not encode the message: {}", e.getMessage(), e);
 		}
 		messageData.setData(data);
-		messageData.setId(new IdType(messageData.fhirType(), ULID.random()));
 		DocumentReference dr = createResource(DocumentReference.class);
 		dr.setStatus(DocumentReferenceStatus.CURRENT);
 		Attachment att = dr.addContent().getAttachment().setContentType("application/x.hl7v2+er7; charset=utf-8");
@@ -212,13 +232,14 @@ public class MessageParser {
 	public Bundle createBundle(Iterable<Structure> structures) {
 		Bundle b = getBundle();
 		boolean didWork = false;
+		processed.clear();
 		for (Structure structure: structures) {
 			updated.clear();
 			processor = getParser(structure.getName());
 			if (processor == null && !processed.containsKey(structure)) {
 				if (structure instanceof Segment) {
 					// Unprocessed segments indicate potential data loss, report them.
-					warn("Cannot parse {} segment", structure.getName(), structure);
+					// warn("Cannot parse {} segment", structure.getName(), structure)
 				}
 			} else if (!processed.containsKey(structure)) { // Process any structures that haven't been processed yet
 				didWork = true;	// We did some work. It may have failed, but we did something.
@@ -258,7 +279,7 @@ public class MessageParser {
 				if ("Provenance".equals(c.getResource().fhirType())) {
 					list.add(c);	// Add this provenance to the end
 					list.remove(i);	// And remove it from the current position
-					--i;			// And backup a step to reprocess the new resource in this position.
+					--i;			// NOSONAR: Backup a step to reprocess the new resource in this position.
 					--len;			// We don't need to look at entries we just shuffled around to the end
 				}
 			}
@@ -277,17 +298,29 @@ public class MessageParser {
 			processed.put(structure, processor.getClass().getSimpleName());
 		}
 	}
-	private static final CodeableConcept CREATE_ACTIVITY = new CodeableConcept().addCoding(new Coding("http://terminology.hl7.org/CodeSystem/v3-DataOperation", "CREATE", "create"));
-	private static final CodeableConcept ASSEMBLER_AGENT = new CodeableConcept().addCoding(new Coding("http://terminology.hl7.org/CodeSystem/provenance-participant-type", "assembler", "Assembler"));
+	private static final Class<StructureParser> NULL_PARSER = StructureParser.class;
 	private void updateProvenance(Segment segment) {
-		for (Resource r: updated) {
+		for (IBaseResource r: updated) {
 			Provenance p = (Provenance) r.getUserData(Provenance.class.getName());
 			if (p == null) {
 				continue;
 			}
 			Reference what = p.getEntityFirstRep().getWhat();
 			try {
-				what.addExtension().setUrl(ORIGINAL_TEXT).setValue(new StringType(context.getHl7DataId()+"#"+PathUtils.getTerserPath(segment)));
+				StringType whatText = new StringType(segment.encode()); // Was new StringType(context.getHl7DataId()+"#"+PathUtils.getTerserPath(segment))
+				what.addExtension().setUrl(ORIGINAL_TEXT).setValue(whatText);
+				IBaseMetaType meta = r.getMeta();
+				if (meta instanceof Meta m4) {
+					m4.getSourceElement().addExtension().setUrl(ORIGINAL_TEXT).setValue(whatText);
+				} else if (meta instanceof org.hl7.fhir.r4b.model.Meta m4b) {
+					m4b.getSourceElement().addExtension().setUrl(ORIGINAL_TEXT).setValue(whatText);
+				} else if (meta instanceof org.hl7.fhir.r5.model.Meta m5) {
+					m5.getSourceElement().addExtension().setUrl(ORIGINAL_TEXT).setValue(whatText);
+				} else if (meta instanceof org.hl7.fhir.dstu2.model.Meta m2) {
+					m2.addExtension().setUrl(ORIGINAL_TEXT).setValue(whatText);
+				} else if (meta instanceof org.hl7.fhir.dstu3.model.Meta m3) {
+					m3.addExtension().setUrl(ORIGINAL_TEXT).setValue(whatText);
+				}
 			} catch (HL7Exception e) {
 				warn("Unexpected {} updating provenance for {} segment: {}", e.getClass().getSimpleName(), segment.getName(), e.getMessage());
 			}
@@ -311,13 +344,13 @@ public class MessageParser {
 	 * Get the generated resource of the specific class and identifier.
 	 * 
 	 * @param <R>	The type of resource
-	 * @param clazz	The class of the resource
+	 * @param theClass	The class of the resource
 	 * @param id	The identifier of the resource
 	 * @return	The generated resource, or null if not found.
 	 * @throws ClassCastException if the resource with the specified id is not of the specified resource type.
 	 */
-	public <R extends Resource> R getResource(Class<R> clazz, String id) {
-		return clazz.cast(getResource(id));
+	public <R extends IBaseResource> R getResource(Class<R> theClass, String id) {
+		return theClass.cast(getResource(id));
 	}
 	
 	/**
@@ -374,48 +407,20 @@ public class MessageParser {
 	 * @param clazz	The class of the resource
 	 * @return The newly created resource.
 	 */
-	public <R extends Resource> R createResource(Class<R> clazz) {
-		return findResource(clazz, null);
+	public <R extends IBaseResource> R createResource(Class<R> clazz) {
+		return createResource(clazz, null);
 	}
 	
 	/**
-	 * Find or create a resource of the specified type and identifier
+	 * Create a resource of the specified type with the given id
 	 * @param <R>	The type of resource
-	 * @param clazz	The class of the resource
-	 * @param id	The identifier of the resource, or null to just create a new resource.
-	 * @return The existing or a newly created resource if none already exists.
+	 * @param theClass	The class of the resource
+	 * @param id	The id for the resource or null to assign a default id
+	 * @return The newly created resource.
 	 */
-	public <R extends Resource> R findResource(Class<R> clazz, String id) {
-		R resource;
-		if (id != null) {
-			resource = getResource(clazz, id);
-			if (resource != null) {
-				updated.add(resource);
-				return resource;
-			}
-		}
+	public <R extends IBaseResource> R createResource(Class<R> theClass, String id) {
 		try {
-			if (id == null) {
-				id = ULID.random();
-			}
-			resource = clazz.getDeclaredConstructor().newInstance();
-			resource.setId(new IdType(resource.fhirType(), id));
-			BundleEntryComponent entry = getContext().getBundle().addEntry().setResource(resource);
-			resource.setUserData(BundleEntryComponent.class.getName(), entry);
-			if (resource instanceof Provenance) {
-				return resource;
-			}
-			updated.add(resource);
-			if (getContext().isStoringProvenance() && resource instanceof DomainResource dr) { 
-				Provenance p = createResource(Provenance.class);
-				resource.setUserData(Provenance.class.getName(), p);
-				p.addTarget(ParserUtils.toReference(dr));
-				p.setRecorded(new Date());
-				p.setActivity(CREATE_ACTIVITY);
-				p.addAgent().setType(ASSEMBLER_AGENT);
-				p.addEntity().setRole(ProvenanceEntityRole.QUOTATION).setWhat(new Reference(getContext().getHl7DataId()));
-			}
-			return resource;
+			return addResource(id, theClass.getDeclaredConstructor().newInstance());
 		} catch (InstantiationException | IllegalAccessException
 				| IllegalArgumentException | InvocationTargetException
 				| NoSuchMethodException | SecurityException e) {
@@ -425,7 +430,61 @@ public class MessageParser {
 	}
 
 	/**
-	 * Make parsers loadable 
+	 * Adds an externally created Resource to the Bundle.
+	 * This method is used when DatatypeConverter.to* methods return a resource
+	 * instead of a type to add the returned resource to the bundle.
+	 * 
+	 * @param <R>	The type of resource to add
+	 * @param id	The identifier of the resource
+	 * @param resource	The resource.
+	 * @return	The resource
+	 */
+	public <R extends IBaseResource> R addResource(String id, R resource) {
+		if (id == null) {
+			id = idGenerator.get();
+		}
+		resource.setId(new IdType(resource.fhirType() + "/" + id));
+		BundleEntryComponent entry = getContext().getBundle().addEntry().setResource((Resource) resource);
+		resource.setUserData(BundleEntryComponent.class.getName(), entry);
+		if (resource instanceof Provenance) {
+			return resource;
+		}
+		updated.add(resource);
+		if (getContext().isStoringProvenance() && resource instanceof DomainResource dr) { 
+			Provenance p = createResource(Provenance.class);
+			resource.setUserData(Provenance.class.getName(), p);
+			p.addTarget(ParserUtils.toReference(dr));
+			p.setRecorded(new Date());
+			// Copy constants so that they are not modified.
+			p.setActivity(Codes.CREATE_ACTIVITY.copy());
+			// Copy constants so that they are not modified.
+			p.addAgent().setType(Codes.ASSEMBLER_AGENT.copy());
+			p.addEntity().setRole(ProvenanceEntityRole.QUOTATION).setWhat(new Reference(getContext().getHl7DataId()));
+		}
+		return resource;
+	}
+	
+	/**
+	 * Find or create a resource of the specified type and identifier
+	 * @param <R>	The type of resource
+	 * @param theClass	The class of the resource
+	 * @param id	The identifier of the resource, or null to just create a new resource.
+	 * @return The existing or a newly created resource if none already exists.
+	 */
+	public <R extends IBaseResource> R findResource(Class<R> theClass, String id) {
+		R resource;
+		if (id != null) {
+			resource = getResource(theClass, id);
+			if (resource != null) {
+				updated.add(resource);
+				return resource;
+			}
+		}
+		return createResource(theClass, id);
+	}
+
+	/**
+	 * Load a parser for a specified segment type.
 	 * @param segment The segment to get a parser for
 	 * @return The parser for that segment.
 	 */
@@ -434,16 +493,22 @@ public class MessageParser {
 		if (p == null) {
 			p = loadParser(segment);
 			if (p == null) {
+				// Report inability to load ONCE
 				log.error("Cannot load parser for {}", segment);
+				// Save the fact that there is no parser for this segment
+				parsers.put(segment, NULL_PARSER);
 				return null;
 			}
 			parsers.put(segment, p);
+		}
+		if (p.equals(NULL_PARSER)) {
+			return null;
 		}
 		try {
 			return p.getDeclaredConstructor(MessageParser.class).newInstance(this);
 		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException
 				| InvocationTargetException | NoSuchMethodException | SecurityException e) {
-			log.error("Unexpected {} while creating {} for {}", e.getClass().getSimpleName(), p.getName(), segment);
+			log.error("Unexpected {} while creating {} for {}", e.getClass().getSimpleName(), p.getName(), segment, e);
 			return null;
 		}
 	}

@@ -16,8 +16,6 @@ import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
  * This is the base interface for parsers of HL7 Structures (segments and groups).
  */
 public interface StructureParser {
-	/** The name of the segment this parser works on */
-	
 	/**
 	 * The name of the segment this parser works on.
 	 * @return The name of the segment this parser works on
@@ -227,7 +225,7 @@ public interface StructureParser {
 	default <F extends org.hl7.fhir.r4.model.Type> 
 		void addField(Segment pid, int fieldNo, Class<F> clazz, Consumer<F> adder
 	) {
-		ifNotEmpty(DatatypeConverter.convert(clazz, getField(pid, fieldNo)), adder);
+		ifNotEmpty(DatatypeConverter.convert(clazz, getField(pid, fieldNo), null), adder);
 	}
 	
 	/** 
@@ -253,8 +251,9 @@ public interface StructureParser {
 	 * @param clazz	The datatype to create from the field
 	 * @param adder	The adder function
 	 */
-	default <R extends org.hl7.fhir.r4.model.Resource, F extends org.hl7.fhir.r4.model.Type> void addField(Segment pid, int fieldNo, R resource, Class<F> clazz, BiConsumer<R, F> adder) {
-		ifNotEmpty(DatatypeConverter.convert(clazz, getField(pid, fieldNo)),  t -> adder.accept(resource, t));
+	default <R extends org.hl7.fhir.r4.model.Resource, F extends org.hl7.fhir.r4.model.Type> 
+	void addField(Segment pid, int fieldNo, Class<F> clazz, R resource, BiConsumer<R, F> adder) {
+		ifNotEmpty(DatatypeConverter.convert(clazz, getField(pid, fieldNo), null),  t -> adder.accept(resource, t));
 	}
 
 	/** 
@@ -283,7 +282,7 @@ public interface StructureParser {
 	 */
 	default <F extends org.hl7.fhir.r4.model.Type> void addFields(Segment pid, int fieldNo, Class<F> clazz, Consumer<F> adder) {
 		for (Type type: getFields(pid, fieldNo)) {
-			ifNotEmpty(DatatypeConverter.convert(clazz, type), adder);
+			ifNotEmpty(DatatypeConverter.convert(clazz, type, null), adder);
 		}
 	}
 
@@ -314,10 +313,10 @@ public interface StructureParser {
 	 * @param adder	The adder function
 	 */
 	default <R extends org.hl7.fhir.r4.model.Resource, F extends org.hl7.fhir.r4.model.Type> 
-		void addFields(Segment pid, int fieldNo, R patient, Class<F> clazz, BiConsumer<R, F> adder
+		void addFields(Segment pid, int fieldNo, Class<F> clazz, R patient, BiConsumer<R, F> adder
 	) {
 		for (Type type: getFields(pid, fieldNo)) {
-			ifNotEmpty(DatatypeConverter.convert(clazz, type), t -> adder.accept(patient, t));
+			ifNotEmpty(DatatypeConverter.convert(clazz, type, null), t -> adder.accept(patient, t));
 		}
-	}	
+	}
 }

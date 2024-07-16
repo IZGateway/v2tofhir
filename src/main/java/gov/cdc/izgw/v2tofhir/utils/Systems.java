@@ -156,7 +156,7 @@ public class Systems {
 	 **/
 	public static final Set<String> IDENTIFIER_TYPES = Collections.unmodifiableSet(idTypeToDisplayMap.keySet());
 	/** All the FHIR identifier types */
-	public static final Set<String> ID_TYPES = new LinkedHashSet<>(
+	public static final Set<String> ID_TYPES = Collections.unmodifiableSet(new LinkedHashSet<>(
 		Arrays.asList("AC", "ACSN", "AIN", "AM", "AMA", "AN",
 			"ANC", "AND", "ANON", "ANT", "APRN", "ASID", "BA", "BC", "BCFN", "BCT", "BR", "BRN", "BSNR", "CAAI", "CC",
 			"CONM", "CY", "CZ", "DC", "DCFN", "DDS", "DEA", "DFN", "DI", "DL", "DN", "DO", "DP", "DPM", "DR", "DS",
@@ -167,7 +167,7 @@ public class Systems {
 			"PPN", "PRC", "PRN", "PT", "QA", "RI", "RN", "RPH", "RR", "RRI", "RRP", "SAMN", "SB", "SID", "SL", "SN",
 			"SNBSN", "SNO", "SP", "SR", "SRX", "SS", "STN", "TAX", "TN", "TPR", "TRL", "U", "UDI", "UPIN", "USID", "VN",
 			"VP", "VS", "WC", "WCN", "WP", "XV", "XX")
-	);
+	));
 
 	// See https://terminology.hl7.org/5.5.0/CodeSystem-v2-0396.html
 	private static final String[][] stringToUri = {

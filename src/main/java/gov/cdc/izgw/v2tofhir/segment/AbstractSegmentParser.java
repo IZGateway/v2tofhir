@@ -1,11 +1,11 @@
 package gov.cdc.izgw.v2tofhir.segment;
 
+import java.util.ServiceConfigurationError;
+
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Segment;
 import ca.uhn.hl7v2.model.Structure;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -14,8 +14,6 @@ import lombok.extern.slf4j.Slf4j;
  * 
  * @author Audacious Inquiry
  */
-@Data
-@EqualsAndHashCode(callSuper=true)
 @Slf4j
 public abstract class AbstractSegmentParser extends AbstractStructureParser {
 	/**
@@ -37,12 +35,25 @@ public abstract class AbstractSegmentParser extends AbstractStructureParser {
 	/**
 	 * Parse a segment for a message.
 	 * This method will be called by MessageParser for each segment of the given type that
-	 * appears within the method.
+	 * appears within the method.  It will create the primary resource produced by the
+	 * parser and then parses individual fields of the segment and passes them to parser
+	 * methods to add them to the primary resource or to create any extra resources.
 	 * 
-	 * @param seg	The segment to be parsed
-	 * @throws HL7Exception	When an HL7Exception occurs.
+	 * @param segment The segment to be parsed
 	 */
-	public abstract void parse(Segment seg) throws HL7Exception;
+	@Override
+	public void parse(Segment segment) {
+		if (isEmpty(segment)) {
+			return;
+		}
+		
+		if (getProduces() == null) {
+			throw new ServiceConfigurationError(
+				"Missing @Produces on " + this.getClass().getSimpleName()
+			);
+		}
+		super.parse(segment);
+	}
 
 	/**
 	 * Warn about a specific problem found while parsing.

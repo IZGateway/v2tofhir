@@ -87,8 +87,7 @@ public class YamlUtils {
         // parse JSON
         JsonNode jsonNodeTree = new ObjectMapper().readTree(jsonString);
         // save it as YAML
-        String jsonAsYaml = newYAMLMapper().writeValueAsString(jsonNodeTree);
-        return jsonAsYaml;
+        return newYAMLMapper().writeValueAsString(jsonNodeTree);
     }
 
     /**
@@ -145,17 +144,17 @@ public class YamlUtils {
      * use.
      * @param args  Names of files for conversion operation.
      */
-    public static void main(String args[]) {
+    public static void main(String ... args) {
         FhirContext r4 = FhirContext.forR4();
         IParser p;
         if (args.length != 2) {
-            System.err.printf("Usage: java %s inputfile outputfile%n", YamlUtils.class.getName());
+            System.err.printf("Usage: java %s inputfile outputfile%n", YamlUtils.class.getName()); // NOSONAR
             System.exit(5);
         }
         File inputFile = new File(args[0]);
         File outputFile = new File(args[1]);
         if (!inputFile.exists()) {
-            System.err.printf("File %s does not exist.%n", inputFile);
+            System.err.printf("File %s does not exist.%n", inputFile); // NOSONAR
         }
         String ext = StringUtils.substringAfterLast(inputFile.getName(), ".");
         p = getParser(ext, r4);
@@ -163,10 +162,10 @@ public class YamlUtils {
         try (FileReader fr = new FileReader(inputFile, StandardCharsets.UTF_8)) {
             r = (Resource) p.parseResource(fr);
         } catch (IOException e) {
-            System.err.printf("Cannot read %s.%n", inputFile);
+            System.err.printf("Cannot read %s.%n", inputFile); // NOSONAR
             System.exit(1);
         } catch (DataFormatException e) {
-            System.err.printf("Cannot parse %s.%n", inputFile);
+            System.err.printf("Cannot parse %s.%n", inputFile); // NOSONAR
             System.exit(2);
         }
 
@@ -176,10 +175,10 @@ public class YamlUtils {
         try (FileWriter fw = new FileWriter(outputFile, StandardCharsets.UTF_8)) {
             p.encodeResourceToWriter(r, fw);
         } catch (IOException e) {
-            System.err.printf("Cannot write %s.%n", outputFile);
+            System.err.printf("Cannot write %s.%n", outputFile);   // NOSONAR
             System.exit(3);
         } catch (DataFormatException e) {
-            System.err.printf("Cannot convert %s.%n", outputFile);
+            System.err.printf("Cannot convert %s.%n", outputFile); // NOSONAR
             System.exit(4);
         }
     }

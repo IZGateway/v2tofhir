@@ -294,7 +294,7 @@ public class TestData {
 			try {
 				evaluate(b, i);
 			} catch (AssertionError | Exception e) {
-				String message = String.format("Assertion %s (%s) failed: %s", getName(i), getFhirPath(i), e.getMessage());
+				String message = String.format(" Assertion %s (%s) failed: %s", getName(i), getFhirPath(i), e.getMessage());
 				throw new AssertionError(message, e);
 			}
 		}
@@ -324,8 +324,8 @@ public class TestData {
 		}
 		if (cause != null) {
 			String msg = message.toString();
-			log.error(msg);
-			throw new AssertionError(msg, cause);
+			log.error("\n" + msg);
+			throw new AssertionError("\n" + msg, cause);
 		}
 	}
 	
@@ -366,7 +366,7 @@ public class TestData {
 					}
 				}
 				
-				if (line.startsWith("#")) {
+				if (line.startsWith("//") || line.startsWith("#")) {
 					continue;	// Ignore comment lines
 				}
 				

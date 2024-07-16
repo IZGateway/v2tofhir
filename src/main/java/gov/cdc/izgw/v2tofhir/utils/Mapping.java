@@ -39,6 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Data
 public class Mapping {
+	private static final String UNEXPECTED_ERROR_READING = "Unexpected {} reading {}({}): {}";
 	/** constant used to store the original system in Type.userData for types with a System */
 	public static final String ORIGINAL_SYSTEM = "originalSystem";
 	/** constant used to store the original display name in Type.userData for types with a display name */
@@ -123,7 +124,7 @@ public class Mapping {
 			log.debug("{}: Loaded {} lines from {}", fileno, line, name);
 
 		} catch (Exception e) {
-			warnException("Unexpected {} reading {}({}): {}", e.getClass().getSimpleName(), file.getFilename(), line,
+			warnException(UNEXPECTED_ERROR_READING, e.getClass().getSimpleName(), file.getFilename(), line,
 					e.getMessage(), e);
 		}
 		return m;
@@ -161,7 +162,7 @@ public class Mapping {
 			log.debug("{}: Loaded {} lines from {}", fileno, line, name);
 
 		} catch (Exception e) {
-			warnException("Unexpected {} reading {}({}): {}", e.getClass().getSimpleName(), file.getFilename(), line,
+			warnException(UNEXPECTED_ERROR_READING, e.getClass().getSimpleName(), file.getFilename(), line,
 					e.getMessage(), e);
 		}
 	}
@@ -326,7 +327,7 @@ public class Mapping {
 				updateCodeLookup(coding);
 			}
 		} catch (Exception e) {
-			warnException("Unexpected {} reading {}({}): {}", e.getClass().getSimpleName(), file.getFilename(), line,
+			warnException(UNEXPECTED_ERROR_READING, e.getClass().getSimpleName(), file.getFilename(), line,
 					e.getMessage(), e);
 		}
 		
@@ -338,10 +339,10 @@ public class Mapping {
 		if (StringUtils.isEmpty(string)) {
 			return null;
 		}
-		if (string.startsWith("HL7")) {
-			string = string.substring(3);
+		if (string.startsWith("HL7") || StringUtils.isNumeric(string)) {
+			return v2Table(string);
 		}
-		return V2_TABLE_PREFIX + StringUtils.right("000" + string, 4);
+		return string;
 	}
 
 	/**
@@ -383,7 +384,7 @@ public class Mapping {
 			return Systems.idTypeToDisplayMap.get(code);
 		}
 		
-		table = Mapping.getPreferredCodeSystem(table);
+		table = Mapping.mapTableNameToSystem(table);
 		if (table == null) {
 			return null;
 		}
@@ -392,9 +393,14 @@ public class Mapping {
 		if (Systems.UCUM.equals(table)) {
 			coding = Units.toUcum(code);
 		} else {
-			Map<String, Coding> cm = codingMaps.get(Mapping.getPreferredCodeSystem(table.trim()));
+			String system = Mapping.mapTableNameToSystem(table.trim());
+			Map<String, Coding> cm = codingMaps.get(system);
 			if (cm == null) {
-				warn("Unknown code system: {}", table);
+				if (!codingMaps.containsKey(system)) {
+					// Report this error once during an application session.
+					warn("Unknown code system: {}", table);
+					codingMaps.put(system, null);
+				}
 				return null;
 			}
 			coding = cm.get(code);
@@ -500,7 +506,7 @@ public class Mapping {
 			return coding;
 		}
 		String system = coding.getSystem();
-		coding.setSystem(Mapping.getPreferredCodeSystem(system));
+		coding.setSystem(Mapping.mapTableNameToSystem(system));
 		if (!system.equals(coding.getSystem()) && !coding.hasUserData(ORIGINAL_SYSTEM)) {
 			coding.setUserData(ORIGINAL_SYSTEM, system);
 		}
@@ -542,7 +548,13 @@ public class Mapping {
 		return ident;
 	}
 
-	private static String getPreferredCodeSystem(String value) {
+	/**
+	 * Given a coding system name or URL, get the preferred CodeSystem
+	 * url for FHIR. 
+	 * @param value	A coding system name or URL
+	 * @return The preferred name as a URL.
+	 */
+	public static String mapTableNameToSystem(String value) {
 		String system = Mapping.getPreferredIdSystem(value);
 		if (system == null) {
 			return null;
@@ -556,9 +568,9 @@ public class Mapping {
 			if (system.startsWith("-")) {
 				system = system.substring(1);
 			}
-			return V2_TABLE_PREFIX + StringUtils.right("000" + system, 4);
+			return v2Table(system);
 		} else if (StringUtils.isNumeric(system)) {
-			return V2_TABLE_PREFIX + StringUtils.right("000" + system, 4);
+			return v2Table(system);
 		}
 		return system;
 	}
@@ -578,5 +590,20 @@ public class Mapping {
 			return value.substring(9);
 		} 
 		return value;
+	}
+
+	/** 
+	 * Return the V2 system name for the given table
+	 * @param table	The table name.
+	 * @return	The normalized FHIR System Name for that table.
+	 */
+	public static String v2Table(String table) {
+		if (table.startsWith("HL7")) {
+			table = table.substring(3);
+		}
+		if (table.startsWith("-") || table.startsWith("_")) {
+			table = table.substring(1);
+		}
+		return Mapping.V2_TABLE_PREFIX + StringUtils.right("000" + table, 4);
 	}
 }

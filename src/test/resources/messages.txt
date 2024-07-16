@@ -1,7 +1,7 @@
 # RSP Response Messages
 MSH|^~\&|\
 	TEST|MOCK|\
-	DEST|DEST|\
+	DEST|DAPP|\
 	20240618083101-0400||\
 	RSP^K11^RSP_K11|\
 	RESULT-01|\
@@ -11,8 +11,8 @@ MSH|^~\&|\
 	@MessageHeader.count() = 1 // It has one message header	
 	@MessageHeader.source.name = "TEST"
 	@MessageHeader.source.endpoint = "MOCK"
-	@MessageHeader.destination.name = "IZGW"
-	@MessageHeader.destination.endpoint = "IZGW"
+	@MessageHeader.destination.name = "DEST"
+	@MessageHeader.destination.endpoint = "DAPP"
 	@Bundle.timestamp = "2024-06-18T08:31:01.000-04:00" 
 	@MessageHeader.event.code.exists($this = "K11") // The event code is K11
 	@MessageHeader.meta.tag.code.exists($this = "RSP")   // The message type is RSP
@@ -53,7 +53,7 @@ QPD|Z34^Request Immunization History^CDCPHINVS|QUERY-01|234814^^^MYEHR^MR
 	@Parameters.meta.tag[0].system.exists($this = "urn:oid:2.16.840.1.113883.12.471") // What is the actual value of CDCPHINVS
 	@Parameters.meta.tag[1].exists($this.code = "QUERY-01" and $this.system = "QueryTag") \
 		// tag[1] is QUERY-01 from QueryTag system
-	@Parameters.parameter
+	@Parameters.parameter \
 		.exists( \
 			name = "PatientList" and \
 			value.ofType(Identifier).exists( \
@@ -82,8 +82,7 @@ PID|1||234814^^^MYEHR^MR||\
 	@Patient.name.exists($this.use = "official")
 	@Patient.extension.exists(\
 		$this.url = "http://hl7.org/fhir/StructureDefinition/patient-mothersMaidenName" and \
-		$this.value = 'DifferentAIRA') \
-		// Mother's maiden name is DifferentAIRA
+		$this.value = 'DifferentAIRA') // Mother's maiden name is DifferentAIRA 
 	// 19631226|M||ASIAN|
 	@Patient.birthDate = "1963-12-26"
 	@Patient.gender='male'
@@ -111,8 +110,8 @@ PID|1||234814^^^MYEHR^MR||\
 	@Patient.telecom.value='8005551212' 	
 	@Patient.extension	\
 		.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension \
-		.exists(url="ombCategory" and value.code="2028-9") \
-		// Translated from legacy code for not HISPANIC to CDCREC 2028-9 
+		.exists(url="ombCategory" and value.code="2186-5") \
+		// Translated from legacy code for not HISPANIC to CDCREC 2186-5 
 	@Patient.extension	\
 		.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension \
 		.exists(url="text" and value="not HISPANIC") \
