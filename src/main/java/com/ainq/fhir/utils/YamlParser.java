@@ -38,7 +38,7 @@ public class YamlParser implements IParser {
     }
     /**
      * Create a new Yaml Parser from a FhirContext
-     * @param context
+     * @param context The FhirContext to use to create the parser
      */
     public YamlParser(FhirContext context) {
         jsonParser = context.newJsonParser();

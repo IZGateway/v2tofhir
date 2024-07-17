@@ -15,6 +15,10 @@ import org.apache.commons.lang3.StringUtils;
 public class ContinuationReader implements AutoCloseable {
 	private final BufferedReader br;
 	int lineNo = 0;
+	/**
+	 * Construct a continuation reader from a reader
+	 * @param in	The reader
+	 */
 	protected ContinuationReader(Reader in) {
 		this.br = IOUtils.toBufferedReader(in);
 	}

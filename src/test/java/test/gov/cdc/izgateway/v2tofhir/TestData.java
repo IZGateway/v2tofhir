@@ -53,7 +53,7 @@ public class TestData {
 	 * Convert to a string
 	 * <pre>
 	 * testData
-	 * @[
+	 * \@[
 	 *  assertion
 	 *  assertion
 	 * ]

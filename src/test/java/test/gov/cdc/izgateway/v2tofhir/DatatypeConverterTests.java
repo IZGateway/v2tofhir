@@ -178,8 +178,8 @@ class DatatypeConverterTests extends TestBase {
 				);
 			}
 		}
-		System.out.println(encoded);
-		System.out.println(TestUtils.toString(coding));
+		// System.out.println(encoded)
+		// System.out.println(TestUtils.toString(coding))
 	}
 	private boolean hasDisplay(Type t) {
 		return Arrays.asList("CE", "CNE", "CWE").contains(t.getName());
@@ -297,16 +297,12 @@ class DatatypeConverterTests extends TestBase {
 	@MethodSource("getTestSegments") // should be getTestSegments, other possible values are for localized testing 
 	void testSegmentConversions(NamedSegment segment) throws HL7Exception {
 		MessageParser p = new MessageParser();
-		System.out.println(segment.segment().encode());
+		// System.out.println(segment.segment().encode());
 		Bundle b1 = p.createBundle(Collections.singleton(segment.segment()));
 		if (!b1.hasEntry()) {
 			log.info("No parsers for {}", segment.segment().getName());
 		}
-		// Test with new Parser Structure
-		// AbstractStructureParser.useNew(false);
-		// Bundle b2 = p.createBundle(Collections.singleton(segment.segment()));
-		// assertEquals(yamlParser.encodeResourceToString(b2), yamlParser.encodeResourceToString(b1));
-		System.out.println(yamlParser.encodeResourceToString(b1));
+		// System.out.println(yamlParser.encodeResourceToString(b1));
 	}
 	
 	private String testMicrosoftConverterResponse(InputStream is) throws IOException, ParseException {

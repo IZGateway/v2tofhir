@@ -32,7 +32,7 @@ public class Property {
 	 * @param b	The Element to get values from
 	 * @param propertyName	The name of property to get the values from.
 	 * @return A list of values on the element.
-	 * @throws FHIRException
+	 * @throws FHIRException When a FHIRException occurs in the HAPI framework
 	 */
 	public static Property getProperty(IBase b, String propertyName) throws FHIRException { // NOSONAR ? intentional
 		if ("resolve()".equals(propertyName)) {
@@ -107,7 +107,7 @@ public class Property {
 	 * @param b	The Element to get values from
 	 * @param propertyName	The name of property to get the values from.
 	 * @return A list of values on the element.
-	 * @throws FHIRException
+	 * @throws FHIRException When a the HAPI FHIR package is not present 
 	 */
 	public static IBase makeProperty(IBase b, String propertyName) throws FHIRException { // NOSONAR ? intentional
 		switch (b.getClass().getPackageName()) {
@@ -435,7 +435,7 @@ public class Property {
 	/**
 	 * Get the class representing the type for this property
 	 * @return The class representing the type
-	 * @throws ClassNotFoundException
+	 * @throws ClassNotFoundException If the class cannot be found.
 	 */
 	public Class<IBase> getType() throws ClassNotFoundException {
 		String type = getTypeCode();

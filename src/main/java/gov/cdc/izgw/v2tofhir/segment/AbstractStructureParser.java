@@ -75,7 +75,6 @@ public abstract class AbstractStructureParser implements StructureParser {
 	 * class, and initialized once from a concrete instance of that class
 	 * using initFieldHandlers.
 	 * 
-	 * @see AbstractStructureParser#initFieldHandlers(StructureParser)
 	 * @return	The list of Field Handlers
 	 */
 	protected abstract List<FieldHandler> getFieldHandlers(); 

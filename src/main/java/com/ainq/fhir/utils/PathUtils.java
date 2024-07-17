@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
  * 
  * Paths in this class use the Restricted FHIRPath syntax with a few minor simplifications:
  * 
- * extension('<extension-url>') can be written without the full url when the extension is
+ * extension('extension-url') can be written without the full url when the extension is
  * a FHIR standard extension (comes from  http://hl7.org/fhir/StructureDefinition/), or from
  * FHIR US Core (http://hl7.org/fhir/us/core/StructureDefinition/). Also, the quotes in the 
  * extension name aren't necessary.
@@ -56,7 +56,7 @@ public class PathUtils {
 	/**
 	 * Get the values at the specified restricted FHIRPath 
 	 * @param b	The base object to get the 
-	 * @param path
+	 * @param path The FHIRPath
 	 * @return	The values
 	 */
 	public static  IBase get(IBase b, String path) {
@@ -90,7 +90,7 @@ public class PathUtils {
 	 * @param action Which value to get or add
 	 * @return	The requested class.
 	 * @throws FHIRException when the property does not exist
-	 * @throws NumberFormatException when an index is not valid (< 0 or not a valid number)
+	 * @throws NumberFormatException when an index is not valid (&lt; 0 or not a valid number)
 	 */
 	public static IBase get(IBase b, String path, Action action) {
 		if (action == null) {

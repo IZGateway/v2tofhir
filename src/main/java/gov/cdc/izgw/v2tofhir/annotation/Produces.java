@@ -27,11 +27,13 @@ public @interface Produces {
 	
 	/**
 	 * Identifies the primary resource produced by the parser.
+	 * @return the primary resource
 	 */
 	Class<? extends IBaseResource> resource();
 
 	/**
 	 * Identifies any extra resources produced by the parser.
+	 * @return The extra resources
 	 */
 	Class<? extends IBaseResource>[] extra() default {};
 

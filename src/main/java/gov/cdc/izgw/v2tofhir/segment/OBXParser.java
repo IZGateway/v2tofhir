@@ -473,7 +473,7 @@ public class OBXParser extends AbstractSegmentParser {
 	
 	/**
 	 * Set the producing organization identifier
-	 * @param producersId
+	 * @param producersId	The producer organization's identifier
 	 */
 	@ComesFrom(path = "Observation.performer(Observation.Organization)", field = 15, comment = "Producer's ID")
 	public void setProducersID(Identifier producersId) 

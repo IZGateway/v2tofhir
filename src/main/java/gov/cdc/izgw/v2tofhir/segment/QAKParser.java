@@ -26,11 +26,6 @@ import lombok.extern.slf4j.Slf4j;
  * @author Audacious Inquiry
  */
 @Produces(segment="QAK", resource=OperationOutcome.class)
-@ComesFrom(path="OperationOutcome[1].meta.tag.code", source="QAK-1")
-@ComesFrom(path="OperationOutcome[1].meta.tag.system", fixed="QueryTag")
-@ComesFrom(path="OperationOutcome[1].issue.code", source="QAK-2")
-@ComesFrom(path="OperationOutcome[1].issue.severity", source="QAK-2")
-@ComesFrom(path="OperationOutcome[1].issue.details", source="QAK-2")
 @Slf4j
 public class QAKParser extends AbstractSegmentParser {
 	private OperationOutcome oo;

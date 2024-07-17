@@ -99,6 +99,7 @@ public interface StructureParser {
 	 * 		}
 	 * 		// Use
 	 * 		ifNotEmpty(identifier, patient::addIdentifier);
+	 * </pre>
 	 * 
 	 * @param <T>	The FHIR type to check
 	 * @param type	The type object
@@ -124,11 +125,10 @@ public interface StructureParser {
 	 * Add a DataAbsent reason of "unknown" to a FHIR primitive type
 	 * This is used when data is not provided within a V2 message.
 	 * 
-	 * @param element	The FHIR type to set as absent
 	 * @param reason	The reason the data is absent
 	 */
-	default void setDataAbsent(PrimitiveType<?> element) {
-		setDataAbsentReason(element, "unknown");
+	default void setDataAbsent(PrimitiveType<?> reason) {
+		setDataAbsentReason(reason, "unknown");
 	}
 	
 	/**
@@ -212,7 +212,7 @@ public interface StructureParser {
 	 *  <pre>
 	 *  	Type t = getField(pid, 4);
 	 *  	Identifier ident = DatatypeConverter.toIdentifier(t);
-	 *  	if (ident != null && !ident.isEmpty()) {
+	 *  	if (ident != null &amp;&amp; !ident.isEmpty()) {
 	 *  		patient.addIdentifier(ident);
 	 *  	}
 	 *  </pre>
@@ -239,7 +239,7 @@ public interface StructureParser {
 	 *  <pre>
 	 *  	Type t = getField(pid, 7);
 	 *  	DateTimeType dt = DatatypeConverter.toDateTimeType(t);
-	 *  	if (dt != null && !dt.isEmpty()) {
+	 *  	if (dt != null &amp;&amp; !dt.isEmpty()) {
 	 *  		this.addBirthDateTime(patient, dt);
 	 *  	}
 	 *  </pre>
@@ -269,7 +269,7 @@ public interface StructureParser {
 	 *  	Type[] types = getFields(pid, 11);
 	 *  	for (Type t: types) {
 	 *  		Address addr = DatatypeConverter.toAddress(t);
-	 *  		if (addr != null && !addr.isEmpty()) {
+	 *  		if (addr != null &amp;&amp; !addr.isEmpty()) {
 	 *  			patient.addAddress(ident);
 	 *  		}
 	 *  	}
@@ -299,12 +299,13 @@ public interface StructureParser {
 	 *  	Type[] types = getField(pid, 10);
 	 *  	for (Type t: types) {
 	 *  		CodeableConcept cc = DatatypeConverter.toCodeableConcept(t);
-	 *  		if (cc != null && !cc.isEmpty()) {
+	 *  		if (cc != null &amp;&amp; !cc.isEmpty()) {
 	 *  			this.addRace(patient, cc);
 	 *  		}
 	 *  	}
 	 * </pre>
 	 * 
+	 * @param <R>	The FHIR Resource to add
 	 * @param <F>	The FHIR type to add
 	 * @param pid	The segment from which the value comes
 	 * @param fieldNo	The field from which the value comes

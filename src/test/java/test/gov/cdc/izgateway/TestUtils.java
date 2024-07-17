@@ -288,6 +288,7 @@ public class TestUtils {
 	 * Format an object with multiple formatters. This method support the pad function above, and providing other formatting
 	 * for test data generators.
 	 * 
+	 * @param <T> The type of value
 	 * @param v	The object to format
 	 * @param test The test applied to the object and format before performing the formatting
 	 * @param formats	The format strings to use

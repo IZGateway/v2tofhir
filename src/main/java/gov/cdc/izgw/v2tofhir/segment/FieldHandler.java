@@ -252,7 +252,7 @@ public class FieldHandler implements Comparable<FieldHandler> {
 	/**
 	 * @param fh1	The first field handler to compare
 	 * @param fh2	The second field handler to compare
-	 * @return < 0 if fh1 < fh2, 0 if equal, > 0 if fh1 > fh2
+	 * @return &lt; 0 if fh1 &lt; fh2, 0 if equal, &gt; 0 if fh1 &gt; fh2
 	 */
 	public static int compare(FieldHandler fh1, FieldHandler fh2) {
 		if (fh1 == fh2)

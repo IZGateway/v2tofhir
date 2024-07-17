@@ -42,7 +42,9 @@ public class TestBase {
 		log.debug("{} loaded", TestBase.class.getName());
 	}
 	static final Parser v2Parser = new PipeParser();
+	/** A list of test messages for unit tests */
 	protected static final List<TestData> TEST_MESSAGES = loadTestMessages();
+	/** A list of test segments for unit tests */
 	protected static final List<TestData> TEST_SEGMENTS = loadTestSegments();
 
 	// These are defined constants which indicate which V2 types should be used for
@@ -63,12 +65,16 @@ public class TestBase {
 	final static List<String> IS_ADDR = ADDR_TYPES;
 	final static List<String> IS_QUANTITY = QUANTITY_TYPES;
 
+	/** The FhirContext for R4 */
 	protected static final FhirContext ctx = FhirContext.forR4();
+	/** A validation Support for R4 */
 	protected static final IValidationSupport support = new DefaultProfileValidationSupport(ctx);
 	static {
 		ctx.setValidationSupport(support);
 	}
+	/** A fhirParser to use to generate FHIR in JSON */
 	protected static final IParser fhirParser = ctx.newJsonParser().setPrettyPrint(true);
+	/** A yamlParser to use to generate FHIR in YAML */
 	protected static final YamlParser yamlParser = new YamlParser(ctx);
 
 	static Set<Type> getTestDataForCoding() {

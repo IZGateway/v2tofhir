@@ -15,7 +15,6 @@ import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Immunization;
 import org.hl7.fhir.r4.model.Immunization.ImmunizationPerformerComponent;
 import org.hl7.fhir.r4.model.Immunization.ImmunizationStatus;
-import org.hl7.fhir.r4.model.ImmunizationRecommendation;
 import org.hl7.fhir.r4.model.ImmunizationRecommendation.ImmunizationRecommendationRecommendationComponent;
 import org.hl7.fhir.r4.model.Location;
 import org.hl7.fhir.r4.model.Organization;

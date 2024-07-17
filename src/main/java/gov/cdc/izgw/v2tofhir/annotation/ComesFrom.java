@@ -58,11 +58,13 @@ public @interface ComesFrom {
 	
 	/**
 	 * The name of the concept map to use when mapping between code systems.
+	 * @return The name of the concept mape
 	 */
 	String map() default "";
 	
 	/**
 	 * The name of the HL7 Table used with this field.
+	 * @return theh name of the HL7 Table
 	 */
 	String table() default "";
 	
@@ -95,6 +97,10 @@ public @interface ComesFrom {
     @Target({ ElementType.TYPE, ElementType.METHOD })
     @Documented
     @interface List {
+    	/**
+    	 * A list of ComesFrom annotations.
+    	 * @return The values
+    	 */
         ComesFrom[] value();
     }
 }
