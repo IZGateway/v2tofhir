@@ -199,11 +199,13 @@ public class FieldHandler implements Comparable<FieldHandler> {
 	private Type setValue(StructureParser p, Type object) {
 		try {
 			method.invoke(p, object);
-		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+		} catch (IllegalAccessException | IllegalArgumentException e) {
 			// This is checked during initialization, so failure happens early if it is going to
 			// happen at all, so it's OK to throw an error here.
 			log.error("Cannot invoke {}: {}", method, e.getMessage(), e);
 			throw new ServiceConfigurationError("Cannot invoke " + method, e);
+		} catch (InvocationTargetException ex) {
+			throw new ServiceConfigurationError("Exception executing " + method, ex.getCause());
 		}
 		return object;
 	}

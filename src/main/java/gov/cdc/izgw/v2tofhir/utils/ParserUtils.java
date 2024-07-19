@@ -97,7 +97,39 @@ public class ParserUtils {
 		}
 		return null;
 	}
-	
+
+    /**
+     * Convert a field to a string
+     * @param segment	The segment
+     * @param fieldNo	The field
+     * @return	The field converted to a string
+     */
+	public static String toString(Segment segment, int fieldNo) {
+		return toString(getField(segment, fieldNo));
+	}
+    /**
+     * Convert a component to a string
+     * @param segment	The segment
+     * @param fieldNo	The field
+     * @param component	The component
+     * @return	The component converted to a string
+     */
+	public static String toString(Segment segment, int fieldNo, int component) {
+		Type t = getField(segment, fieldNo);
+		t = DatatypeConverter.adjustIfVaries(t);
+		if (t instanceof Composite comp) {
+			return toString(comp.getComponents(), component);
+		} 
+		if (component == 1) {
+			return toString(t);
+		}
+		// Components beyond 1 don't exist in a primitive
+		// This happens in cases where field changes between versions,
+		// so a 2.8.1 message might have a XXX-3-2, but in prior versions,
+		// XXX-3 only had a primitive type.
+		return null;
+	}
+
 	/**
      * Convert a component of a HAPI V2 datatype to a String
      * @param types Components of the composite type to convert

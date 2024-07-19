@@ -149,7 +149,11 @@ public class TextUtils {
 				b.append(" ( ").append(code).append(")"); 
 			}
 		}
-		return b.toString();
+		String value = b.toString();
+		if (value.endsWith(",") || value.endsWith(", ")) {
+			value = StringUtils.substringBeforeLast(value, ",");
+		}
+		return value;
 	}
 	
 	/**

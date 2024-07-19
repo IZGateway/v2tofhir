@@ -117,6 +117,11 @@ public class Systems {
 	/** OID for the code system used for UCUM unit codes */
 	public static final String UCUM_OID = "2.16.840.1.113883.6.8";
 
+	/** Participation Type */
+	public static final String V3_PARTICIPATION_TYPE = "http://terminology.hl7.org/CodeSystem/v3-ParticipationType";
+	/** Act Encounter Code System */
+	public static final String V3_ACT_ENCOUNTER_CODE = "http://terminology.hl7.org/ValueSet/v3-ActEncounterCode";
+
 	/** Code System URI for the code system used for Data Absent Reason */
 	public static final String DATA_ABSENT = "http://terminology.hl7.org/CodeSystem/data-absent-reason";
 	/** Code System OID for the code system used for Data Absent Reason */

@@ -10,6 +10,7 @@ import org.hl7.fhir.r4.model.ImmunizationRecommendation.ImmunizationRecommendati
 import org.hl7.fhir.r4.model.MessageHeader;
 import org.hl7.fhir.r4.model.Organization;
 
+import gov.cdc.izgw.v2tofhir.converter.MessageParser;
 import gov.cdc.izgw.v2tofhir.utils.Mapping;
 
 /**
@@ -19,7 +20,7 @@ import gov.cdc.izgw.v2tofhir.utils.Mapping;
  * @author Audacious Inquiry
  */
 
-class IzDetail {
+public class IzDetail {
 	private final AbstractSegmentParser p;
 	private IzDetail(AbstractSegmentParser p) {
 		this.p = p;
@@ -31,6 +32,16 @@ class IzDetail {
 			p.getContext().setProperty(detail);
 		}
 		return detail;
+	}
+	
+	/**
+	 * Strictly to support testing
+	 * @param mp	The message parser used for testing
+	 */
+	public static void testWith(MessageParser mp) {
+		IzDetail detail = new IzDetail(null);
+		detail.hasImmunization = true;
+		detail.immunization = mp.createResource(Immunization.class);
 	}
 	
 	private Boolean hasImmunization = null;
@@ -84,14 +95,18 @@ class IzDetail {
 		}
 		
 		// Create the necessary resources.
-		if (hasImmunizationRecommendation) {
+		if (Boolean.TRUE.equals(hasImmunizationRecommendation)) {
 			immunizationRecommendation = p.createResource(ImmunizationRecommendation.class);
 		}
-		if (hasImmunization) {
+		if (Boolean.TRUE.equals(hasImmunization)) {
 			immunization = p.createResource(Immunization.class);
 		}
 	}
 	
+	/**
+	 * Get the recommendation component.
+	 * @return The recommendation from the ImmunizationRecommendation resource.
+	 */
 	public ImmunizationRecommendationRecommendationComponent getRecommendation() {
 		if (hasRecommendation()) {
 			// Get the recommendation created by the last RXA.

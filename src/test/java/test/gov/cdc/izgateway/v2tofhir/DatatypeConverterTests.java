@@ -293,18 +293,6 @@ class DatatypeConverterTests extends TestBase {
 		);
 	}
 	
-	@ParameterizedTest
-	@MethodSource("getTestSegments") // should be getTestSegments, other possible values are for localized testing 
-	void testSegmentConversions(NamedSegment segment) throws HL7Exception {
-		MessageParser p = new MessageParser();
-		// System.out.println(segment.segment().encode());
-		Bundle b1 = p.createBundle(Collections.singleton(segment.segment()));
-		if (!b1.hasEntry()) {
-			log.info("No parsers for {}", segment.segment().getName());
-		}
-		// System.out.println(yamlParser.encodeResourceToString(b1));
-	}
-	
 	private String testMicrosoftConverterResponse(InputStream is) throws IOException, ParseException {
 		String response = IOUtils.toString(is, StandardCharsets.UTF_8);
 		StreamTokenizer t = new StreamTokenizer(new StringReader(response));

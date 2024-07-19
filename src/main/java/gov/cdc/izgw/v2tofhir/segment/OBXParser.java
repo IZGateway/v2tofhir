@@ -19,7 +19,6 @@ import org.hl7.fhir.r4.model.HumanName;
 import org.hl7.fhir.r4.model.ImmunizationRecommendation;
 import org.hl7.fhir.r4.model.ImmunizationRecommendation.ImmunizationRecommendationRecommendationComponent;
 import org.hl7.fhir.r4.model.ImmunizationRecommendation.ImmunizationRecommendationRecommendationDateCriterionComponent;
-import org.hl7.fhir.r4.model.InstantType;
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Immunization;
 import org.hl7.fhir.r4.model.Immunization.ImmunizationEducationComponent;
@@ -221,7 +220,7 @@ public class OBXParser extends AbstractSegmentParser {
 		case "ST":	target = StringType.class; break; //	String Data.	
 		case "TM":	target = TimeType.class; break; //	Time	
 		case "TN":	target = ContactPoint.class; break; //	Telephone Number	
-		case "TS":	target = InstantType.class; break; //	TimeStamp	
+		case "TS":	target = DateTimeType.class; break; //	TimeStamp	 (OBX requires DateTimeType)
 		case "TX":	target = StringType.class; break; //	Text Data (Display)	
 		case "XAD":	target = Address.class; break; //	Extended Address	
 		case "XCN":	target = RelatedPerson.class; break; //	Extended Composite Name And Number For Persons	

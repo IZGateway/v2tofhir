@@ -18,12 +18,16 @@ import ca.uhn.fhir.context.support.IValidationSupport;
 import ca.uhn.fhir.parser.IParser;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Composite;
+import ca.uhn.hl7v2.model.GenericMessage;
 import ca.uhn.hl7v2.model.GenericSegment;
+import ca.uhn.hl7v2.model.Group;
 import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.model.Primitive;
 import ca.uhn.hl7v2.model.Segment;
 import ca.uhn.hl7v2.model.Type;
 import ca.uhn.hl7v2.model.Varies;
+import ca.uhn.hl7v2.parser.EncodingCharacters;
+import ca.uhn.hl7v2.parser.ModelClassFactory;
 import ca.uhn.hl7v2.parser.Parser;
 import ca.uhn.hl7v2.parser.PipeParser;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
@@ -76,6 +80,10 @@ public class TestBase {
 	protected static final IParser fhirParser = ctx.newJsonParser().setPrettyPrint(true);
 	/** A yamlParser to use to generate FHIR in YAML */
 	protected static final YamlParser yamlParser = new YamlParser(ctx);
+	/** The default V2 Version to use for parsing */
+	protected static final String DEFAULT_V2_VERSION = "2.5.1";
+	/** The default V2 encoding characters */
+	protected static final String ENCODING_CHARS = "|^~\\&";
 
 	static Set<Type> getTestDataForCoding() {
 		return getTestData(t -> CODING_TYPES.contains(t.getName()));
@@ -205,11 +213,18 @@ public class TestBase {
 	}
 
 	static List<NamedSegment> getTestSegments() {
-		// TODO: Load segments as well.  We'll need to figure out how to get them
-		// parsed, because an MSH is the bare minimum necessary
 		Set<Segment> testSegments = new TreeSet<Segment>(TestUtils::compare);
 		for (Message msg : getTestMessages().toList()) {
 			ParserUtils.iterateSegments(msg, testSegments);
+		}
+
+		for (TestData data: TestData.load("segments.txt", false)) {
+			try {
+				testSegments.add(parseSegment(StringUtils.trim(data.getTestData())));
+			} catch (Exception e) {
+				// Just swallow this.
+				log.error("Error parsing segment {}: {}", data.getTestData(), e.getMessage());
+			}
 		}
 		return testSegments.stream().map(s -> new NamedSegment(s)).toList();
 	}
@@ -219,19 +234,24 @@ public class TestBase {
 		return getTestSegments().stream().filter(n -> l.contains(n.segment().getName())).toList();
 	}
 
-	static List<NamedSegment> getTestPIDs() {
-		return getTestSegments("PID");
-	}
-	
-	static List<NamedSegment> getTestORCs() {
-		return getTestSegments("ORC");
-	}
-	
-	static List<NamedSegment> getTestMSHs() {
-		return getTestSegments("MSH");
-	}
-	
+	/* Test Segment generators for all segment types in the test data */ 
+	static List<NamedSegment> getTestDSCs() { return getTestSegments("DSC"); }
+	static List<NamedSegment> getTestERRs() { return getTestSegments("ERR"); }
+	static List<NamedSegment> getTestEVNs() { return getTestSegments("EVN"); }
+	static List<NamedSegment> getTestMRGs() { return getTestSegments("MRG"); }
+	static List<NamedSegment> getTestMSAs() { return getTestSegments("MSA"); }
+	static List<NamedSegment> getTestMSHs() { return getTestSegments("MSH"); }
+	static List<NamedSegment> getTestOBXs() { return getTestSegments("OBX"); }
+	static List<NamedSegment> getTestORCs() { return getTestSegments("ORC"); }
+	static List<NamedSegment> getTestPIDs() { return getTestSegments("PID"); }
+	static List<NamedSegment> getTestQAKs() { return getTestSegments("QAK"); }
+	static List<NamedSegment> getTestQIDs() { return getTestSegments("QID"); }
+	static List<NamedSegment> getTestQPDs() { return getTestSegments("QPD"); }
+	static List<NamedSegment> getTestRCPs() { return getTestSegments("RCP"); }
+	static List<NamedSegment> getTestRXAs() { return getTestSegments("RXA"); }
+	static List<NamedSegment> getTestRXRs() { return getTestSegments("RXR"); }
 
+	
 	static Message parse(String message) {
 		try {
 			return v2Parser.parse(message);
@@ -240,6 +260,29 @@ public class TestBase {
 			e.printStackTrace();
 			return null;
 		}
+	}
+	
+	static Segment parseSegment(String segment) throws Exception {
+		ModelClassFactory factory = v2Parser.getHapiContext().getModelClassFactory();
+		String segName = StringUtils.substringBefore(segment, "|");
+		@SuppressWarnings("serial")
+		Message message = new GenericMessage.V251(factory) {
+			@Override
+		    public String getEncodingCharactersValue() throws HL7Exception {
+		    	return "^~\\&";
+		    }
+			@Override
+		    public Character getFieldSeparatorValue() throws HL7Exception {
+		    	return '|';
+		    }
+		};
+		message.setParser(v2Parser);
+		Class<? extends Segment> segClass = factory.getSegmentClass(segName, DEFAULT_V2_VERSION);
+		Segment seg = segClass
+				.getDeclaredConstructor(Group.class, ModelClassFactory.class)
+				.newInstance(message, factory);
+		v2Parser.parse(seg, segment, EncodingCharacters.defaultInstance());
+		return seg;
 	}
 
 	static Stream<String> testMessages() {
@@ -259,6 +302,7 @@ public class TestBase {
 		List<TestData> data = TestData.load("messages.txt", false);
 		// Add test Segments to the list
 		data.addAll(TestData.load("segments.txt", false));
+		
 		return data;
 	}
 	

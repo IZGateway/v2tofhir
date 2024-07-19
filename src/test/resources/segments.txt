@@ -81,7 +81,9 @@ RXA|0|1|20090412|20090412|48^HIB PRP-T^CVX|0.5|mL^^UCUM||00^new immunization rec
 RXR|C28161^IM^NCIT^IM^IM^HL70162|
 OBX|1|CE|30956-7^vaccine type^LN|1|17^HIB, NOS^CVX||||||F
 OBX|2|CE|59779-9^Immunization Schedule used^LN|1|VXC16^ACIP^CDCPHINVS||||||F|||20090415
-OBX|3|NM|30973-2^dose number in series^LN|1|1||||||F|||20090415 Reporting the Number of Doses in a Series: 
+OBX|3|NM|30973-2^dose number in series^LN|1|1||||||F|||20090415 
+
+# Reporting the Number of Doses in a Series: 
 OBX|1|NM|59782-3^number of doses in series^LN|1|1||||||F|||20090415 Reporting Next Dose Recommendation Dates (forecast only): 
 RXA|0|1|20090412|20090412|998^No vaccine administered^CVX|999|||||||||||||NA
 OBX|1|CE|30956-7^vaccine type^LN|1|17^HIB, NOS^CVX||||||F

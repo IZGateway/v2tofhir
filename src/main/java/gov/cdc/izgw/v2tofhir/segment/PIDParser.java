@@ -161,7 +161,7 @@ public class PIDParser extends AbstractSegmentParser {
 			if (coding.hasCode() && coding.hasSystem()) {
 				String system = coding.getSystem();
 				if (system.endsWith("0001")) {
-					setGenderFromTable0001(coding);
+					setGenderFromTable0001(patient.getGenderElement(), coding);
 				} else if (Systems.getSystemNames(system).contains(Systems.DATA_ABSENT)) {
 					setDataAbsentReasonFromDataAbsent(patient.getGenderElement(), coding.getCode());
 				} else if (Systems.getSystemNames(system).contains(Systems.NULL_FLAVOR)) {
@@ -174,22 +174,23 @@ public class PIDParser extends AbstractSegmentParser {
 
 	/**
 	 * Set gender from HL7 Table 0001
+	 * @param enumeration	The enumeration to set the value for 
 	 * @param gender	The gender code
 	 */
-	public void setGenderFromTable0001(Coding gender) {
+	public static void setGenderFromTable0001(Enumeration<AdministrativeGender> enumeration, Coding gender) {
 		switch (gender.getCode()) {
-		case "A":	patient.setGender(AdministrativeGender.OTHER); break;
-		case "F":	patient.setGender(AdministrativeGender.FEMALE); break;
-		case "M":	patient.setGender(AdministrativeGender.MALE); break;
-		case "N":	setDataAbsentReason(patient.getGenderElement(), "not-applicable"); break;
-		case "O":	patient.setGender(AdministrativeGender.OTHER); break;
+		case "A":	enumeration.setValue(AdministrativeGender.OTHER); break;
+		case "F":	enumeration.setValue(AdministrativeGender.FEMALE); break;
+		case "M":	enumeration.setValue(AdministrativeGender.MALE); break;
+		case "N":	StructureParser.setDataAbsentReason(enumeration, "not-applicable"); break;
+		case "O":	enumeration.setValue(AdministrativeGender.OTHER); break;
 		case "U", "UNK":
-					patient.setGender(AdministrativeGender.UNKNOWN); break;
+					enumeration.setValue(AdministrativeGender.UNKNOWN); break;
 		case "ASKU":
-					setDataAbsentReason(patient.getGenderElement(), "asked-unknown"); break;
+					StructureParser.setDataAbsentReason(enumeration, "asked-unknown"); break;
 		case "PHC1175":
-					setDataAbsentReason(patient.getGenderElement(), "asked-declined"); break;
-		default:	setDataAbsent(patient.getGenderElement()); break;
+					StructureParser.setDataAbsentReason(enumeration, "asked-declined"); break;
+		default:	StructureParser.setDataAbsent(enumeration); break;
 		}
 	}
 	
@@ -203,7 +204,7 @@ public class PIDParser extends AbstractSegmentParser {
 		case "unsupported": gender.setValue(AdministrativeGender.OTHER); break;
 		case "unknown": 	gender.setValue(AdministrativeGender.UNKNOWN); break;
 		case "temp-unknown":gender.setValue(AdministrativeGender.UNKNOWN); break;
-		default:			setDataAbsentReason(gender, code); break;
+		default:			StructureParser.setDataAbsentReason(gender, code); break;
 		}
 	}
 

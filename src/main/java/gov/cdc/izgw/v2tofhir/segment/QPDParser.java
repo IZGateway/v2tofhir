@@ -34,7 +34,6 @@ import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.model.Segment;
 import ca.uhn.hl7v2.model.Type;
 import ca.uhn.hl7v2.model.Varies;
-import gov.cdc.izgw.v2tofhir.annotation.ComesFrom;
 import gov.cdc.izgw.v2tofhir.annotation.Produces;
 import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
@@ -58,11 +57,6 @@ import lombok.extern.slf4j.Slf4j;
  *
  */
 @Produces(segment="QPD", resource=Parameters.class)
-@ComesFrom(path="Parameters.meta.tag", source="QPD-1", comment="Query Name")
-@ComesFrom(path="Parameters.meta.tag[1].code", source="QPD-2", comment="Query Tag")
-@ComesFrom(path="Parameters.meta.tag[1].system", fixed="QueryTag")
-@ComesFrom(path="Parameters.parameter.name", source= { "QPD-3", "QPD-*" }, comment="Varies by query")
-@ComesFrom(path="Parameters.parameter.value", source= { "QPD-3", "QPD-*" }, comment="Varies by query")
 @Slf4j
 public class QPDParser extends AbstractSegmentParser {
 	private Parameters params;
@@ -171,15 +165,17 @@ public class QPDParser extends AbstractSegmentParser {
 		if (entry != null && Boolean.TRUE.equals(isResponse)) {
 			// Was this QPD in response to a query message, or was it the query itself.
 			BundleEntryResponseComponent resp = entry.getResponse();
+			params.setUserData(BundleEntryResponseComponent.class.getName(), resp);
 			resp.setLocation(request);
 			resp.setLastModified(getBundle().getTimestamp());
 		} else if (entry != null && Boolean.FALSE.equals(isResponse)) {
 			BundleEntryRequestComponent req = entry.getRequest();
+			params.setUserData(BundleEntryRequestComponent.class.getName(), req);
 			req.setMethod(HTTPVerb.GET);
 			req.setUrl(request);
-		} else {
-			params.addParameter("_search", request);
 		}
+		// Always add the search translation to params.
+		params.addParameter("_search", request);
 	}
 
 	private String getSearchRequest(Segment seg, String[] parameters) {

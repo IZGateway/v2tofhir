@@ -72,5 +72,39 @@ public class Codes {
 			new Coding("http://terminology.hl7.org/CodeSystem/v3-RoleCode", "MTH", "Mother")
 		);
 	
+	/** Attending Provider */
+	public static final CodeableConcept ATTENDING_PARTICIPANT = new CodeableConcept()
+		.addCoding(
+			new Coding(Systems.V3_PARTICIPATION_TYPE, "ATND", "attender")
+		);
+	/** Consulting Provider */
+	public static final CodeableConcept CONSULTING_PARTICIPANT = new CodeableConcept()
+		.addCoding(
+			new Coding(Systems.V3_PARTICIPATION_TYPE, "CON", "consultant")
+		);
+	/** Referring Provider */
+	public static final CodeableConcept REFERRING_PARTICIPANT = new CodeableConcept()
+		.addCoding(
+			new Coding(Systems.V3_PARTICIPATION_TYPE, "REF", "referrer")
+		);
+	
+	/** Admitting Provider */
+	public static final CodeableConcept ADMITTING_PARTICIPANT = new CodeableConcept()
+			.addCoding(
+				new Coding(Systems.V3_PARTICIPATION_TYPE, "ADM", "admitter")
+			);
+	
+	/** An otherwise unspecified participant */
+	public static final CodeableConcept PARTICIPANT = new CodeableConcept()
+			.addCoding(
+					new Coding(Systems.V3_PARTICIPATION_TYPE, "PART", "participant")
+				);
+	
+	/** Visit Number */
+	public static final CodeableConcept VISIT_NUMBER = new CodeableConcept()
+			.addCoding(
+					new Coding(Mapping.v2Table("0203"), "VN", "visit number")
+				);
+	
 	private Codes() {}
 }

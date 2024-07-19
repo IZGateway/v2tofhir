@@ -116,18 +116,19 @@ public interface StructureParser {
 	 * @param element	The FHIR type to set as absent
 	 * @param reason	The reason the data is absent
 	 */
-	default void setDataAbsentReason(PrimitiveType<?> element, String reason) {
+	static void setDataAbsentReason(PrimitiveType<?> element, String reason) {
 		element.addExtension()
 			.setUrl("http://hl7.org/fhir/StructureDefinition/data-absent-reason")
 			.setValue(new CodeType(reason));
 	}
+		
 	/**
 	 * Add a DataAbsent reason of "unknown" to a FHIR primitive type
 	 * This is used when data is not provided within a V2 message.
 	 * 
 	 * @param reason	The reason the data is absent
 	 */
-	default void setDataAbsent(PrimitiveType<?> reason) {
+	static void setDataAbsent(PrimitiveType<?> reason) {
 		setDataAbsentReason(reason, "unknown");
 	}
 	

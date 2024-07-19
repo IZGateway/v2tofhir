@@ -1,5 +1,7 @@
 package test.gov.cdc.izgateway.v2tofhir;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -11,6 +13,9 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.Parameters;
+import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.StringType;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -20,8 +25,10 @@ import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.util.Terser;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
 import gov.cdc.izgw.v2tofhir.annotation.ComesFrom;
+import gov.cdc.izgw.v2tofhir.segment.IzDetail;
 import gov.cdc.izgw.v2tofhir.segment.StructureParser;
 import gov.cdc.izgw.v2tofhir.utils.Mapping;
+import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -215,6 +222,50 @@ class MessageParserTests extends TestBase {
 		System.out.println(yamlParser.encodeResourceToString(b));
 	}
 	
+	@ParameterizedTest
+	@MethodSource("getTestSegments") // should be getTestSegments, other possible values are for localized testing 
+	void testSegmentConversions(NamedSegment segment) throws HL7Exception {
+		MessageParser p = new MessageParser();
+		// System.out.println(segment.segment().encode());
+		// Ensure the bundle exists.
+		p.getBundle();
+		
+		// Add some prep data for it for some tests.
+		prepareForTest(p, segment);
+		
+		Bundle b1 = p.createBundle(Collections.singleton(segment.segment()));
+		
+		if (!b1.hasEntry()) {
+			log.info("No parsers for {}", segment.segment().getName());
+		}
+		if (segment.segment().getName().equals("RCP")) {
+			// Verify that there is a count if the segment as RCP-2
+			Parameters params = p.getFirstResource(Parameters.class);
+			String value = ParserUtils.toString(segment.segment(), 2, 0);
+			if (value != null) {
+				if (params.getParameter("_search").getValue() instanceof StringType uri) {
+					assertTrue(uri.getValueAsString().endsWith("&_count=" + value));
+				}
+			}
+		} else {
+			assertTrue(b1.hasEntry(), "The bundle should have entries");
+		}
+		//System.out.println(yamlParser.encodeResourceToString(b1));
+	}
+	
+	private void prepareForTest(MessageParser mp, NamedSegment segment) {
+		switch (segment.segment().getName()) {
+		case "RCP":
+			Parameters params = mp.createResource(Parameters.class);
+			params.addParameter("_search", "");
+			break;
+		case "RXA", "RXR":
+			IzDetail.testWith(mp);
+			break;
+		case "PD1":
+			mp.createResource(Patient.class);
+		}
+	}
 	static Stream<Message> getTestMessages1() {
 		int[] found = { 0 }; 
 		return getTestMessages().filter(t -> ++found[0] == 1);
