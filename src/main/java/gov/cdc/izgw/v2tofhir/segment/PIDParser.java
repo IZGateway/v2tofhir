@@ -361,7 +361,11 @@ public class PIDParser extends AbstractSegmentParser {
 		if (category.hasCode()) {
 			// if category has a code, it was a legitimate race code
 			extension.addExtension(OMB_CATEGORY, category);
-			extension.addExtension("detailed", coding);
+			// If if smells enough like a CDCREC code
+			if (coding.getCode().matches("^[1-2]\\d{3}-\\d$")) {
+				// Add to detailed.
+				extension.addExtension("detailed", coding);
+			}
 			if (coding.hasDisplay() && !extension.hasExtension("text")) {
 				extension.addExtension("text", coding.getDisplayElement());
 			}

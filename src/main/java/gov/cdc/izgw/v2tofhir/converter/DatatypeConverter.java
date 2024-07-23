@@ -1615,10 +1615,16 @@ public class DatatypeConverter {
 			List<Coding> codingList = cc.getCoding();
 			Collections.sort(codingList, DatatypeConverter::compareUnitsBySystem);
 			Coding coding = codingList.get(0);
-			coding = Units.toUcum(coding.getCode());
-			qt.setCode(coding.getCode());
-			qt.setSystem(Systems.UCUM);
-			qt.setUnit(coding.getDisplay());
+			Coding units = Units.toUcum(coding.getCode());
+			if (units != null) {
+				qt.setCode(units.getCode());
+				qt.setSystem(Systems.UCUM);
+				qt.setUnit(units.getDisplay());
+			} else {
+				qt.setUnit(coding.hasDisplay() ? coding.getDisplay() : coding.getCode());
+				qt.setSystem(coding.getSystem());
+				qt.setCode(coding.getCode());
+			}
 		}
 	}
 
