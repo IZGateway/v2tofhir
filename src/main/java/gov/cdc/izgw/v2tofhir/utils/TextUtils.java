@@ -6,20 +6,28 @@ import java.util.List;
 import java.util.Objects;
 
 import org.apache.commons.lang3.StringUtils;
+import org.hl7.fhir.instance.model.api.IBase;
 import org.hl7.fhir.r4.model.Address;
+import org.hl7.fhir.r4.model.BaseDateTimeType;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.ContactPoint;
 import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.HumanName;
 import org.hl7.fhir.r4.model.Identifier;
+import org.hl7.fhir.r4.model.Location;
+import org.hl7.fhir.r4.model.Organization;
+import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.Practitioner;
 import org.hl7.fhir.r4.model.PrimitiveType;
 import org.hl7.fhir.r4.model.Quantity;
-import org.hl7.fhir.r4.model.Type;
+import org.hl7.fhir.r4.model.Reference;
+import org.hl7.fhir.r4.model.RelatedPerson;
 
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Composite;
 import ca.uhn.hl7v2.model.Varies;
+import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
 import gov.cdc.izgw.v2tofhir.datatype.ContactPointParser;
 
 /**
@@ -184,11 +192,11 @@ public class TextUtils {
 	 * @param type	The type of identifier (e.g., DLN, SSN, MR) or null if not present
 	 * @param value	The identifier or null if not present
 	 * @param checkDigit	A check digit to append to the identifier if present
-	 * @return a string in the general form: {type}# {identifier}-{checkDigit}
+	 * @return a string in the general form: {type}#{identifier}-{checkDigit}
 	 */
 	public static String identifierToText(String type, String value, String checkDigit) {
 		StringBuilder b = new StringBuilder();
-		appendIfNonBlank(b, type, "# ");
+		appendIfNonBlank(b, type, "#");
 		appendIfNonBlank(b, value, null);
 		if (StringUtils.isNotBlank(checkDigit)) {
 			b.append("-").append(checkDigit);
@@ -279,7 +287,18 @@ public class TextUtils {
 				ParserUtils.toString(comp, 0),
 				ParserUtils.toString(comp, 1)
 			);
-				
+		case "PL", "LA1", "LA2":
+			return StringUtils.normalizeSpace(
+				StringUtils.joinWith(" ", 
+					ParserUtils.toString(comp, 2), 
+					ParserUtils.toString(comp, 1),
+					ParserUtils.toString(comp, 0),
+					ParserUtils.toString(comp, 7),
+					ParserUtils.toString(comp, 6),
+					ParserUtils.toString(comp, 3)
+				)
+			);
+			
 		case "SAD":
 			return ParserUtils.toString(comp);
 		case "TN":
@@ -346,11 +365,14 @@ public class TextUtils {
 	 * @param fhirType The type to convert
 	 * @return A string representation of the FHIR type.
 	 */
-	public static String toString(Type fhirType) {
+	public static String toString(IBase fhirType) {
 		if (fhirType == null || fhirType.isEmpty()) {
 			return "";
 		}
 		if (fhirType instanceof PrimitiveType<?> pt) {
+			if (pt instanceof BaseDateTimeType) {
+				return DatatypeConverter.removeIsoPunct(pt.asStringValue());
+			} 
 			return StringUtils.defaultIfBlank(pt.asStringValue(), "");
 		}
 		switch (fhirType.fhirType()) {
@@ -366,9 +388,22 @@ public class TextUtils {
 			return toText((HumanName)fhirType);
 		case "Identifier":
 			return toText((Identifier)fhirType);
+		case "Location":
+			return ((Location)fhirType).getName();
+		case "Organization":
+			return ((Organization)fhirType).getName();
+		case "Patient":
+			return toText(((Patient)fhirType).getNameFirstRep());
+		case "Practitioner":
+			return toText(((Practitioner)fhirType).getNameFirstRep());
 		case "Quantity":
 			Quantity quantity = (Quantity)fhirType;
 			return toText(quantity);
+		case "Reference":
+			Reference ref = (Reference)fhirType;
+			return toText(ref);
+		case "RelatedPerson":
+			return toText(((RelatedPerson)fhirType).getNameFirstRep());
 		case "Extension":
 			StringBuilder b = new StringBuilder();
 			Extension ext = (Extension)fhirType;
@@ -389,6 +424,10 @@ public class TextUtils {
 		}
 	}
 	
+	private static String toText(Reference ref) {
+		return StringUtils.joinWith(" ", ref.getDisplay(), toText(ref.getIdentifier()));
+	}
+
 	/**
 	 * Convert an Address to text. 
 	 * @param addr	The address to convert

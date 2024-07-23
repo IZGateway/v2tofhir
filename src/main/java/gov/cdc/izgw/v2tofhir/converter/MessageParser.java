@@ -22,6 +22,7 @@ import org.hl7.fhir.r4.model.DocumentReference;
 import org.hl7.fhir.r4.model.DomainResource;
 import org.hl7.fhir.r4.model.Enumerations.DocumentReferenceStatus;
 import org.hl7.fhir.r4.model.IdType;
+import org.hl7.fhir.r4.model.Location;
 import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Provenance;
 import org.hl7.fhir.r4.model.Provenance.ProvenanceEntityRole;
@@ -106,6 +107,16 @@ public class MessageParser {
 	}
 	
 	/**
+	 * Reset this message parser for a new parsing session.
+	 */
+	public void reset() {
+		getContext().clear();
+		updated.clear();
+		processed.clear();
+		processor = null;
+	}
+	
+	/**
 	 * Set the ID Generator for this MessageParser.
 	 * 
 	 * This is used during testing to get uniform ID Generation during tests
@@ -152,8 +163,8 @@ public class MessageParser {
 	 * @return A FHIR Bundle containing the relevant resources. 
 	 */
 	public Bundle convert(Message msg) {
+		reset();
 		try {
-			getContext().clear();
 			initContext((Segment) msg.get("MSH"));
 		} catch (HL7Exception e) {
 			warn("Cannot retrieve MSH segment from message");
@@ -181,7 +192,6 @@ public class MessageParser {
 				
 		att.setUrl(messageData.getIdElement().toString());
 		att.setData(data);
-		getContext().setHl7DataId(messageData.getIdElement().toString());
 
 		// Add the encoded message as the original text for the content in both the binary
 		// and document reference resources.
@@ -440,10 +450,17 @@ public class MessageParser {
 	 * @return	The resource
 	 */
 	public <R extends IBaseResource> R addResource(String id, R resource) {
+		// See if it already exists in the bundle
+		if (getContext().getBundle().getEntry().stream()
+				.anyMatch(e -> e.getResource() == resource)) {
+			// if it does, just return it. Nothing more is necessary.
+			return resource;
+		}
 		if (id == null) {
 			id = idGenerator.get();
 		}
-		resource.setId(new IdType(resource.fhirType() + "/" + id));
+		IdType theId = new IdType(resource.fhirType(), id);
+		resource.setId(theId);
 		BundleEntryComponent entry = getContext().getBundle().addEntry().setResource((Resource) resource);
 		resource.setUserData(BundleEntryComponent.class.getName(), entry);
 		if (resource instanceof Provenance) {
@@ -459,7 +476,22 @@ public class MessageParser {
 			p.setActivity(Codes.CREATE_ACTIVITY.copy());
 			// Copy constants so that they are not modified.
 			p.addAgent().setType(Codes.ASSEMBLER_AGENT.copy());
-			p.addEntity().setRole(ProvenanceEntityRole.QUOTATION).setWhat(new Reference(getContext().getHl7DataId()));
+			DocumentReference doc = getFirstResource(DocumentReference.class);
+			if (doc != null) {
+				p.addEntity().setRole(ProvenanceEntityRole.QUOTATION).setWhat(ParserUtils.toReference(doc));
+			}
+		}
+		if (resource instanceof Location location) {
+			// Location resources can be created by the DatatypeConverter
+			// in hierarchical form.  Add any partOf resources as well.
+			if (location.hasPartOf()) {
+				addResource(
+					null, 
+					ParserUtils.getResource(
+						Location.class, location.getPartOf()
+					)
+				);
+			}
 		}
 		return resource;
 	}

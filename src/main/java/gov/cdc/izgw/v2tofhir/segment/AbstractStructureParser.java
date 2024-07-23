@@ -1,7 +1,5 @@
 package gov.cdc.izgw.v2tofhir.segment;
 
-import java.lang.reflect.Method;
-import java.util.Collections;
 import java.util.List;
 
 import org.hl7.fhir.instance.model.api.IBaseResource;
@@ -11,7 +9,6 @@ import org.hl7.fhir.r4.model.Resource;
 import org.hl7.fhir.r4.model.OperationOutcome.OperationOutcomeIssueComponent;
 
 import ca.uhn.hl7v2.model.Segment;
-import gov.cdc.izgw.v2tofhir.annotation.ComesFrom;
 import gov.cdc.izgw.v2tofhir.annotation.Produces;
 import gov.cdc.izgw.v2tofhir.converter.Context;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
@@ -25,35 +22,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class AbstractStructureParser implements StructureParser {
 	private Segment segment;
-	/**
-	 * initFieldHandlers must be called by a parser before calling parse(segment, parser)
-	 * 
-	 * @see #getFieldHandlers
-	 * @param p	The structure parser to compute the field handlers for.
-	 * @param fieldHandlers	The list to update with all of the field handlers 
-	 */
-	protected static void initFieldHandlers(AbstractStructureParser p, List<FieldHandler> fieldHandlers) {
-		// Synchronize on the list in case two callers are trying to to initialize it at the 
-		// same time.  This avoids one thread from trying to use fieldHandlers while another 
-		// potentially overwrites it.
-		synchronized (fieldHandlers) { // NOSONAR This use of a parameter for synchronization is OK
-			// We got the lock, recheck the entry condition.
-			if (!fieldHandlers.isEmpty()) {
-				// Another thread initialized the list.
-				return;
-			}
-			/**
-			 * Go through and find all methods with a ComesFrom annotation.
-			 */
-			for (Method method: p.getClass().getMethods()) {
-				for (ComesFrom from: method.getAnnotationsByType(ComesFrom.class)) {
-					fieldHandlers.add(new FieldHandler(method, from, p));
-				}
-			}
-			Collections.sort(fieldHandlers);
-		}
-	}
-
 	/**
 	 * Returns the current segment being parsed.
 	 * @return the current segment being parsed.
@@ -250,9 +218,19 @@ public abstract class AbstractStructureParser implements StructureParser {
 	 * Annotation driven parsing.  Call this method to use parsing driven
 	 * by ComesFrom and Produces annotations in the parser.
 	 * 
-	 * @param segment	The segment to parse
+	 * This method will be called by MessageParser for each segment of the given type that
+	 * appears within the method.  It will create the primary resource produced by the
+	 * parser (by calling the setup() method) and then parses individual fields of the 
+	 * segment and passes them to parser methods to add them to the primary resource or 
+	 * to create any extra resources.
+	 * 
+	 * @param segment The segment to be parsed
 	 */
 	public void parse(Segment segment) {
+		if (isEmpty(segment)) {
+			return;
+		}
+
 		this.segment = segment;
 		IBaseResource r = setup();
 		if (r == null) {

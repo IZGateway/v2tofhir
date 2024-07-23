@@ -14,9 +14,11 @@ import org.hl7.fhir.instance.model.api.IBaseExtension;
 import org.hl7.fhir.instance.model.api.IBaseReference;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Element;
-import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.MessageHeader;
+import org.hl7.fhir.r4.model.Parameters;
+import org.hl7.fhir.r4.model.Parameters.ParametersParameterComponent;
 import org.hl7.fhir.r4.model.Resource;
+import org.hl7.fhir.r4.model.Type;
 
 import ca.uhn.fhir.util.ExtensionUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -37,10 +39,16 @@ public class Property {
 	public static Property getProperty(IBase b, String propertyName) throws FHIRException { // NOSONAR ? intentional
 		if ("resolve()".equals(propertyName)) {
 			if (b instanceof IBaseReference ref) {
-				return new Property((IBaseResource)ref.getUserData("Resource"));
+				IBaseResource res = (IBaseResource)ref.getUserData("Resource");
+				return res == null ? null : new Property(res);
 			} else {
 				throw new IllegalArgumentException("Cannot resolve() a " + b.getClass().getSimpleName());
 			}
+		} else if (Character.isUpperCase(propertyName.charAt(0)) && b instanceof IBaseReference ref) {
+			// Using XXX.reference.ResourceName is short-hand for resolve().ResourceName
+			// when b is a reference.
+			IBaseResource res = (IBaseResource)ref.getUserData("Resource");
+			return (res != null && res.fhirType().equals(propertyName)) ? new Property(res) : null;
 		}
 		if (propertyName.contains("-")) {
 			// The actual property is for an extension from us-core
@@ -49,18 +57,27 @@ public class Property {
 			if (ExtensionUtil.hasExtension(b, extensionName)) {
 				return new Property(ExtensionUtil.getExtensionByUrl(b, extensionName));
 			} else {
-				return new Property(new Extension(extensionName, null));
+				return null;
 			}
 		}
-		String type = PathUtils.getTypeSpecifier(propertyName);
-		if (type != null) {
-			propertyName = propertyName.substring(0, propertyName.length() - type.length()) + "[x]";
-		}
+		
+		String[] theName = new String[] { propertyName };
+		String type = PathUtils.getType(b, theName );
+		propertyName = theName[0];
+
 		switch (b.getClass().getPackageName()) {
 		case "org.hl7.fhir.r4.model":
 			if (b instanceof Element e) {
 				return new Property(e, propertyName, type);
 			} else if (b instanceof Resource r) {
+				if (b instanceof Parameters params) {
+					for (ParametersParameterComponent param : params.getParameter()) {
+						if (StringUtils.equals(param.getName(), propertyName)) {
+							return new Property(propertyName, param.getValue());
+						}
+					}
+					return null;
+				}
 				return new Property(r, propertyName, type);
 			}
 			break;
@@ -170,7 +187,8 @@ public class Property {
 	 */
 	@SuppressWarnings("unchecked")
 	public static List<IBase> getValues(IBase b, String propertyName) {
-		return (List<IBase>) getProperty(b, propertyName).getValues();
+		 Property prop = getProperty(b, propertyName);
+		 return prop == null ? Collections.emptyList() : (List<IBase>) prop.getValues();
 	}
 	private final Object property;
 	private final Method getName;
@@ -231,6 +249,9 @@ public class Property {
 	 * @param res	The resource
 	 */
 	public Property(IBaseResource res) {
+		if (res == null) {
+			throw new NullPointerException("res cannot be null");
+		}
 		property = res;
 		name = "resolve()";
 		typeCode = res.fhirType();
@@ -245,6 +266,28 @@ public class Property {
 		getMaxCardinality = null;
 		getValues = null;
 	}
+	
+	/**
+	 * Create a property for a known property with the given name.
+	 * @param propertyName	The property
+	 * @param value	The value of the property
+	 */
+	public Property(String propertyName, Type value) {
+		property = value;
+		name = propertyName;
+		typeCode = value.fhirType();
+		definition = value.fhirType();
+		minCardinality = 0;
+		maxCardinality = 1;
+		values = Collections.singletonList(value);
+		getName = null;
+		getTypeCode = null;
+		getDefinition = null;
+		getMinCardinality = null;
+		getMaxCardinality = null;
+		getValues = null;
+	}
+
 
 	
 	/**

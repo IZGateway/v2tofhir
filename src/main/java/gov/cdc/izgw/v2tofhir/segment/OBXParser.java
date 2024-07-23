@@ -28,7 +28,6 @@ import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.PositiveIntType;
 import org.hl7.fhir.r4.model.Practitioner;
 import org.hl7.fhir.r4.model.PractitionerRole;
-import org.hl7.fhir.r4.model.PrimitiveType;
 import org.hl7.fhir.r4.model.Quantity;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.RelatedPerson;
@@ -43,6 +42,7 @@ import gov.cdc.izgw.v2tofhir.converter.MessageParser;
 import gov.cdc.izgw.v2tofhir.utils.Codes;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 import gov.cdc.izgw.v2tofhir.utils.Systems;
+import gov.cdc.izgw.v2tofhir.utils.TextUtils;
 
 /**
  * OBXParser parses any OBX segments in a message to an Immunization if the message is a VXU or an 
@@ -73,7 +73,7 @@ public class OBXParser extends AbstractSegmentParser {
 	public OBXParser(MessageParser p) {
 		super(p, "OBX");
 		if (fieldHandlers.isEmpty()) {
-			initFieldHandlers(this, fieldHandlers);
+			FieldHandler.initFieldHandlers(this, fieldHandlers);
 		}
 	}
 
@@ -84,7 +84,7 @@ public class OBXParser extends AbstractSegmentParser {
 
 	@Override
 	public IBaseResource setup() {
-		izDetail = IzDetail.get(this);
+		izDetail = IzDetail.get(getMessageParser());
 		if (izDetail.hasRecommendation()) {
 			recommendation = izDetail.getRecommendation();
 		}
@@ -194,7 +194,7 @@ public class OBXParser extends AbstractSegmentParser {
 	 * Set the value
 	 * @param v2Type	The v2 data type to convert.
 	 */
-	@ComesFrom(path = "Observation.value", field = 5, comment = "Observation Value")
+	@ComesFrom(path = "Observation.value[x]", field = 5, comment = "Observation Value")
 	public void setValue(Type v2Type) {
 		v2Type = DatatypeConverter.adjustIfVaries(v2Type);
 		if (type == null) {
@@ -204,7 +204,8 @@ public class OBXParser extends AbstractSegmentParser {
 		Class<? extends IBase> target = null;
 		switch (type) {
 		case "AD":	target = Address.class; break;	//	Address	
-		case "CF":	target = CodeableConcept.class; break;	//	Coded Element With Formatted Values	
+		case "CE", 
+			 "CF":  target = CodeableConcept.class; break;	//	Coded Element (With Formatted Values)	
 		case "CK":	target = Identifier.class; break;	//	Composite ID With Check Digit	
 		case "CN":	target = Address.class; break;	//	Composite ID And Name	
 		case "CNE":	target = CodeableConcept.class; break;	//	Coded with No Exceptions	
@@ -281,7 +282,11 @@ public class OBXParser extends AbstractSegmentParser {
 					DatatypeConverter.castInto((BaseDateTimeType)converted, new DateTimeType()));
 			break;
 		case VIS_DOCUMENT_TYPE_CODE:
-			education.setDocumentType(((PrimitiveType<?>)converted).asStringValue());
+			if (converted instanceof StringType sv) {
+				education.setDocumentTypeElement(sv);
+			} else if (converted instanceof CodeableConcept cc) {
+				education.setDocumentType(TextUtils.toString(cc));
+			}
 			break;
 		case VIS_VACCINE_TYPE_CODE:
 			education.getDocumentTypeElement()
@@ -348,56 +353,6 @@ public class OBXParser extends AbstractSegmentParser {
 		List<ImmunizationEducationComponent> l = immunization.getEducation();
 		return l.get(l.size() - 1);
 	}
-	
-	
-	/*
-	7	OBX-7	References Range	ST	0	1				Observation.referenceRange.text		Observation.string	0	-1				If OBX-7 is sufficiently parseable, then the low, high, type, appliesTo, and/or age may be used.
-	8	OBX-8	Interpretation Codes	CWE	0	-1				Observation.interpretation		Observation.CodeableConcept	0	-1	CWE[CodeableConcept]	InterpretationCode		
-	9	OBX-9	Probability	NM	0	1												
-	10	OBX-10	Nature of Abnormal Test	ID	0	-1				Observation.extension.uri		Observation.uri	0	-1			"http://hl7.org/fhir/StructureDefinition/observation-nature-of-abnormal-test"	
-	10	OBX-10	Nature of Abnormal Test	ID	0	-1				Observation.extension.valueCodeableConcept		Observation.CodeableConcept	0	-1	CWE[CodeableConcept]	NatureOfAbnormalTesting		
-	11	OBX-11	Observation Result Status	ID	1	1				Observation.status		Observation.code	1	1		ObservationStatus		
-	11	OBX-11	Observation Result Status	ID	1	1	IF OBX-11 IS "X"			Observation.dataAbsentReason.coding.code		Observation.CodeableConcept					/cannot-be-obtained/	Needs to be requested
-	11	OBX-11	Observation Result Status	ID	1	1	IF OBX-11 IS "X"			Observation.dataAbsentReason.coding.system		Observation.uri					"http://terminology.hl7.org/CodeSystem/data-absent-reason"	
-	11	OBX-11	Observation Result Status	ID	1	1	IF OBX-11 IS "N"			Observation.dataAbsentReason.coding.code							"not-asked"	
-	11	OBX-11	Observation Result Status	ID	1	1	IF OBX-11 IS "N"			Observation.dataAbsentReason.coding.system							"http://terminology.hl7.org/CodeSystem/data-absent-reason"	
-	12	OBX-12	Effective Date of Reference Range	DTM	0	1												
-	13	OBX-13	User Defined Access Checks	ST	0	1												
-	14	OBX-14	Date/Time of the Observation	DTM	0	1				Observation.effectiveDateTime		Observation.dateTime	0	1				
-	15	OBX-15	Producer's ID	CWE	0	1				Observation.performer(Observation.Organization)		Observation.identifier	0	1	CWE[Organization]			We are mapping this to an identifier considering the definition (used for a unique identifier of the producer), although that does not fit the use of the CWE data type in HL7 v2. Depending on context (e.g., US CLIA or IHE LTW, or ILW) this may reflect a location (US CLIA) or an organization (IHE LTW or ILW).
-	15	OBX-15	Producer's ID	CWE	0	1				Observation.performer(Observation.PractitionerRole)								
-	16	OBX-16	Responsible Observer	XCN	0	-1				Observation.performer(Observation.PractitionerRole.practitioner(Observation.Practitioner)		Reference(Observation.PractitionerRole)	0	-1	XCN[Practitioner]			
-	16	OBX-16	Responsible Observer	XCN	0	-1				Observation.performer(Observation.PractitionerRole.code.coding.code)		Observation.CodeableConcept	0	-1			"responsibleObserver"	
-	16	OBX-16	Responsible Observer	XCN	0	-1				Observation.performer(Observation.PractitionerRole.code.coding.system)		Observation.CodeableConcept	0	-1			"http://terminology.hl7.org/CodeSystem/practitioner-role"	
-	17	OBX-17	Observation Method	CWE	0	-1				Observation.method		Observation.CodeableConcept	0	1	CWE[CodeableConcept]			The cardinality of Observation.method is 0..1 while the source allows for multiple methods. As we are not aware of anybody populating multiples in HL7 v2, we did not provide further mapping guidance. If you need to support multiples, please submit a gForge to OO for the HL7 v2 to FHIR mapping Implementation Guide.
-	18	OBX-18	Equipment Instance Identifier	EI	0	-1				Observation.device(Observation.Device.identifier)		Observation.Identifier	0	1	EI[Identifier-Extension]			
-	19	OBX-19	Date/Time of the Analysis	DTM	0	1				Observation.extension.url		Observation.uri	0	1				"http://hl7.org/fhir/StructureDefinition/observation-analysis-date-time"
-	19	OBX-19	Date/Time of the Analysis	DTM	0	1				Observation.extension.valueDateTime		Observation.dateTime	0	1				
-	20	OBX-20	Observation Site	CWE	0	-1				Observation.bodySite		Observation.CodeableConcept	0	1	CWE[CodeableConcept]			The cardinality of Observation.bodySite is 0..1 while the source allows for multiple body sites. As we are not aware of anybody populating multiples in HL7 v2, we did not provide further mapping guidance. If you need to support multiples, please submit a gForge to OO for the HL7 v2 to FHIR mapping Implementation Guide.
-	21	OBX-21	Observation Instance Identifier	EI	0	1				Observation.identifier		Observation.Identifier	0	-1	EI[Identifier-Extension]			
-	21	OBX-21	Observation Instance Identifier	EI	0	1				Observation.identifier.type.coding.code		Observation.code	0	1			"FILL"	
-	22	OBX-22	Mood Code	CNE	0	1												
-	23	OBX-23	Performing Organization Name	XON	0	1	IF OBX-25 NOT VALUED			Observation.performer(Observation.Organization)		Reference(Observation.Organization)	0	-1	XON[Organization]			
-	23	OBX-23	Performing Organization Name	XON	0	1	IF OBX-25 VALUED			Observation.performer(Observation.PractitionerRole.organization(Observation.Organization)		Reference(Observation.Organization)	0	-1	XON[Organization]			
-	24	OBX-24	Performing Organization Address	XAD	0	1	IF OBX-25 NOT VALUED			Observation.performer(Observation.Organization.address)		Observation.Address	0	-1	XAD[Address]			
-	24	OBX-24	Performing Organization Address	XAD	0	1	IF OBX-25 VALUED			Observation.performer(Observation.PractitionerRole.organization(Observation.Organization.address)		Observation.Address	0	-1	XAD[Address]			
-	25	OBX-25	Performing Organization Medical Director	XCN	0	1				Observation.performer(Observation.PractitionerRole.practitioner)		Reference(Observation.PractitionerRole)	0	1	XCN[PractitionerRole]			
-	25	OBX-25	Performing Organization Medical Director	XCN	0	1				Observation.performer(Observation.PractitionerRole.code.coding.code)		Observation.code					"MDIR"	
-	25	OBX-25	Performing Organization Medical Director	XCN	0	1				Observation.performer(Observation.PractitionerRole.code.coding.system)							"http://terminology.hl7.org/CodeSystem/v2-0912"	
-	26	OBX-26	Patient Results Release Category	ID	0	1												
-	27	OBX-27	Root Cause	CWE	0	1												
-	28	OBX-28	Local Process Control	CWE	0	-1												
-	29	OBX-29	Observation Type	ID	0	1												
-	30	OBX-30	Observation Sub-Type	ID	0	1					extension??-subType	Observation.code	0	1				The sub type was necessary in v2 to distinguish purpose of the observation when it appears in a message in the same group (e.g., answers to ask at order entry questions with actual results ). Within FHIR flagging the observation may not be necessary, but that is not yet clear. Until then, we will keep the thought of needing an extension, but not create it yet.
-	31	OBX-31	Action Code	ID	0	1												
-	32	OBX-32	Observation Value Absent Reason	CWE	0	-1												
-	33	OBX-33	Observation Related Specimen Identifier	EIP	0	-1	IF OBX-33 COUNT>1			Observation.extension.uri		Reference	0	1			"http://hl7.org/fhir/5.0/StructureDefinition/extension-Observation.specimen	Note that in v2 messages the observations that a calculated observation is derived from on and involve multiple specimens are typically not included with the message. To enable relating the calculated observation to the correct specimens it relates to, the v2 message should include the originating observations that in turn use OBX-33 to link to the correct specimens. Without that, and if there are multiple specimens in OBX-33, there is no standard method to correctly associate the observation with the correct specimens. The implementer will have to devise an appropriate method for that in their context.
-	33	OBX-33	Observation Related Specimen Identifier	EIP	0	-1	IF OBX-33 COUNT>1			Observation.extension.valueReference(Observation.Group.member.entity(Observation.Specimen.identifier)			0	1				
-	33	OBX-33	Observation Related Specimen Identifier	EIP	0	-1	IF OBX-33 COUNT>1			Observation.extension.uri			0	1			"http://hl7.org/fhir/5.0/StructureDefinition/extension-Observation.specimen	
-	33	OBX-33	Observation Related Specimen Identifier	EIP	0	-1	IF OBX-33 COUNT>1			Observation.extension.valueReference(Observation.Group.member.entity(Observation.Specimen.identifier)			0	1				
-	33	OBX-33	Observation Related Specimen Identifier	EIP	0	-1	IF OBX-33 COUNT=1			Observation.specimen(Observation.Specimen.identifier)		Observation.Identifier			EIP[Identifier-PlacerAssignedIdentifier]			
-	33	OBX-33	Observation Related Specimen Identifier	EIP	0	-1	IF OBX-33 COUNT=1			Observation.specimen(Observation.Specimen.identifier)		Observation.Identifier			EIP[Identifier-FillerAssignedIdentifier]	
-	*/
 	
 	/**
 	 * Set the reference range
@@ -474,17 +429,24 @@ public class OBXParser extends AbstractSegmentParser {
 	 * Set the producing organization identifier
 	 * @param producersId	The producer organization's identifier
 	 */
-	@ComesFrom(path = "Observation.performer(Observation.Organization)", field = 15, comment = "Producer's ID")
+	@ComesFrom(path = "Observation.performer.PractitionerRole.organization.Organization.identifier", field = 15, comment = "Producer's ID")
 	public void setProducersID(Identifier producersId) 
 	{
-		Organization producer = createResource(Organization.class);
-		producer.addIdentifier(producersId);
-		PractitionerRole pr = getPerformer();
-		pr.setOrganization(ParserUtils.toReference(producer));
-		observation.addPerformer(ParserUtils.toReference(producer));	}
+		Organization producer = null;
+		if (!getPerformer().hasOrganization()) {
+			producer = createResource(Organization.class);
+			producer.addIdentifier(producersId);
+			performer.setOrganization(ParserUtils.toReference(producer));
+		} else {
+			producer = ParserUtils.getResource(Organization.class, performer.getOrganization()); 
+			producer.addIdentifier(producersId);
+			ParserUtils.toReference(producer);  // Force reference update with identifier
+		}
+	}
 	
 	/**
 	 * Get or create if necessary the performer of the observation.
+	 * Attaches the reference to the performer to Observation.performer.
 	 * @return the performer of the observation.
 	 */
 	private PractitionerRole getPerformer() {
@@ -495,6 +457,7 @@ public class OBXParser extends AbstractSegmentParser {
 					.setSystem("http://terminology.hl7.org/CodeSystem/practitioner-role")
 					.setCode("responsibleObserver")
 					.setDisplay("Responsible Observer");
+			observation.addPerformer(ParserUtils.toReference(performer));
 		}
 		return performer;
 	}
@@ -503,11 +466,11 @@ public class OBXParser extends AbstractSegmentParser {
 	 * Set the responsible observer
 	 * @param responsibleObserver the responsible observer
 	 */
-	@ComesFrom(path = "Observation.performer(Observation.PractitionerRole.practitioner(Observation.Practitioner)", field = 16, comment = "Responsible Observer")
+	@ComesFrom(path = "Observation.performer.PractitionerRole.practitioner", field = 16, comment = "Responsible Observer")
 	public void setResponsibleObserver(Practitioner responsibleObserver) 
 	{
-		addResource(responsibleObserver);		PractitionerRole pr = getPerformer();
-		pr.setPractitioner(ParserUtils.toReference(responsibleObserver));
+		addResource(responsibleObserver);		getPerformer();
+		performer.setPractitioner(ParserUtils.toReference(responsibleObserver));
 	}
 	
 	/**
@@ -523,7 +486,7 @@ public class OBXParser extends AbstractSegmentParser {
 	 * Set the device identifier
 	 * @param equipmentInstanceIdentifier the device identifier
 	 */
-	@ComesFrom(path = "Observation.device(Observation.Device.identifier)", field = 18, comment = "Equipment Instance Identifier")
+	@ComesFrom(path = "Observation.device.Device.identifier", field = 18, comment = "Equipment Instance Identifier")
 	public void setEquipmentInstanceIdentifier(Identifier equipmentInstanceIdentifier) 
 	{
 		Device device = createResource(Device.class);
@@ -569,11 +532,11 @@ public class OBXParser extends AbstractSegmentParser {
 	 * Set the performing organization
 	 * @param performingOrganization the performing organization
 	 */
-	@ComesFrom(path = "Observation.performer(Observation.Organization)", field = 23, comment = "Performing Organization Name")
+	@ComesFrom(path = "Observation.performer", field = 23, comment = "Performing Organization Name")
 	public void setPerformingOrganizationName(Organization performingOrganization) 
 	{	Organization org = null;
 		if (getPerformer().hasOrganization()) {
-			org = (Organization) performer.getOrganization().getUserData("Resource");
+			org = ParserUtils.getResource(Organization.class, performer.getOrganization());
 			if (performingOrganization.hasName()) {
 				org.setName(performingOrganization.getName());
 			}
@@ -592,14 +555,14 @@ public class OBXParser extends AbstractSegmentParser {
 	 * Set the address of the performing organization
 	 * @param performingOrganizationAddress the address of the performing organization
 	 */
-	@ComesFrom(path = "Observation.performer(Observation.Organization.address)", field = 24, comment = "Performing Organization Address")
+	@ComesFrom(path = "Observation.performer.Organization.address", field = 24, comment = "Performing Organization Address")
 	public void setPerformingOrganizationAddress(Address performingOrganizationAddress) {	
 		Organization org = null;
 		if (!getPerformer().hasOrganization()) {
 			org = createResource(Organization.class);
 			performer.setOrganization(ParserUtils.toReference(org));
 		} else {
-			org = (Organization) performer.getOrganization().getUserData("Resource");
+			org = ParserUtils.getResource(Organization.class, performer.getOrganization());
 		}
 		org.addAddress(performingOrganizationAddress);
 	}
@@ -608,13 +571,18 @@ public class OBXParser extends AbstractSegmentParser {
 	 * Create a performer identifying the medical director of the performing organization
 	 * @param performingOrganizationMedicalDirector the medical director 
 	 */
-	@ComesFrom(path = "Observation.performer(Observation.PractitionerRole.practitioner)", field = 25, comment = "Performing Organization Medical Director")
+	@ComesFrom(path = "Observation.performer.PractitionerRole.practitioner", field = 25, comment = "Performing Organization Medical Director")
 	public void setPerformingOrganizationMedicalDirector(Practitioner performingOrganizationMedicalDirector) {		// NOTE: The performingOrganizationMedicalDirector is a separate performer from the default performer
 		// returned by getPerformer.
-		PractitionerRole pr = createResource(PractitionerRole.class);
+		getPerformer();
+		if (performer.hasPractitioner()) {
+			// If there is already a practitioner in the performer, add a new one.
+			performer = createResource(PractitionerRole.class);
+			observation.addPerformer(ParserUtils.toReference(performer));
+		}
 		addResource(performingOrganizationMedicalDirector);
-		pr.setPractitioner(ParserUtils.toReference(performingOrganizationMedicalDirector));
-		pr.addCode(Codes.MEDICAL_DIRECTOR_ROLE_CODE);
+		performer.addCode(Codes.MEDICAL_DIRECTOR_ROLE_CODE);
+		performer.setPractitioner(ParserUtils.toReference(performingOrganizationMedicalDirector));
 	}
 
 	/**
@@ -622,7 +590,7 @@ public class OBXParser extends AbstractSegmentParser {
 	 * NOTE: Not present until HL7 2.9, and not widely in use
 	 * @param specimenIdentifier the specific identifier
 	 */
-	@ComesFrom(path = "Observation.specimen(Observation.Specimen.identifier)", field = 33, comment = "Observation Related Specimen Identifier")
+	@ComesFrom(path = "Observation.specimen.Specimen.identifier", field = 33, comment = "Observation Related Specimen Identifier")
 	public void setSpecimenIdentifier(Identifier specimenIdentifier) {
 		// A degenerate reference instead of one of the usual ones.  The SPM segment if present
 		// will create the Specimen resource rather than creating it here.

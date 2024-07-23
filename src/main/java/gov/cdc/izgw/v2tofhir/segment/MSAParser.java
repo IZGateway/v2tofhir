@@ -47,7 +47,7 @@ public class MSAParser extends AbstractSegmentParser {
 	public MSAParser(MessageParser messageParser) {
 		super(messageParser, "MSA");
 		if (fieldHandlers.isEmpty()) {
-			initFieldHandlers(this, fieldHandlers);
+			FieldHandler.initFieldHandlers(this, fieldHandlers);
 		}
 	}
 	
@@ -83,9 +83,9 @@ public class MSAParser extends AbstractSegmentParser {
 	 * Set the acknowledgementCode and severity from MSA-1
 	 * @param acknowledgementCode	The Acknowledgement code from MSA-1
 	 */
-	@ComesFrom(path = "OperationOutcome.issue.code", table = "0008", field = 1, 
+	@ComesFrom(path = "OperationOutcome.issue.details.coding.code", table = "0008", field = 1, 
 			   also = { "OperationOutcome.issue.severity",
-					    "OperationOutcome.issue.details",
+					    "OperationOutcome.issue.code",
 					    "MessageHeader.response.code"
 					  }
 	)

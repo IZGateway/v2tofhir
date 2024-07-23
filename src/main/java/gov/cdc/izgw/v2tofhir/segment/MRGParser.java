@@ -44,7 +44,7 @@ public class MRGParser extends AbstractSegmentParser {
 	public MRGParser(MessageParser messageParser) {
 		super(messageParser, "MRG");
 		if (fieldHandlers.isEmpty()) {
-			initFieldHandlers(this, fieldHandlers);
+			FieldHandler.initFieldHandlers(this, fieldHandlers);
 		}
 	}
 
@@ -93,11 +93,11 @@ public class MRGParser extends AbstractSegmentParser {
 	
 	/**
 	 * Add a patient account identifier
-	 * Creates a new account and encounter.  Adds a reference from the Encounter to the account.
+	 * Creates a new account.  Adds a reference from the Encounter to the account.
 	 * Adds a reference from the encounter and the account to the patient as the subject.
 	 * @param accountId	The account identifier
 	 */
-	@ComesFrom(path="Patient.account", field = 3, comment = "Prior Patient Account Number")
+	@ComesFrom(path="Account.identifier", field = 3, comment = "Prior Patient Account Number")
 	public void addPatientAccount(Identifier accountId) {
 		account = createResource(Account.class);
 		account.addIdentifier(accountId);

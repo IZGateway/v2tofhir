@@ -21,15 +21,15 @@ import gov.cdc.izgw.v2tofhir.utils.Mapping;
  */
 
 public class IzDetail {
-	private final AbstractSegmentParser p;
-	private IzDetail(AbstractSegmentParser p) {
-		this.p = p;
+	private final MessageParser mp;
+	private IzDetail(MessageParser mp) {
+		this.mp = mp;
 	}
-	static IzDetail get(AbstractSegmentParser p) {
-		IzDetail detail = p.getContext().getProperty(IzDetail.class);
+	static IzDetail get(MessageParser mp) {
+		IzDetail detail = mp.getContext().getProperty(IzDetail.class);
 		if (detail == null) {
-			detail = new IzDetail(p);
-			p.getContext().setProperty(detail);
+			detail = new IzDetail(mp);
+			mp.getContext().setProperty(detail);
 		}
 		return detail;
 	}
@@ -39,9 +39,14 @@ public class IzDetail {
 	 * @param mp	The message parser used for testing
 	 */
 	public static void testWith(MessageParser mp) {
-		IzDetail detail = new IzDetail(null);
-		detail.hasImmunization = true;
-		detail.immunization = mp.createResource(Immunization.class);
+		IzDetail detail = mp.getContext().getProperty(IzDetail.class);
+		if (detail == null) {
+			detail = new IzDetail(mp);
+			detail.hasImmunization = true;
+			detail.hasImmunizationRecommendation = false;
+			detail.immunization = mp.createResource(Immunization.class);
+			mp.getContext().setProperty(detail);
+		}
 	}
 	
 	private Boolean hasImmunization = null;
@@ -73,12 +78,12 @@ public class IzDetail {
 		hasImmunization = Boolean.FALSE;
 		hasImmunizationRecommendation = Boolean.FALSE;
 		
-		MessageHeader mh = p.getFirstResource(MessageHeader.class);
+		MessageHeader mh = mp.getFirstResource(MessageHeader.class);
 		if (mh == null) {
 			// there is no message header, so not an immunization or recommendation.
 			return;
 		}
-		for (CanonicalType url: p.getBundle().getMeta().getProfile()) {
+		for (CanonicalType url: mp.getBundle().getMeta().getProfile()) {
 			if ("CDCPHINVS#Z32".equals(url.getValue()) || "CDCPHINVS#Z22".equals(url.getValue())) {
 				// An RSP_K11 conforming to Z32, or a VXU_V04 conforming to Z22 
 				// will have Immunization resources
@@ -92,14 +97,6 @@ public class IzDetail {
 			if (Mapping.v2Table("0076").equals(tag.getSystem()) && "VXU".equals(tag.getCode())) {
 				hasImmunization = Boolean.TRUE;
 			}
-		}
-		
-		// Create the necessary resources.
-		if (Boolean.TRUE.equals(hasImmunizationRecommendation)) {
-			immunizationRecommendation = p.createResource(ImmunizationRecommendation.class);
-		}
-		if (Boolean.TRUE.equals(hasImmunization)) {
-			immunization = p.createResource(Immunization.class);
 		}
 	}
 	
@@ -117,5 +114,18 @@ public class IzDetail {
 			return l.get(l.size() - 1); 
 		}
 		return null;
+	}
+	
+	/**
+	 * Initialize the resources on receipt of a new RXA segment. 
+	 */
+	public void initializeResources() {
+		// Create the necessary resources.
+		if (hasRecommendation() && immunizationRecommendation == null) {
+			immunizationRecommendation = mp.createResource(ImmunizationRecommendation.class);
+		}
+		if (hasImmunization() && immunization == null) {
+			immunization = mp.createResource(Immunization.class);
+		}
 	}
 }

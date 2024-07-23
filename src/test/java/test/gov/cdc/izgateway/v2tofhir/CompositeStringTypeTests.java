@@ -72,7 +72,7 @@ class CompositeStringTypeTests extends TestBase {
 			}
 			typeNames.add(typeName);
 		}
-		System.out.println(typeNames);
+		log.info("{}", typeNames);
 	}
 
 	@ParameterizedTest

@@ -2,9 +2,13 @@ package com.ainq.fhir.utils;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ServiceConfigurationError;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -78,10 +82,77 @@ public class PathUtils {
 	/** 
 	 * Endings on a property name that refine it to a specific type.  These names
 	 * are generally the name of a FHIR Type.
+	 * 
+	 * NOTE: .*? must use a reluctant qualifier to find the longest value for
+	 * type because DateTime ends with Time
 	 */
 	private static final Pattern VARIES_PATTERN = Pattern.compile(
-		"^.*(" + StringUtils.joinWith("|", (Object[])FHIR_TYPES) + ")$"
+		"^.*?(" + StringUtils.joinWith("|", (Object[])FHIR_TYPES) + ")$"
 	);
+	/**
+	 * Exceptions to the above pattern.  These are few.  So far only
+	 * the following are false matches: 
+	 * Patient.birthDate, 
+	 * Immunization.doseQuantity,
+	 * Immunization.expirationDate,
+	 * ServiceRequest.locationCode,
+	 * Immunization.reasonCode 
+	 * Observation.referenceRange, 
+	 * Immunization.vaccineCode 
+	 */
+	private static final Set<String> VARIES_EXCEPTIONS = 
+		new LinkedHashSet<>(Arrays.asList(
+			"birthDate", "doseQuantity", "expirationDate",
+			"locationCode", "reasonCode", "referenceRange", "vaccineCode")
+		);
+	/**
+	 * Get all elements at the specified path.
+	 * @param b	The base
+	 * @param path	The path
+	 * @return	The list of elements at that location.
+	 */
+	public static List<IBase> getAll(IBase b, String path) {
+		
+		List<IBase> l = null;
+		
+		// Split a restricted FHIRPath into its constituent parts.
+		// FUTURE: Handle cases like extension("http://hl7.org/ ...
+		String propertyName = StringUtils.substringBefore(path, ".");
+		String rest = StringUtils.substringAfter(path, ".");
+		do {
+			// Pass a reference to propertyName for functions which need to adjust it.
+			String[] theName = { propertyName };
+			int index = getIndex(theName);
+			
+			String extension = getExtension(theName);
+			String type = getType(b, theName);
+			
+			try {
+				l = getValues(b, theName[0], extension);
+			} catch (Exception ex) {
+				log.error("{} extracting {}.{}",
+					ex.getClass().getSimpleName(),
+					b.fhirType(),
+					theName[0] + (StringUtils.isNotEmpty(extension) ? "." + extension : ""),
+					ex
+				);
+				throw ex;
+			}
+			filterListByType(type, l);
+			
+			adjustListForIndex(l, index, null);
+			
+			propertyName = StringUtils.substringBefore(rest, ".");
+			rest = StringUtils.substringAfter(rest, ".");
+			
+			if (l.isEmpty()) {
+				return Collections.emptyList();
+			}
+			b = l.get(l.size() - 1); 
+		} while (StringUtils.isNotEmpty(propertyName));
+		
+		return l;
+	}
 	
 	/**
 	 * Get the values at the specified restricted FHIRPath 
@@ -101,26 +172,27 @@ public class PathUtils {
 		// FUTURE: Handle cases like extension("http://hl7.org/ ...
 		String propertyName = StringUtils.substringBefore(path, ".");
 		String rest = StringUtils.substringAfter(path, ".");
-		IBase result = null;
+		IBase result = b;
 		do {
 			// Pass a reference to propertyName for functions which need to adjust it.
 			String[] theName = { propertyName };
 			int index = getIndex(theName);
 			
 			String extension = getExtension(theName);
-			String type = getType(theName);
+			String type = getType(b, theName);
 			
-			List<IBase> l = getValues(b, theName[0], extension);
+			List<IBase> l = getValues(result, theName[0], extension);
 	
 			filterListByType(type, l);
 			
-			Supplier<IBase> adder = () -> Property.makeProperty(b, theName[0]);
+			IBase result2 = result;
+			Supplier<IBase> adder = () -> Property.makeProperty(result2, theName[0]);
 			if (theName[0].length() == 0 && type != null) {
 				// When type is non-null and the property name is empty
 				// we just need to create a new object of the specified type.
 				// NOTE: This object won't be attached to ANYTHING b/c we don't
 				// know what list to attach it to.
-				adder = () -> createElement(b, type);
+				adder = () -> createElement(result2, type);
 			}
 				
 			adjustListForIndex(l, index, 
@@ -214,14 +286,28 @@ public class PathUtils {
 		if (type != null) {
 			Iterator<IBase> it = l.iterator();
 			while (it.hasNext()) {
-				// Remove items in the list that aren't of the proper type.
-				if (!type.equals(it.next().fhirType())) {
+				IBase b = it.next();
+				if (!isOfType(b, type)) {
 					it.remove();
 				}
 			}
 		}
 	}
 	
+	private static List<String> bases = Arrays.asList("DomainResource", "Resource", "Base", "Object");
+	private static boolean isOfType(IBase b, String type) {
+		Class<?> theClass = b.getClass();
+		do {
+			String className = theClass.getSimpleName();
+			if (className.equals(type) || className.equals(type + "Type")) {
+				return true;
+			}
+			theClass = theClass.getSuperclass();
+		} while (!bases.contains(theClass.getSimpleName()));
+
+		return false;
+	}
+
 	/**
 	 * Get information about a Property of a FHIR resource or element.
 	 * @param clazz	The class of the resource or element to get a property for.
@@ -248,7 +334,8 @@ public class PathUtils {
 	
 	private static int getIndex(String[] propertyName) {
 		String index = StringUtils.substringBetween(propertyName[0], "[", "]");
-		if (index == null) {
+		// Handle values with no index and special cases like value[x] 
+		if (index == null || "x".equals(index)) {
 			return -1;
 		}
 		propertyName[0] = StringUtils.substringBefore(propertyName[0], "[");
@@ -278,22 +365,39 @@ public class PathUtils {
 		} else if (propertyName[0].contains("-")) {
 			// save extension name
 			extension = propertyName[0];
+			// Translate commonly used extension names.
+			if (extension.startsWith("us-core")) {
+				return US_CORE_EXT_PREFIX + extension;
+			} 
+			
+			if (!extension.startsWith("http:")) {
+				return FHIR_EXT_PREFIX + extension;
+			}
 		} else {
 			return null;
 		}
 		
-		// Translate commonly used extension names.
-		if (extension.startsWith("us-core")) {
-			return US_CORE_EXT_PREFIX + extension;
-		} 
-		
-		if (!extension.startsWith("http:")) {
-			return FHIR_EXT_PREFIX + extension;
-		}
 		return extension;
 	}
 	
-	private static String getType(String[] propertyName) {
+	/**
+	 * Get the type associated with the specified property.  
+	 * This is used to adjust property names by removing terminal type specifiers 
+	 * to correct names like eventCoding (which is actually named event[x] in 
+	 * MessageHeader).  The challenge is that some property names (e.g., Patient.birthDate)
+	 * also end in a type name, but don't follow that pattern.
+	 * 
+	 * @param b	The base fhir object having the property
+	 * @param propertyName	The name of the property.
+	 * @return
+	 */
+	static String getType(IBase b, String[] propertyName) {
+		// Deal with special cases
+		if ("Reference".equals(b.fhirType()) && Character.isUpperCase(propertyName[0].charAt(0))) {
+			// allow shortcut for Reference.TypeName
+			return null;
+		}
+		
 		String type = null;
 		if (Character.isUpperCase(propertyName[0].charAt(0))) {
 			// A property name such as Bundle, IntegerType, etc, is assumed to be a type.
@@ -306,34 +410,21 @@ public class PathUtils {
 			if (StringUtils.substringAfter(propertyName[0], ")").length() != 0 || type == null) {
 				throw new FHIRException("Invalid ofType call: " + propertyName);
 			}
+			propertyName[0] = propertyName[0].substring(0, propertyName[0].length() - type.length());
+		} else if (VARIES_EXCEPTIONS.contains(propertyName[0])) {
+			// This is an exception to the rule for property names ending
+			// in a type.
+			return null;
 		} else {
 			Matcher m = VARIES_PATTERN.matcher(propertyName[0]);
 			if (m.matches()) {
 				type = m.group(1);
+				propertyName[0] = 
+					StringUtils.left(
+						propertyName[0], propertyName[0].length() - type.length()
+					) + "[x]";
 			}
-		}
-		if (type != null) {
-			propertyName[0] = propertyName[0].substring(0, propertyName[0].length() - type.length());
 		}
 		return type;
 	}
-
-	/** 
-	 * Get the type specifier at the end of a property name
-	 * @param propertyName	The property name or path 
-	 * @return The type specifier at the end of a property name or path
-	 */
-	public static String getTypeSpecifier(String propertyName) {
-		// Some odd ducks need special handling
-		if (propertyName.equals("locationCode")) {
-			return null;
-		}
-		for (String ending: FHIR_TYPES) {
-			if (propertyName.endsWith(ending)) {
-				return ending;
-			}
-		}
-		return null;
-	}
-	
 }

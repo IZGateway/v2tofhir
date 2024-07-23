@@ -81,7 +81,17 @@ public @interface ComesFrom {
 	 * @return	The type to convert to, or IBase.class to convert to the 
 	 * type determined by the path.
 	 */
-	Class<? extends IBase> type() default IBase.class;
+	Class<? extends IBase> fhir() default IBase.class;
+	
+	/**
+	 * The expected V2 datatype.
+	 * This may need to be specified in cases where a message has pre-adopted features
+	 * from a newer version, e.g., as for IHE profiles and immunization messages where
+	 * some 2.7.1 features were used.
+	 * 
+	 * @return The expected V2 datatype.
+	 */
+	String type() default "";
 	
 	/**
 	 * Set the priority of this mapping.

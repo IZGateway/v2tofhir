@@ -32,15 +32,6 @@ public abstract class AbstractSegmentParser extends AbstractStructureParser {
 		}
 	}
 	
-	/**
-	 * Parse a segment for a message.
-	 * This method will be called by MessageParser for each segment of the given type that
-	 * appears within the method.  It will create the primary resource produced by the
-	 * parser and then parses individual fields of the segment and passes them to parser
-	 * methods to add them to the primary resource or to create any extra resources.
-	 * 
-	 * @param segment The segment to be parsed
-	 */
 	@Override
 	public void parse(Segment segment) {
 		if (isEmpty(segment)) {

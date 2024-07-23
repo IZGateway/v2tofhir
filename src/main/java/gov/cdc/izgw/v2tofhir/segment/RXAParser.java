@@ -54,7 +54,7 @@ public class RXAParser extends AbstractSegmentParser {
 	public RXAParser(MessageParser p) {
 		super(p, "RXA");
 		if (fieldHandlers.isEmpty()) {
-			initFieldHandlers(this, fieldHandlers);
+			FieldHandler.initFieldHandlers(this, fieldHandlers);
 		}
 	}
 
@@ -65,7 +65,8 @@ public class RXAParser extends AbstractSegmentParser {
 
 	@Override
 	public IBaseResource setup() {
-		izDetail = IzDetail.get(this);
+		izDetail = IzDetail.get(getMessageParser());
+		izDetail.initializeResources();
 		if (izDetail.hasImmunization()) {
 			return izDetail.immunization;
 		} else if (izDetail.hasRecommendation()) {
@@ -126,7 +127,8 @@ public class RXAParser extends AbstractSegmentParser {
 	 * Set the dose units
 	 * @param doseUnits the dose units
 	 */
-	@ComesFrom(path = "Immunization.doseQuantity", field = 7, comment = "Administered Units")
+	@ComesFrom(path = "Immunization.doseQuantity.code", field = 7, comment = "Administered Units",
+			also = "Immunization.doseQuantity.unit")
 	public void setDoseAmount(CodeableConcept doseUnits) {
 		if (izDetail.hasImmunization()) {
 			DatatypeConverter.setUnits(izDetail.immunization.getDoseQuantity(), doseUnits);
@@ -142,13 +144,15 @@ public class RXAParser extends AbstractSegmentParser {
 	/*
 	10	RXA-10	Administering Provider	XCN	0	-1				Immunization.performer.function.coding.system		Immunization.uri					"http://terminology.hl7.org/CodeSystem/v2-0443"	
 	*/
+	// CVX 48, 49, MVX MSD
 	/**
 	 * Set the administering provider
 	 * @param adminProvider the administering provider
 	 */
-	@ComesFrom(path = "Immunization.performer.actor(Immunization.Practitioner)", field = 10, comment = "Administering Provider")
+	@ComesFrom(path = "Immunization.performer.actor.Practitioner", field = 10, comment = "Administering Provider")
 	public void setAdministeringProvider(Practitioner adminProvider) {
 		if (izDetail.hasImmunization()) {
+			addResource(adminProvider);
 			Reference ref = ParserUtils.toReference(adminProvider);
 			ImmunizationPerformerComponent perf = izDetail.immunization.addPerformer().setActor(ref);
 			perf.setFunction(Codes.ADMIN_PROVIDER_FUNCTION_CODE);
@@ -163,14 +167,19 @@ public class RXAParser extends AbstractSegmentParser {
 	 * Set the administered at location
 	 * @param administerAt the administered at location
 	 */
-	@ComesFrom(path = "Immunization.location", field = 10, comment = "Administered-at Location", priority = 10)
-	@ComesFrom(path = "Immunization.location", field = 27, comment = "Administer-at", priority = 10)
+	@ComesFrom(path = "Immunization.location", field = 11, comment = "Administered-at Location")
+	@ComesFrom(path = "Immunization.location", field = 27, comment = "Administer-at")
 	public void setAdministerAt(Location administerAt) {
 		if (izDetail.hasImmunization()) {
+			// We don't need to check for location already being created.
+			// A use of RXA-27 will likely not use, or just duplicate value in RXA-11
+			// since few HL7 V2 versions have both (RXA-11 withdrawl started 
+			// when RXA-27 introduced in V2.6).
 			addResource(administerAt);
 			izDetail.immunization.setLocation(ParserUtils.toReference(administerAt));
 		}
 	}
+
 	/*
 	28	RXA-28	Administered-at Address	XAD	0	1				Immunization.location(Immunization.Location.address)		Immunization.Address	0	1	XAD[Address]			
 	*/
@@ -178,7 +187,7 @@ public class RXAParser extends AbstractSegmentParser {
 	 * Set the administered at location address
 	 * @param administerAtAddress the administered at location address
 	 */
-	@ComesFrom(path = "Immunization.location(Immunization.Location.address)", field = 28, comment = "Administered-at Address", priority = 5)
+	@ComesFrom(path = "Immunization.location.Location.address", field = 28, comment = "Administered-at Address")
 	public void setAdministerAtAddress(Address administerAtAddress) {
 		if (izDetail.hasImmunization()) {
 			Reference locRef = izDetail.immunization.getLocation();
@@ -187,7 +196,7 @@ public class RXAParser extends AbstractSegmentParser {
 				location = createResource(Location.class);
 				izDetail.immunization.setLocation(ParserUtils.toReference(location));
 			} else {
-				location = (Location) locRef.getUserData("Resource");
+				location = ParserUtils.getResource(Location.class, locRef);
 			}
 			location.setAddress(administerAtAddress);
 		}
@@ -228,7 +237,7 @@ public class RXAParser extends AbstractSegmentParser {
 	 * Set the manufacturing organization from the MVX or Table 0227 code
 	 * @param manufacturer	The manufacturing organization
 	 */
-	@ComesFrom(path = "Immunization.manufacturer(Immunization.Organization)", field = 17, table = "0227", comment = "Substance Manufacturer Name")
+	@ComesFrom(path = "Immunization.manufacturer.Organization", field = 17, table = "0227", comment = "Substance Manufacturer Name")
 	public void setManufacturer(CodeableConcept manufacturer) {
 		if (izDetail.hasImmunization()) {
 			Organization mOrg = new Organization();
@@ -289,8 +298,8 @@ public class RXAParser extends AbstractSegmentParser {
 	 * Set the completion status
 	 * @param completionStatus the completion status
 	 */
-	@ComesFrom(path = "Immunization.status", field = 20, table = "0322", comment = "Completion Status")
-	@ComesFrom(path = "Immunization.status", field = 21, table = "0323", comment = "Action Code – RXA")
+	@ComesFrom(path = "Immunization.status", field = 20, table = "0322", map = "ImmunizationStatus", comment = "Completion Status")
+	@ComesFrom(path = "Immunization.status", field = 21, table = "0323", map = "ImmunizationStatus", comment = "Action Code – RXA")
 	public void setCompletionStatus(Coding completionStatus) {
 		if (izDetail.hasImmunization()) {
 			if (!completionStatus.hasCode()) {
@@ -308,11 +317,9 @@ public class RXAParser extends AbstractSegmentParser {
 			default:
 				break;
 			}
-			if (code == null) {
-				izDetail.immunization.setStatus(code);
-			} else if (!code.equals(izDetail.immunization.getStatus())) {
-				warn("Conflicts between RXA-20 and RXA-21");
-			}
+			// RXA-22 field in can be D, which is a delete (entered-in-error), 
+			// that overrides first, so we don't check for conflicts
+			izDetail.immunization.setStatus(code);
 		}
 	}
 

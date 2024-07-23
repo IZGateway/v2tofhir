@@ -54,7 +54,7 @@ RXA|0|1|20140907|20140907|160^Influenza H5N1 -2013^CVX^^^|0.5|mL^^UCUM||00^NEW I
 RXA|0|1|20140907|20140907|801^AS03^CVX^^^ |0.5|mL^^UCUM||00^NEW IMMUNIZATION RECORD^NIP001|1234567890^SMITH^SALLY^S|||||455sd|| |||CP|A|
 
 # VXU Example #11—Recording an incompletely administered dose or a non-potent dose. 
-RXA|0|1|20091010||03^MMR^CVX|0.5|mL^^UCUM||||||||A23E1||MSD^^MVX|||P A|A
+RXA|0|1|20091010||03^MMR^CVX|0.5|mL^^UCUM||||||||A23E1||MSD^^MVX|||PA|A
 
 # Send Acknowledgement ACK In Response To VXU 
 MSH|^~\&|DCS|MYIIS|MYIIS||200906040000-0500||ACK^V04^ACK|1234567|P|2.5.1|||NE|NE|||||Z23^CDCPHINVS 
@@ -62,7 +62,7 @@ MSA|AA|9299381
 
 # Example Return an Evaluated History and Forecast (RSP(Z42)) 
 ORC|RE||197027^DCS|||||||^Clerk^Myron||^Pediatric^MARY^^^^^^^L^^^^^^^^^^^MD
-RXA|0|1|20090412|20090412|48^HIB PRP-T^CVX|0.5|mL^^UCUM||00^new immunization record^NIP0001|^Sticker^Nurse|^^^DCS_DC||||33k2a||PMC^sanofi^MVX|||C P|A
+RXA|0|1|20090412|20090412|48^HIB PRP-T^CVX|0.5|mL^^UCUM||00^new immunization record^NIP0001|^Sticker^Nurse|^^^DCS_DC||||33k2a||PMC^sanofi^MVX|||CP|A
 RXR|C28161^IM^NCIT^IM^IM^HL70162|
 OBX|1|CE|59779-9^Schedule used^LN|1|VXC16^ACIP^CDCPHINVS||||||F|||20090415
 

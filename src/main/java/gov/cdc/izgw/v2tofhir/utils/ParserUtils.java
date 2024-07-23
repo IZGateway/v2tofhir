@@ -7,9 +7,15 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
+import org.hl7.fhir.instance.model.api.IBase;
+import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.DomainResource;
+import org.hl7.fhir.r4.model.HumanName;
 import org.hl7.fhir.r4.model.IdType;
+import org.hl7.fhir.r4.model.Identifier;
+import org.hl7.fhir.r4.model.Property;
 import org.hl7.fhir.r4.model.Reference;
+import org.hl7.fhir.r4.model.StringType;
 
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Composite;
@@ -125,8 +131,8 @@ public class ParserUtils {
 		}
 		// Components beyond 1 don't exist in a primitive
 		// This happens in cases where field changes between versions,
-		// so a 2.8.1 message might have a XXX-3-2, but in prior versions,
-		// XXX-3 only had a primitive type.
+		// so a 2.8.1 message might have a SEG-3-2, but in prior versions,
+		// SEG-3 only had a primitive type.
 		return null;
 	}
 
@@ -204,7 +210,7 @@ public class ParserUtils {
 		try {
 			return type.isEmpty();
 		} catch (HL7Exception e) {
-			warnException("Unexpected HL7Exception: {}", e.getMessage(), e);
+			warn("Unexpected HL7Exception: {}", e.getMessage(), e);
 			return true;
 		}
 	}
@@ -426,7 +432,12 @@ public class ParserUtils {
 		if (type instanceof Composite comp) {
 			return comp.getComponents()[number];
 		}
-		warn("{}-{} is not a composite", type.getName(), number, type);
+		if (number == 0) {
+			// This handles the case of requesting the first component of what used to
+			// be a primitive, but is now a composite in a later version of the standard.
+			return type;
+		}
+		// warn("{}-{} is not a composite", type.getName(), number, type)
 		return null;
 	}
 	
@@ -473,8 +484,6 @@ public class ParserUtils {
 		} 
 	}
 	
-
-	
 	/**
 	 * Test if a segment has a value in a given field
 	 * @param segment	The segment to test
@@ -502,7 +511,7 @@ public class ParserUtils {
 		try {
 			return seg.getField(number, 0);
 		} catch (HL7Exception e) {
-			warnException("Unexpected {} {}: {}", e.getClass().getSimpleName(), segment, e.getMessage(), e);
+			warn("Unexpected {} {}: {}", e.getClass().getSimpleName(), segment, e.getMessage(), e);
 		}
 		return null;
 	}
@@ -529,7 +538,7 @@ public class ParserUtils {
 			}
 		}
 		if (saved != null) {
-			warnException("Unexpected {} loading {}: {}", saved.getClass().getSimpleName(), segment, saved.getMessage(), saved);
+			warn("Unexpected {} loading {}: {}", saved.getClass().getSimpleName(), segment, saved.getMessage(), saved);
 		}
 		return null;
 	}
@@ -548,36 +557,94 @@ public class ParserUtils {
 			return segClass.getDeclaredConstructor(Message.class).newInstance((Message)null);
 		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException
 				| InvocationTargetException | NoSuchMethodException | SecurityException e) {
-			warnException("Unexpected {} loading {}", e.getClass().getSimpleName(), segClass.getName(), e);
+			warn("Unexpected {} loading {}", e.getClass().getSimpleName(), segClass.getName(), e);
 			return null;
 		}
 	}
 	/**
-	 * Create a reference to a resource.  
+	 * Create or get the existing reference for a resource.  
+	 *
+	 * Every resource has a singular reference returned by this method. This 
+	 * ensures the reference is consistent across all uses based on the 
+	 * values in the resource such as identifier, and name.
 	 * 
 	 * Set the reference id to the resource id, and make this reference point 
 	 * to the resource through getResource().
 	 * 
+	 * @see #getResource(Class, Reference)
 	 * @param resource	The resource to create the reference to
 	 * @return	The created Reference
 	 */
 	public static Reference toReference(DomainResource resource) {
+		
 		if (resource == null) {
 			throw new NullPointerException("Resource cannot be null");
 		}
 		IdType id = resource.getIdElement();
-		Reference ref = new Reference();
-		if (id != null) {
-			ref.setId(id.getIdPart());
+		
+		Reference ref = (Reference) resource.getUserData("Reference"); 
+		if (ref == null) {
+			ref = new Reference();
+			// Link the resource to the reference
+			resource.setUserData("Reference", ref);
+			// And the reference to the resource
+			ref.setUserData("Resource", resource);
 		}
-		ref.setUserData("Resource", resource);
+		
+		if (id != null) {
+			ref.setReference(id.getResourceType() + "/" + id.getIdPart());
+		}
+		
+		// Make very nice references by adding identifier and display
+		Identifier ident = (Identifier) getFirstChild(resource, "identifier");
+		ref.setIdentifier(ident);
+		// Don't break the reference's display if it already has one.  First name
+		// in is kept.
+		if (!ref.hasDisplay()) { 
+			IBase name = getFirstChild(resource, "name");
+			// And don't write out a useless display value.
+			if (name != null && !name.isEmpty()) {
+				if (name instanceof HumanName hn) {
+					ref.setDisplay(TextUtils.toText(hn));
+				} else if (name instanceof StringType st) {
+					ref.setDisplayElement(st);
+				}
+			}
+		}
 		return ref;
+	}
+
+	/**
+	 * Get the resource linked to this reference.  This method can be used on the 
+	 * reference returned by toReference.
+	 * 
+	 * @see #toReference(DomainResource)
+	 * 
+	 * @param <T>	The class of the resource
+	 * @param clazz	The class
+	 * @param ref	The reference
+	 * @return	The resource linked to the reference.
+	 */
+	public static <T extends IBaseResource> T getResource(Class<T> clazz, Reference ref) {
+		return clazz.cast(ref.getUserData("Resource"));
+	}
+
+
+	/**
+	 * Get the first child of the specified name
+	 * @param r	The resource
+	 * @param name	The name of the property
+	 * @return	The value of the property
+	 */
+	public static IBase getFirstChild(DomainResource r, String name) {
+		Property p = r.getChildByName(name);
+		if (p == null || p.getValues().isEmpty()) {
+			return null;
+		}
+		return p.getValues().get(0);
 	}
 	
 	private static void warn(String msg, Object ...args) {
-		log.warn(msg, args);
-	}
-	private static void warnException(String msg, Object ...args) {
 		log.warn(msg, args);
 	}
 

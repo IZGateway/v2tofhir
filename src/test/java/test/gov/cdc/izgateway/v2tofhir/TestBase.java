@@ -241,6 +241,7 @@ public class TestBase {
 	static List<NamedSegment> getTestMRGs() { return getTestSegments("MRG"); }
 	static List<NamedSegment> getTestMSAs() { return getTestSegments("MSA"); }
 	static List<NamedSegment> getTestMSHs() { return getTestSegments("MSH"); }
+	static List<NamedSegment> getTestNK1s() { return getTestSegments("NK1"); }
 	static List<NamedSegment> getTestOBXs() { return getTestSegments("OBX"); }
 	static List<NamedSegment> getTestORCs() { return getTestSegments("ORC"); }
 	static List<NamedSegment> getTestPIDs() { return getTestSegments("PID"); }

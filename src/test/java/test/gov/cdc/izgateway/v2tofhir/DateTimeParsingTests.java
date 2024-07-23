@@ -443,7 +443,7 @@ class DateTimeParsingTests {
 		TestUtils.assertNotEmpty(times);
 
 		NamedArrayList crossedResult = cross(dates, times, punct);
-		System.out.println("Computed " + crossedResult.size() + " test cases");
+		log.debug("Computed {} test cases", crossedResult.size());
 		return crossedResult.notEmpty();
 	}
 	

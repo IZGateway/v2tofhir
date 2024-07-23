@@ -20,6 +20,7 @@ import org.hl7.fhir.r4.model.StringType;
 import gov.cdc.izgw.v2tofhir.annotation.ComesFrom;
 import gov.cdc.izgw.v2tofhir.annotation.Produces;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
+import gov.cdc.izgw.v2tofhir.utils.Mapping;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 import gov.cdc.izgw.v2tofhir.utils.Systems;
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +55,7 @@ public class NK1Parser extends AbstractSegmentParser {
 	public NK1Parser(MessageParser messageParser) {
 		super(messageParser, "NK1");
 		if (fieldHandlers.isEmpty()) {
-			initFieldHandlers(this, fieldHandlers);
+			FieldHandler.initFieldHandlers(this, fieldHandlers);
 		}
 	}
 
@@ -67,6 +68,11 @@ public class NK1Parser extends AbstractSegmentParser {
 	public IBaseResource setup() {
 		relatedPerson = createResource(RelatedPerson.class);
 		patient = getLastResource(Patient.class);
+		if (patient == null) {
+			// patient may not exist if PID somehow failed or wasn't parsed.
+			// so create one so that it can be referenced.
+			patient = createResource(Patient.class);
+		}
 		relatedPerson.setPatient(ParserUtils.toReference(patient));
 		return relatedPerson;
 	}
@@ -75,8 +81,8 @@ public class NK1Parser extends AbstractSegmentParser {
 	 * Set the name
 	 * @param name the name
 	 */
-	@ComesFrom(path = "relatedPerson.name", field = 2, comment = "Name")
-	@ComesFrom(path = "relatedPerson.name", field = 30, comment = "Contact Person's Name")
+	@ComesFrom(path = "RelatedPerson.name", field = 2, comment = "Name")
+	@ComesFrom(path = "RelatedPerson.name", field = 30, comment = "Contact Person's Name")
 	public void setName(HumanName name) {
 		relatedPerson.addName(name);
 	}
@@ -85,9 +91,31 @@ public class NK1Parser extends AbstractSegmentParser {
 	 * Set the relationship
 	 * @param relationship the relationship
 	 */
-	@ComesFrom(path = "relatedPerson.relationship", field = 3, table = "0063", comment = "Relationship")
-	@ComesFrom(path = "relatedPerson.relationship", field = 7, comment = "Contact Role")
+	@ComesFrom(path = "RelatedPerson.relationship", field = 3, table = "0063", map = "Relationship", comment = "Relationship")
+	@ComesFrom(path = "RelatedPerson.relationship", field = 7, table = "0131", map = "ContactRole", comment = "Contact Role")
 	public void setRelationship(CodeableConcept relationship) {
+		CodeableConcept mappedConcept = new CodeableConcept(); 
+		for (Coding coding: relationship.getCoding()) {
+			if (!coding.hasSystem() || !coding.hasCode()) {
+				continue;
+			}
+			Mapping m = null;
+			if (coding.getSystem().endsWith("0063")) {
+				m = Mapping.getMapping("Relationship");
+			} else if (coding.getSystem().endsWith("0131")) {
+				m = Mapping.getMapping("ContactRole");
+			} else {
+				continue;
+			}
+			
+			Coding mappedCode = m.mapCode(coding, true);
+			mappedConcept.addCoding(mappedCode);
+		}
+		// Add the mapped codes first, since they are the preferred concepts.
+		if (!mappedConcept.isEmpty()) {
+			relatedPerson.addRelationship(mappedConcept);
+		}
+		// Also add the original codes.
 		relatedPerson.addRelationship(relationship);
 	}
 
@@ -95,8 +123,8 @@ public class NK1Parser extends AbstractSegmentParser {
 	 * Set the address
 	 * @param address	The address
 	 */
-	@ComesFrom(path = "relatedPerson.address", field = 4, comment = "Address")
-	@ComesFrom(path = "relatedPerson.address", field = 32, comment = "Contact Person's Address")
+	@ComesFrom(path = "RelatedPerson.address", field = 4, comment = "Address")
+	@ComesFrom(path = "RelatedPerson.address", field = 32, comment = "Contact Person's Address")
 	public void setAddress(Address address) {
 		relatedPerson.addAddress(address);
 	}

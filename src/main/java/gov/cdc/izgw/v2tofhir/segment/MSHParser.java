@@ -48,7 +48,7 @@ public class MSHParser extends AbstractSegmentParser {
 	public MSHParser(MessageParser messageParser) {
 		super(messageParser, "MSG");
 		if (fieldHandlers.isEmpty()) {
-			initFieldHandlers(this, fieldHandlers);
+			FieldHandler.initFieldHandlers(this, fieldHandlers);
 		}
 	}
 	
@@ -73,10 +73,11 @@ public class MSHParser extends AbstractSegmentParser {
 	 *  
 	 * @param ident	The identifier of the sending organization.
 	 */
-	@ComesFrom(path="MessageHeader.responsible", field = 22, comment="Sending Responsible Organization")
+	@ComesFrom(path="MessageHeader.responsible", field = 22, type="XON", comment="Sending Responsible Organization")
 	public void setSourceSender(Identifier ident) {
 		Organization sendingOrganization = getOrganization(SENDING_ORGANIZATION);
 		sendingOrganization.addIdentifier(ident);
+		mh.setResponsible(ParserUtils.toReference(sendingOrganization));
 	}
 	
 	/**
@@ -95,6 +96,7 @@ public class MSHParser extends AbstractSegmentParser {
 		ep.setName(senderEndpoint.getSystem());
 		ep.addIdentifier().setValue(senderEndpoint.getSystem());
 		sendingOrganization.getEndpoint().add(ParserUtils.toReference(ep));
+		ParserUtils.toReference(sendingOrganization);
 	}
 	
 	/**
@@ -106,14 +108,23 @@ public class MSHParser extends AbstractSegmentParser {
 		mh.getSource().setName(sendingFacility.getSystem());
 		Organization sendingOrganization = getOrganization(SENDING_ORGANIZATION);
 		sendingOrganization.setName(sendingFacility.getSystem());
+		ParserUtils.toReference(sendingOrganization);
 	}
 	
 	private Organization getOrganization(String organizationType) {
 		Organization organization = (Organization) mh.getUserData(organizationType);
 		if (organization == null) {
-			organization = createResource(Organization.class);
-			mh.setSender(ParserUtils.toReference(organization));
-			mh.setUserData(organizationType, organization);
+			if (SENDING_ORGANIZATION.equals(organizationType)) {
+				organization = createResource(Organization.class);
+				mh.setSender(ParserUtils.toReference(organization));
+				mh.setUserData(organizationType, organization);
+			} else if (DESTINATION_ORGANIZATION.equals(organizationType)) {
+				organization = createResource(Organization.class);
+				mh.getDestinationFirstRep().setReceiver(ParserUtils.toReference(organization));
+				mh.setUserData(organizationType, organization);
+			} else {
+				throw new IllegalArgumentException("Unrecognized organization type: " + organizationType);
+			}
 		}
 		return organization;
 	}
@@ -122,7 +133,7 @@ public class MSHParser extends AbstractSegmentParser {
 	 * Copy information from the reciever organization to the destination organization
 	 * @param receiver The receiving organization from an XON
 	 */
-	@ComesFrom(path="MessageHeader.destination.receiver", field = 23, comment="Receiving Responsible Organization")
+	@ComesFrom(path="MessageHeader.destination.receiver", field = 23, type="XON", comment="Receiving Responsible Organization")
 	public void setDestinationReceiver(Organization receiver) {
 		Organization receivingOrganization = getOrganization(DESTINATION_ORGANIZATION);
 		if (receiver.hasName()) {
@@ -138,6 +149,7 @@ public class MSHParser extends AbstractSegmentParser {
 				receivingOrganization.addEndpoint(endpoint);
 			}
 		}
+		ParserUtils.toReference(receivingOrganization);
 	}
 	
 	
@@ -146,7 +158,7 @@ public class MSHParser extends AbstractSegmentParser {
 	 * @param receiverEndpoint	The receiver endpoint
 	 */
 	@ComesFrom(path="MessageHeader.destination.endpoint", field = 5, comment="Receiving Application",
-			   also="MessageHeader.destination.receiver.resolve().Organization.endpoint")
+			   also="MessageHeader.destination.receiver.Organization.endpoint")
 	public void setDestinationReceiverEndpoint(Identifier receiverEndpoint) {
 		mh.getDestinationFirstRep().setEndpoint(receiverEndpoint.getSystem());
 		
@@ -154,6 +166,7 @@ public class MSHParser extends AbstractSegmentParser {
 		Endpoint endpoint = createResource(Endpoint.class);
 		endpoint.addIdentifier(receiverEndpoint);
 		organization.addEndpoint(ParserUtils.toReference(endpoint));
+		ParserUtils.toReference(organization);
 				
 	}
 	
@@ -162,22 +175,23 @@ public class MSHParser extends AbstractSegmentParser {
 	 * @param receiverName	The receiving facility name
 	 */
 	@ComesFrom(path="MessageHeader.destination.name", field = 6, comment="Receiving Facility",
-			   also="MessageHeader.destination.receiver.resolve().Organization.identifier")
+			   also="MessageHeader.destination.receiver.Organization.identifier")
 	public void setDestinationReceiverName(Identifier receiverName) {
 		mh.getDestinationFirstRep().setName(receiverName.getSystem());
 		
 		Organization organization = getOrganization(DESTINATION_ORGANIZATION);
 		organization.addIdentifier(new Identifier().setValue(receiverName.getSystem()));
+		ParserUtils.toReference(organization);
 	}
 	
 	
 	/**
 	 * Set the bundle timestamp from MSH-7
-	 * @param instant The timestamp
+	 * @param dateTimeOfMessage The timestamp 
 	 */
-	@ComesFrom(path="Bundle.timestamp", field = 7, component = 0)
-	public void setBundleTimestamp(InstantType instant) {
-		getBundle().setTimestampElement(instant);
+	@ComesFrom(path="Bundle.timestamp", field = 7, comment = "Date/Time Of Message")
+	public void setDateTimeOfMessage(InstantType dateTimeOfMessage) {
+		getBundle().setTimestampElement(dateTimeOfMessage);
 	}
 	
 	/**
@@ -241,9 +255,9 @@ public class MSHParser extends AbstractSegmentParser {
 	 * @param securityCode	The security code
 	 */
 	@ComesFrom(path="MessageHeader.meta.security", field=8)
-	@ComesFrom(path="MessageHeader.meta.security", field=26)
-	@ComesFrom(path="MessageHeader.meta.security", field=27)
-	@ComesFrom(path="MessageHeader.meta.security", field=28)
+	@ComesFrom(path="MessageHeader.meta.security", field=26, type = "CWE", table = "0952")
+	@ComesFrom(path="MessageHeader.meta.security", field=27, type = "CWE", table = "0953")
+	@ComesFrom(path="MessageHeader.meta.security", field=28, type = "ST")
 	public void addSecurity(CodeableConcept securityCode) {
 		for (Coding coding: securityCode.getCoding()) {
 			mh.getMeta().addSecurity(coding);

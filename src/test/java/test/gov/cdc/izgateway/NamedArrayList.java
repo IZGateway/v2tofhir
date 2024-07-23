@@ -5,6 +5,8 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.TreeMap;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * NamedArrayList is used to make automated lists test cases which
  * are intended to be extensive in what they test.  
@@ -17,6 +19,7 @@ import java.util.TreeMap;
  * offers the capability to generate a selection from the total set
  * for more frequent regression testing vs. release testing.
  */
+@Slf4j
 public class NamedArrayList 
 	extends ArrayList<String> 
 	implements Comparable<NamedArrayList> 
@@ -95,7 +98,7 @@ public class NamedArrayList
 	 * @return true if not empty, false otherwise
 	 */
 	public NamedArrayList notEmpty() {
-		System.out.println(name + " has " + size() + " elements.");
+		log.debug("{} has {} elements", name, size());
 		TestUtils.assertNotEmpty(this);
 		return this;
 	}
@@ -110,7 +113,7 @@ public class NamedArrayList
 		if (size() < newSize || newSize < 0) {
 			return this;
 		}
-		System.out.printf("Truncating %s(%d) to %d%n", name(), size(), newSize);
+		log.debug("Truncating {}({}) to {}", name(), size(), newSize);
 		ArrayList<String> l = new ArrayList<>();
 		// Choose every Nth item from original test cases so we get 
 		// examples from each subgroup within the list instead of truncating 

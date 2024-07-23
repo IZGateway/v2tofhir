@@ -31,7 +31,7 @@ public class RXRParser extends AbstractSegmentParser {
 	public RXRParser(MessageParser p) {
 		super(p, "RXR");
 		if (fieldHandlers.isEmpty()) {
-			initFieldHandlers(this, fieldHandlers);
+			FieldHandler.initFieldHandlers(this, fieldHandlers);
 		}
 	}
 
@@ -42,7 +42,7 @@ public class RXRParser extends AbstractSegmentParser {
 
 	@Override
 	public IBaseResource setup() {
-		izDetail = IzDetail.get(this);
+		izDetail = IzDetail.get(getMessageParser());
 		return izDetail.immunization;
 	}
 	
@@ -69,7 +69,7 @@ public class RXRParser extends AbstractSegmentParser {
 	@ComesFrom(path = "Immunization.site", field = 2, table = "0163", comment = "Administration Site")
 	public void setAdministrationSite(CodeableConcept administrationSite) {
 		if (izDetail.hasImmunization()) {
-			izDetail.immunization.setRoute(administrationSite);
+			izDetail.immunization.setSite(administrationSite);
 		}
 	}
 }

@@ -178,8 +178,8 @@ class DatatypeConverterTests extends TestBase {
 				);
 			}
 		}
-		// System.out.println(encoded)
-		// System.out.println(TestUtils.toString(coding))
+		log.debug("{}", encoded);
+		log.debug("{}", TestUtils.toString(coding));
 	}
 	private boolean hasDisplay(Type t) {
 		return Arrays.asList("CE", "CNE", "CWE").contains(t.getName());

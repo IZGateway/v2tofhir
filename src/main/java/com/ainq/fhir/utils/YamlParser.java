@@ -18,6 +18,7 @@ import ca.uhn.fhir.parser.DataFormatException;
 import ca.uhn.fhir.parser.IParser;
 import ca.uhn.fhir.parser.IParserErrorHandler;
 import ca.uhn.fhir.rest.api.EncodingEnum;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * YamlParser implements the HAPI FHIR IParser interface, enabling it
@@ -27,6 +28,7 @@ import ca.uhn.fhir.rest.api.EncodingEnum;
  * @see <a href="https://motorcycleguy.blogspot.com/2021/08/yaml-as-fhir-format.html">YAML as a FHIR Format</a>
  *
  */
+@Slf4j
 public class YamlParser implements IParser {
     private final IParser jsonParser;
     
@@ -50,6 +52,7 @@ public class YamlParser implements IParser {
         try {
             return YamlUtils.toYaml(jsonParser.encodeResourceToString(theResource));
         } catch (IOException e) {
+        	log.error("Error Converting to YAML: {}", e.getMessage(), e);
             throw new DataFormatException("Error Converting to YAML", e);
         }
     }
@@ -61,6 +64,7 @@ public class YamlParser implements IParser {
         try {
             theWriter.write(YamlUtils.toYaml(jsonParser.encodeResourceToString(theResource)));
         } catch (IOException e) {
+        	log.error("Error Converting to YAML: {}", e.getMessage(), e);
             throw new DataFormatException("Error Converting to YAML", e);
         }
     }

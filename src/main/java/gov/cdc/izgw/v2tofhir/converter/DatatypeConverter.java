@@ -33,6 +33,8 @@ import org.hl7.fhir.r4.model.IdType;
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.InstantType;
 import org.hl7.fhir.r4.model.IntegerType;
+import org.hl7.fhir.r4.model.Location;
+import org.hl7.fhir.r4.model.Location.LocationMode;
 import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.PositiveIntType;
 import org.hl7.fhir.r4.model.Practitioner;
@@ -46,7 +48,8 @@ import org.hl7.fhir.r4.model.UriType;
 import ca.uhn.fhir.model.api.TemporalPrecisionEnum;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Composite;
-import ca.uhn.hl7v2.model.DataTypeException;
+import ca.uhn.hl7v2.model.GenericComposite;
+import ca.uhn.hl7v2.model.GenericPrimitive;
 import ca.uhn.hl7v2.model.Primitive;
 import ca.uhn.hl7v2.model.Type;
 import ca.uhn.hl7v2.model.Varies;
@@ -247,6 +250,8 @@ public class DatatypeConverter {
 			return clazz.cast(toPractitioner(t));
 		case "RelatedPerson":
 			return clazz.cast(toRelatedPerson(t));
+		case "Location":
+			return clazz.cast(toLocation(t));
 		default:
 			throw new IllegalArgumentException(clazz.getName() + " is not a supported FHIR type");
 		}
@@ -296,7 +301,10 @@ public class DatatypeConverter {
      * @return The CodeableConcept converted from the V2 datatype
      */
     public static CodeableConcept toCodeableConcept(Type codedElement, String table) {
-		if (table != null && table.length() == 0) {
+		if (ParserUtils.isEmpty(codedElement)) {
+			return null;
+		}
+    	if (table != null && table.length() == 0) {
 			table = null;
 		}
 		if ((codedElement = adjustIfVaries(codedElement)) == null) {
@@ -358,13 +366,33 @@ public class DatatypeConverter {
 	 * this to work well where the HAPI V2 Parser doesn't already know the type.
 	 *  
 	 * @param type	The V2 varies object to adjust
+	 * @param name	The name of the type to convert for generics.
+	 * @return	A V2 Primitive or Composite datatype
+	 */
+	public static Type adjustIfVaries(Type type, String name) {
+		if (type instanceof Varies v) {
+			type = v.getData();
+		}
+		if (type instanceof MyGenericComposite || type instanceof MyGenericPrimitive) {
+			return type;
+		}
+		if (type instanceof GenericComposite generic && StringUtils.isNotEmpty(name)) {
+			type = new MyGenericComposite(generic, name);
+		} else if (type instanceof GenericPrimitive prim) {
+			type = new MyGenericPrimitive(prim, name);
+		}
+
+		return type;
+	}
+	
+	/**
+	 * Convert a V2 Varies datatype to its actual datatype
+	 * 
+	 * @param type	The V2 varies object to adjust
 	 * @return	A V2 Primitive or Composite datatype
 	 */
 	public static Type adjustIfVaries(Type type) {
-		if (type instanceof Varies v) {
-			return v.getData();
-		}
-		return type;
+		return adjustIfVaries(type, null);
 	}
 	
 	/**
@@ -718,6 +746,114 @@ public class DatatypeConverter {
 	}
 
 	/**
+	 * Create a location from a primitive, DLD, LA1, LA2 or PL
+	 * data type.
+	 * 
+	 * NOTE: Creates a hierarchy of locations, so take care when
+	 * referencing to the location to also ensure that 
+	 * Location.partOf ancestors are created as well.
+	 *  
+	 * @param t	The datatype to convert.
+	 * @return The location.
+	 */
+	public static Location toLocation(Type t) {
+		if ((t = adjustIfVaries(t)) == null) {
+			return null;
+		}
+		Location location = new Location();
+		if (t instanceof Primitive) {
+			location.setName(ParserUtils.toString(t));
+			return location;
+		}
+		
+		Composite comp = null;
+		if (t instanceof Composite c) {
+			comp = c;
+		} else {
+			// DLD, PL, LA1, and LA2 are all composites.
+			return null;
+		}
+		
+		switch (t.getName()) {
+		// Anything with an address can be converted a location
+		case "AD", "SAD", "XAD", "XPN":
+			location.setMode(LocationMode.INSTANCE);
+			location.setAddress(toAddress(comp));
+			break;
+		case "DLD":
+			location.setMode(LocationMode.KIND);
+			location.addType(toCodeableConcept(ParserUtils.getComponent(comp, 0)));
+			break;
+		case "PL":
+			toLocationFromComposite(location, comp);
+			location.setDescription(ParserUtils.toString(comp, 9));
+			break;
+		case "LA1":
+			toLocationFromComposite(location, comp);
+			location.setAddress(toAddress(ParserUtils.getComponent(comp, 8)));
+			break;
+		case "LA2":
+			toLocationFromComposite(location, comp);
+			location.setAddress(toAddress(comp));
+			break;
+		default:
+			break;
+		}
+		if (location.isEmpty()) {
+			return null;
+		}
+		return location;
+	}
+
+	/**
+	 * Convert the bulk of a PL, LA1 or LA2 to a location. 
+	 * These all look almost the same.
+	 * PL/LA1/LA2.3 - Bed			HD/IS	0304	
+	 * PL/LA1/LA2.2 - Room			HD/IS	0303	
+	 * PL/LA1/LA2.1 - Point Of Care HD/IS	0302	
+	 * PL/LA1/LA2.8 - Floor			HD/IS	0308	
+	 * PL/LA1/LA2.7 - Building		HD/IS	0307	
+	 * PL/LA1/LA2.4 - Facility		HD/IS			
+	 * 
+	 * PL/LA1/LA2.5 - Location Status		IS	O	-	0306	
+	 * PL/LA1/LA2.6 - Person Location Type	IS	O	-	0305	
+	 * @param location	The location
+	 * @param comp	The composite to convert
+	 */
+	private static void toLocationFromComposite(Location location, Composite comp) {
+		
+		String[] d = { "Bed", "Room", "Ward", "Level", "Building", "Site" };
+		String[] n = { "bd", "ro", "wa", "lvl", "bu", "si" };
+		int[] c = { 2, 1, 0, 7, 6, 3 };
+		Location curl = location;
+		for (int i = 0; i < c.length; i++) {
+			Type t1 = ParserUtils.getComponent(comp, i);
+			if (ParserUtils.isEmpty(t1)) {
+				continue;
+			}
+			CodeableConcept cc = new CodeableConcept()
+					.addCoding(
+						new Coding(Systems.LOCATION_TYPE, n[i], d[i]));
+			if (curl.hasName()) {
+				Location partOf = new Location();
+				curl.setPartOf(ParserUtils.toReference(partOf));
+				curl = partOf;
+			}
+			curl.setMode(LocationMode.INSTANCE);
+			curl.setPhysicalType(cc);
+			curl.setName(ParserUtils.toString(t1));
+			ParserUtils.toReference(curl);	// Update reference
+		}
+		location.setOperationalStatus(toCoding(ParserUtils.getComponent(comp, 4), "0306"));
+		location.addType(
+			toCodeableConcept(ParserUtils.getComponent(comp, 5), "0305")
+		);
+		location.setDescription(ParserUtils.toString(comp, 8));
+		location.addIdentifier(toIdentifier(ParserUtils.getComponent(comp, 9)));
+	}
+
+
+	/**
      * Convert a HAPI V2 datatype to a FHIR Identifier
      * @param t The HAPI V2 type to convert
      * @return The Identifier converted from the V2 datatype
@@ -940,58 +1076,87 @@ public class DatatypeConverter {
 
 		TSComponentOne ts1 = new MyTSComponentOne();
 		try {
-			ts1.setValue(value);
-			String valueWithoutZone = StringUtils.substringBefore(value.replace("+", "-"), "+");
-			String valueWithoutDecimal = StringUtils.substringBefore(value, ".");
-			int len = valueWithoutDecimal.length();
-			TemporalPrecisionEnum prec;
-			if (len < 5) {
-				prec = TemporalPrecisionEnum.YEAR;
-			} else if (len < 7) {
-				prec = TemporalPrecisionEnum.MONTH;
-			} else if (len < 9) {
-				prec = TemporalPrecisionEnum.DAY;
-			} else if (len < 13) {
-				prec = TemporalPrecisionEnum.MINUTE;
-			} else if (len < 15) {
-				prec = TemporalPrecisionEnum.SECOND;
+			String[] parts = value.split("[\\.\\-+]");
+			// parts is now number, decimal, zone 
+			// or numeric, zone
+			// or numeric, decimal
+			// or numeric
+			String numeric = parts[0];
+			String decimal = "";
+			String zone = "";
+			if (value.contains(".")) {
+				decimal = "." + parts[1];
+			}
+			if (decimal.length() == 0) {
+				zone = parts.length > 1 ? parts[1] : "";
 			} else {
-				prec = TemporalPrecisionEnum.MILLI;
+				zone = parts.length > 2 ? parts[2] : "";
 			}
+			if (zone.length() > 0) {
+				zone = StringUtils.right(value, zone.length() + 1);
+			}
+			int len = numeric.length();
+			TemporalPrecisionEnum prec;
+			prec = getPrecision(decimal, len);
+			
+			// Set any missing values to the string to the right defaults.
+			value = numeric + StringUtils.right("0101000000", Math.max(14 - numeric.length(),0));
+			value = value + decimal + zone;
+			ts1.setValue(value);
 			Calendar cal = ts1.getValueAsCalendar();
-			if (TemporalPrecisionEnum.YEAR.equals(prec)) {
-				// Fix V2 Calendar bug when only year is provided.
-				cal.set(Calendar.YEAR, Integer.parseInt(valueWithoutDecimal));
-				cal.set(Calendar.MONTH, 0);
-				cal.set(Calendar.DATE, 1);
-			}
-			if (valueWithoutDecimal.length() < valueWithoutZone.length()) {
-				prec = TemporalPrecisionEnum.MILLI;
-			}
 			InstantType t = new InstantType(cal);
 			t.setPrecision(prec);
 			return t;
 		} catch (Exception e) {
-			try {
-				// We failed to convert, try as FHIR
-				BaseDateTimeType fhirType = new DateTimeType();
-				fhirType.setValueAsString(original);
-				Date date = fhirType.getValue();
-				TemporalPrecisionEnum prec = fhirType.getPrecision();
-				InstantType instant = new InstantType();
-				TimeZone tz = fhirType.getTimeZone();
-				instant.setValue(date);
-				instant.setPrecision(prec);
-				instant.setTimeZone(tz);
-				return instant;
-			} catch (Exception ex) {
-				debugException("Unexpected FHIR {} parsing {} as InstantType: {}", e.getClass().getSimpleName(),
-						original, ex.getMessage(), ex);
+			InstantType t = toInstantViaFHIR(original, e);
+			if (t != null) {  // NOSONAR: It can be null
+				return t;
 			}
 			debugException("Unexpected   V2 {} parsing {} as InstantType: {}", e.getClass().getSimpleName(), original,
 					e.getMessage());
 			return null;
 		}
+	}
+
+	private static InstantType toInstantViaFHIR(String original, Exception e) {
+		try {
+			// We failed to convert, try as FHIR
+			BaseDateTimeType fhirType = new DateTimeType();
+			fhirType.setValueAsString(original);
+			Date date = fhirType.getValue();
+			TemporalPrecisionEnum prec = fhirType.getPrecision();
+			InstantType instant = new InstantType();
+			TimeZone tz = fhirType.getTimeZone();
+			instant.setValue(date);
+			instant.setPrecision(prec);
+			instant.setTimeZone(tz);
+			return instant;
+		} catch (Exception ex) {
+			debugException("Unexpected FHIR {} parsing {} as InstantType: {}", e.getClass().getSimpleName(),
+					original, ex.getMessage(), ex);
+			return null;
+		}
+	}
+
+	private static TemporalPrecisionEnum getPrecision(String decimal, int len) {
+		TemporalPrecisionEnum prec;
+		if (len < 5) {
+			prec = TemporalPrecisionEnum.YEAR;
+		} else if (len < 7) {
+			prec = TemporalPrecisionEnum.MONTH;
+		} else if (len < 9) {
+			prec = TemporalPrecisionEnum.DAY;
+		} else if (len < 13) {
+			prec = TemporalPrecisionEnum.MINUTE;
+		} else if (len < 15) {
+			prec = TemporalPrecisionEnum.SECOND;
+		} else {
+			prec = TemporalPrecisionEnum.MILLI;
+		}
+		if (decimal.length() > 0) {
+			prec = TemporalPrecisionEnum.MILLI;
+		}
+		return prec;
 	}
 
 	/** 
@@ -1017,7 +1182,7 @@ public class DatatypeConverter {
 			tz = "Z";
 		}
 		right = right.replace(":", "");
-		value = left + right + tz;
+		value = left + right + tz.replace(":", "");
 		return value;
 	}
 
@@ -1029,46 +1194,9 @@ public class DatatypeConverter {
     public static InstantType toInstantType(Type type) {
 		// This will convert the first primitive component of anything to an instant.
 		if (type instanceof TSComponentOne ts1) {
-			try {
-				Date date = ts1.getValueAsDate();
-				if (date != null) {
-					InstantType instant = new InstantType();
-					TemporalPrecisionEnum prec = getTemporalPrecision(ts1);
-					instant.setValue(date);
-					instant.setPrecision(prec);
-					return instant;
-				}
-				return null;
-			} catch (DataTypeException e) {
-				warn("Unexpected {} parsing {} as InstantType: {}", e.getClass().getSimpleName(), type,
-						e.getMessage());
-			}
+			return toInstantType(ts1.getValue());
 		}
 		return toInstantType(ParserUtils.toString(type));
-	}
-
-	private static TemporalPrecisionEnum getTemporalPrecision(TSComponentOne ts1) {
-		String v = ts1.getValue();
-		String ts = StringUtils.substringBefore(v, ".");
-		if (ts.length() != v.length()) {
-			return TemporalPrecisionEnum.MILLI;
-		}
-		StringUtils.replace(ts, "-", "+");
-		ts = StringUtils.substringBefore(ts1.getValue(), "+");
-		switch (ts.length()) {
-		case 1, 2, 3, 4:
-			return TemporalPrecisionEnum.YEAR;
-		case 5, 6:
-			return TemporalPrecisionEnum.MONTH;
-		case 7, 8:
-			return TemporalPrecisionEnum.DAY;
-		case 9, 10, 11, 12:
-			return TemporalPrecisionEnum.MINUTE;
-		case 13, 14:
-			return TemporalPrecisionEnum.SECOND;
-		default:
-			return TemporalPrecisionEnum.MILLI;
-		}
 	}
 
 	/**
@@ -1223,6 +1351,7 @@ public class DatatypeConverter {
 
 	private static final String V2_TIME_FORMAT = "HHmmss.SSSS";
 	private static final String FHIR_TIME_FORMAT = "HH:mm:ss.SSS";
+	public static final List<String> DATETIME_TYPES = Arrays.asList("DT", "DTM", "TS");
 
 	/**
 	 * Convert a string to a FHIR TimeType object.
@@ -1449,7 +1578,8 @@ public class DatatypeConverter {
 		value = pt.getValue().strip();
 		String[] valueParts = value.split("\\s+");
 		try {
-			qt.setValueElement(new DecimalType(valueParts[0]));
+			DecimalType v = new DecimalType(valueParts[0]);
+			qt.setValue(v.getValue());
 		} catch (NumberFormatException ex) {
 			return null;
 		}
@@ -1484,6 +1614,7 @@ public class DatatypeConverter {
 			List<Coding> codingList = cc.getCoding();
 			Collections.sort(codingList, DatatypeConverter::compareUnitsBySystem);
 			Coding coding = codingList.get(0);
+			coding = Units.toUcum(coding.getCode());
 			qt.setCode(coding.getCode());
 			qt.setSystem(Systems.UCUM);
 			qt.setUnit(coding.getDisplay());

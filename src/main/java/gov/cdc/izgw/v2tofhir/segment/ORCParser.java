@@ -9,17 +9,19 @@ import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.ContactPoint;
 import org.hl7.fhir.r4.model.DateTimeType;
+import org.hl7.fhir.r4.model.Encounter;
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Immunization;
 import org.hl7.fhir.r4.model.Immunization.ImmunizationPerformerComponent;
 import org.hl7.fhir.r4.model.Organization;
+import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.Practitioner;
 import org.hl7.fhir.r4.model.PractitionerRole;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ServiceRequest;
+import org.hl7.fhir.r4.model.ServiceRequest.ServiceRequestIntent;
 import org.hl7.fhir.r4.model.ServiceRequest.ServiceRequestStatus;
 
-import ca.uhn.hl7v2.model.Segment;
 import gov.cdc.izgw.v2tofhir.annotation.ComesFrom;
 import gov.cdc.izgw.v2tofhir.annotation.Produces;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
@@ -44,10 +46,6 @@ public class ORCParser extends AbstractSegmentParser {
 	private PractitionerRole requester;
 	private IzDetail izDetail;
 	
-	@Override 
-	public void parse(Segment orc) {
-		super.parse(orc);
-	}
 	/**
 	 * Create an ORC Parser for the specified MessageParser
 	 * @param p	The message parser.
@@ -55,7 +53,7 @@ public class ORCParser extends AbstractSegmentParser {
 	public ORCParser(MessageParser p) {
 		super(p, "ORC");
 		if (fieldHandlers.isEmpty()) {
-			initFieldHandlers(this, fieldHandlers);
+			FieldHandler.initFieldHandlers(this, fieldHandlers);
 		}
 	}
 
@@ -66,8 +64,18 @@ public class ORCParser extends AbstractSegmentParser {
 
 	@Override
 	public IBaseResource setup() {
-		izDetail = IzDetail.get(this);
+		izDetail = IzDetail.get(getMessageParser());
+		izDetail.initializeResources();
 		order = createResource(ServiceRequest.class);
+		Patient patient = this.getLastResource(Patient.class);
+		if (patient != null) {
+			order.setSubject(ParserUtils.toReference(patient));
+		}
+		Encounter encounter = this.getLastResource(Encounter.class);
+		if (encounter != null) {
+			order.setSubject(ParserUtils.toReference(encounter));
+		}
+		order.setIntent(ServiceRequestIntent.ORDER);
 		return order;
 	}
 	
@@ -79,8 +87,8 @@ public class ORCParser extends AbstractSegmentParser {
 	 * 
 	 * @param orderControl	The order control code from Table HL7-0119
 	 */
-	@ComesFrom(path = "ServiceRequest.status", field = 1, table = "0119",
-			   also = { "ServiceRequest.indent = 'order'",
+	@ComesFrom(path = "ServiceRequest.status", field = 1, table = "0119", map = "OrderControlCode[ServiceRequest.status]",
+			   also = { "ServiceRequest.intent = 'order'",
 					    "ServiceRequest.subject = Patient",
 					    "ServiceRequest.encounter = Encounter"
 			   }, priority = 10)
@@ -97,7 +105,7 @@ public class ORCParser extends AbstractSegmentParser {
 			case "RE", "CN", "OE", "OF", "OR":
 				order.setStatus(ServiceRequestStatus.COMPLETED);
 				break;
-			case "AF", "CH", "FU", "NW", "OK", "PA", "PR", "RL", "RO", "RP", 
+			case "AF", "CH", "FU", "NW", "OK", "PA", "RL", "RO", "RP", 
 				 "RQ", "RR", "RU":
 				order.setStatus(ServiceRequestStatus.ACTIVE);
 				break;
@@ -117,8 +125,11 @@ public class ORCParser extends AbstractSegmentParser {
 		}
 	}
 	
-	private void setOrderIdentifier(Identifier ident, CodeableConcept type) {
-		ident.setType(type);
+	private void addOrderIdentifier(Identifier ident, CodeableConcept type) {
+		if (ident.getType() != type) {
+			ident = ident.copy();
+			ident.setType(type);
+		}
 		order.addIdentifier(ident);
 		if (izDetail.hasImmunization()) {
 			izDetail.immunization.addIdentifier(ident);
@@ -131,7 +142,10 @@ public class ORCParser extends AbstractSegmentParser {
 	@ComesFrom(path = "ServiceRequest.identifier", field = 2)
 	@ComesFrom(path = "ServiceRequest.identifier", field = 33)
 	public void setOrderPlacerIdentifier(Identifier ident) {
-		setOrderIdentifier(ident, Codes.PLACER_ORDER_IDENTIFIER_TYPE);
+		if (ident.hasType()) {
+			addOrderIdentifier(ident, ident.getType());
+		}
+		addOrderIdentifier(ident, Codes.PLACER_ORDER_IDENTIFIER_TYPE);
 	}
 	
 	/**
@@ -140,7 +154,10 @@ public class ORCParser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path = "ServiceRequest.identifier", field = 3)
 	public void setOrderFillerIdentifier(Identifier ident) {
-		setOrderIdentifier(ident, Codes.FILLER_ORDER_IDENTIFIER_TYPE);
+		if (ident.hasType()) {
+			addOrderIdentifier(ident, ident.getType());
+		}
+		addOrderIdentifier(ident, Codes.FILLER_ORDER_IDENTIFIER_TYPE);
 	}
 	
 	/**
@@ -149,7 +166,7 @@ public class ORCParser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path = "ServiceRequest.identifier", field = 4)
 	public void setOrderPlacerGroupIdentifier(Identifier ident) {
-		setOrderIdentifier(ident, Codes.PLACER_ORDER_GROUP_TYPE);
+		addOrderIdentifier(ident, Codes.PLACER_ORDER_GROUP_TYPE);
 	}
 	
 
@@ -186,7 +203,7 @@ public class ORCParser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path = "ServiceRequest.identifier", field = 8, component = 1)
 	public void setOrderPlacerParentIdentifier(Identifier ident) { 
-		setOrderIdentifier(ident, Codes.PLACER_ORDER_GROUP_TYPE);
+		addOrderIdentifier(ident, Codes.PLACER_ORDER_GROUP_TYPE);
 	}
 
 	/**
@@ -195,7 +212,7 @@ public class ORCParser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path = "ServiceRequest.identifier", field = 8, component = 2)
 	public void setOrderFillerParentIdentifier(Identifier ident) { 
-		setOrderIdentifier(ident, Codes.FILLER_ORDER_GROUP_TYPE);
+		addOrderIdentifier(ident, Codes.FILLER_ORDER_GROUP_TYPE);
 	}
 	
 	/**
@@ -214,7 +231,7 @@ public class ORCParser extends AbstractSegmentParser {
 	 * Set the ordering provider
 	 * @param orderingProvider the ordering provider
 	 */
-	@ComesFrom(path = "ServiceRequest.requester", field = 12) 
+	@ComesFrom(path = "ServiceRequest.requester.PractitionerRole.practitioner", field = 12) 
 	public void setOrderingProvider(Practitioner orderingProvider) {
 		Reference providerReference = ParserUtils.toReference(addResource(orderingProvider));
 		getRequester().setPractitioner(providerReference);
@@ -251,7 +268,7 @@ public class ORCParser extends AbstractSegmentParser {
 	 * Set the ordering organization
 	 * @param organization the ordering organization
 	 */
-	@ComesFrom(path = "ServiceRequest.requester", field = 21) 
+	@ComesFrom(path = "ServiceRequest.requester.PractitionerRole.organization", field = 21) 
 	public void setOrderingOrganization(Organization organization) {
 		if (izDetail.requestingOrganization != null) {
 			// If organization already exists, just copy name and identifier from XON
@@ -268,7 +285,10 @@ public class ORCParser extends AbstractSegmentParser {
 	 * Set the ordering organization address
 	 * @param orderingProviderAddress the ordering organization address
 	 */
-	@ComesFrom(path = "ServiceRequest.requester", field = 22) 
+	@ComesFrom(
+		path = "ServiceRequest.requester.PractitionerRole"
+		        + ".organization.Organization.address", field = 22
+	) 
 	public void setOrderingOrganizationAddress(Address orderingProviderAddress) {
 		if (izDetail.requestingOrganization == null) {
 			izDetail.requestingOrganization = createResource(Organization.class);
@@ -281,7 +301,7 @@ public class ORCParser extends AbstractSegmentParser {
 	 * Set the ordering organization phone number
 	 * @param orderingProviderContact the ordering organization phone number
 	 */
-	@ComesFrom(path = "ServiceRequest.requester", field = 23) 
+	@ComesFrom(path = "ServiceRequest.requester.PractitionerRole.organization.Organization.telecom", field = 23) 
 	public void setOrderingOrganizationTelecom(ContactPoint orderingProviderContact) {
 		if (izDetail.requestingOrganization == null) {
 			izDetail.requestingOrganization = createResource(Organization.class);

@@ -1,0 +1,6 @@
+HL7 v2,,,Condition (IF True),,,HL7 FHIR,,,,,Comments
+Code,Text,Code System,Computable ANTLR,Computable FHIRPath,Narrative,Code,,Display,Code System,,
+E,Error,HL70516,,,Error,error,,http://hl7.org/fhir/issue-severity,,
+W,Warning,HL70516,,,Warning,warning,,http://hl7.org/fhir/issue-severity,,
+I,Information,HL70516,,,Information,information,,http://hl7.org/fhir/issue-severity,,
+F,Fatal,HL70516,,,Fatal,fatal,,http://hl7.org/fhir/issue-severity,,

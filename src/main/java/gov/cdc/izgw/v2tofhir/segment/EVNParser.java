@@ -43,7 +43,7 @@ public class EVNParser extends AbstractSegmentParser {
 	public EVNParser(MessageParser messageParser) {
 		super(messageParser, "EVN");
 		if (fieldHandlers.isEmpty()) {
-			initFieldHandlers(this, fieldHandlers);
+			FieldHandler.initFieldHandlers(this, fieldHandlers);
 		}
 	}
 
@@ -85,7 +85,7 @@ public class EVNParser extends AbstractSegmentParser {
 	 * Set the operator
 	 * @param operatorId	The operator
 	 */
-	@ComesFrom(path = "Provenance.agent.who(Provenance.Practitioner)", field = 5, comment = "Operator ID")
+	@ComesFrom(path = "Provenance.agent.who.Practitioner", field = 5, comment = "Operator ID")
 	public void setOperatorID(Practitioner operatorId) {
 		provenance.addAgent().setWho(ParserUtils.toReference(operatorId));
 	}
@@ -103,7 +103,7 @@ public class EVNParser extends AbstractSegmentParser {
 	 * Set the identifier of the facility where the event occurred
 	 * @param eventFacility The event facility identifier
 	 */
-	@ComesFrom(path = "Provenance.location(Provenance.Location)", field = 7, comment = "Event Facility")
+	@ComesFrom(path = "Provenance.location", field = 7, comment = "Event Facility")
 	public void setEventFacility(Identifier eventFacility) {
 		if (eventFacility.hasSystem()) {
 			Location location = createResource(Location.class);

@@ -82,7 +82,7 @@ public class ERRParser extends AbstractSegmentParser {
 	public ERRParser(MessageParser messageParser) {
 		super(messageParser, "ERR");
 		if (fieldHandlers.isEmpty()) {
-			initFieldHandlers(this, fieldHandlers);
+			FieldHandler.initFieldHandlers(this, fieldHandlers);
 		}
 	}
 	
@@ -163,7 +163,7 @@ public class ERRParser extends AbstractSegmentParser {
 	 * Set the severity
 	 * @param severity	Severity
 	 */
-	@ComesFrom(path="OperationOutcome.issue.severity", field = 4, table = "0516")
+	@ComesFrom(path="OperationOutcome.issue.severity", field = 4, table = "0516", map = "ErrorSeverity")
 	public void setSeverity(CodeableConcept severity) {
 		for (Coding coding: severity.getCoding()) {
 			issue.getDetails().addCoding(coding);
@@ -173,9 +173,13 @@ public class ERRParser extends AbstractSegmentParser {
 				continue;
 			}
 			switch (sev.getCode().toUpperCase()) {
+			// F is not really a code in table 0516, but if it shows up, treat it as if it meant fatal.
+			case "F":	issue.setSeverity(IssueSeverity.FATAL); break;
+			// These are the legit codes.
 			case "I":	issue.setSeverity(IssueSeverity.INFORMATION); break;
 			case "W":	issue.setSeverity(IssueSeverity.WARNING); break;
 			case "E":	// Fall through
+			// Everything else maps to error
 			default: 	issue.setSeverity(IssueSeverity.ERROR); break;
 			}
 		}

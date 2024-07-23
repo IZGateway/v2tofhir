@@ -2,6 +2,10 @@ package gov.cdc.izgw.v2tofhir.segment;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 import java.util.ServiceConfigurationError;
 
 import org.apache.commons.lang3.StringUtils;
@@ -157,18 +161,7 @@ public class FieldHandler implements Comparable<FieldHandler> {
 			return;
 		}
 		for (Type t: f) {
-			t = DatatypeConverter.adjustIfVaries(t);
-			if (t instanceof Composite comp && from.component() != 0) {
-				// Check for component
-				Type[] t2 = comp.getComponents();
-				if (from.component() > t2.length) {
-					continue;
-				}
-				t = t2[from.component()-1];
-			} else if (from.component() > 1) {
-				// A component > 1 does not exist in a primitive
-				continue;
-			}
+			t = getActualType(t);
 			if (t == null) {
 				continue;
 			}
@@ -182,6 +175,23 @@ public class FieldHandler implements Comparable<FieldHandler> {
 				setValue(p, t);
 			}
 		}
+	}
+
+	private Type getActualType(Type t) {
+		t = DatatypeConverter.adjustIfVaries(t, from.type());
+		if (t instanceof Composite comp && from.component() != 0) {
+			// Check for component
+			Type[] t2 = comp.getComponents();
+			if (from.component() > t2.length) {
+				return null;
+			} 
+			return t2[from.component()-1];
+		} 
+		if (from.component() < 2) {
+			return t;
+		}
+		// A component > 1 does not exist in a primitive
+		return null;
 	}
 
 	private IBase setValue(StructureParser p, IBase object) {
@@ -295,5 +305,71 @@ public class FieldHandler implements Comparable<FieldHandler> {
 	@Override
 	public int hashCode() {
 		return from.hashCode() ^ method.hashCode();
+	}
+
+	/**
+	 * initFieldHandlers must be called by a parser before calling parse(segment, parser)
+	 * 
+	 * @see #getFieldHandlers
+	 * @param p	The structure parser to compute the field handlers for.
+	 * @param fieldHandlers	The list to update with all of the field handlers 
+	 */
+	protected static void initFieldHandlers(AbstractStructureParser p, List<FieldHandler> fieldHandlers) {
+		// Synchronize on the list in case two callers are trying to to initialize it at the 
+		// same time.  This avoids one thread from trying to use fieldHandlers while another 
+		// potentially overwrites it.
+		synchronized (fieldHandlers) { // NOSONAR This use of a parameter for synchronization is OK
+			// We got the lock, recheck the entry condition.
+			if (!fieldHandlers.isEmpty()) {
+				// Another thread initialized the list.
+				return;
+			}
+			/*
+			 * Go through and find all methods with a ComesFrom annotation.
+			 */
+			for (Method method: p.getClass().getMethods()) {
+				for (ComesFrom from: method.getAnnotationsByType(ComesFrom.class)) {
+					fieldHandlers.add(new FieldHandler(method, from, p));
+				}
+			}
+			Collections.sort(fieldHandlers);
+		}
+	}
+	
+	/**
+	 * Get all public methods with a ComesFrom annotation.
+	 * @param parserClass The parser to get the annotations from.
+	 * @return all methods with a ComesFrom annotation in processing order.
+	 */
+	public static List<ComesFrom> getComesFrom(
+		Class<? extends AbstractStructureParser> parserClass
+	) {
+		List<ComesFrom> a = new ArrayList<>();
+		for (Method method: parserClass.getMethods()) {
+			for (ComesFrom from: method.getAnnotationsByType(ComesFrom.class)) {
+				a.add(from);
+			}
+		}
+		Collections.sort(a, FieldHandler::compareComesFrom);
+		return a;
+	}
+	
+	/**
+	 * Order ComesFrom annotations into processing order
+	 * @param a The first annotation
+	 * @param b The second annotation
+	 * @return The annotations in processing order
+	 */
+	public static int compareComesFrom(ComesFrom a, ComesFrom b) {
+		if (Objects.equals(a, b)) {
+			return 0;
+		}
+		int comp = -Integer.compare(a.priority(), b.priority());
+		if (comp != 0) return comp;
+		comp = Integer.compare(a.field(), b.field());
+		if (comp != 0) return comp;
+		comp = Integer.compare(a.component(), b.component());
+		if (comp != 0) return comp;
+		return a.path().compareTo(b.path());
 	}
 }

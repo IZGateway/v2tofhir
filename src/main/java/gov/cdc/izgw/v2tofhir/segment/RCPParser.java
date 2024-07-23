@@ -7,7 +7,6 @@ import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Parameters;
 import org.hl7.fhir.r4.model.Parameters.ParametersParameterComponent;
 import org.hl7.fhir.r4.model.PositiveIntType;
-import org.hl7.fhir.r4.model.Quantity;
 import org.hl7.fhir.r4.model.StringType;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryRequestComponent;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryResponseComponent;
@@ -40,7 +39,7 @@ public class RCPParser extends AbstractSegmentParser {
 	public RCPParser(MessageParser messageParser) {
 		super(messageParser, "RCP");
 		if (fieldHandlers.isEmpty()) {
-			initFieldHandlers(this, fieldHandlers);
+			FieldHandler.initFieldHandlers(this, fieldHandlers);
 		}
 	}
 	
@@ -69,12 +68,11 @@ public class RCPParser extends AbstractSegmentParser {
 	 * Update the search on params and the Bundle.entry.request component with the count.
 	 * @param quantityLimitedRequest	The count.
 	 */
-	@ComesFrom(path = "Params.count", field = 2, comment = "Quantity Limited Request")
-	public void setQuantityLimitedRequest(Quantity quantityLimitedRequest) {
-		PositiveIntType count = new PositiveIntType(quantityLimitedRequest.getValue().intValue());
-		params.addParameter().setName("_count").setValue(count);
+	@ComesFrom(path = "Parameters._count", field = 2, component = 1, comment = "Quantity Limited Request")
+	public void setQuantityLimitedRequest(PositiveIntType quantityLimitedRequest) {
+		params.addParameter().setName("_count").setValue(quantityLimitedRequest);
 		ParametersParameterComponent search = params.getParameter("_search");
-		String countQueryParam = "&_count=" + count.getValueAsString();
+		String countQueryParam = "&_count=" + quantityLimitedRequest.getValueAsString();
 		// Update anyplace the _search was stored with the count.
 		if (search != null && search.getValue() instanceof StringType s) {
 			s.setValue(s.getValue() + countQueryParam);

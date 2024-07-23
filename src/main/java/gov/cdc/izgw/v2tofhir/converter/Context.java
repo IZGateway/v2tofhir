@@ -33,10 +33,6 @@ public class Context {
 	 */
 	private final Set<String> profileIds = new LinkedHashSet<>();
 	/**
-	 * The idetifier of the hl7 data object.
-	 */
-	private String hl7DataId;
-	/**
 	 * The bundle being created.
 	 */
 	private Bundle bundle;
@@ -65,7 +61,6 @@ public class Context {
 	 */
 	public void clear() {
 		properties.clear();
-		setHl7DataId(null);
 		setBundle(null);
 		setEventCode(null);
 	}

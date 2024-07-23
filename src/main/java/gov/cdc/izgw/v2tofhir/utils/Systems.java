@@ -131,7 +131,10 @@ public class Systems {
 	public static final String NULL_FLAVOR = "http://terminology.hl7.org/CodeSystem/v3-NullFlavor";
 	/** Code System OID for the code system used for Null Flavors */
 	public static final String NULL_FLAVOR_OID = "2.16.840.1.113883.5.1008";
-
+	/** Code System URI for the location type code system */
+	public static final String LOCATION_TYPE = "http://terminology.hl7.org/CodeSystem/location-physical-type";
+	/** Code System OID for the location type code system */
+	public static final String LOCATION_TYPE_OID = "2.16.840.1.113883.4.642.3.328"; 
 
 	static final String[] IDTYPE_NAMES =  { ID_TYPE, "HL70203", "0203", "IDTYPE", "2.16.840.1.113883.12.203", ID_TYPE_OID };
 	static final String[] IDENTIFIER_TYPE_NAMES = { UNIVERSAL_ID_TYPE, "HL70301", "0301", "2.16.840.1.113883.12.301", UNIVERSAL_ID_TYPE_OID };
@@ -178,7 +181,7 @@ public class Systems {
 	private static final String[][] stringToUri = {
 		{ CDCGS1VIS, "CDCGS1VIS", CDCGS1VIS_OID },
 		{ CDCPHINVS, "CDCPHINVS", CDCPHINVS_OID },
-		{ CDCREC, "CDCREC", CDCREC_OID },
+		{ CDCREC, "CDCREC", "http://terminology.hl7.org/CodeSystem/v2-0005", CDCREC_OID },
 		{ CPT, "C4", "CPT", "CPT4", CPT_OID},
 		{ CVX, "CVX", CVX_OID },
 		{ DICOM, "DCM", "DICOM", DICOM_OID },
@@ -188,13 +191,14 @@ public class Systems {
 		{ ICD9PCS, "ICD9PCS", "I9CP", ICD9PCS_OID },
 		IDENTIFIER_TYPE_NAMES,
 		IDTYPE_NAMES,
-		{ LOINC, "LOINC", "LN", "LNC", LOINC_OID },
+		{ LOINC, "LN", "LOINC", "LNC", LOINC_OID },
+		{ LOCATION_TYPE, LOCATION_TYPE_OID },
 		{ MVX, "MVX", MVX_OID },
 		{ NCI, "NCI", "NCIT", NCI_OID },
 		{ NDC, "NDC", NDC_OID },
 		{ NDFRT, "NDFRT", "NDF-RT", NDFRT_OID },
 		{ RXNORM, "RXNORM", RXNORM_OID },
-		{ SNOMED, "SNOMEDCT", "SNOMED-CT", "SNOMED", "SNM", "SCT", SNOMED_OID },
+		{ SNOMED, "SCT", "SNOMEDCT", "SNOMED-CT", "SNOMED", "SNM", SNOMED_OID },
 		{ SSN, "SSN", SSN_OID },
 		{ UCUM, "UCUM", UCUM_OID },
 		{ NULL_FLAVOR, "NULLFLAVOR", NULL_FLAVOR_OID },

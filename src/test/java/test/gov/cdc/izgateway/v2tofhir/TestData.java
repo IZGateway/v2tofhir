@@ -189,23 +189,17 @@ public class TestData {
 		}
 		List<IBase> result = engine.evaluate(b, expr, IBase.class);
 		// log.info("Value: {} = {}", this.getInnerAsString(expr), result)
-		String testValue = "";
-		if (result == null || result.isEmpty()) {
-			testValue = getTestValue(b, position);
-			testValue = " (" + testValue + ")";
-		}
+		String testValue = " (" + getTestValue(b, position) + ")";
 		assertNotNull(result, comment + testValue);
 		assertFalse(result.isEmpty(), comment + testValue);
 		if (result.size() == 1) {
 			IBase base = result.get(0);
 			assertFalse(base.isEmpty());
 			if (base instanceof BooleanType bool) {
-				String value = "";
 				if (!bool.getValue()) {
 					testValue = getTestValue(b, position);
-					value = " (" + testValue + ")";
 				}
-				assertTrue(bool.getValue(), comment + value);
+				assertTrue(bool.getValue(), comment + testValue);
 			} else if (base instanceof PrimitiveType<?> primitive) {
 				String str = primitive.asStringValue();
 				assertNotNull(str, comment);
@@ -248,7 +242,9 @@ public class TestData {
 		    	b.append("[");
 		    }
 			for (IBase item: l) {
-				if (item instanceof Type t) {
+				if (item instanceof PrimitiveType<?> pt) {
+					b.append(pt.asStringValue()).append(", ");
+				} else if (item instanceof Type t) {
 					b.append(TextUtils.toString(t)).append(", ");
 				} else {
 					b.append(item.fhirType()).append("[").append(item).append("], ");

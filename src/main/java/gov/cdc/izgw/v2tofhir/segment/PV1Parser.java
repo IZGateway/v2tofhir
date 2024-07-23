@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Account;
+import org.hl7.fhir.r4.model.CodeType;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.DateTimeType;
@@ -19,6 +20,8 @@ import org.hl7.fhir.r4.model.Location;
 import org.hl7.fhir.r4.model.Location.LocationStatus;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.Practitioner;
+
+import com.ainq.fhir.utils.PathUtils;
 
 import gov.cdc.izgw.v2tofhir.annotation.ComesFrom;
 import gov.cdc.izgw.v2tofhir.annotation.Produces;
@@ -37,7 +40,7 @@ import lombok.extern.slf4j.Slf4j;
  * @author Audacious Inquiry
  */
 @Produces(segment = "PV1", resource = Encounter.class, 
-	extra = { Patient.class, Practitioner.class, Location.class }
+	extra = { Patient.class, Practitioner.class, Location.class, EpisodeOfCare.class }
 )
 @Slf4j
 public class PV1Parser extends AbstractSegmentParser {
@@ -61,7 +64,7 @@ public class PV1Parser extends AbstractSegmentParser {
 	public PV1Parser(MessageParser messageParser) {
 		super(messageParser, "PV1");
 		if (fieldHandlers.isEmpty()) {
-			initFieldHandlers(this, fieldHandlers);
+			FieldHandler.initFieldHandlers(this, fieldHandlers);
 		}
 	}
 
@@ -74,6 +77,10 @@ public class PV1Parser extends AbstractSegmentParser {
 	public IBaseResource setup() {
 		encounter = createResource(Encounter.class);
 		patient = getLastResource(Patient.class);
+		if (patient == null) {
+			// No patient was found, create one.
+			patient = createResource(Patient.class);
+		}
 		encounter.setSubject(ParserUtils.toReference(patient));
 		account = null;
 		location = null;
@@ -87,14 +94,33 @@ public class PV1Parser extends AbstractSegmentParser {
 	 * Also adds the class to the Encounter.type. 
 	 * @param patientClass	The patient class
 	 */
-	@ComesFrom(path = "Encounter.class", field = 2, table = "0004", comment = "Patient Class",
+	@ComesFrom(path = "Encounter.class", field = 2, table = "0004", map = "EncounterClass", comment = "Patient Class",
 			   also = "Encounter.type")
 	public void setPatientClass(CodeableConcept patientClass) {
+		boolean notMapped = false;
 		// Set to mapped value when present.
+		// Encounter.class is of coding type with a preferred coding system, so it gets mapped
 		encounter.setClass_(mapPatientClass(patientClass));
-		// Otherwise set to first coding value.
+		
+		// Otherwise set to first coding value.  It's typical that there's only one,
+		// so we won't worry about the rest of them, unlike the mapping case above.
 		if (!encounter.hasClass_() && patientClass.hasCoding()) {
+			notMapped = true;
 			encounter.setClass_(patientClass.getCodingFirstRep());
+		}
+		
+		if (encounter.hasClass_()) {
+			// We don't want to lose the original values, so we store them as the codings
+			// that apply to coding.code
+			CodeType code = encounter.getClass_().getCodeElement();
+			for (Coding coding: patientClass.getCoding()) {
+				if (notMapped) {
+					// If it wasn't mapped, we stored the first one, so we skip it.
+					notMapped = false;
+					continue;
+				}
+				code.addExtension(PathUtils.FHIR_EXT_PREFIX + "/iso21090-SC-coding", coding);
+			}
 		}
 		encounter.addType(patientClass);
 	}
@@ -175,7 +201,7 @@ public class PV1Parser extends AbstractSegmentParser {
 	 * Set the attending physician
 	 * @param attendingDoctor the attending physician
 	 */
-	@ComesFrom(path = "Encounter.participant.individual(Encounter.Practitioner)", field = 7, comment = "Attending Doctor")
+	@ComesFrom(path = "Encounter.participant.individual.Practitioner", field = 7, comment = "Attending Doctor")
 	public void setAttendingDoctor(Practitioner attendingDoctor) {
 		addResource(attendingDoctor);
 		EncounterParticipantComponent participant = encounter.addParticipant()
@@ -187,7 +213,7 @@ public class PV1Parser extends AbstractSegmentParser {
 	 * Set the referring physician
 	 * @param referringDoctor the referring physician
 	 */
-	@ComesFrom(path = "Encounter.participant.individual(Encounter.Practitioner)", field = 8, comment = "Referring Doctor")
+	@ComesFrom(path = "Encounter.participant.individual.Practitioner", field = 8, comment = "Referring Doctor")
 	public void setReferringDoctor(Practitioner referringDoctor) {
 		addResource(referringDoctor);
 		EncounterParticipantComponent participant = encounter.addParticipant()
@@ -199,7 +225,7 @@ public class PV1Parser extends AbstractSegmentParser {
 	 * Set the consulting physician
 	 * @param consultingDoctor the consulting physician
 	 */
-	@ComesFrom(path = "Encounter.participant.individual(Encounter.Practitioner)", field = 9, comment = "Consulting Doctor")
+	@ComesFrom(path = "Encounter.participant.individual.Practitioner", field = 9, comment = "Consulting Doctor")
 	public void setConsultingDoctor(Practitioner consultingDoctor) {
 		addResource(consultingDoctor);
 		EncounterParticipantComponent participant = encounter.addParticipant()
@@ -271,7 +297,7 @@ public class PV1Parser extends AbstractSegmentParser {
 	 * Set the admitting physician
 	 * @param admittingDoctor the admitting physician
 	 */
-	@ComesFrom(path = "Encounter.participant.individual(Encounter.Practitioner)", field = 17, comment = "Admitting Doctor")
+	@ComesFrom(path = "Encounter.participant.individual.Practitioner", field = 17, comment = "Admitting Doctor")
 	public void setAdmittingDoctor(Practitioner admittingDoctor) {
 		addResource(admittingDoctor);
 		EncounterParticipantComponent participant = encounter.addParticipant()
@@ -302,7 +328,7 @@ public class PV1Parser extends AbstractSegmentParser {
 	 * Set the discharge location
 	 * @param dischargedToLocation the discharge location
 	 */
-	@ComesFrom(path = "Encounter.hospitalization.destination(Encounter.Location)", field = 37, comment = "Discharged to Location")
+	@ComesFrom(path = "Encounter.hospitalization.destination.Location", field = 37, comment = "Discharged to Location")
 	public void setDischargedToLocation(Location dischargedToLocation) {
 		addResource(dischargedToLocation);
 		encounter.getHospitalization().setDestination(ParserUtils.toReference(dischargedToLocation));
@@ -321,7 +347,7 @@ public class PV1Parser extends AbstractSegmentParser {
 	 * Set the status of the bed 
 	 * @param bedStatus the status of the bed 
 	 */
-	@ComesFrom(path = "Encounter.location.location(Encounter.Location.operationalStatus)", field = 40, table = "0116", comment = "Bed Status")
+	@ComesFrom(path = "Encounter.location.location(Encounter.location.Location.operationalStatus)", field = 40, table = "0116", comment = "Bed Status")
 	public void setBedStatus(Coding bedStatus) {
 		if (location != null) {
 			location.setStatus(mapBedStatus(bedStatus));
@@ -388,7 +414,7 @@ public class PV1Parser extends AbstractSegmentParser {
 	 * Add other healthcare providers
 	 * @param otherHealthcareProvider the other healthcare provider
 	 */
-	@ComesFrom(path = "Encounter.participant.individual(Encounter.Practitioner)", field = 52, comment = "Other Healthcare Provider")
+	@ComesFrom(path = "Encounter.participant.individual.Practitioner", field = 52, comment = "Other Healthcare Provider")
 	public void setOtherHealthcareProvider(Practitioner otherHealthcareProvider) {
 		addResource(otherHealthcareProvider);
 		EncounterParticipantComponent part = encounter.addParticipant().setIndividual(ParserUtils.toReference(otherHealthcareProvider));
@@ -400,7 +426,7 @@ public class PV1Parser extends AbstractSegmentParser {
 	 * Create an episode of care and add the identifier.
 	 * @param serviceEpisodeIdentifier the episode of care identifier
 	 */
-	@ComesFrom(path = "Encounter.episodeOfCare(Encounter.EpisodeOfCare.identifier)", field = 54, comment = "Service Episode Identifier")
+	@ComesFrom(path = "Encounter.episodeOfCare", field = 54, comment = "Service Episode Identifier")
 	public void setServiceEpisodeIdentifier(Identifier serviceEpisodeIdentifier) {
 		EpisodeOfCare episodeOfCare = createResource(EpisodeOfCare.class);
 		episodeOfCare.setPatient(ParserUtils.toReference(patient));

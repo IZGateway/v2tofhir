@@ -45,7 +45,7 @@ public class QAKParser extends AbstractSegmentParser {
 	public QAKParser(MessageParser messageParser) {
 		super(messageParser, "QAK");
 		if (fieldHandlers.isEmpty()) {
-			initFieldHandlers(this, fieldHandlers);
+			FieldHandler.initFieldHandlers(this, fieldHandlers);
 		}
 	}
 

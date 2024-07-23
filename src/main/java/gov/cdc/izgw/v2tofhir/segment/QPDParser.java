@@ -73,7 +73,7 @@ public class QPDParser extends AbstractSegmentParser {
 	public QPDParser(MessageParser messageParser) {
 		super(messageParser, "QPD");
 		if (fieldHandlers.isEmpty()) {
-			initFieldHandlers(this, fieldHandlers);
+			FieldHandler.initFieldHandlers(this, fieldHandlers);
 		}
 	}
 	

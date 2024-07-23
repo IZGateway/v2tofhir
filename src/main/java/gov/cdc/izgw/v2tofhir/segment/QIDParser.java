@@ -3,13 +3,9 @@ package gov.cdc.izgw.v2tofhir.segment;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.codec.binary.StringUtils;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Coding;
-import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Parameters;
-import org.hl7.fhir.r4.model.StringType;
-
 import ca.uhn.hl7v2.model.Segment;
 import gov.cdc.izgw.v2tofhir.annotation.Produces;
 import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
@@ -40,7 +36,7 @@ public class QIDParser extends AbstractSegmentParser {
 	public QIDParser(MessageParser messageParser) {
 		super(messageParser, "QID");
 		if (fieldHandlers.isEmpty()) {
-			initFieldHandlers(this, fieldHandlers);
+			FieldHandler.initFieldHandlers(this, fieldHandlers);
 		}
 	}
 	

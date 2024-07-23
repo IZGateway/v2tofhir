@@ -12,8 +12,13 @@ import org.hl7.fhir.r4.model.CodeSystem;
 import org.hl7.fhir.r4.model.CodeSystem.CodeSystemContentMode;
 import org.hl7.fhir.r4.model.CodeSystem.ConceptDefinitionComponent;
 import org.hl7.fhir.r4.model.CodeSystem.ConceptPropertyComponent;
+import org.hl7.fhir.r4.model.CodeType;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.ConceptMap;
+import org.hl7.fhir.r4.model.ConceptMap.ConceptMapGroupComponent;
+import org.hl7.fhir.r4.model.ConceptMap.ConceptMapGroupUnmappedMode;
+import org.hl7.fhir.r4.model.Enumerations.ConceptMapEquivalence;
 import org.hl7.fhir.r4.model.Enumerations.PublicationStatus;
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.NamingSystem;
@@ -28,7 +33,7 @@ import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.enums.CSVReaderNullFieldIndicator;
 
-import lombok.Data;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -37,30 +42,43 @@ import lombok.extern.slf4j.Slf4j;
  * @author Audacious Inquiry
  */
 @Slf4j
-@Data
 public class Mapping {
 	private static final String UNEXPECTED_ERROR_READING = "Unexpected {} reading {}({}): {}";
 	/** constant used to store the original system in Type.userData for types with a System */
 	public static final String ORIGINAL_SYSTEM = "originalSystem";
 	/** constant used to store the original display name in Type.userData for types with a display name */
 	public static final String ORIGINAL_DISPLAY = "originalDisplay";
-
+	/** constant used to store the original coding Coding.userData for mapped values */
+	public static final String ORIGINAL = "original";
+	/** constant used to store the mapped from system in Type.userData */
+	private static final String MAPPED_SYSTEM = "mappedSystem";
+	private static final String MAPPED_DISPLAY = "mappedDisplay";
 	/** The prefix for V2 tables in HL7 Terminology */
+
 	public static final String V2_TABLE_PREFIX = "http://terminology.hl7.org/CodeSystem/v2-";
 
 	private static final PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
 	private static final Map<String, String> v2TablesUsed = new LinkedHashMap<>();
 	private static final Map<String, Mapping> codeMaps = new LinkedHashMap<>();
+	private static final Map<String, ConceptMap> conceptMaps = new LinkedHashMap<>();
 	private static final Map<String, Map<String, Coding>> codingMaps = new LinkedHashMap<>();
 	static {
 		initConceptMaps();
 		initVocabulary();
 	}
 	
+	/**
+	 * Get the specified mapping
+	 * @param name	The name of the mapping
+	 * @return	The specified mapping or null if it was not found.
+	 */
+	public static Mapping getMapping(String name) {
+		return codeMaps.get(name);
+	}
 
+	@Getter
 	private final String name;
-	private Map<String, Coding> from = new LinkedHashMap<>();
-	private Map<String, Coding> to = new LinkedHashMap<>();
+	private Map<String, Coding> mappingLookup = new LinkedHashMap<>();
 
 	/**
 	 * Construct a new mapping with the given name
@@ -69,13 +87,137 @@ public class Mapping {
 	public Mapping(final String name) {
 		this.name = name;
 	}
+	
+	/**
+	 * Return the mapping as a concept map
+	 * @return	The concept map.
+	 */
+	public ConceptMap asConceptMap() {
+		ConceptMap m = conceptMaps.computeIfAbsent(name, k -> new ConceptMap().setName(name));
+		Map<String, ConceptMap.ConceptMapGroupComponent> groups = new LinkedHashMap<>();
+		for (Map.Entry<String, Coding> e: mappingLookup.entrySet()) {
+			Coding coding = e.getValue();
+			String code = e.getKey();
+			String system = coding.getUserString(MAPPED_SYSTEM);
+			ConceptMapGroupComponent group = 
+				groups.computeIfAbsent(system + coding.getSystem(),
+					k -> m.addGroup().setSource(system).setTarget(coding.getSystem()));
+			if ("*".equals(code)) {
+				group.getUnmapped()
+					.setMode(ConceptMapGroupUnmappedMode.FIXED)
+					.setCode(coding.getCode())
+					.setDisplay(coding.getDisplay());
+			} else {
+				group.addElement()
+					.setCode(code)
+					.setDisplay(coding.getUserString(MAPPED_DISPLAY))
+					.addTarget()
+						.setCode(coding.getCode())
+						.setDisplay(coding.getDisplay())
+						.setEquivalence(ConceptMapEquivalence.RELATEDTO); // we don't know any more than this.
+			}
+		}
+		return m;
+	}
+	
+	/**
+	 * Map a string using the to Coding map.
+	 * @param text	The string to map
+	 * @return	The coding or null if no match
+	 */
+	public Coding mapCode(String text) { // NOSONAR the data flow is fine
+		if (text == null) {
+			return null;
+		}
+		return mapCode(new Coding(null, text, null), true, mappingLookup);
+	}
+	
+	/**
+	 * Map a coding using the to Coding map.
+	 * @param coding	The coding to map
+	 * @param useAny	If there is a "*" mapping, use it. 
+	 * @return	The coding or null if no match, or coding cannot be mapped
+	 */
+	public Coding mapCode(Coding coding, boolean useAny) {
+		return mapCode(coding, useAny, mappingLookup);
+	}
+	
+	/**
+	 * Reverse map a coding using the to Coding map.
+	 * @param coding	The coding to map
+	 * @param useAny	If there is a "*" mapping, use it. 
+	 * @return	The coding or null if no match, or coding cannot be mapped
+	 */
+	public Coding unMapCode(Coding coding, boolean useAny) {
+		if (coding.hasUserData(ORIGINAL)) {
+			// We have the original value, use it.
+			return (Coding) coding.getUserData(ORIGINAL);
+		}
+		// FUTURE: Improve this to reverse walk the concept map
+		return null;
+	}
+	
+	/**
+	 * Map a coding using the specified Coding map.
+	 * @param map	The map to use
+	 * @param coding	The coding to map
+	 * @param useAny	If there is a "*" mapping, use it. 
+	 * @return	The coding or null if no match, or coding cannot be mapped
+	 */
+	private Coding mapCode(Coding coding, boolean useAny, Map<String, Coding> map) {
+		if (coding.isEmpty() || (coding.hasCode() && coding.hasSystem())) {
+			return null;
+		}
+		Coding mapped = null;
+		if (coding.hasCode()) {
+			mapped = map.get(coding.getCode());
+			if (mapped == null) {
+				mapped = map.get(coding.getCode().toUpperCase());
+			}
+			if (mapped != null) {
+				String mappedSystem = mapped.getUserString(MAPPED_SYSTEM);
+				if (!("*".equals(mappedSystem) || !coding.hasSystem() || StringUtils.equals(mappedSystem, coding.getSystem()))) {
+					mapped = null;
+				}
+			} else if (useAny) {
+				mapped = map.get("*");
+			}
+		}
+		
+		if (mapped != null) {
+			mapped = mapped.copy();
+			mapped.setUserData(ORIGINAL, coding);
+		}
+		return mapped;
+	}
+	
+	/**
+	 * Map a CodeableConcept using the to Coding map.
+	 * returns the first match on cc.getCoding or null if nothing matches.
+	 * Order in cc.getCoding is therefore important.
+	 * @param cc	The CodeableConcept
+	 * @return	The coding or null if no match
+	 */
+	public Coding mapCode(CodeableConcept cc) {
+		if (cc.isEmpty() || (!cc.hasCoding() && !cc.hasText())) {
+			return null;
+		}
+		for (Coding coding: cc.getCoding()) {
+			Coding mapped = mapCode(coding, false);
+			if (mapped != null) {
+				return mapped;
+			}
+		}
+		// Check the text, if there is none, mapCode will still check
+		// the any mapping and return it.
+		return mapCode(cc.hasText() ? cc.getText() : "");
+	}
 
 	/**
 	 * Lock the mapping values after initialization to prevent modification.
 	 */
 	void lock() {
-		from = Collections.unmodifiableMap(from);
-		to = Collections.unmodifiableMap(to);
+		mappingLookup = Collections.unmodifiableMap(mappingLookup);
 	}
 
 	/**
@@ -90,7 +232,6 @@ public class Mapping {
 		} catch (IOException e) {
 			log.error("Cannot load coding resources");
 			throw new ServiceConfigurationError("Cannot load coding resources", e);
-
 		}
 		int fileno = 0;
 		for (Resource file : conceptFiles) {
@@ -149,14 +290,14 @@ public class Mapping {
 			
 			createNamingSystem(cs);
 			
-			line++;
 			String[] headers = reader.readNext();
-			int[] indices = getHeaderIndices(headers);
-			line++;
+			getHeaderIndices(headers);
 			String[] fields = null;
 
+			line = 2;
 			while ((fields = reader.readNext()) != null) {
-				addCodes(cs, ++line, indices, fields);
+				++line;
+				addCodes(cs, fields);
 				cs.setCount(cs.getCount()+1);
 			}
 			log.debug("{}: Loaded {} lines from {}", fileno, line, name);
@@ -167,9 +308,40 @@ public class Mapping {
 		}
 	}
 
-	private static void addCodes(CodeSystem cs, int i, int[] indices, String[] fields) {
-		// TODO Auto-generated method stub
-		
+	/**
+	 * Add the codes in fields to the specified CodeSystem
+	 * 
+	 * Field data is expected to appear in this order:
+	 * Code,Display,Definition,V2 Concept Comment,V2 Concept Comment As Published,HL7 Concept Usage Notes
+	 * 
+	 * @param cs	The code System
+	 * @param lineNumber		The line number
+	 * @param indices Header indices (not used)
+	 * @param fields	The field data
+	 */
+	private static void addCodes(CodeSystem cs, String[] fields) {
+		if (fields == null) {
+			return;
+		}
+		ConceptDefinitionComponent concept = cs.addConcept();
+		if (fields.length > 0 && StringUtils.isNotEmpty(fields[0])) {
+			concept.setCode(fields[0]);
+		}
+		if (fields.length > 1 && StringUtils.isNotEmpty(fields[1])) {
+			concept.setDisplay(fields[1]);
+		}
+		if (fields.length > 2 && StringUtils.isNotEmpty(fields[2])) {
+			concept.setDefinition(fields[2]);
+		}
+		if (fields.length > 3 && StringUtils.isNotEmpty(fields[3])) {
+			concept.addProperty(new ConceptPropertyComponent(new CodeType("v2-concComment"), new StringType(fields[3])));
+		}
+		if (fields.length > 4 && StringUtils.isNotEmpty(fields[4])) {
+			concept.addProperty(new ConceptPropertyComponent(new CodeType("v2-concCommentAsPub"), new StringType(fields[4])));
+		}
+		if (fields.length > 5 && StringUtils.isNotEmpty(fields[5])) {
+			concept.addProperty(new ConceptPropertyComponent(new CodeType("HL7usageNotes"), new StringType(fields[5])));
+		}
 	}
 
 	private static NamingSystem createNamingSystem(CodeSystem cs) {
@@ -189,12 +361,19 @@ public class Mapping {
 		return ns;
 	}
 
+	/**
+	 * Update mapping tables to go from here to there
+	 * @param m	The mapping table to update
+	 * @param here	The code to go from
+	 * @param there	The code to code to
+	 * @param altLookupName	An alternative name for this mapping table.
+	 */
 	private static void updateMaps(Mapping m, Coding here, Coding there, String altLookupName) {
-		if (there != null && there.hasCode()) {
-			m.getTo().put(there.getCode(), here);
-			if (there.hasSystem()) {
+		if (here != null && here.hasCode()) {
+			m.mappingLookup.put(here.getCode(), there);
+			if (here.hasSystem()) {
 				// Enable lookup of any from codes by system and code
-				Map<String, Coding> cm = updateCodeLookup(there); 
+				Map<String, Coding> cm = updateCodeLookup(here); 
 				// Enable lookup also by HL7 table number.
 				codingMaps.computeIfAbsent(altLookupName, k -> cm);
 			}
@@ -226,8 +405,16 @@ public class Mapping {
 			to = null;
 		}
 
-		updateMaps(m, to, from, table);
-		updateMaps(m, from, to, name);
+		if (from != null) {
+			from.setUserData(MAPPED_SYSTEM, get(fields, indices[5]));
+			from.setUserData(MAPPED_DISPLAY, get(fields, indices[4]));
+		}
+		if (to != null) {
+			to.setUserData(MAPPED_SYSTEM, toFhirUri(table));
+			to.setUserData(MAPPED_DISPLAY, get(fields, indices[1]));
+		}
+
+		updateMaps(m, from, to, table);
 	}
 
 	private static void checkAllHeadersPresent(String[] headers, String[] headerStrings, int[] headerIndices)
@@ -605,6 +792,6 @@ public class Mapping {
 			table = table.substring(1);
 		}
 		String key = StringUtils.right("000" + table, 4);
-		return v2TablesUsed.computeIfAbsent(key, (k) -> Mapping.V2_TABLE_PREFIX + key);
+		return v2TablesUsed.computeIfAbsent(key, k -> Mapping.V2_TABLE_PREFIX + key);
 	}
 }

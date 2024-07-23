@@ -81,7 +81,7 @@ public class PIDParser extends AbstractSegmentParser {
 	public PIDParser(MessageParser p) {
 		super(p, "PID");
 		if (fieldHandlers.isEmpty()) {
-			initFieldHandlers(this, fieldHandlers);
+			FieldHandler.initFieldHandlers(this, fieldHandlers);
 		}
 	}
 	
@@ -122,7 +122,7 @@ public class PIDParser extends AbstractSegmentParser {
 	 * 
 	 * @param hn	The mother's maiden name
 	 */
-	@ComesFrom(path="Patient.patient-mothersMaidenName", field = 6, type = HumanName.class)
+	@ComesFrom(path="Patient.patient-mothersMaidenName.valueString", field = 6, fhir = HumanName.class)
 	public void addMothersMaidenName(HumanName hn) {
 		if (isNotEmpty(hn) && hn.hasFamily()) {
 			patient.addExtension()
@@ -139,7 +139,8 @@ public class PIDParser extends AbstractSegmentParser {
 	 * 
 	 * @param dt	The datetime
 	 */
-	@ComesFrom(path="Patient.patient-birthTime", field = 7, type = DateTimeType.class)
+	@ComesFrom(path="Patient.birthDate", field = 7, fhir = DateTimeType.class,
+			   also="Patient.patient-birthTime")
 	public void addBirthDateTime(DateTimeType dt) {
 		if (isNotEmpty(dt)) {
 			patient.setBirthDate(dt.getValue());
@@ -155,7 +156,11 @@ public class PIDParser extends AbstractSegmentParser {
 	 * Set a gender on a patient based on a Codeable Concept
 	 * @param gender	A Codeable Concept representing the patient gender
 	 */
-	@ComesFrom(path="Patient.gender", field = 8, table="0001", type = CodeableConcept.class)
+	@ComesFrom(
+		path="Patient.gender", field = 8, table="0001", 
+		map = "Gender", 
+		fhir = CodeableConcept.class
+	)
 	public void setGender(CodeableConcept gender) {
 		for (Coding coding: gender.getCoding()) {
 			if (coding.hasCode() && coding.hasSystem()) {
@@ -239,7 +244,12 @@ public class PIDParser extends AbstractSegmentParser {
 	 * Add a race code to the patient using the US Core Race extension
 	 * @param race	The race to add.
 	 */
-	@ComesFrom(path="Patient.us-core-race", field = 10)
+	@ComesFrom(path="Patient.us-core-race.extension('ombCategory').valueCoding", table = "0005", map = "USCoreRace", field = 10,
+				also= {
+					"Patient.us-core-race.extension('ombDetail').valueCoding",
+					"Patient.us-core-race.extension('text').valueString"
+				}
+	)
 	public void addRace(CodeableConcept race) {
 		if (isEmpty(race)) {
 			return;
@@ -254,6 +264,7 @@ public class PIDParser extends AbstractSegmentParser {
 		) {
 			setUnknown(raceExtension, "UNK");		// Then set value as unknown.
 		}
+		
 	}
 	
 	private Extension setRaceText(CodeableConcept race, Extension raceExtension) {
@@ -274,7 +285,7 @@ public class PIDParser extends AbstractSegmentParser {
 			
 			List<String> systemNames = Systems.getSystemNames(coding.getSystem());
 			
-			if (systemNames.contains(Systems.CDCREC) &&
+			if ((!coding.hasSystem() || systemNames.contains(Systems.CDCREC)) &&
 				setCategoryAndDetail(raceExtension, coding, code, this::getRaceCategory)
 			) {
 				return true;
@@ -362,7 +373,12 @@ public class PIDParser extends AbstractSegmentParser {
 	 * Add an ethnicity code to the patient using the US Core Ethnicity extension
 	 * @param ethnicity	The ethnicity to add.
 	 */
-	@ComesFrom(path="Patient.us-core-ethnicity" , field = 22)
+	@ComesFrom(path="Patient.us-core-ethnicity.extension('ombCategory').valueCoding", table = "0189", map = "USCoreEthnicity", field = 22,
+			also = {
+				"Patient.us-core-ethnicity.extension('ombDetail').valueCoding",
+				"Patient.us-core-ethnicity.extension('text').valueString"
+			}
+	)
 	public void addEthnicity(CodeableConcept ethnicity) {
 		if (isEmpty(ethnicity)) {
 			return;
@@ -443,42 +459,51 @@ public class PIDParser extends AbstractSegmentParser {
 	public String getRaceCategory(String raceCode) {
 		raceCode = raceCode.toUpperCase();
 		// American Indian or Alaska Native
-		if (("1002".compareTo(raceCode) >= 0 && "2027".compareTo(raceCode) < 0) ||
+		
+		if (isBetween(raceCode, "1002", "2027") ||
 			"INDIAN".equals(raceCode) || 
 			"I".equals(raceCode)
 		) {
 			return "1002-5";
 		}
 		// Asian
-		if (("2028".compareTo(raceCode) >= 0 && "2053".compareTo(raceCode) < 0) ||
+		if (isBetween(raceCode, "2028", "2053") ||
 			"ASIAN".equals(raceCode) || 
 			"A".equals(raceCode)
 		) {
 			return "2028-9";
 		}
 		// Black or African American
-		if (("2054".compareTo(raceCode) >= 0 && "2076".compareTo(raceCode) < 0) ||
+		if (isBetween(raceCode, "2054", "2076") ||
 			"BLACK".equals(raceCode) || 
 			"B".equals(raceCode)
 		) {
 			return "2054-5";
 		}
 		// Native Hawaiian or Other Pacific Islander
-		if (("2076".compareTo(raceCode) >= 0 && "2105".compareTo(raceCode) < 0) ||
+		if (isBetween(raceCode, "2076", "2105") ||
 			"2500-7".equals(raceCode) ||
 			"HAWIIAN".equals(raceCode) || "H".equals(raceCode)
 		) { 
 			return "2076-8";
 		}
 		// White
-		if (("2106".compareTo(raceCode) >= 0 && "2130".compareTo(raceCode) < 0) ||
+		if (isBetween(raceCode, "2106", "2130") ||
 			"WHITE".equals(raceCode) || 
 			"W".equals(raceCode)
 		) {
 			return "2106-3";
 		}
+		if ("2131-1".equals(raceCode) || "OTHER".equals(raceCode) || "O".equals(raceCode)) {
+			return "2131-1";
+		}
 		return null;
 	}
+	
+	private boolean isBetween(String string, String low, String high) {
+		return low.compareTo(string) <= 0 && high.compareTo(string) > 0;
+	}
+
 	/**
 	 * Computes the ethnic group category from the race code
 	 * 

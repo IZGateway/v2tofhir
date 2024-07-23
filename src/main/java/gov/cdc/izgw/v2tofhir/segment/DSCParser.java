@@ -35,7 +35,7 @@ public class DSCParser extends AbstractSegmentParser {
 	public DSCParser(MessageParser messageParser) {
 		super(messageParser, "DSC");
 		if (fieldHandlers.isEmpty()) {
-			initFieldHandlers(this, fieldHandlers);
+			FieldHandler.initFieldHandlers(this, fieldHandlers);
 		}
 	}
 	

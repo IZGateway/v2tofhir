@@ -42,7 +42,7 @@ public class PD1Parser extends AbstractSegmentParser {
 	public PD1Parser(MessageParser messageParser) {
 		super(messageParser, "PD1");
 		if (fieldHandlers.isEmpty()) {
-			initFieldHandlers(this, fieldHandlers);
+			FieldHandler.initFieldHandlers(this, fieldHandlers);
 		}
 	}
 
@@ -60,7 +60,7 @@ public class PD1Parser extends AbstractSegmentParser {
 	 * Set the primary care provider organization
 	 * @param patientPrimaryFacility the primary care provider organization
 	 */
-	@ComesFrom(path = "Patient.generalPractitioner(Patient.Organization)", field = 3, comment = "Patient Primary Facility")
+	@ComesFrom(path = "Patient.generalPractitioner.Organization", field = 3, comment = "Patient Primary Facility")
 	public void setPatientPrimaryFacility(Organization patientPrimaryFacility) {
 		addResource(patientPrimaryFacility);
 		patient.addGeneralPractitioner(ParserUtils.toReference(patientPrimaryFacility));
@@ -70,7 +70,7 @@ public class PD1Parser extends AbstractSegmentParser {
 	 * Set the primary care provider 
 	 * @param patientPrimaryCareProviderNameIdNo the primary care provider 
 	 */
-	@ComesFrom(path = "Patient.generalPractitioner(Patient.Practitioner)", field = 4, comment = "Patient Primary Care Provider Name & ID No.")
+	@ComesFrom(path = "Patient.generalPractitioner.Practitioner", field = 4, comment = "Patient Primary Care Provider Name & ID No.")
 	public void setPatientPrimaryCareProviderNameIdNo(Practitioner patientPrimaryCareProviderNameIdNo) {
 		addResource(patientPrimaryCareProviderNameIdNo);
 		patient.addGeneralPractitioner(ParserUtils.toReference(patientPrimaryCareProviderNameIdNo));
