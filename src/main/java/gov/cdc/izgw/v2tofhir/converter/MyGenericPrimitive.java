@@ -18,7 +18,9 @@ import ca.uhn.hl7v2.model.Type;
  */
 public class MyGenericPrimitive extends GenericPrimitive implements Type {
 	private static final long serialVersionUID = 1L;
+	/** The delegate to the original generic */
 	private final GenericPrimitive delegate;
+	/** The name of the type */
 	private final String name;
 
 	/**

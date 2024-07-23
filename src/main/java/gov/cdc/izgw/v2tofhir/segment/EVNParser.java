@@ -65,7 +65,7 @@ public class EVNParser extends AbstractSegmentParser {
 
 	/**
 	 * Set the recorded date time.
-	 * @param recordedDateTime
+	 * @param recordedDateTime The time the event was recorded.
 	 */
 	@ComesFrom(path = "Provenance.recorded", field = 2, comment = "Recorded Date/Time")
 	public void setRecordedDateTime(InstantType recordedDateTime) {

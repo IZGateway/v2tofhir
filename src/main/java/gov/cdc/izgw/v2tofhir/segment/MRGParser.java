@@ -135,7 +135,7 @@ public class MRGParser extends AbstractSegmentParser {
 		
 	/**
 	 * Add the name to the patient.
-	 * @param humanName
+	 * @param humanName The patient name
 	 */
 	@ComesFrom(path="Patient.name", field = 7, comment = "Patient Name")
 	public void addPatientName(HumanName humanName) {

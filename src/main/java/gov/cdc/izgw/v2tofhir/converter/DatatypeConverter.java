@@ -1351,6 +1351,7 @@ public class DatatypeConverter {
 
 	private static final String V2_TIME_FORMAT = "HHmmss.SSSS";
 	private static final String FHIR_TIME_FORMAT = "HH:mm:ss.SSS";
+	/** The V2 types involving date and time */
 	public static final List<String> DATETIME_TYPES = Arrays.asList("DT", "DTM", "TS");
 
 	/**

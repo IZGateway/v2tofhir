@@ -310,7 +310,7 @@ public class FieldHandler implements Comparable<FieldHandler> {
 	/**
 	 * initFieldHandlers must be called by a parser before calling parse(segment, parser)
 	 * 
-	 * @see #getFieldHandlers
+	 * @see AbstractStructureParser#getFieldHandlers()
 	 * @param p	The structure parser to compute the field handlers for.
 	 * @param fieldHandlers	The list to update with all of the field handlers 
 	 */

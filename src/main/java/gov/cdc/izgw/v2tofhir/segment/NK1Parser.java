@@ -171,7 +171,7 @@ public class NK1Parser extends AbstractSegmentParser {
 
 	/**
 	 * Set the identifier
-	 * @param nextofKinAssociatedPartiesEmployeeNumber
+	 * @param nextofKinAssociatedPartiesEmployeeNumber The identifier
 	 */
 	@ComesFrom(path = "relatedPerson.identifier", field = 12, comment = "Next of Kin / Associated Parties Employee Number")
 	@ComesFrom(path = "relatedPerson.identifier", field = 33, comment = "Next of Kin/Associated Party's Identifiers")
