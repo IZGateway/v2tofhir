@@ -107,7 +107,7 @@ jobs:
         # default to force a revision check unless releasing
         echo DO_REVISION_CHECK=true >> $GITHUB_ENV
         # Skip dependency check
-        echo SKIP_DEPENDENCY_CHECK=true >> $GITHUB_ENV
+        echo SKIP_DEPENDENCY_CHECK=false >> $GITHUB_ENV
 
     # If pulling to main branch (cutting a release), set branch tag appropriately  
     - name: Sets env vars for pull to main 
@@ -122,7 +122,7 @@ jobs:
         # Skip revision check on merge
         echo DO_REVISION_CHECK=false >> $GITHUB_ENV
         # Skip dependency check
-        echo SKIP_DEPENDENCY_CHECK=true >> $GITHUB_ENV
+        echo SKIP_DEPENDENCY_CHECK=false >> $GITHUB_ENV
 
     # If pushing to main branch (cutting a release), set branch tag appropriately  
     - name: Sets env vars for pull to main 
@@ -181,11 +181,18 @@ jobs:
         ELASTIC_API_KEY: ${{ secrets.ELASTIC_API_KEY }}
 
       run: |
-        env && mvn -B clean package install deploy -Dbuildno=${{github.run_number}} \
+        env && mvn -B clean package install deploy site -Dbuildno=${{github.run_number}} \
             -DdoRevisionCheck=${{env.DO_REVISION_CHECK}} \
             -DskipDependencyCheck=${{env.SKIP_DEPENDENCY_CHECK}} \
             -Dimage.tag=$IMAGE_BRANCH_TAG 
-            
+
+    - name: Publish Site
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./target/site
+        destination_dir: current
+
     - name: Upload build environment as artifact for failed build
       uses: actions/upload-artifact@v4
       if: ${{ failure() }}

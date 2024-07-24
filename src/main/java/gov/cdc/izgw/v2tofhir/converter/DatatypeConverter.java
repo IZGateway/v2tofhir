@@ -14,8 +14,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.function.Consumer;
-import java.util.function.UnaryOperator;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.hl7.fhir.r4.model.Address;
@@ -23,6 +21,7 @@ import org.hl7.fhir.r4.model.BaseDateTimeType;
 import org.hl7.fhir.r4.model.CodeType;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.ContactPoint;
 import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.DateType;
 import org.hl7.fhir.r4.model.DecimalType;
@@ -46,29 +45,239 @@ import ca.uhn.hl7v2.model.Primitive;
 import ca.uhn.hl7v2.model.Type;
 import ca.uhn.hl7v2.model.Varies;
 import ca.uhn.hl7v2.model.primitive.TSComponentOne;
-import gov.cdc.izgw.v2tofhir.converter.datatype.AddressParser;
-import gov.cdc.izgw.v2tofhir.converter.datatype.HumanNameParser;
+import gov.cdc.izgw.v2tofhir.datatype.AddressParser;
+import gov.cdc.izgw.v2tofhir.datatype.ContactPointParser;
+import gov.cdc.izgw.v2tofhir.datatype.HumanNameParser;
+import gov.cdc.izgw.v2tofhir.utils.Mapping;
+import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
+import gov.cdc.izgw.v2tofhir.utils.Systems;
+import gov.cdc.izgw.v2tofhir.utils.Units;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * DatatypeConverter is the entry point for V2 to FHIR datatype conversion.
+ * 
+ * Operations in DatatypeConverter
+ * 
+ * <ul><li><b>convert</b>
+ * 		- Generic methods</li>
+ * <li><b>getConverter/converter</b>
+ * 		- Generic Functional Interfaces</li>
+ * <li><b>to{FhirType}(V2 datatype)</b>
+ * 		- Converts to a specified FHIR datatype</li>
+ * <li><b>castInto()</b>
+ * 		- Converts between FHIR Numeric types</li>
+ * </ul>
+ * 
+ * Supported FHIR Types:
+ * 
+ * <ul><li>Address</li>
+ * <li>CodeableConcept</li>
+ * <li>CodeType</li>
+ * <li>Coding</li>
+ * <li>ContactPoint</li>
+ * <li>DateTimeType</li>
+ * <li>DateType</li>
+ * <li>DecimalType</li>
+ * <li>HumanName</li>
+ * <li>Identifier</li>
+ * <li>IdType</li>
+ * <li>InstantType</li>
+ * <li>IntegerType</li>
+ * <li>PositiveIntType</li>
+ * <li>Quantity</li>
+ * <li>StringType</li>
+ * <li>TimeType</li>
+ * <li>UnsignedIntType</li>
+ * <li>UriType</li>
+ * </ul>
+ * 
+ * @see <a href="https://build.fhir.org/ig/HL7/v2-to-fhir/datatype_maps.html">HL7 Version 2 to FHIR - Datatype Maps</a>
+ * @author Audacious Inquiry
+ *
+ */
 @Slf4j
 public class DatatypeConverter {
-	private static final String UNEXPECTED_EXCEPTION_MESSAGE = "Unexpected {}: {}";
 	private static final BigDecimal MAX_UNSIGNED_VALUE = new BigDecimal(Integer.MAX_VALUE);
 	private static final AddressParser addressParser = new AddressParser();
+	private static final ContactPointParser contactPointParser = new ContactPointParser();
 	private static final HumanNameParser nameParser = new HumanNameParser();
+
+	/**
+	 * A functional interface for FHIR datatype conversion from HAPI V2 datatypes
+	 * 
+	 * @author Audacious Inquiry
+	 *
+	 * @param <F> A FHIR data type to convert to.
+	 */
+	@FunctionalInterface
+	public interface Converter<F extends org.hl7.fhir.r4.model.Type> {
+		/**
+		 * Convert a V2 datatype to a FHIR datatype
+		 * @param type	The V2 datatype to convert
+		 * @return	The converted FHIR datatype
+		 */
+		F convert(Type type);
+		
+		/**
+		 * Convert a V2 datatype to a FHIR datatype
+		 * @param type	The V2 datatype to convert
+		 * @param clazz The class of the FHIR object to conver to
+		 * @return	The converted FHIR datatype
+		 * @throws ClassCastException if the converted type is incorrect.
+		 */
+		default F convertAs(Class<F> clazz, Type type) {
+			return clazz.cast(convert(type));
+		}
+	}
 
 	private DatatypeConverter() {
 	}
 
-	public static Address toAddress(Type codedElement) {
+	/**
+	 * Get a converter for a FHIR datatype
+	 * @param <F>	The FHIR datatype
+	 * @param clazz	The class representing the datatype
+	 * @return The converter
+	 */
+	public static <F extends org.hl7.fhir.r4.model.Type> Converter<F> getConverter(Class<F> clazz) {
+		return (Type t) -> convert(clazz, t);
+	}
+
+	/**
+	 * Get a converter for a FHIR datatype
+	 * @param <F>	The FHIR datatype
+	 * @param className	The name of the FHIR datatype
+	 * @return The converter
+	 */
+	public static <F extends org.hl7.fhir.r4.model.Type> Converter<F> getConverter(String className) {
+		return (Type t) -> convert(className, t);
+	}
+	
+	private static final Set<String> FHIR_PRIMITIVE_NAMES = new LinkedHashSet<>(
+		Arrays.asList("integer", "string", "time", "date", "datetime", "decimal", "boolean", "url",
+					  "code", "integer", "uri", "canonical", "markdown", "id", "oid", "uuid", 
+					  "unsignedInt", "positiveInt"));
+
+	/**
+	 * Get a converter for a FHIR datatype.
+	 * @param <F>	The FHIR type to convert to.
+	 * @param className	The name of the FHIR datatype
+	 * @param t	The HAP V2 type to convert
+	 * @return The converter
+	 */
+	public static <F extends org.hl7.fhir.r4.model.Type> F convert(String className, Type t) {
+		className =  "org.hl7.fhir.r4.model." + className;
+		
+		if (FHIR_PRIMITIVE_NAMES.contains(className)) {
+			className = Character.toUpperCase(className.charAt(0)) + className.substring(1) + "Type";
+		}
+		try {
+			@SuppressWarnings("unchecked")
+			Class<F> clazz = (Class<F>) Type.class.getClassLoader().loadClass(className);
+			return convert(clazz, t);
+		} catch (ClassNotFoundException e) {
+			throw new IllegalArgumentException(className + " is not a supported FHIR type");
+		}
+	}
+
+	/**
+	 * Convert a HAPI V2 datatype to a FHIR datatype.
+	 * 
+	 * @param <F>	The FHIR datatype
+	 * @param clazz	The class representing the FHIR datatype
+	 * @param t	The HAPI V2 type to convert
+	 * @return	The converted HAPI V2 type
+	 */
+	public static <F extends org.hl7.fhir.r4.model.Type> F convert(Class<F> clazz, Type t) {
+		switch (clazz.getSimpleName()) {
+		case "Address":
+			return clazz.cast(toAddress(t));
+		case "CodeableConcept":
+			return clazz.cast(toCodeableConcept(t));
+		case "CodeType":
+			return clazz.cast(toCodeType(t));
+		case "Coding":
+			return clazz.cast(toCoding(t));
+		case "ContactPoint":
+			return clazz.cast(toContactPoint(t));
+		case "DateTimeType":
+			return clazz.cast(toDateTimeType(t));
+		case "DateType":
+			return clazz.cast(toDateType(t));
+		case "DecimalType":
+			return clazz.cast(toDecimalType(t));
+		case "HumanName":
+			return clazz.cast(toHumanName(t));
+		case "Identifier":
+			return clazz.cast(toIdentifier(t));
+		case "IdType":
+			return clazz.cast(toIdType(t));
+		case "InstantType":
+			return clazz.cast(toInstantType(t));
+		case "IntegerType":
+			return clazz.cast(toIntegerType(t));
+		case "PositiveIntType":
+			return clazz.cast(toPositiveIntType(t));
+		case "Quantity":
+			return clazz.cast(toQuantity(t));
+		case "StringType":
+			return clazz.cast(toStringType(t));
+		case "TimeType":
+			return clazz.cast(toTimeType(t));
+		case "UnsignedIntType":
+			return clazz.cast(toUnsignedIntType(t));
+		case "UriType":
+			return clazz.cast(toUriType(t));
+		default:
+			throw new IllegalArgumentException(clazz.getName() + " is not a supported FHIR type");
+		}
+	}
+
+
+	/**
+     * Convert a HAPI V2 datatype to a FHIR Address
+     * @param codedElement The HAPI V2 type to convert
+     * @return The Address converted from the V2 datatype
+     */
+    public static Address toAddress(Type codedElement) {
 		return addressParser.convert(codedElement);
 	}
 
-	public static CodeableConcept toCodeableConcept(Type codedElement) {
+	/**
+     * Convert a HAPI V2 datatype to a FHIR CodeableConcept
+     * @param codedElement The HAPI V2 type to convert
+     * @return The CodeableConcept converted from the V2 datatype
+     */
+    public static CodeableConcept toCodeableConcept(Type codedElement) {
 		return toCodeableConcept(codedElement, null);
 	}
 
-	public static CodeableConcept toCodeableConcept(Type codedElement, String table) {
+	/**
+	 * Used to add an element V to a field of type T in a FHIR type.
+	 * 
+	 * Example usage: 
+	 *   CodeableConcept cc = new CodeableConcept();
+	 *   Coding c = new Coding();
+	 *   addValue(cc:addCoding, c);
+	 *   
+	 * @param <T>	The type to add or set
+	 * @param consumer	An adder or setter method, e.g., cc::addCoding or cc::setValue
+	 * @param t	The object to add or set.
+	 */
+	public static <T extends org.hl7.fhir.r4.model.Type> void addIfNotEmpty(Consumer<T> consumer, T t
+	) {
+		if (t != null && !t.isEmpty()) {
+			consumer.accept(t);
+		}
+	}
+	/**
+     * Convert a HAPI V2 datatype to a FHIR CodeableConcept
+     * @param codedElement The HAPI V2 type to convert
+     * @param table The HL7 table or coding system to use for the system of the coded element
+     * @return The CodeableConcept converted from the V2 datatype
+     */
+    public static CodeableConcept toCodeableConcept(Type codedElement, String table) {
 		if ((codedElement = adjustIfVaries(codedElement)) == null) {
 			return null;
 		}
@@ -79,16 +288,14 @@ public class DatatypeConverter {
 		case "CE", "CF", "CNE", "CWE":
 			comp = (Composite) codedElement;
 			for (int i = 0; i <= 3; i += 3) {
-				addCoding(cc, getCoding(comp, i, true));
+				addIfNotEmpty(cc::addCoding, getCoding(comp, i, true));
 			}
 			setValue(cc::setText, comp.getComponents(), 8);
 			break;
 		case "CX":
 			Identifier ident = toIdentifier(codedElement);
 			if (ident != null && !ident.isEmpty()) {
-				// Get the coding from the identifier
-				Coding coding = new Coding(ident.getSystem(), ident.getValue(), null);
-				addCoding(cc, coding);
+				addIfNotEmpty(cc::addCoding, new Coding(ident.getSystem(), ident.getValue(), null));
 			}
 			break;
 		case "CQ":
@@ -100,16 +307,19 @@ public class DatatypeConverter {
 			break;
 		case "EI", "EIP", "HD":
 			ident = toIdentifier(codedElement);
-			addCoding(cc, new Coding(ident.getSystem(), ident.getValue(), null));
+			if (ident == null) {
+				return null;
+			}
+			addIfNotEmpty(cc::addCoding, new Coding(ident.getSystem(), ident.getValue(), null));
 			break;
 		case "ID":
 			st = (Primitive) codedElement;
-			addCoding(cc, new Coding("http://terminology.hl7.org/CodeSystem/v2-0301", st.getValue(), null));
+			addIfNotEmpty(cc::addCoding, new Coding("http://terminology.hl7.org/CodeSystem/v2-0301", st.getValue(), null));
 			break;
 
 		case "IS", "ST":
 			st = (Primitive) codedElement;
-			addCoding(cc, Mapping.mapSystem(new Coding(table, st.getValue(), null)));
+			addIfNotEmpty(cc::addCoding, Mapping.mapSystem(new Coding(table, st.getValue(), null)));
 			break;
 		default:
 			break;
@@ -120,12 +330,40 @@ public class DatatypeConverter {
 		return cc;
 	}
 
-	private static Type adjustIfVaries(Type codedElement) {
-		if (codedElement instanceof Varies v) {
+	/**
+	 * Convert a V2 Varies datatype to its actual datatype
+	 * 
+	 * Used internally in DatatypeConverter to process data
+	 *  
+	 * NOTE: This operation works on Varies objects where the datatype is specified elsewhere
+	 * in the message (such as for OBX-5 where the type is specified in OBX-2).  Don't expect
+	 * this to work well where the HAPI V2 Parser doesn't already know the type.
+	 *  
+	 * @param type	The V2 varies object to adjust
+	 * @return	A V2 Primitive or Composite datatype
+	 */
+	public static Type adjustIfVaries(Type type) {
+		if (type instanceof Varies v) {
 			return v.getData();
 		}
-		return codedElement;
+		return type;
 	}
+	
+	/**
+	 * Adjust the specified type in the component fields of a V2 Composite
+	 *
+	 * @param types	The types of the V2 composite
+	 * @param index	The index of the type to adjust
+	 * @return	The adjusted type from the types, or null if the component does not exist
+	 * @see #adjustIfVaries(Type)
+	 */
+	public static Type adjustIfVaries(Type[] types, int index) {
+		if (types == null || index < 0 || index >= types.length) {
+			return null;
+		}
+		return adjustIfVaries(types[index]);
+	}
+	
 
 	private static Identifier extractAsIdentifier(Composite comp, int idLocation, int checkDigitLoc, int idTypeLoc,
 			int... systemValues) {
@@ -149,8 +387,8 @@ public class DatatypeConverter {
 				}
 			}
 		}
-		if (idTypeLoc >= 0 && types.length > idTypeLoc && types[idTypeLoc] instanceof Primitive pt
-				&& !ParserUtils.isEmpty(pt)) {
+		Type type = adjustIfVaries(types, idTypeLoc);
+		if (type instanceof Primitive pt && !ParserUtils.isEmpty(pt)) {
 			Coding coding = new Coding(Systems.IDENTIFIER_TYPE, pt.getValue(), null);
 			Mapping.setDisplay(coding);
 			CodeableConcept cc = new CodeableConcept();
@@ -164,9 +402,7 @@ public class DatatypeConverter {
 	}
 
 	private static String getSystemOfIdentifier(Type type) {
-		if (type instanceof Varies v) {
-			type = v.getData();
-		}
+		type = adjustIfVaries(type);
 		if (type instanceof Primitive pt) {
 			return pt.getValue();
 		} else if (type instanceof Composite comp2 && "HD".equals(comp2.getName()) // NOSONAR Name check is correct here
@@ -180,22 +416,27 @@ public class DatatypeConverter {
 	}
 
 	private static String getValueOfIdentifier(int idLocation, int checkDigitLoc, Type[] types) {
-		if (idLocation >= 0 && types.length > idLocation && types[idLocation] instanceof Primitive pt
-				&& !ParserUtils.isEmpty(pt)) {
-			if (checkDigitLoc > 0 && types.length > checkDigitLoc && types[checkDigitLoc] instanceof Primitive pt2
-					&& !ParserUtils.isEmpty(pt2)) {
-				return pt.getValue() + "-" + pt2.getValue();
-			} else {
-				return pt.getValue();
+		Type ident = adjustIfVaries(types, idLocation);
+		Type checkDigit = adjustIfVaries(types, checkDigitLoc);
+		if (ident != null && !ParserUtils.isEmpty(ident)) {
+			if (checkDigit != null && !ParserUtils.isEmpty(checkDigit)) {
+				return ParserUtils.toString(ident) + "-" + ParserUtils.toString(checkDigit);
 			}
+			return ParserUtils.toString(ident);
 		}
 		return null;
 	}
 
-	public static CodeType toCodeType(Type codedElement) {
+	/**
+     * Convert a HAPI V2 datatype to a FHIR CodeType
+     * @param codedElement The HAPI V2 type to convert
+     * @return The CodeType converted from the V2 datatype
+     */
+    public static CodeType toCodeType(Type codedElement) {
 		if (codedElement == null) {
 			return null;
 		}
+		codedElement = adjustIfVaries(codedElement);
 		if (codedElement instanceof Primitive pt) {
 			return new CodeType(StringUtils.strip(pt.getValue()));
 		}
@@ -206,11 +447,22 @@ public class DatatypeConverter {
 		return null;
 	}
 
-	public static Coding toCoding(Type type) {
+	/**
+     * Convert a HAPI V2 datatype to a FHIR Coding
+     * @param type The HAPI V2 type to convert
+     * @return The Coding converted from the V2 datatype
+     */
+    public static Coding toCoding(Type type) {
 		return toCoding(type, null);
 	}
 
-	public static Coding toCoding(Type type, String table) {
+	/**
+     * Convert a HAPI V2 datatype to a FHIR Coding
+     * @param type The HAPI V2 type to convert
+     * @param table The HL7 V2 table or FHIR System to use for the conversion
+     * @return The Coding converted from the V2 datatype
+     */
+    public static Coding toCoding(Type type, String table) {
 		CodeableConcept cc = toCodeableConcept(type, table);
 		if (cc == null || cc.isEmpty()) {
 			return null;
@@ -226,14 +478,29 @@ public class DatatypeConverter {
 		return coding;
 	}
 
+    /**
+     * Convert the Message Code part of a MSG into a Coding
+     * @param type	The MSG dataype to convert
+     * @return	The coding for the Message Code
+     */
 	public static Coding toCodingFromMessageCode(Type type) {
 		return toCodingFromMSG(type, 0);
 	}
 
+    /**
+     * Convert the Trigger event part of a MSG into a Coding
+     * @param type	The MSG dataype to convert
+     * @return	The coding for the Trigger Event
+     */
 	public static Coding toCodingFromTriggerEvent(Type type) {
 		return toCodingFromMSG(type, 1);
 	}
 
+    /**
+     * Convert the Message Structure part of a MSG into a Coding
+     * @param type	The MSG dataype to convert
+     * @return	The coding for the Message Structure
+     */
 	public static Coding toCodingFromMessageStructure(Type type) {
 		return toCodingFromMSG(type, 2);
 	}
@@ -267,16 +534,41 @@ public class DatatypeConverter {
 		}
 		return null;
 	}
+	
+	/**
+     * Convert a HAPI V2 datatype to a FHIR ContactPoint
+     * @param type The HAPI V2 type to convert
+     * @return The ContactPoint converted from the V2 datatype
+     */
+    public static ContactPoint toContactPoint(Type type) {
+		return contactPointParser.convert(type);
+	}
 
-	public static DateTimeType toDateTimeType(Type type) {
+	/**
+     * Convert a HAPI V2 datatype to a FHIR DateTimeType
+     * @param type The HAPI V2 type to convert
+     * @return The DateTimeType converted from the V2 datatype
+     */
+    public static DateTimeType toDateTimeType(Type type) {
 		InstantType instant = toInstantType(type);
 		if (instant == null || instant.isEmpty()) {
 			return null;
 		}
-		return convert(new DateTimeType(), instant);
+		return castInto(new DateTimeType(), instant);
 	}
 
-	public static <T extends BaseDateTimeType, U extends BaseDateTimeType> U convert(U to, T from) {
+    
+    /**
+	 * Convert between date FHIR types, adjusting as necessary. Basically this
+	 * works like a cast.
+	 * 
+     * @param <T>	The type of the time object to convert from
+     * @param <U>	The type of the time object to copy the data to
+     * @param to	The time object to convert from
+     * @param from	The time object to convert into
+     * @return	The converted time object
+     */
+	public static <T extends BaseDateTimeType, U extends BaseDateTimeType> U castInto(U to, T from) {
 		to.setValue(from.getValue());
 		to.setPrecision(from.getPrecision());
 		return to;
@@ -294,15 +586,15 @@ public class DatatypeConverter {
 	 * @param from The place from which to convert
 	 * @return The converted type
 	 */
-	public static <N1 extends Number, N2 extends Number, F extends PrimitiveType<N1>, T extends PrimitiveType<N2>> T castInto(
-			F from, T to) {
+	public static <N1 extends Number, N2 extends Number, F extends PrimitiveType<N1>, T extends PrimitiveType<N2>> 
+	T castInto(F from, T to) {
 		// IntegerType and DecimalType are the only two classes of Number that directly
 		// extend PrimitiveType
 		if (to instanceof IntegerType i) {
 			// PositiveIntType and UnsignedIntType extend IntegerType, so this code works
 			// for those as well.
 			if (from instanceof DecimalType f) {
-				f.round(0, RoundingMode.DOWN); // Truncate to an Integer;
+				f.round(0, RoundingMode.DOWN); // Truncate to an Integer
 				i.setValue(f.getValue().intValueExact());
 			}
 		} else if (to instanceof DecimalType t) {
@@ -315,15 +607,25 @@ public class DatatypeConverter {
 		return to;
 	}
 
-	public static DateType toDateType(Type type) {
+	/**
+     * Convert a HAPI V2 datatype to a FHIR DateType
+     * @param type The HAPI V2 type to convert
+     * @return The DateType converted from the V2 datatype
+     */
+    public static DateType toDateType(Type type) {
 		InstantType instant = toInstantType(type);
 		if (instant == null || instant.isEmpty()) {
 			return null;
 		}
-		return convert(new DateType(), instant);
+		return castInto(new DateType(), instant);
 	}
 
-	public static DecimalType toDecimalType(Type pt) {
+	/**
+     * Convert a HAPI V2 datatype to a FHIR DecimalType
+     * @param pt The HAPI V2 type to convert
+     * @return The DecimalType converted from the V2 datatype
+     */
+    public static DecimalType toDecimalType(Type pt) {
 		Quantity qt = toQuantity(pt);
 		if (qt == null || qt.isEmpty()) {
 			return null;
@@ -331,11 +633,21 @@ public class DatatypeConverter {
 		return qt.getValueElement();
 	}
 
-	public static HumanName toHumanName(Type t) {
+	/**
+     * Convert a HAPI V2 datatype to a FHIR HumanName
+     * @param t The HAPI V2 type to convert
+     * @return The HumanName converted from the V2 datatype
+     */
+    public static HumanName toHumanName(Type t) {
 		return nameParser.convert(t);
 	}
 
-	public static Identifier toIdentifier(Type t) {
+	/**
+     * Convert a HAPI V2 datatype to a FHIR Identifier
+     * @param t The HAPI V2 type to convert
+     * @return The Identifier converted from the V2 datatype
+     */
+    public static Identifier toIdentifier(Type t) {
 		if ((t = adjustIfVaries(t)) == null) {
 			return null;
 		}
@@ -405,7 +717,7 @@ public class DatatypeConverter {
 				if (type.contains(":")) {
 					c.setSystem(Systems.IETF); // Type is a URI, so code gets to be IETF
 				} else if (Systems.ID_TYPES.contains(type)) {
-					c.setSystem(Systems.IDTYPE); 
+					c.setSystem(Systems.IDTYPE);
 					Mapping.setDisplay(c);
 				} else if (Systems.IDENTIFIER_TYPES.contains(type)) {
 					c.setSystem(Systems.IDENTIFIER_TYPE);
@@ -416,13 +728,18 @@ public class DatatypeConverter {
 		}
 	}
 
-	public static IdType toIdType(Type type) {
+	/**
+     * Convert a HAPI V2 datatype to a FHIR IdType
+     * @param type The HAPI V2 type to convert
+     * @return The IdType converted from the V2 datatype
+     */
+    public static IdType toIdType(Type type) {
 		return new IdType(StringUtils.strip(ParserUtils.toString(type)));
 	}
 
 	/**
 	 * The HD type is often used to identify the system, and there are two possible
-	 * names for the syste, one is a local name, and the other is a unique name. The
+	 * names for the system, one is a local name, and the other is a unique name. The
 	 * HD type is often "demoted in place" to replace a string value that identified
 	 * an HL7 table name, so can appear as a sequence of 3 components within a data
 	 * type at any arbitrary offset.
@@ -502,10 +819,8 @@ public class DatatypeConverter {
 		TSComponentOne ts1 = new MyTSComponentOne();
 		try {
 			ts1.setValue(value);
-			Calendar cal = ts1.getValueAsCalendar();
 			String valueWithoutZone = StringUtils.substringBefore(value.replace("+", "-"), "+");
 			TemporalPrecisionEnum prec = null;
-			InstantType t = new InstantType(cal);
 			String valueWithoutDecimal = StringUtils.substringBefore(value, ".");
 			int len = valueWithoutDecimal.length();
 			if (len < 5) {
@@ -519,9 +834,17 @@ public class DatatypeConverter {
 			} else if (len < 15) {
 				prec = TemporalPrecisionEnum.SECOND;
 			}
+			Calendar cal = ts1.getValueAsCalendar();
+			if (TemporalPrecisionEnum.YEAR.equals(prec)) {
+				// Fix V2 Calendar bug when only year is provided.
+				cal.set(Calendar.YEAR, Integer.parseInt(valueWithoutDecimal));
+				cal.set(Calendar.MONTH, 0);
+				cal.set(Calendar.DATE, 1);
+			}
 			if (valueWithoutDecimal.length() < valueWithoutZone.length()) {
 				prec = TemporalPrecisionEnum.MILLI;
 			}
+			InstantType t = new InstantType(cal);
 			t.setPrecision(prec);
 			return t;
 		} catch (Exception e) {
@@ -547,6 +870,11 @@ public class DatatypeConverter {
 		}
 	}
 
+	/** 
+	 * Remove punctuation characters from an ISO-8601 date or datetime type 
+	 * @param value	The string to remove characters from
+	 * @return	The ISO-8601 string without punctuation.
+	 */
 	public static String removeIsoPunct(String value) {
 		if (value == null) {
 			return null;
@@ -569,7 +897,12 @@ public class DatatypeConverter {
 		return value;
 	}
 
-	public static InstantType toInstantType(Type type) {
+	/**
+     * Convert a HAPI V2 datatype to a FHIR InstantType
+     * @param type The HAPI V2 type to convert
+     * @return The InstantType converted from the V2 datatype
+     */
+    public static InstantType toInstantType(Type type) {
 		// This will convert the first primitive component of anything to an instant.
 		if (type instanceof TSComponentOne ts1) {
 			try {
@@ -583,8 +916,8 @@ public class DatatypeConverter {
 				}
 				return null;
 			} catch (DataTypeException e) {
-				warnException("Unexpected {} parsing {} as InstantType: {}", e.getClass().getSimpleName(), type,
-						e.getMessage(), e);
+				warn("Unexpected {} parsing {} as InstantType: {}", e.getClass().getSimpleName(), type,
+						e.getMessage());
 			}
 		}
 		return toInstantType(ParserUtils.toString(type));
@@ -614,7 +947,12 @@ public class DatatypeConverter {
 		}
 	}
 
-	public static IntegerType toIntegerType(Type pt) {
+	/**
+     * Convert a HAPI V2 datatype to a FHIR IntegerType
+     * @param pt The HAPI V2 type to convert
+     * @return The IntegerType converted from the V2 datatype
+     */
+    public static IntegerType toIntegerType(Type pt) {
 		DecimalType dt = toDecimalType(pt);
 		if (dt == null || dt.isEmpty()) {
 			return null;
@@ -627,12 +965,17 @@ public class DatatypeConverter {
 			i.setValue(i.getValue()); // Force normalization of string value
 			return i;
 		} catch (ArithmeticException ex) {
-			warnException("Integer overflow value in field {}", pt.toString(), ex);
+			warn("Integer overflow value in field {}", pt.toString());
 			return null;
 		}
 	}
 
-	public static PositiveIntType toPositiveIntType(Type pt) {
+	/**
+     * Convert a HAPI V2 datatype to a FHIR PositiveIntType
+     * @param pt The HAPI V2 type to convert
+     * @return The PositiveIntType converted from the V2 datatype
+     */
+    public static PositiveIntType toPositiveIntType(Type pt) {
 		IntegerType dt = toIntegerType(pt);
 		if (dt == null || dt.isEmpty()) {
 			return null;
@@ -644,11 +987,17 @@ public class DatatypeConverter {
 		return new PositiveIntType(dt.getValue());
 	}
 
-	public static Quantity toQuantity(Type type) {
+	/**
+     * Convert a HAPI V2 datatype to a FHIR Quantity
+     * @param type The HAPI V2 type to convert
+     * @return The Quantity converted from the V2 datatype
+     */
+    public static Quantity toQuantity(Type type) {
 		Quantity qt = null;
-		if (type instanceof Varies v) {
-			type = v.getData();
+		if ((type = adjustIfVaries(type)) == null) {
+			return null;
 		}
+		
 		if (type instanceof Primitive pt) {
 			qt = getQuantity(pt);
 		}
@@ -672,6 +1021,11 @@ public class DatatypeConverter {
 		return qt;
 	}
 
+    /**
+     * Convert a HAPI V2 datatype used for length of stay into a FHIR Quantity 
+     * @param pt	The type to convert
+     * @return	The converted Quantity
+     */
 	public static Quantity toQuantityLengthOfStay(Type pt) {
 		Quantity qt = toQuantity(pt);
 		if (qt == null || qt.isEmpty()) {
@@ -679,14 +1033,20 @@ public class DatatypeConverter {
 		}
 		qt.setCode("d");
 		qt.setUnit("days");
-		qt.setSystem(Units.UCUM);
+		qt.setSystem(Systems.UCUM);
 		return qt;
 	}
 
-	public static StringType toStringType(Type type) {
+	/**
+     * Convert a HAPI V2 datatype to a FHIR StringType
+     * @param type The HAPI V2 type to convert
+     * @return The StringType converted from the V2 datatype
+     */
+    public static StringType toStringType(Type type) {
 		if (type == null) {
 			return null;
 		}
+		type = adjustIfVaries(type);
 		if (type instanceof Primitive pt) {
 			return new StringType(pt.getValue());
 		}
@@ -720,14 +1080,42 @@ public class DatatypeConverter {
 	private static final String V2_TIME_FORMAT = "HHmmss.SSSS";
 	private static final String FHIR_TIME_FORMAT = "HH:mm:ss.SSS";
 
+	/**
+	 * Convert a string to a FHIR TimeType object.
+	 * 
+	 * NOTE: V2 allows times to specify a time zone, FHIR does not, but HAPI FHIR TimeType is
+	 * very forgiving in this respect, as it does not structure TimeType into parts.
+	 * 
+	 * @param value	The string representing the time
+	 * @return	A FHIR TimeType object representing that string
+	 */
 	public static TimeType toTimeType(String value) {
 
 		if (StringUtils.isBlank(value)) {
 			return null;
 		}
+		value = value.replace(":", "").replace(" ", "");
+		if (!value.matches(
+			"^\\d{2}"
+			+ "("
+				+ "\\d{2}"
+				+ "("
+					+ "\\.\\d{1,4}"
+				+ ")?"
+			+ ")?"
+			+ "("
+				+ "\\[\\-+]\\d{2}"
+				+ "("
+					+ "\\d{2}"
+				+ ")?"
+			+ ")?$"
+		)) {
+			warn("Value does not match date pattern for V2 HH[MM[SS[.S[S[S[S]]]]]][+/-ZZZZ]");
+			return null;
+		}
 		// Parse according to V2 rule: HH[MM[SS[.S[S[S[S]]]]]][+/-ZZZZ]
 		// Remove any inserted : or space values.
-		String timePart = value.replace(":", "").replace(" ", "").split("[\\-+]")[0];
+		String timePart = value.split("[\\-+]")[0];
 		String zonePart = StringUtils.right(value, value.length() - (timePart.length() + 1));
 		String wholePart = StringUtils.substringBefore(timePart, ".");
 		try {
@@ -799,12 +1187,22 @@ public class DatatypeConverter {
 		return i > 0;
 	}
 
-	public static TimeType toTimeType(Type type) {
+	/**
+     * Convert a HAPI V2 datatype to a FHIR TimeType
+     * @param type The HAPI V2 type to convert
+     * @return The TimeType converted from the V2 datatype
+     */
+    public static TimeType toTimeType(Type type) {
 		// This will convert the first primitive component of anything to a time.
 		return toTimeType(ParserUtils.toString(type));
 	}
 
-	public static UnsignedIntType toUnsignedIntType(Type pt) {
+	/**
+     * Convert a HAPI V2 datatype to a FHIR UnsignedIntType
+     * @param pt The HAPI V2 type to convert
+     * @return The UnsignedIntType converted from the V2 datatype
+     */
+    public static UnsignedIntType toUnsignedIntType(Type pt) {
 		DecimalType dt = toDecimalType(pt);
 		if (dt == null || dt.isEmpty()) {
 			return null;
@@ -820,13 +1218,16 @@ public class DatatypeConverter {
 		return new UnsignedIntType(dt.getValueAsInteger());
 	}
 
-	public static UriType toUriType(Type type) {
+	/**
+     * Convert a HAPI V2 datatype to a FHIR UriType
+     * @param type The HAPI V2 type to convert
+     * @return The UriType converted from the V2 datatype
+     */
+    public static UriType toUriType(Type type) {
 		if (type == null) {
 			return null;
 		}
-		if (type instanceof Varies v) {
-			type = v.getData();
-		}
+		type = adjustIfVaries(type);
 		if (type instanceof Primitive pt) {
 			return new UriType(StringUtils.strip(pt.getValue()));
 		}
@@ -845,17 +1246,10 @@ public class DatatypeConverter {
 		return null;
 	}
 
-	private static void addCoding(CodeableConcept cc, Coding coding) {
-		if (coding == null || coding.isEmpty()) {
-			return;
-		}
-		cc.addCoding(coding);
-	}
-
 	private static int compareUnitsBySystem(Coding c1, Coding c2) {
-		if (Units.UCUM.equals(c1.getSystem())) {
+		if (Systems.UCUM.equals(c1.getSystem())) {
 			return -1;
-		} else if (Units.UCUM.equals(c2.getSystem())) {
+		} else if (Systems.UCUM.equals(c2.getSystem())) {
 			return 1;
 		}
 		return StringUtils.compare(c1.getSystem(), c2.getSystem());
@@ -888,7 +1282,7 @@ public class DatatypeConverter {
 			setValue(coding::setSystem, types, index++);
 			setValue(coding::setVersion, types, versionIndex);
 			setValue(coding::setSystem, types, codeSystemOID);
-			
+
 			Mapping.mapSystem(coding);
 			if (!coding.hasDisplay() || coding.getDisplay().equals(coding.getCode())) {
 				// See if we can do better for display names
@@ -936,14 +1330,18 @@ public class DatatypeConverter {
 			Collections.sort(codingList, DatatypeConverter::compareUnitsBySystem);
 			Coding coding = codingList.get(0);
 			qt.setCode(coding.getCode());
-			qt.setSystem(Units.UCUM);
+			qt.setSystem(Systems.UCUM);
 			qt.setUnit(coding.getDisplay());
 		}
 	}
 
 	private static void setValue(Consumer<String> consumer, Type[] types, int i) {
-		if (i < types.length && types[i] instanceof Primitive st) {
-			consumer.accept(st.getValue());
+		Type type = adjustIfVaries(types, i);
+		if (type instanceof Primitive st) {
+			String value = ParserUtils.toString(st);
+			if (StringUtils.isNotEmpty(value)) {
+				consumer.accept(st.getValue());
+			}
 		}
 	}
 

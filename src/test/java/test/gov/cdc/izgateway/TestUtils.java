@@ -24,8 +24,9 @@ import ca.uhn.fhir.parser.IParser;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Segment;
 import ca.uhn.hl7v2.model.Type;
+import ca.uhn.hl7v2.model.Varies;
 import ca.uhn.hl7v2.model.Visitable;
-import gov.cdc.izgw.v2tofhir.converter.ParserUtils;
+import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -73,22 +74,7 @@ public class TestUtils {
 		if (comp != 2) {
 			return comp;
 		}
-		// Two Types are equal if they encode to the same string values.
-		String a1;
-		try {
-			a1 = toString(a);
-		} catch (HL7Exception e) {
-			e.printStackTrace();
-			return -1;
-		}
-		String b1;
-		try {
-			b1 = toString(b);
-		} catch (HL7Exception e) {
-			e.printStackTrace();
-			return 1;
-		}
-		return StringUtils.compare(a1, b1);
+		return a.toString().compareTo(b.toString());
 	}
 
 	public static int compareObjects(Object a, Object b) {
@@ -124,10 +110,11 @@ public class TestUtils {
 		if (t.encode() == null) {
 			log.warn("t is null for ", t.getMessage().encode());
 		}
+		boolean isDateTime = BaseDateTimeType.class.isAssignableFrom(expectedClass);
 		try {
-			String value = ParserUtils.unescapeV2Chars(t.encode());
+			String value = ParserUtils.toString(t);
 			
-			if (BaseDateTimeType.class.isAssignableFrom(expectedClass)) {
+			if (isDateTime) {
 				Boolean cleanupNeeded = needsIsoCleanup(t);
 				if (cleanupNeeded != null) {
 					value = ParserUtils.cleanupIsoDateTime(value, cleanupNeeded);
@@ -154,16 +141,17 @@ public class TestUtils {
 			return;
 		}
 		assertNotNull(expectedFhirType);
+
+		// TimeType has a bug in that it doesn't parse the actual value in use.
+		if (!"time".equals(expectedFhirType.fhirType())) {
+			assertEqualStrings(expectedFhirType.asStringValue(), actualString);
+		}
+		
 		// The values are the same.
-		if (actualFhirType == null) {
-			// TimeType has a bug in that it doesn't parse the actual value
-			// in use.
-			if (!"time".equals(expectedFhirType.fhirType())) {
-				// assertEqualStrings(null, expectedFhirType.asStringValue());
-			}
-		} else {
+		if (actualFhirType != null) {
 			// Types are the same
 			assertEquals(expectedFhirType.fhirType(), actualFhirType.fhirType());
+			// Classes are the same
 			assertEquals(expectedClass, actualFhirType.getClass());
 			// String representations are essentially the same
 			assertEquals(isEmpty(actualString), isEmpty(expectedFhirString), 
@@ -207,6 +195,9 @@ public class TestUtils {
 	}
 
 	public static String toString(Visitable a) throws HL7Exception {
+		if (a instanceof Varies v) {
+			a = v.getData();
+		}
 		if (a instanceof Type t) {
 			return t.encode();
 		} else if (a instanceof Segment s) {

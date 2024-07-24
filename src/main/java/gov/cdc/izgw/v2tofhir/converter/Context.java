@@ -11,13 +11,16 @@ import org.hl7.fhir.r4.model.Bundle;
 
 import lombok.Data;
 
-/* 
- * Keeps track of important decision making variables during the parse of an HL7 message.
+/**
+ * Context keeps track of important decision making variables during the parse of an HL7 message.
  * 
  * Different parsing decisions may be made depending on the type of event. For
  * example, RXA segments may be parsed into the Immunization resource instead of
  * a MedicationAdministration resource when the message is being parsed for a 
  * VXU message or a QPD response to an immunization query.
+ * 
+ * In order to make these decisions, Context provides a place to store information
+ * about previously created objects.
  */
 @Data
 public class Context {
@@ -47,30 +50,85 @@ public class Context {
 	private final Map<String, Object> properties = new LinkedHashMap<>();
 	
 	private final MessageParser messageParser;
+	
+	/** 
+	 * Create a new Context for use with the given message parser.
+	 * 
+	 * @param messageParser	The message parser using this context.
+	 */
 	public Context(MessageParser messageParser) {
 		this.messageParser = messageParser;
 	}
+	
 	void addProfileId(String profileId) {
 		if (profileId == null || StringUtils.isEmpty(profileId)) {
 			return;
 		}
 		profileIds.add(profileId);
 	}
+	/** 
+	 * Get the properties for the context as an unmodifiable map.
+	 * 
+	 * @return The properties set in this context.
+	 */
 	public Map<String, Object> getProperties() {
 		return Collections.unmodifiableMap(properties);
 	}
+	
+	/**
+	 * Get a given property
+	 * @param key	The property to find.
+	 * @return	The property value, or null if not found.
+	 */
 	public Object getProperty(String key) {
 		return properties.get(key);
 	}
+	
+	/**
+	 * Get a property of the given type. 
+	 * 
+	 * The key will be the class name of the property type.
+	 * @see #getProperty(Class,String) 
+	 *
+	 * @param <T>	The property type
+	 * @param clazz	The class representing the property type
+	 * @return	The property that was found, or null if not found.
+	 */
 	public <T> T getProperty(Class<T> clazz) {
 		return clazz.cast(getProperty(clazz.getName()));
 	}
+	
+	/**
+	 * Get a property of the given type. 
+	 * 
+	 * The key will be the class name of the property type.
+	 * 
+	 * @param <T>	The property type
+	 * @param clazz	The class representing the property type
+	 * @param key The lookup key for the property
+	 * @return	The property that was found, or null if not found.
+	 */
 	public <T> T getProperty(Class<T> clazz, String key) {
 		return clazz.cast(getProperty(key));
 	}
+	
+	/**
+	 * Add or replace a property in the context with a new value.
+	 * 
+	 * The property will be created with the key obj.getClass().getName().
+	 * @see #setProperty(String,Object) 
+	 * @param obj	The object containing the property value	
+	 */
 	public void setProperty(Object obj) {
 		properties.put(obj.getClass().getName(), obj);
 	}
+	
+	/**
+	 * Set the property with the specified key to the value of the specified object.
+	 * 
+	 * @param key	The key to store the property under 
+	 * @param obj	The object containing the property value	
+	 */
 	public void setProperty(String key, Object obj) {
 		properties.put(key, obj);
 	}
