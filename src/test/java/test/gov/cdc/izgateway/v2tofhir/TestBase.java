@@ -251,6 +251,11 @@ public class TestBase {
 	static List<NamedSegment> getTestRCPs() { return getTestSegments("RCP"); }
 	static List<NamedSegment> getTestRXAs() { return getTestSegments("RXA"); }
 	static List<NamedSegment> getTestRXRs() { return getTestSegments("RXR"); }
+	static Stream<NamedSegment> getTestZIMs() {
+		List<String> allowed = Arrays.asList("Z34", "Z44");
+		return getTestSegments("QPD").stream()
+			.filter(n -> allowed.contains(ParserUtils.toString(n.segment(), 1))); 
+	}
 
 	
 	static Message parse(String message) {

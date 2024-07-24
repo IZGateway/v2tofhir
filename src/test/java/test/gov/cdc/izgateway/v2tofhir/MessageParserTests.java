@@ -8,12 +8,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
@@ -40,6 +43,9 @@ import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.model.Segment;
 import ca.uhn.hl7v2.model.Type;
 import ca.uhn.hl7v2.model.v251.datatype.ST;
+import ca.uhn.hl7v2.model.v251.message.QBP_Q11;
+import ca.uhn.hl7v2.model.v251.segment.MSH;
+import ca.uhn.hl7v2.model.v251.segment.QPD;
 import ca.uhn.hl7v2.util.Terser;
 import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
@@ -52,6 +58,7 @@ import gov.cdc.izgw.v2tofhir.segment.PIDParser;
 import gov.cdc.izgw.v2tofhir.segment.StructureParser;
 import gov.cdc.izgw.v2tofhir.utils.Mapping;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
+import gov.cdc.izgw.v2tofhir.utils.QBPUtils;
 import gov.cdc.izgw.v2tofhir.utils.TextUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -321,6 +328,65 @@ class MessageParserTests extends TestBase {
 		}
 	}
 	
+	@ParameterizedTest
+	@MethodSource("getTestZIMs") 
+	void testQBPUtils(NamedSegment segment) throws HL7Exception {
+		Type messageQueryName = segment.segment().getField(1, 0);
+		String zim = ParserUtils.toString(messageQueryName);
+		
+		if (!"Z34".equals(zim) && !"Z44".equals(zim)) {
+			return;  // This test is only for specific message profiles
+		}
+
+		Bundle b1 = new MessageParser().createBundle(Collections.singleton(segment.segment()));
+		Parameters parameters = b1.getEntry().stream()
+			.map(e -> e.getResource())
+			.filter(r -> r instanceof Parameters)
+			.map(r -> (Parameters)r)
+			.findFirst().orElse(null);
+		
+		StringType search = (StringType)parameters.getParameter("_search").getValue();
+		
+		QBP_Q11 qbp = QBPUtils.createMessage(zim);
+		MSH msh = qbp.getMSH();
+		
+		QBPUtils.setSendingApplication(qbp, "SendingApp");
+		assertEquals("SendingApp", msh.getSendingApplication().getNamespaceID().getValue());
+		
+		QBPUtils.setSendingFacility(qbp, "SendingFacility");
+		assertEquals("SendingFacility", msh.getSendingFacility().getNamespaceID().getValue());
+		
+		QBPUtils.setReceivingApplication(qbp, "ReceivingApp");
+		assertEquals("ReceivingApp", msh.getReceivingApplication().getNamespaceID().getValue());
+		
+		QBPUtils.setReceivingFacility(qbp, "ReceivingFacility");
+		assertEquals("ReceivingFacility", msh.getReceivingFacility().getNamespaceID().getValue());
+		
+		String[] searchParams = StringUtils.substringAfter(search.asStringValue(), "?").split("&");
+		Map<String, List<String>> m = new LinkedHashMap<>();
+		for (String searchParam: searchParams) {
+			String name = StringUtils.substringBefore(searchParam, "=");
+			String value = StringUtils.substringAfter(searchParam, "=");
+			List<String> values = m.computeIfAbsent(name, k -> new ArrayList<>());
+			values.add(URLDecoder.decode(value, StandardCharsets.UTF_8));
+		}
+		
+		QBPUtils.addParamsToQPD(qbp, m);
+
+		// Copy over the query tag.
+		Type queryTag = segment.segment().getField(2, 0);
+		QPD qpd = qbp.getQPD();
+		qpd.getQueryTag().setValue(ParserUtils.toString(queryTag));
+		if (!StringUtils.equals(segment.segment().encode(), qpd.encode())) {
+			log.info("=============== FAILURE ===============");
+			log.info("Search: \n{}", parameters.getParameter("_search").getValue());
+			log.info("Comparing: \nORIGINAL: {}\n REBUILT: {}", segment.segment().encode(), qpd.encode());
+		}
+		// Assert that the round trip worked.
+		assertEquals(segment.segment().encode().replace("|", "|\n "), qpd.encode().replace("|", "|\n "));
+	}
+	
+	
 	private String verify(Segment segment, Resource res, ComesFrom from) {
 		// So now we have a path and a segment and field.
 		// We should be able to compare these using TextUtils.toString() methods.
@@ -433,14 +499,7 @@ class MessageParserTests extends TestBase {
 		log.info("Produced {} <> value {}", l, value);
 		return null;
 	}
-	/**
-	 * Return true if base is of a primitive type
-	 * @param base The base
-	 * @return true if a FHIR primitive type, false otherwise
-	 */
-	private boolean isPrimitive(IBase base) {
-		return Character.isLowerCase(base.fhirType().charAt(0));
-	}
+	
 	private void getFields(Segment segment, ComesFrom from) {
 		fieldValues = null;
 		fieldName = segment.getName() + "-" + from.field();

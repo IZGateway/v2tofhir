@@ -996,8 +996,10 @@ ERR||PID|100^required segment missing^HL70357|E||||PID is required segment. Mess
 #Complete Example Of Evaluation And Forecasting: 
 MSH|^~\&|MYEHR|DCS|||200910311452-0500||RSP^K11^RSP_K11|3533469|P|2.5.1|||NE|NE|||||Z42^CDCPHINVS|DCS 
 MSA|AA|793543
-QAK|37374859|OK|Z44^request evaluated Immunization history^CDCPHINVS
-QPD|Z44^Request Evaluated Immunization History^CDCPHINVS|37374859|123456^^^MYEHR^MR|Child^Bobbie^Q^^^^L|Que^Suzy^^^^^M|20090214|M|10 East Main St^^Myfaircity^GA^^^L
+QAK|999|OK|Z44^Request Evaluated History and Forecast^CDCPHINVS
+QPD|Z44^Request Evaluated History and Forecast^CDCPHINVS|\
+	999|\
+	123456^^^MYEHR^MR|Child^Bobbie^Q^^^^L|Que^Suzy^^^^^M|20090214|M|10 East Main St^^Myfaircity^GA^^^L
 PID|1||123456^^^MYEHR^MR||Child^Bobbie^Q^^^^L||20090214|M|||10 East Main St^^Myfaircity^GA^^^L
 ORC|RE||197023^DCS|||||||^Clerk^Myron|||||||DCS^Dabig Clinical System^StateIIS
 RXA|0|1|20090415132511|20090415132511|31^Hep B Peds NOS^CVX|999|||01^historical record^NIP0001|||||||||||CP|A 
@@ -1036,8 +1038,8 @@ OBX|24|DT|30980-7^Date vaccination due^LN|1|20091015||||||F
 # Sample message for multiple recommendations: 
 MSH|^~\&|MYIIS|StatePH|MyEHR|DCS|20150131145233-0500||RSP^K11^RSP_K11|3533469|P|2.5.1|||NE|NE|||||Z42^CDCPHINVS|DCS^^^^^DCS^XX^^^6439432|StatePH 
 MSA|AA|793543 
-QAK|37374859|OK|Z44^request evaluated Immunization history^CDCPHINVS
-QPD|Z44^Request Evaluated History and Forecast^CDCPHINVS|37374859|123456^^^MYEHR^MR|Child^Bobbie^Q^^^^L|Que^Suzy^^^^^M|20110214|M|10 East Main St^^Myfaircity^GA^^^L 
+QAK|1039|OK|Z44^Request Evaluated History and Forecast^CDCPHINVS
+QPD|Z44^Request Evaluated History and Forecast^CDCPHINVS|1039|123456^^^MYEHR^MR|Child^Bobbie^Q^^^^L|Que^Suzy^^^^^M|20110214|M|10 East Main St^^Myfaircity^GA^^^L 
 PID|1||123456^^^MYEHR^MR~34500907^^^MyIIS^SR||Child^Bobbie^Q^^^^L||20110214|M|||10 East Main St^^Myfaircity^GA^^^L 
 ORC|RE|8788^IIS|197023^IIS 
 RXA|0|1|20150131|20150131|998^no vaccine admin^CVX|999||||||||||||||NA 
@@ -1054,14 +1056,14 @@ OBX|30|DT|30980-7^Date vaccination due^LN|3|20150214||||||F|||20150131
 #  Send Request for Complete Immunization History (QBP/RSP) 
 # Process for requesting Immunization History 
 MSH|^~\&|||||201405150010-0500||QBP^Q11^QBP_Q11|793543|P|2.5.1|||||||||Z34^CDCPHINVS
-QPD|Z34^Request Immunization History^CDCPHINVS|37374859|123456^^^MYEHR^MR|Child^Bobbie^Q^^^^L|Que^Suzy^^^^^M|20050512|M|10 East Main St^^Myfaircity^GA^^^L
+QPD|Z34^Request Immunization History^CDCPHINVS|1057|123456^^^MYEHR^MR|Child^Bobbie^Q^^^^L|Que^Suzy^^^^^M|20050512|M|10 East Main St^^Myfaircity^GA^^^L
 RCP|I|5^RD&records&HL70126 
 
 # Returning a list of candidate clients in response to QBP^Q11 query 
-MSH|^~\&|SOME_SYSTEM|A_Clinic |MYIIS|MyStateIIS|200911051000-0500||RSP^K11^RSP_K11|37374859|P|2.5.1|||NE|NE|||||Z31^CDCPHINVS|A_Clinic 
+MSH|^~\&|SOME_SYSTEM|A_Clinic |MYIIS|MyStateIIS|200911051000-0500||RSP^K11^RSP_K11|1061|P|2.5.1|||NE|NE|||||Z31^CDCPHINVS|A_Clinic 
 MSA|AA|793543
-QAK|37374859|OK
-QPD|Z34^Request Immunization History^CDCPHINVS|37374859|123456^^^MYEHR^MR|Child^Bobbie^Q^^^^L|Que^Suzy^^^^^M|20050512|M|10 East Main St^^Myfaircity^GA^^^L 
+QAK|1061|OK
+QPD|Z34^Request Immunization History^CDCPHINVS|1061|123456^^^MYEHR^MR|Child^Bobbie^Q^^^^L|Que^Suzy^^^^^M|20050512|M|10 East Main St^^Myfaircity^GA^^^L 
 PID|1||99445566^^^MYStateIIS^SR||Child^Robert^^^^^L||20050512|M
 NK1|1|Child^Susan|MTH^Mother^HL70063|^^Myfaircity^GA
 PID|2||123456^^^MYStateIIS^SR||Child^Robert^^^^^L||20050512|M
@@ -1069,8 +1071,8 @@ PID|2||123456^^^MYStateIIS^SR||Child^Robert^^^^^L||20050512|M
 # Returning an immunization history in response to a Request for Immunization History query 
 MSH|^~\&|MYIIS|MyStateIIS|MYEHR|Myclinic|200911300200-0500||RSP^K11^RSP_K11|7731029|P|2.5.1|||NE|NE|||||Z32^CDCPHINVS|MyStateIIS|Myclinic
 MSA|AA|793543
-QAK|37374859|OK|Z34^Request Immunization History^CDCPHINVS
-QPD|Z34^Request Immunization History^CDCPHINVS|37374859|123456^^^MYEHR^MR|Child^Bobbie^Q^^^^L|Que^Suzy^^^^^M|20050512|M|10 East Main St^^Myfaircity^GA^^^L<CR 
+QAK|1072|OK|Z34^Request Immunization History^CDCPHINVS
+QPD|Z34^Request Immunization History^CDCPHINVS|1072|123456^^^MYEHR^MR|Child^Bobbie^Q^^^^L|Que^Suzy^^^^^M|20050512|M|10 East Main St^^Myfaircity^GA^^^L 
 PID|1||123456^^^MYEHR^MR~987633^^^MYIIS^SR||Child^Robert^Quenton^^^^L|Que^Suzy^^^^^M|||||10 East Main St^^Myfaircity^GA
 PD1||||||||||||N|20091130
 NK1|1|Child^Suzy^^^^^L|MTH^Mother^HL70063
@@ -1083,14 +1085,14 @@ RXR|SC^^HL70162
 # Acknowledging a Query that finds no candidate clients 
 MSH|^~\&|MYIIS|MyStateIIS||MYEHR|200911302300-0500||RSP^K11^RSP_K11|7731029|P|2.5.1|||NE|NE|||||Z33^CDCPHINVS|MyStateIIS|MYEHR
 MSA|AA|793543
-QAK|37374859|NF|Z34^request Immunization history^CDCPHINVS
-QPD|Z34^Request Immunization History^CDCPHINVS|37374859|123456^^^MYEHR^MR|Child^Bobbie^Q^^^^L|Que^Suzy^^^^^M|20050512|M|10 East Main St^^Myfaircity^GA^^^L
+QAK|1086|NF|Z34^request Immunization history^CDCPHINVS
+QPD|Z34^Request Immunization History^CDCPHINVS|1086|123456^^^MYEHR^MR|Child^Bobbie^Q^^^^L|Que^Suzy^^^^^M|20050512|M|10 East Main St^^Myfaircity^GA^^^L
 
 # Acknowledging a query that finds more candidates than requested 
 MSH|^~\&|MYIIS|MyStateIIS||MYEHR|200911300000-0500||RSP^K11^RSP_K11|7731029|P|2.5.1|||NE|NE|||||Z33^CDCPHINVS|MyStateIIS|MYEHR 
 MSA|AA|793543
-QAK|37374859|TM|Z34^request Immunization history^CDCPHINVS
-QPD|Z34^Request Immunization History^CDCPHINVS|37374859|123456^^^MYEHR^MR|Child^Bobbie^Q^^^^L|Que^Suzy^^^^^M|20050512|M|10 East Main St^^Myfaircity^GA^^^L
+QAK|1092|TM|Z34^request Immunization history^CDCPHINVS
+QPD|Z34^Request Immunization History^CDCPHINVS|1092|123456^^^MYEHR^MR|Child^Bobbie^Q^^^^L|Que^Suzy^^^^^M|20050512|M|10 East Main St^^Myfaircity^GA^^^L
 
 # Using a Two-step process to request an immunization history 
 MSH|^~\&||SendingOrg||ReceivingOrg|2009113000-0500||QBP^Q11^QBP_Q11|793543|P|2.5.1|||ER|AL|||||Z34^CDCPHINVS|SendingOrg|ReceivingOrg
