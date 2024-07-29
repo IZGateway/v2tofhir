@@ -39,8 +39,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class NK1Parser extends AbstractSegmentParser {
 	private RelatedPerson relatedPerson;
-	private Patient patient;
-
 	private static List<FieldHandler> fieldHandlers = new ArrayList<>();
 
 	static {
@@ -67,13 +65,13 @@ public class NK1Parser extends AbstractSegmentParser {
 	@Override
 	public IBaseResource setup() {
 		relatedPerson = createResource(RelatedPerson.class);
-		patient = getLastResource(Patient.class);
+		Patient patient = getLastResource(Patient.class);
 		if (patient == null) {
 			// patient may not exist if PID somehow failed or wasn't parsed.
 			// so create one so that it can be referenced.
 			patient = createResource(Patient.class);
 		}
-		relatedPerson.setPatient(ParserUtils.toReference(patient));
+		relatedPerson.setPatient(ParserUtils.toReference(patient, relatedPerson, "patient"));
 		return relatedPerson;
 	}
 

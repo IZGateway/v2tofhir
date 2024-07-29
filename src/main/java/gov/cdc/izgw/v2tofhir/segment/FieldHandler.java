@@ -3,6 +3,7 @@ package gov.cdc.izgw.v2tofhir.segment;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -346,9 +347,7 @@ public class FieldHandler implements Comparable<FieldHandler> {
 	) {
 		List<ComesFrom> a = new ArrayList<>();
 		for (Method method: parserClass.getMethods()) {
-			for (ComesFrom from: method.getAnnotationsByType(ComesFrom.class)) {
-				a.add(from);
-			}
+			a.addAll(Arrays.asList(method.getAnnotationsByType(ComesFrom.class)));
 		}
 		Collections.sort(a, FieldHandler::compareComesFrom);
 		return a;

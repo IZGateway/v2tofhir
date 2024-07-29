@@ -4,14 +4,17 @@ import java.util.List;
 
 import org.hl7.fhir.r4.model.CanonicalType;
 import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.DomainResource;
 import org.hl7.fhir.r4.model.Immunization;
 import org.hl7.fhir.r4.model.ImmunizationRecommendation;
 import org.hl7.fhir.r4.model.ImmunizationRecommendation.ImmunizationRecommendationRecommendationComponent;
 import org.hl7.fhir.r4.model.MessageHeader;
 import org.hl7.fhir.r4.model.Organization;
+import org.hl7.fhir.r4.model.Patient;
 
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
 import gov.cdc.izgw.v2tofhir.utils.Mapping;
+import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 
 /**
  * This class is used for parsers that may generate an Immunization or ImmunizationRecommendation
@@ -45,6 +48,14 @@ public class IzDetail {
 			detail.hasImmunization = true;
 			detail.hasImmunizationRecommendation = false;
 			detail.immunization = mp.createResource(Immunization.class);
+			MessageHeader mh = mp.getFirstResource(MessageHeader.class);
+			if (mh != null) {
+				mh.addFocus(ParserUtils.toReference(detail.immunization, mh, "focus"));
+			}
+			Patient p = mp.getLastResource(Patient.class);
+			if (p != null) {
+				detail.immunization.setPatient(ParserUtils.toReference(detail.immunization, p, "patient"));
+			}
 			mp.getContext().setProperty(detail);
 		}
 	}
@@ -121,11 +132,25 @@ public class IzDetail {
 	 */
 	public void initializeResources() {
 		// Create the necessary resources.
+		DomainResource created = null;
+		Patient p = mp.getLastResource(Patient.class);
 		if (hasRecommendation() && immunizationRecommendation == null) {
-			immunizationRecommendation = mp.createResource(ImmunizationRecommendation.class);
+			created = immunizationRecommendation = mp.createResource(ImmunizationRecommendation.class);
+			if (p != null) {
+				immunizationRecommendation.setPatient(ParserUtils.toReference(p, immunizationRecommendation, "patient"));
+			}
 		}
 		if (hasImmunization() && immunization == null) {
-			immunization = mp.createResource(Immunization.class);
+			created = immunization = mp.createResource(Immunization.class);
+			if (p != null) {
+				immunization.setPatient(ParserUtils.toReference(p, immunization, "patient"));
+			}
+		}
+		if (created != null) {
+			MessageHeader mh = mp.getFirstResource(MessageHeader.class);
+			if (mh != null) {
+				mh.addFocus(ParserUtils.toReference(created, mh, "focus"));
+			}
 		}
 	}
 }

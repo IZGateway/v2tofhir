@@ -82,45 +82,7 @@ public class HumanNameParser implements DatatypeParser<HumanName> {
 		String[] parts = name.split("\\s");
 		StringBuilder familyName = new StringBuilder();
 		for (String part : parts) {
-			switch (classifyNamePart(part)) {
-			case PREFIXANDSUFFIX:
-				if (!hn.hasGiven() && familyName.isEmpty()) {
-					hn.addPrefix(part);
-					break;
-				} else if (!familyName.isEmpty()) { // Some are both a prefix and a suffix
-					hn.addSuffix(part);
-				} else {
-					familyName.append(part).append(" ");
-				}
-			case PREFIX:
-				if (!hn.hasGiven() && !hn.hasFamily()) {
-					hn.addPrefix(part);
-					break;
-				} else if (hn.hasFamily()) { // Some are both a prefix and a suffix
-					hn.addSuffix(part);
-				}
-				break;
-			case AFFIX:
-				if (!hn.hasGiven()) {
-					hn.addGiven(part);
-				} else {
-					familyName.append(part).append(" ");
-				}
-				break;
-			case FAMILY, GIVEN, NAME:
-				if (!familyName.isEmpty()) {
-					familyName.append(part).append(" ");
-				} else {
-					hn.addGiven(part);
-				}
-				break;
-			case SUFFIX:
-				hn.addSuffix(part);
-				break;
-			default:
-				break;
-
-			}
+			updateNamePart(hn, familyName, part);
 		}
 		List<StringType> given = hn.getGiven();
 		if (familyName.isEmpty() && !given.isEmpty()) {
@@ -139,6 +101,46 @@ public class HumanNameParser implements DatatypeParser<HumanName> {
 			return null;
 		}
 		return hn;
+	}
+
+	private void updateNamePart(HumanName hn, StringBuilder familyName, String part) {
+		NamePart classification = classifyNamePart(part);
+		switch (classification) {
+		case PREFIXANDSUFFIX, PREFIX:
+			if (!hn.hasGiven() && familyName.isEmpty()) {
+				hn.addPrefix(part);
+				break;
+			} 
+			if (NamePart.PREFIXANDSUFFIX.equals(classification)) {
+				if (!familyName.isEmpty()) { // Some are both a prefix and a suffix
+					hn.addSuffix(part);
+				} else {
+					familyName.append(part).append(" ");
+				}
+			} else if (!familyName.isEmpty()) { // Some are both a prefix and a suffix
+				hn.addSuffix(part);
+			}
+			break;
+		case AFFIX:
+			if (!hn.hasGiven()) {
+				hn.addGiven(part);
+			} else {
+				familyName.append(part).append(" ");
+			}
+			break;
+		case FAMILY, GIVEN, NAME:
+			if (!familyName.isEmpty()) {
+				familyName.append(part).append(" ");
+			} else {
+				hn.addGiven(part);
+			}
+			break;
+		case SUFFIX:
+			hn.addSuffix(part);
+			break;
+		default:
+			break;
+		}
 	}
 
 	private NamePart classifyNamePart(String part) {

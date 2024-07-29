@@ -761,6 +761,8 @@ public class DatatypeConverter {
 			return null;
 		}
 		Location location = new Location();
+    	location.setUserData("source", DatatypeConverter.class.getName());
+
 		if (t instanceof Primitive) {
 			location.setName(ParserUtils.toString(t));
 			return location;
@@ -834,15 +836,17 @@ public class DatatypeConverter {
 			CodeableConcept cc = new CodeableConcept()
 					.addCoding(
 						new Coding(Systems.LOCATION_TYPE, n[i], d[i]));
+
 			if (curl.hasName()) {
 				Location partOf = new Location();
-				curl.setPartOf(ParserUtils.toReference(partOf));
+		    	partOf.setUserData("source", DatatypeConverter.class.getName());
+				curl.setPartOf(ParserUtils.toReference(partOf, curl, "partof"));
 				curl = partOf;
 			}
 			curl.setMode(LocationMode.INSTANCE);
 			curl.setPhysicalType(cc);
 			curl.setName(ParserUtils.toString(t1));
-			ParserUtils.toReference(curl);	// Update reference
+			ParserUtils.toReference(curl, null, "partof");	// Update reference
 		}
 		location.setOperationalStatus(toCoding(ParserUtils.getComponent(comp, 4), "0306"));
 		location.addType(
@@ -923,6 +927,7 @@ public class DatatypeConverter {
     public static Organization toOrganization(Type t) {
     	t = adjustIfVaries(t);
     	Organization org = new Organization();
+    	org.setUserData("source", DatatypeConverter.class.getName());
 		org.setName(ParserUtils.toString(t));
 
     	if ("XON".equals(t.getName())) {
@@ -940,6 +945,8 @@ public class DatatypeConverter {
     public static Practitioner toPractitioner(Type t) {
     	t = adjustIfVaries(t);
     	Practitioner pract = new Practitioner();
+    	pract.setUserData("source", DatatypeConverter.class.getName());
+
 		pract.addName(toHumanName(t));
 		if (PEOPLE_TYPES.contains(t.getName())) {
     		pract.addIdentifier(toIdentifier(t));
@@ -955,6 +962,8 @@ public class DatatypeConverter {
     public static RelatedPerson toRelatedPerson(Type t) {
     	t = adjustIfVaries(t);
     	RelatedPerson person = new RelatedPerson();
+    	person.setUserData("source", DatatypeConverter.class.getName());
+
     	person.addName(toHumanName(t));
 		if (PEOPLE_TYPES.contains(t.getName())) {
     		person.addIdentifier(toIdentifier(t));
@@ -1352,7 +1361,7 @@ public class DatatypeConverter {
 	private static final String V2_TIME_FORMAT = "HHmmss.SSSS";
 	private static final String FHIR_TIME_FORMAT = "HH:mm:ss.SSS";
 	/** The V2 types involving date and time */
-	public static final List<String> DATETIME_TYPES = Arrays.asList("DT", "DTM", "TS");
+	public static final List<String> DATETIME_TYPES = Collections.unmodifiableList(Arrays.asList("DT", "DTM", "TS"));
 
 	/**
 	 * Convert a string to a FHIR TimeType object.

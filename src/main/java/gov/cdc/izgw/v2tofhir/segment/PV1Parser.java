@@ -44,6 +44,8 @@ import lombok.extern.slf4j.Slf4j;
 )
 @Slf4j
 public class PV1Parser extends AbstractSegmentParser {
+	private static final String PARTICIPANT = "participant";
+	private static final String PRACTITIONER = "practitioner";
 	private Encounter encounter;
 	@SuppressWarnings("unused")
 	private Account account;
@@ -81,7 +83,7 @@ public class PV1Parser extends AbstractSegmentParser {
 			// No patient was found, create one.
 			patient = createResource(Patient.class);
 		}
-		encounter.setSubject(ParserUtils.toReference(patient));
+		encounter.setSubject(ParserUtils.toReference(patient, encounter, "subject", "patient"));
 		account = null;
 		location = null;
 		return encounter;
@@ -157,7 +159,7 @@ public class PV1Parser extends AbstractSegmentParser {
 	public void setAssignedPatientLocation(Location assignedPatientLocation) {
 		location = addResource(assignedPatientLocation);
 		EncounterLocationComponent loc = encounter.addLocation()
-				.setLocation(ParserUtils.toReference(assignedPatientLocation));
+				.setLocation(ParserUtils.toReference(assignedPatientLocation, encounter, "location"));
 		if (encounter.hasStatus()) {
 			if (EncounterStatus.PLANNED.equals(encounter.getStatus())) {
 				loc.setStatus(EncounterLocationStatus.PLANNED);
@@ -193,7 +195,7 @@ public class PV1Parser extends AbstractSegmentParser {
 	public void setPriorPatientLocation(Location priorPatientLocation) {
 		addResource(priorPatientLocation);
 		EncounterLocationComponent loc = encounter.addLocation()
-				.setLocation(ParserUtils.toReference(priorPatientLocation));
+				.setLocation(ParserUtils.toReference(priorPatientLocation, encounter, "location"));
 		loc.setStatus(EncounterLocationStatus.COMPLETED);
 	}
 
@@ -205,7 +207,8 @@ public class PV1Parser extends AbstractSegmentParser {
 	public void setAttendingDoctor(Practitioner attendingDoctor) {
 		addResource(attendingDoctor);
 		EncounterParticipantComponent participant = encounter.addParticipant()
-				.setIndividual(ParserUtils.toReference(attendingDoctor));
+				.setIndividual(ParserUtils.toReference(attendingDoctor, encounter, PARTICIPANT, PRACTITIONER, 
+						Codes.ATTENDING_PARTICIPANT.getCodingFirstRep().getDisplay()));
 		participant.addType(Codes.ATTENDING_PARTICIPANT);
 	}
 
@@ -217,7 +220,8 @@ public class PV1Parser extends AbstractSegmentParser {
 	public void setReferringDoctor(Practitioner referringDoctor) {
 		addResource(referringDoctor);
 		EncounterParticipantComponent participant = encounter.addParticipant()
-				.setIndividual(ParserUtils.toReference(referringDoctor));
+				.setIndividual(ParserUtils.toReference(referringDoctor, encounter, PARTICIPANT, PRACTITIONER, 
+						Codes.REFERRING_PARTICIPANT.getCodingFirstRep().getDisplay()));
 		participant.addType(Codes.REFERRING_PARTICIPANT);
 	}
 
@@ -229,7 +233,8 @@ public class PV1Parser extends AbstractSegmentParser {
 	public void setConsultingDoctor(Practitioner consultingDoctor) {
 		addResource(consultingDoctor);
 		EncounterParticipantComponent participant = encounter.addParticipant()
-				.setIndividual(ParserUtils.toReference(consultingDoctor));
+				.setIndividual(ParserUtils.toReference(consultingDoctor, encounter, PARTICIPANT, PRACTITIONER,
+						Codes.CONSULTING_PARTICIPANT.getCodingFirstRep().getDisplay()));
 		participant.addType(Codes.CONSULTING_PARTICIPANT);
 	}
 
@@ -250,7 +255,7 @@ public class PV1Parser extends AbstractSegmentParser {
 	public void setTemporaryLocation(Location temporaryLocation) {
 		addResource(temporaryLocation);
 		EncounterLocationComponent loc = encounter.addLocation()
-				.setLocation(ParserUtils.toReference(temporaryLocation));
+				.setLocation(ParserUtils.toReference(temporaryLocation, encounter, "location"));
 		loc.setStatus(EncounterLocationStatus.ACTIVE);
 		// TODO: Add a temporary indicator to location
 	}
@@ -301,7 +306,7 @@ public class PV1Parser extends AbstractSegmentParser {
 	public void setAdmittingDoctor(Practitioner admittingDoctor) {
 		addResource(admittingDoctor);
 		EncounterParticipantComponent participant = encounter.addParticipant()
-				.setIndividual(ParserUtils.toReference(admittingDoctor));
+				.setIndividual(ParserUtils.toReference(admittingDoctor, encounter, PARTICIPANT, PRACTITIONER, "admitting"));
 		participant.addType(Codes.ADMITTING_PARTICIPANT);
 	}
 
@@ -331,7 +336,7 @@ public class PV1Parser extends AbstractSegmentParser {
 	@ComesFrom(path = "Encounter.hospitalization.destination.Location", field = 37, comment = "Discharged to Location")
 	public void setDischargedToLocation(Location dischargedToLocation) {
 		addResource(dischargedToLocation);
-		encounter.getHospitalization().setDestination(ParserUtils.toReference(dischargedToLocation));
+		encounter.getHospitalization().setDestination(ParserUtils.toReference(dischargedToLocation, encounter, "destination"));
 	}
 
 	/**
@@ -356,6 +361,21 @@ public class PV1Parser extends AbstractSegmentParser {
 
 	private LocationStatus mapBedStatus(Coding bedStatus) {
 		// TODO Auto-generated method stub
+		if (!bedStatus.hasCode()) {
+			return null;
+		}
+		if (bedStatus.hasSystem() && bedStatus.getSystem().endsWith("0116")) {
+			switch (bedStatus.getCode()) {
+			case "O", "U", "I":
+				return LocationStatus.ACTIVE;
+			case "H", "K":
+				return LocationStatus.SUSPENDED;
+			case "C":
+				return LocationStatus.INACTIVE;
+			default:
+				return null;
+			}
+		}
 		return null;
 	}
 
@@ -367,7 +387,7 @@ public class PV1Parser extends AbstractSegmentParser {
 	public void setPendingLocation(Location pendingLocation) {
 		location = addResource(pendingLocation);
 		EncounterLocationComponent loc = encounter.addLocation()
-				.setLocation(ParserUtils.toReference(pendingLocation));
+				.setLocation(ParserUtils.toReference(pendingLocation, encounter, "location"));
 		loc.setStatus(EncounterLocationStatus.PLANNED);
 	}
 	
@@ -379,7 +399,7 @@ public class PV1Parser extends AbstractSegmentParser {
 	public void setPriorTemporaryLocation(Location priorTemporaryLocation) {
 		location = addResource(priorTemporaryLocation);
 		EncounterLocationComponent loc = encounter.addLocation()
-				.setLocation(ParserUtils.toReference(priorTemporaryLocation));
+				.setLocation(ParserUtils.toReference(priorTemporaryLocation, encounter, "location"));
 		loc.setStatus(EncounterLocationStatus.COMPLETED);
 	}
 		
@@ -417,7 +437,8 @@ public class PV1Parser extends AbstractSegmentParser {
 	@ComesFrom(path = "Encounter.participant.individual.Practitioner", field = 52, comment = "Other Healthcare Provider")
 	public void setOtherHealthcareProvider(Practitioner otherHealthcareProvider) {
 		addResource(otherHealthcareProvider);
-		EncounterParticipantComponent part = encounter.addParticipant().setIndividual(ParserUtils.toReference(otherHealthcareProvider));
+		EncounterParticipantComponent part = encounter.addParticipant()
+				.setIndividual(ParserUtils.toReference(otherHealthcareProvider, encounter, PRACTITIONER));
 		part.addType(Codes.PARTICIPANT);
 	}
 
@@ -429,8 +450,8 @@ public class PV1Parser extends AbstractSegmentParser {
 	@ComesFrom(path = "Encounter.episodeOfCare", field = 54, comment = "Service Episode Identifier")
 	public void setServiceEpisodeIdentifier(Identifier serviceEpisodeIdentifier) {
 		EpisodeOfCare episodeOfCare = createResource(EpisodeOfCare.class);
-		episodeOfCare.setPatient(ParserUtils.toReference(patient));
+		episodeOfCare.setPatient(ParserUtils.toReference(patient, episodeOfCare, "patient"));
 		episodeOfCare.addIdentifier(serviceEpisodeIdentifier);
-		encounter.addEpisodeOfCare(ParserUtils.toReference(episodeOfCare));
+		encounter.addEpisodeOfCare(ParserUtils.toReference(episodeOfCare, encounter, "episode-of-care"));
 	}
 }

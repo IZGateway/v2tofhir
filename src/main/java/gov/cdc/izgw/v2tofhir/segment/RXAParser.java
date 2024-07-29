@@ -153,7 +153,7 @@ public class RXAParser extends AbstractSegmentParser {
 	public void setAdministeringProvider(Practitioner adminProvider) {
 		if (izDetail.hasImmunization()) {
 			addResource(adminProvider);
-			Reference ref = ParserUtils.toReference(adminProvider);
+			Reference ref = ParserUtils.toReference(adminProvider, izDetail.immunization, "performer", "practitioner");
 			ImmunizationPerformerComponent perf = izDetail.immunization.addPerformer().setActor(ref);
 			perf.setFunction(Codes.ADMIN_PROVIDER_FUNCTION_CODE);
 		}
@@ -176,7 +176,7 @@ public class RXAParser extends AbstractSegmentParser {
 			// since few HL7 V2 versions have both (RXA-11 withdrawl started 
 			// when RXA-27 introduced in V2.6).
 			addResource(administerAt);
-			izDetail.immunization.setLocation(ParserUtils.toReference(administerAt));
+			izDetail.immunization.setLocation(ParserUtils.toReference(administerAt, izDetail.immunization, "location"));
 		}
 	}
 
@@ -194,7 +194,7 @@ public class RXAParser extends AbstractSegmentParser {
 			Location location = null;
 			if (locRef == null) {
 				location = createResource(Location.class);
-				izDetail.immunization.setLocation(ParserUtils.toReference(location));
+				izDetail.immunization.setLocation(ParserUtils.toReference(location, izDetail.immunization, "location"));
 			} else {
 				location = ParserUtils.getResource(Location.class, locRef);
 			}
@@ -254,7 +254,7 @@ public class RXAParser extends AbstractSegmentParser {
 			if (mOrg.hasName() || mOrg.hasIdentifier()) {
 				addResource(mOrg);
 			}
-			izDetail.immunization.setManufacturer(ParserUtils.toReference(mOrg));
+			izDetail.immunization.setManufacturer(ParserUtils.toReference(mOrg, izDetail.immunization, "manufacturer"));
 		}
 	}
 	

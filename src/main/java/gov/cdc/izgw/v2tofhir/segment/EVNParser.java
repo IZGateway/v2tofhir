@@ -87,7 +87,7 @@ public class EVNParser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path = "Provenance.agent.who.Practitioner", field = 5, comment = "Operator ID")
 	public void setOperatorID(Practitioner operatorId) {
-		provenance.addAgent().setWho(ParserUtils.toReference(operatorId));
+		provenance.addAgent().setWho(ParserUtils.toReference(operatorId, provenance, "agent"));
 	}
 
 	/**
@@ -109,7 +109,7 @@ public class EVNParser extends AbstractSegmentParser {
 			Location location = createResource(Location.class);
 			location.setName(eventFacility.getSystem());
 			location.addIdentifier(eventFacility);
-			provenance.setLocation(ParserUtils.toReference(location));
+			provenance.setLocation(ParserUtils.toReference(location, provenance, "location"));
 		}
 	}
 }

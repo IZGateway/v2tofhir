@@ -31,7 +31,6 @@ import lombok.extern.slf4j.Slf4j;
 public class MSAParser extends AbstractSegmentParser {
 	private static final List<FieldHandler> fieldHandlers = new ArrayList<>();
 	private MessageHeader mh = null;
-	private OperationOutcome oo = null;
 	private MessageHeaderResponseComponent response = null;
 	private OperationOutcomeIssueComponent issue;
 	
@@ -65,9 +64,9 @@ public class MSAParser extends AbstractSegmentParser {
 			mh = createResource(MessageHeader.class);
 		}
 		response  = mh.getResponse();
-		oo = createResource(OperationOutcome.class);
+		OperationOutcome oo = createResource(OperationOutcome.class);
 		issue = oo.getIssueFirstRep();
-		mh.getResponse().setDetails(ParserUtils.toReference(oo));
+		mh.getResponse().setDetails(ParserUtils.toReference(oo, mh, "details"));
 		return mh;
 	}
 	

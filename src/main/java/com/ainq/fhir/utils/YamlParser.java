@@ -30,7 +30,9 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class YamlParser implements IParser {
-    private final IParser jsonParser;
+    private static final String YAML_WRITE_ERROR = "Error Converting to YAML";
+	private static final String YAML_READ_ERROR = "Error Converting from YAML";
+	private final IParser jsonParser;
     
     /**
      * Create a YamlParser with the default(R4) FhirContext
@@ -52,8 +54,8 @@ public class YamlParser implements IParser {
         try {
             return YamlUtils.toYaml(jsonParser.encodeResourceToString(theResource));
         } catch (IOException e) {
-        	log.error("Error Converting to YAML: {}", e.getMessage(), e);
-            throw new DataFormatException("Error Converting to YAML", e);
+        	log.error(YAML_WRITE_ERROR + ": {}", e.getMessage(), e);
+            throw new DataFormatException(YAML_WRITE_ERROR, e);
         }
     }
 
@@ -65,7 +67,7 @@ public class YamlParser implements IParser {
             theWriter.write(YamlUtils.toYaml(jsonParser.encodeResourceToString(theResource)));
         } catch (IOException e) {
         	log.error("Error Converting to YAML: {}", e.getMessage(), e);
-            throw new DataFormatException("Error Converting to YAML", e);
+            throw new DataFormatException(YAML_WRITE_ERROR, e);
         }
     }
 
@@ -105,7 +107,7 @@ public class YamlParser implements IParser {
         try {
             return jsonParser.parseResource(theResourceType, YamlUtils.fromYaml(theReader));
         } catch (IOException e) {
-            throw new DataFormatException("Error Converting from YAML", e);
+            throw new DataFormatException(YAML_READ_ERROR, e);
         }
     }
 
@@ -115,7 +117,7 @@ public class YamlParser implements IParser {
         try {
             return jsonParser.parseResource(theResourceType, YamlUtils.fromYaml(theInputStream));
         } catch (IOException e) {
-            throw new DataFormatException("Error Converting from YAML", e);
+            throw new DataFormatException(YAML_READ_ERROR, e);
         }
     }
 
@@ -125,7 +127,7 @@ public class YamlParser implements IParser {
         try {
             return jsonParser.parseResource(theResourceType, YamlUtils.fromYaml(theString));
         } catch (Exception e) {
-            throw new DataFormatException("Error Converting from YAML", e);
+            throw new DataFormatException(YAML_READ_ERROR, e);
         }
     }
 
@@ -134,7 +136,7 @@ public class YamlParser implements IParser {
         try {
             return jsonParser.parseResource(YamlUtils.fromYaml(theReader));
         } catch (Exception e) {
-            throw new DataFormatException("Error Converting from YAML", e);
+            throw new DataFormatException(YAML_READ_ERROR, e);
         }
     }
 
@@ -144,7 +146,7 @@ public class YamlParser implements IParser {
         try {
             return jsonParser.parseResource(YamlUtils.fromYaml(theInputStream));
         } catch (Exception e) {
-            throw new DataFormatException("Error Converting from YAML", e);
+            throw new DataFormatException(YAML_READ_ERROR, e);
         }
     }
 
@@ -153,7 +155,7 @@ public class YamlParser implements IParser {
         try {
             return jsonParser.parseResource(YamlUtils.fromYaml(theMessageString));
         } catch (Exception e) {
-            throw new DataFormatException("Error Converting from YAML", e);
+            throw new DataFormatException(YAML_READ_ERROR, e);
         }
     }
 
@@ -254,7 +256,7 @@ public class YamlParser implements IParser {
         try {
             return YamlUtils.toYaml(jsonParser.encodeToString(theElement));
         } catch (IOException e) {
-            throw new DataFormatException("Error Converting to YAML", e);
+            throw new DataFormatException(YAML_WRITE_ERROR, e);
         }
 	}
 
@@ -263,7 +265,7 @@ public class YamlParser implements IParser {
         try {
             theWriter.write(YamlUtils.toYaml(jsonParser.encodeToString(theElement)));
         } catch (IOException e) {
-            throw new DataFormatException("Error Converting to YAML", e);
+            throw new DataFormatException(YAML_WRITE_ERROR, e);
         }
 	}
 

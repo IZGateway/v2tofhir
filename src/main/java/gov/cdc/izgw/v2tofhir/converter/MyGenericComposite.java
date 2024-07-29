@@ -2,7 +2,6 @@ package gov.cdc.izgw.v2tofhir.converter;
 
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.Location;
-import ca.uhn.hl7v2.model.DataTypeException;
 import ca.uhn.hl7v2.model.ExtraComponents;
 import ca.uhn.hl7v2.model.GenericComposite;
 import ca.uhn.hl7v2.model.Message;
@@ -28,7 +27,7 @@ class MyGenericComposite extends GenericComposite {
 		this.name = name;
 	}
 	@Override
-	public Type getComponent(int number) throws DataTypeException {
+	public Type getComponent(int number) {
 		return delegate.getComponent(number);
 	}
 	@Override

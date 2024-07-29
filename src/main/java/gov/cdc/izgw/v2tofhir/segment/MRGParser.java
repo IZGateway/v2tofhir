@@ -101,10 +101,10 @@ public class MRGParser extends AbstractSegmentParser {
 	public void addPatientAccount(Identifier accountId) {
 		account = createResource(Account.class);
 		account.addIdentifier(accountId);
-		account.addSubject(ParserUtils.toReference(patient));
+		account.addSubject(ParserUtils.toReference(patient, account, "subject", "patient"));
 		account.getMeta().addTag();
 		encounter = getEncounter();
-		encounter.addAccount(ParserUtils.toReference(account));
+		encounter.addAccount(ParserUtils.toReference(account, encounter, "account"));
 	}
 
 	/**
@@ -116,7 +116,7 @@ public class MRGParser extends AbstractSegmentParser {
 	private Encounter getEncounter() {
 		if (encounter == null) {
 			encounter = createResource(Encounter.class);
-			encounter.setSubject(ParserUtils.toReference(patient));
+			encounter.setSubject(ParserUtils.toReference(patient, encounter, "subject", "patient"));
 		}
 		return encounter;
 	}

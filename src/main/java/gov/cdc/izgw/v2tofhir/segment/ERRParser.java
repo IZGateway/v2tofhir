@@ -107,7 +107,7 @@ public class ERRParser extends AbstractSegmentParser {
 			// Normally this is already done in MSAParser, but if processing
 			// an incomplete message (e.g., ERR segment but w/o MSA), this ensures 
 			// that the parser has the expected objects to work with.
-			mh.getResponse().setDetails(ParserUtils.toReference(oo));
+			mh.getResponse().setDetails(ParserUtils.toReference(oo, mh, "details"));
 		}
 		issue = oo.addIssue();
 		return oo;

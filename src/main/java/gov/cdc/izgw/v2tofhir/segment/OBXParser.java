@@ -14,7 +14,6 @@ import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.ContactPoint;
 import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.Device;
-import org.hl7.fhir.r4.model.DomainResource;
 import org.hl7.fhir.r4.model.HumanName;
 import org.hl7.fhir.r4.model.ImmunizationRecommendation;
 import org.hl7.fhir.r4.model.ImmunizationRecommendation.ImmunizationRecommendationRecommendationComponent;
@@ -58,6 +57,7 @@ import gov.cdc.izgw.v2tofhir.utils.TextUtils;
 @Produces(segment = "OBX", resource=Observation.class,
 		  extra = { Immunization.class, ImmunizationRecommendation.class })
 public class OBXParser extends AbstractSegmentParser {
+	private static final String PERFORMER = "performer";
 	private static List<FieldHandler> fieldHandlers = new ArrayList<>();
 	private IzDetail izDetail;
 	private VisCode redirect = null;
@@ -246,10 +246,12 @@ public class OBXParser extends AbstractSegmentParser {
 		}
 		
 		IBase converted = DatatypeConverter.convert(target, v2Type, null);
-		if (converted instanceof DomainResource dr) {
-			Reference r = ParserUtils.toReference(dr);
-			addResource(dr);
-			observation.setValue(r);
+		if (converted instanceof Organization org) {
+			observation.setValue(org.getNameElement());
+		} else if (converted instanceof RelatedPerson rp) {
+			observation.setValue(new StringType(TextUtils.toString(rp.getNameFirstRep())));
+		} else if (converted instanceof Practitioner pr) {
+			observation.setValue(new StringType(TextUtils.toString(pr.getNameFirstRep())));
 		} else if (converted instanceof org.hl7.fhir.r4.model.Type t){
 			observation.setValue(t);
 		}
@@ -258,6 +260,10 @@ public class OBXParser extends AbstractSegmentParser {
 			return;
 		}
 		
+		// This observation applies to either a created Immunization or an ImmunizationRecommendation,
+		// link it via Observation.partOf.
+		linkObservation();
+
 		if (izDetail.hasImmunization()) {
 			handleVisObservations(converted);
 		} else if (izDetail.hasRecommendation()) {
@@ -268,6 +274,7 @@ public class OBXParser extends AbstractSegmentParser {
 	private void handleVisObservations(IBase converted) {
 		if (VisCode.VACCINE_ELIGIBILITY_CODE.equals(redirect)) {
 			izDetail.immunization.addProgramEligibility((CodeableConcept) converted);
+			observation.addPartOf(ParserUtils.toReference(izDetail.immunization, observation, "partOf"));
 			return;
 		} 
 		ImmunizationEducationComponent education = getLastEducation(izDetail.immunization);
@@ -303,10 +310,29 @@ public class OBXParser extends AbstractSegmentParser {
 		}
 	}
 
+	/**
+	 * Link the Observation to the Immunization or ImmunizationRecommendation to
+	 * which it applies.
+	 */
+	private void linkObservation() {
+		if (!VisCode.OTHER.equals(redirect)) {
+			Reference ref = null;
+			if (izDetail.hasImmunization()) {
+				ref = ParserUtils.toReference(izDetail.immunization, observation, "partof");
+			} else if (izDetail.hasRecommendation()) {
+				ref = ParserUtils.toReference(izDetail.immunizationRecommendation, observation, "partof");
+			}
+			if (ref != null && !observation.getPartOf().contains(ref)) {
+				observation.addPartOf(ref);
+			}
+		}
+	}
+
 	private void handleRecommendationObservations(IBase converted) {
 		if (redirect == null) {
 			return;
 		}
+		
 		ImmunizationRecommendationRecommendationDateCriterionComponent criterion = null;
 		int value = 0;
 		switch (redirect) {
@@ -436,11 +462,11 @@ public class OBXParser extends AbstractSegmentParser {
 		if (!getPerformer().hasOrganization()) {
 			producer = createResource(Organization.class);
 			producer.addIdentifier(producersId);
-			performer.setOrganization(ParserUtils.toReference(producer));
+			performer.setOrganization(ParserUtils.toReference(producer, performer, PERFORMER));
 		} else {
 			producer = ParserUtils.getResource(Organization.class, performer.getOrganization()); 
 			producer.addIdentifier(producersId);
-			ParserUtils.toReference(producer);  // Force reference update with identifier
+			ParserUtils.toReference(producer, performer, PERFORMER);  // Force reference update with identifier
 		}
 	}
 	
@@ -457,7 +483,7 @@ public class OBXParser extends AbstractSegmentParser {
 					.setSystem("http://terminology.hl7.org/CodeSystem/practitioner-role")
 					.setCode("responsibleObserver")
 					.setDisplay("Responsible Observer");
-			observation.addPerformer(ParserUtils.toReference(performer));
+			observation.addPerformer(ParserUtils.toReference(performer, observation, "performer"));
 		}
 		return performer;
 	}
@@ -470,7 +496,7 @@ public class OBXParser extends AbstractSegmentParser {
 	public void setResponsibleObserver(Practitioner responsibleObserver) 
 	{
 		addResource(responsibleObserver);		getPerformer();
-		performer.setPractitioner(ParserUtils.toReference(responsibleObserver));
+		performer.setPractitioner(ParserUtils.toReference(responsibleObserver, performer, PERFORMER));
 	}
 	
 	/**
@@ -491,7 +517,7 @@ public class OBXParser extends AbstractSegmentParser {
 	{
 		Device device = createResource(Device.class);
 		device.addIdentifier(equipmentInstanceIdentifier);
-		observation.setDevice(ParserUtils.toReference(device));
+		observation.setDevice(ParserUtils.toReference(device, observation, "device"));
 	}
 	
 	/**
@@ -548,7 +574,7 @@ public class OBXParser extends AbstractSegmentParser {
 		} else {
 			addResource(performingOrganization);
 			org = performingOrganization;
-			performer.setOrganization(ParserUtils.toReference(org));
+			performer.setOrganization(ParserUtils.toReference(org, performer, PERFORMER));
 		}	}
 	
 	/**
@@ -560,7 +586,7 @@ public class OBXParser extends AbstractSegmentParser {
 		Organization org = null;
 		if (!getPerformer().hasOrganization()) {
 			org = createResource(Organization.class);
-			performer.setOrganization(ParserUtils.toReference(org));
+			performer.setOrganization(ParserUtils.toReference(org, performer, PERFORMER));
 		} else {
 			org = ParserUtils.getResource(Organization.class, performer.getOrganization());
 		}
@@ -578,11 +604,11 @@ public class OBXParser extends AbstractSegmentParser {
 		if (performer.hasPractitioner()) {
 			// If there is already a practitioner in the performer, add a new one.
 			performer = createResource(PractitionerRole.class);
-			observation.addPerformer(ParserUtils.toReference(performer));
+			observation.addPerformer(ParserUtils.toReference(performer, observation, PERFORMER));
 		}
 		addResource(performingOrganizationMedicalDirector);
 		performer.addCode(Codes.MEDICAL_DIRECTOR_ROLE_CODE);
-		performer.setPractitioner(ParserUtils.toReference(performingOrganizationMedicalDirector));
+		performer.setPractitioner(ParserUtils.toReference(performingOrganizationMedicalDirector, performer, PERFORMER));
 	}
 
 	/**
@@ -596,6 +622,4 @@ public class OBXParser extends AbstractSegmentParser {
 		// will create the Specimen resource rather than creating it here.
 		observation.setSpecimen(new Reference().setIdentifier(specimenIdentifier));
 	}
-		
-
 }

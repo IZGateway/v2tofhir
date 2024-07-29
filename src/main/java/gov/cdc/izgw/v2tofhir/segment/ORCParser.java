@@ -41,9 +41,11 @@ import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 	extra = { Practitioner.class, Organization.class, Immunization.class }
 )
 public class ORCParser extends AbstractSegmentParser {
+	private static final String REQUESTER = "requester";
 	private static List<FieldHandler> fieldHandlers = new ArrayList<>();
 	private ServiceRequest order;
 	private PractitionerRole requester;
+	private Reference requesterRef;
 	private IzDetail izDetail;
 	
 	/**
@@ -69,11 +71,11 @@ public class ORCParser extends AbstractSegmentParser {
 		order = createResource(ServiceRequest.class);
 		Patient patient = this.getLastResource(Patient.class);
 		if (patient != null) {
-			order.setSubject(ParserUtils.toReference(patient));
+			order.setSubject(ParserUtils.toReference(patient, order, "patient", "subject"));
 		}
 		Encounter encounter = this.getLastResource(Encounter.class);
 		if (encounter != null) {
-			order.setSubject(ParserUtils.toReference(encounter));
+			order.setSubject(ParserUtils.toReference(encounter, order, "encounter"));
 		}
 		order.setIntent(ServiceRequestIntent.ORDER);
 		return order;
@@ -233,8 +235,9 @@ public class ORCParser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path = "ServiceRequest.requester.PractitionerRole.practitioner", field = 12) 
 	public void setOrderingProvider(Practitioner orderingProvider) {
-		Reference providerReference = ParserUtils.toReference(addResource(orderingProvider));
+		Reference providerReference = ParserUtils.toReference(addResource(orderingProvider), requester, "practitioner");
 		getRequester().setPractitioner(providerReference);
+		updateRequesterName();
 	}
 	
 	/**
@@ -245,14 +248,33 @@ public class ORCParser extends AbstractSegmentParser {
 	private PractitionerRole getRequester() {
 		if (requester == null) {
 			requester = createResource(PractitionerRole.class);
-			Reference ref = ParserUtils.toReference(requester);
-			order.setRequester(ref);
+			requesterRef = ParserUtils.toReference(requester, order, REQUESTER);
+			order.setRequester(requesterRef);
 			if (izDetail.hasImmunization()) {
-				ImmunizationPerformerComponent perf = izDetail.immunization.addPerformer().setActor(ref);
+				requesterRef = ParserUtils.toReference(requester, izDetail.immunization, "performer", "practitioner");
+				ImmunizationPerformerComponent perf = izDetail.immunization.addPerformer().setActor(requesterRef);
 				perf.setFunction(Codes.ORDERING_PROVIDER_FUNCTION_CODE);
 			}
 		}
 		return requester;
+	}
+	
+	private void updateRequesterName() {
+		// NOTE: This violates the rule about first name in wins
+		// for PractitionerRole, but that's because their name
+		// has to dynamically change to account for the fact that
+		// they are built in pieces.
+		StringBuilder b = new StringBuilder();
+		if (requester.hasPractitioner()) {
+			b.append(requester.getPractitioner().getDisplay());
+			if (requester.hasOrganization()) {
+				b.append(" @ ");
+			}
+		}
+		if (requester.hasOrganization()) {
+			b.append(requester.getOrganization().getDisplay());
+		}
+		requesterRef.setDisplay(b.toString());
 	}
 	
 	/**
@@ -277,8 +299,10 @@ public class ORCParser extends AbstractSegmentParser {
 		} else {
 			izDetail.requestingOrganization = addResource(organization);
 		}
-		Reference orgReference = ParserUtils.toReference(izDetail.requestingOrganization);
-		getRequester().setOrganization(orgReference);
+		getRequester();
+		Reference orgReference = ParserUtils.toReference(izDetail.requestingOrganization, requester, REQUESTER);
+		requester.setOrganization(orgReference);
+		updateRequesterName();
 	}
 	
 	/**
@@ -292,7 +316,7 @@ public class ORCParser extends AbstractSegmentParser {
 	public void setOrderingOrganizationAddress(Address orderingProviderAddress) {
 		if (izDetail.requestingOrganization == null) {
 			izDetail.requestingOrganization = createResource(Organization.class);
-			getRequester().setOrganization(ParserUtils.toReference(izDetail.requestingOrganization));
+			getRequester().setOrganization(ParserUtils.toReference(izDetail.requestingOrganization, requester, REQUESTER));
 		}
 		izDetail.requestingOrganization.addAddress(orderingProviderAddress);
 	}
@@ -305,7 +329,7 @@ public class ORCParser extends AbstractSegmentParser {
 	public void setOrderingOrganizationTelecom(ContactPoint orderingProviderContact) {
 		if (izDetail.requestingOrganization == null) {
 			izDetail.requestingOrganization = createResource(Organization.class);
-			getRequester().setOrganization(ParserUtils.toReference(izDetail.requestingOrganization));
+			getRequester().setOrganization(ParserUtils.toReference(izDetail.requestingOrganization, requester, REQUESTER));
 		}
 		izDetail.requestingOrganization.addTelecom(orderingProviderContact);
 	}

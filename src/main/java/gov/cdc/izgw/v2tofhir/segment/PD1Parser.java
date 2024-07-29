@@ -63,7 +63,7 @@ public class PD1Parser extends AbstractSegmentParser {
 	@ComesFrom(path = "Patient.generalPractitioner.Organization", field = 3, comment = "Patient Primary Facility")
 	public void setPatientPrimaryFacility(Organization patientPrimaryFacility) {
 		addResource(patientPrimaryFacility);
-		patient.addGeneralPractitioner(ParserUtils.toReference(patientPrimaryFacility));
+		patient.addGeneralPractitioner(ParserUtils.toReference(patientPrimaryFacility, patient, "general-practitioner"));
 	}
 
 	/**
@@ -73,7 +73,7 @@ public class PD1Parser extends AbstractSegmentParser {
 	@ComesFrom(path = "Patient.generalPractitioner.Practitioner", field = 4, comment = "Patient Primary Care Provider Name & ID No.")
 	public void setPatientPrimaryCareProviderNameIdNo(Practitioner patientPrimaryCareProviderNameIdNo) {
 		addResource(patientPrimaryCareProviderNameIdNo);
-		patient.addGeneralPractitioner(ParserUtils.toReference(patientPrimaryCareProviderNameIdNo));
+		patient.addGeneralPractitioner(ParserUtils.toReference(patientPrimaryCareProviderNameIdNo, patient, "general-practitioner"));
 	}
 
 	/**

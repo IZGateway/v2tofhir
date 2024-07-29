@@ -37,8 +37,8 @@ import ca.uhn.hl7v2.model.Varies;
 import gov.cdc.izgw.v2tofhir.annotation.Produces;
 import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
+import gov.cdc.izgw.v2tofhir.utils.IzQuery;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
-import gov.cdc.izgw.v2tofhir.utils.QBPUtils;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -86,28 +86,28 @@ public class QPDParser extends AbstractSegmentParser {
 	private static final String[][] v2QueryNames = {
 		{ 	"Z34", "Request Immunization History", "CDCPHINVS", "Immunization",
 			// QPD Parameter Name, V2 Type to convert from, FHIR Query Parameter, FHIR Type to convert parmater to
-			"PatientList", "CX", QBPUtils.PATIENT_LIST, Identifier.class.getSimpleName(),
+			"PatientList", "CX", IzQuery.PATIENT_LIST, Identifier.class.getSimpleName(),
 			"PatientName", "XPN", "patient.name", HumanName.class.getSimpleName(), 
-			"PatientMotherMaidenName", "XPN", QBPUtils.PATIENT_MOTHERS_MAIDEN_NAME, HumanName.class.getSimpleName(), 
-			"PatientDateOfBirth", "TS", QBPUtils.PATIENT_BIRTHDATE, DateType.class.getSimpleName(),
-			"PatientSex", "IS", QBPUtils.PATIENT_GENDER, CodeType.class.getSimpleName(), 
-			"PatientAddress", "XAD", QBPUtils.PATIENT_ADDRESS, Address.class.getSimpleName(), 
-			"PatientHomePhone", "XTN", QBPUtils.PATIENT_HOMEPHONE, ContactPoint.class.getSimpleName(),
-			"PatientMultipleBirthIndicator", QBPUtils.PATIENT_MULTIPLE_BIRTH_INDICATOR, null, BooleanType.class.getSimpleName(),
-			"PatientBirthOrder", "NM", QBPUtils.PATIENT_MULTIPLE_BIRTH_ORDER, PositiveIntType.class.getSimpleName(),
+			"PatientMotherMaidenName", "XPN", IzQuery.PATIENT_MOTHERS_MAIDEN_NAME, HumanName.class.getSimpleName(), 
+			"PatientDateOfBirth", "TS", IzQuery.PATIENT_BIRTHDATE, DateType.class.getSimpleName(),
+			"PatientSex", "IS", IzQuery.PATIENT_GENDER, CodeType.class.getSimpleName(), 
+			"PatientAddress", "XAD", IzQuery.PATIENT_ADDRESS, Address.class.getSimpleName(), 
+			"PatientHomePhone", "XTN", IzQuery.PATIENT_HOMEPHONE, ContactPoint.class.getSimpleName(),
+			"PatientMultipleBirthIndicator", IzQuery.PATIENT_MULTIPLE_BIRTH_INDICATOR, null, BooleanType.class.getSimpleName(),
+			"PatientBirthOrder", "NM", IzQuery.PATIENT_MULTIPLE_BIRTH_ORDER, PositiveIntType.class.getSimpleName(),
 			"ClientLastUpdateDate", "TS", null, InstantType.class.getSimpleName(),
 			"ClientLastUpdateFacility", "HD", null, Identifier.class.getSimpleName()
 		},
 		{	"Z44", "Request Evaluated History and Forecast", "CDCPHINVS", "ImmunizationRecommendation",
-			"PatientList", "CX", QBPUtils.PATIENT_LIST, Identifier.class.getSimpleName(),
+			"PatientList", "CX", IzQuery.PATIENT_LIST, Identifier.class.getSimpleName(),
 			"PatientName", "XPN", "patient.name", HumanName.class.getSimpleName(), 
-			"PatientMotherMaidenName", "XPN", QBPUtils.PATIENT_MOTHERS_MAIDEN_NAME, HumanName.class.getSimpleName(), 
-			"PatientDateOfBirth", "TS", QBPUtils.PATIENT_BIRTHDATE, DateType.class.getSimpleName(),
-			"PatientSex", "IS", QBPUtils.PATIENT_GENDER, CodeType.class.getSimpleName(), 
-			"PatientAddress", "XAD", QBPUtils.PATIENT_ADDRESS, Address.class.getSimpleName(), 
-			"PatientHomePhone", "XTN", QBPUtils.PATIENT_HOMEPHONE, ContactPoint.class.getSimpleName(),
-			"PatientMultipleBirthIndicator", QBPUtils.PATIENT_MULTIPLE_BIRTH_INDICATOR, null, BooleanType.class.getSimpleName(),
-			"PatientBirthOrder", "NM", QBPUtils.PATIENT_MULTIPLE_BIRTH_ORDER, PositiveIntType.class.getSimpleName(),
+			"PatientMotherMaidenName", "XPN", IzQuery.PATIENT_MOTHERS_MAIDEN_NAME, HumanName.class.getSimpleName(), 
+			"PatientDateOfBirth", "TS", IzQuery.PATIENT_BIRTHDATE, DateType.class.getSimpleName(),
+			"PatientSex", "IS", IzQuery.PATIENT_GENDER, CodeType.class.getSimpleName(), 
+			"PatientAddress", "XAD", IzQuery.PATIENT_ADDRESS, Address.class.getSimpleName(), 
+			"PatientHomePhone", "XTN", IzQuery.PATIENT_HOMEPHONE, ContactPoint.class.getSimpleName(),
+			"PatientMultipleBirthIndicator", IzQuery.PATIENT_MULTIPLE_BIRTH_INDICATOR, null, BooleanType.class.getSimpleName(),
+			"PatientBirthOrder", "NM", IzQuery.PATIENT_MULTIPLE_BIRTH_ORDER, PositiveIntType.class.getSimpleName(),
 			"ClientLastUpdateDate", "TS", null, InstantType.class.getSimpleName(),
 			"ClientLastUpdateFacility", "HD", null, Identifier.class.getSimpleName()
 		},
@@ -274,27 +274,27 @@ public class QPDParser extends AbstractSegmentParser {
 			for (StringType line: addr.getLine()) {
 				appendParameter(request, line, name);
 			}
-			used = addParam(request, addr.getCity(), QBPUtils.PATIENT_ADDRESS_CITY);
-			used |= addParam(request, addr.getState(), QBPUtils.PATIENT_ADDRESS_STATE);
-			used |= addParam(request, addr.getPostalCode(), QBPUtils.PATIENT_ADDRESS_POSTAL);
-			used |= addParam(request, addr.getCountry(), QBPUtils.PATIENT_ADDRESS_COUNTRY);
+			used = addParam(request, addr.getCity(), IzQuery.PATIENT_ADDRESS_CITY);
+			used |= addParam(request, addr.getState(), IzQuery.PATIENT_ADDRESS_STATE);
+			used |= addParam(request, addr.getPostalCode(), IzQuery.PATIENT_ADDRESS_POSTAL);
+			used |= addParam(request, addr.getCountry(), IzQuery.PATIENT_ADDRESS_COUNTRY);
 			break;
 		case "HumanName":
 			HumanName hn = (HumanName) converted;
-			if (name.equals(QBPUtils.PATIENT_MOTHERS_MAIDEN_NAME)) {
-				used = addParam(request, hn.getFamily(), QBPUtils.PATIENT_MOTHERS_MAIDEN_NAME); 
+			if (name.equals(IzQuery.PATIENT_MOTHERS_MAIDEN_NAME)) {
+				used = addParam(request, hn.getFamily(), IzQuery.PATIENT_MOTHERS_MAIDEN_NAME); 
 				// support multiple values for given
 				for (StringType given : hn.getGiven()) {
-					used |= appendParameter(request, given, QBPUtils.PATIENT_MOTHERS_MAIDEN_NAME + "-given");
+					used |= appendParameter(request, given, IzQuery.PATIENT_MOTHERS_MAIDEN_NAME + "-given");
 				}
-				used |= addParam(request, hn.getSuffixAsSingleString(), QBPUtils.PATIENT_MOTHERS_MAIDEN_NAME + "-suffix");
+				used |= addParam(request, hn.getSuffixAsSingleString(), IzQuery.PATIENT_MOTHERS_MAIDEN_NAME + "-suffix");
 			} else {
-				used = addParam(request, hn.getFamily(), QBPUtils.PATIENT_NAME_FAMILY); 
+				used = addParam(request, hn.getFamily(), IzQuery.PATIENT_NAME_FAMILY); 
 				// support multiple values for given
 				for (StringType given : hn.getGiven()) {
-					used |= appendParameter(request, given, QBPUtils.PATIENT_NAME_GIVEN);
+					used |= appendParameter(request, given, IzQuery.PATIENT_NAME_GIVEN);
 				}
-				used |= addParam(request, hn.getSuffixAsSingleString(), QBPUtils.PATIENT_NAME_SUFFIX);
+				used |= addParam(request, hn.getSuffixAsSingleString(), IzQuery.PATIENT_NAME_SUFFIX);
 			}
 			break;
 		case "Identifier":

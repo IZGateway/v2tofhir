@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -15,6 +16,7 @@ import org.hl7.fhir.r4.model.IdType;
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Property;
 import org.hl7.fhir.r4.model.Reference;
+import org.hl7.fhir.r4.model.Resource;
 import org.hl7.fhir.r4.model.StringType;
 
 import ca.uhn.hl7v2.HL7Exception;
@@ -37,6 +39,10 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class ParserUtils {
+	/** Key under which search names are stored for a reference */
+	public static final String SEARCH_NAMES = "searchNames";
+	/** Key under which reverse search names are stored for a reference */
+	public static final String REVERSE_NAMES = "reverseNames";
 	private ParserUtils() {}
 	
 	/**
@@ -561,6 +567,8 @@ public class ParserUtils {
 			return null;
 		}
 	}
+	
+	
 	/**
 	 * Create or get the existing reference for a resource.  
 	 *
@@ -573,16 +581,34 @@ public class ParserUtils {
 	 * 
 	 * @see #getResource(Class, Reference)
 	 * @param resource	The resource to create the reference to
+	 * @param source	The resource which points to the newly created reference
+	 * @param searchNames The name used to reference this from the source 
 	 * @return	The created Reference
 	 */
-	public static Reference toReference(DomainResource resource) {
+	public static Reference toReference(Resource resource, Resource source, String ... searchNames) {
+		Reference ref = toReference(resource, SEARCH_NAMES, searchNames);
+
+		if (source != null) {
+			// Track forward references
+			addIncludeReferences(source, ref, true);
+			
+			// Track Reverse references
+			Reference rev = toReference(source, REVERSE_NAMES, searchNames);
+			addIncludeReferences(resource, rev, false);
+		}
+		
+		return ref;
+	}
+
+	private static Reference toReference(Resource resource, String userDataNamesField, String ...searchNames) {
 		
 		if (resource == null) {
 			throw new NullPointerException("Resource cannot be null");
 		}
 		IdType id = resource.getIdElement();
 		
-		Reference ref = (Reference) resource.getUserData("Reference"); 
+		Reference ref = (Reference) resource.getUserData("Reference");
+		
 		if (ref == null) {
 			ref = new Reference();
 			// Link the resource to the reference
@@ -590,19 +616,44 @@ public class ParserUtils {
 			// And the reference to the resource
 			ref.setUserData("Resource", resource);
 		}
+		addSearchNames(ref, userDataNamesField, searchNames);
 		
 		if (id != null) {
-			ref.setReference(id.getResourceType() + "/" + id.getIdPart());
+			ref.setReferenceElement(id);
 		}
 		
+		updateReference(resource, ref);
+		return ref;
+	}
+
+	/**
+	 * Make references nicer by adding an identifier and display
+	 * properties, but don't overwrite any existing ones.
+	 * 
+	 * Essentially, the first referencing improving property
+	 * is set, but no further ones will be added.
+	 * 
+	 * @param resource	The resource the reference points to
+	 * @param ref	The reference to update.
+	 */
+	private static void updateReference(Resource resource, Reference ref) {
 		// Make very nice references by adding identifier and display
-		Identifier ident = (Identifier) getFirstChild(resource, "identifier");
-		ref.setIdentifier(ident);
+		
+		// We take advantage of some polymorphic HAPI FHIR capabilities
+		// to get attributes with common names to get the identifier and name 
+		// from the resource.
+		if (!ref.hasIdentifier()) {
+			Identifier ident = (Identifier) getFirstChild(resource, "identifier");
+			if (ident != null) {
+				ref.setIdentifier(ident);
+			}
+		}
+		
 		// Don't break the reference's display if it already has one.  First name
 		// in is kept.
-		if (!ref.hasDisplay()) { 
+		if (!ref.hasDisplay()) {
 			IBase name = getFirstChild(resource, "name");
-			// And don't write out a useless display value.
+			// don't write out a useless display value.
 			if (name != null && !name.isEmpty()) {
 				if (name instanceof HumanName hn) {
 					ref.setDisplay(TextUtils.toText(hn));
@@ -611,14 +662,39 @@ public class ParserUtils {
 				}
 			}
 		}
-		return ref;
 	}
+
+	private static void addIncludeReferences(Resource resource, Reference ref, boolean isForward) {
+		String direction = isForward ? "References" : "Reverses";
+		@SuppressWarnings("unchecked")
+		Set<Reference> refs = (Set<Reference>) resource.getUserData(direction);
+		if (refs == null) {
+			refs = new LinkedHashSet<>();
+			resource.setUserData(direction, refs);
+		}
+		refs.add(ref);
+	}
+
+	private static void addSearchNames(Reference ref, String userDataNamesField, String... searchNames) {
+		for (String searchName: searchNames) {
+			String names = ref.getUserString(userDataNamesField);
+			if (names == null) {
+				ref.setUserData(userDataNamesField, searchName);
+			} else {
+				if (!Arrays.asList(names.split(",")).contains(searchName)) {
+					names += "," + searchName;
+				}
+				ref.setUserData(userDataNamesField, names);
+			}
+		}
+	}
+		
 
 	/**
 	 * Get the resource linked to this reference.  This method can be used on the 
 	 * reference returned by toReference.
 	 * 
-	 * @see #toReference(DomainResource)
+	 * @see #toReference(DomainResource, Resource, String...)
 	 * 
 	 * @param <T>	The class of the resource
 	 * @param clazz	The class
@@ -636,7 +712,7 @@ public class ParserUtils {
 	 * @param name	The name of the property
 	 * @return	The value of the property
 	 */
-	public static IBase getFirstChild(DomainResource r, String name) {
+	public static IBase getFirstChild(Resource r, String name) {
 		Property p = r.getChildByName(name);
 		if (p == null || p.getValues().isEmpty()) {
 			return null;

@@ -32,6 +32,10 @@ import lombok.extern.slf4j.Slf4j;
 @Produces(segment="MSH", resource=MessageHeader.class, extra = { Organization.class, OperationOutcome.class, Bundle.class })
 @Slf4j
 public class MSHParser extends AbstractSegmentParser {
+	private static final String SENDER = "sender";
+
+	private static final String RECEIVER = "receiver";
+
 	private MessageHeader mh;
 	
 	private static final String SENDING_ORGANIZATION = "sendingOrganization";
@@ -77,7 +81,7 @@ public class MSHParser extends AbstractSegmentParser {
 	public void setSourceSender(Identifier ident) {
 		Organization sendingOrganization = getOrganization(SENDING_ORGANIZATION);
 		sendingOrganization.addIdentifier(ident);
-		mh.setResponsible(ParserUtils.toReference(sendingOrganization));
+		mh.setResponsible(ParserUtils.toReference(sendingOrganization, mh, "responsible"));
 	}
 	
 	/**
@@ -87,7 +91,7 @@ public class MSHParser extends AbstractSegmentParser {
 	 * @param senderEndpoint	The identifier of the sending application.
 	 */
 	@ComesFrom(path="MessageHeader.source.endpoint", field = 3, 
-			   also={ "Organization.endpoint.identifier", "Endpoint.name", "Endpoint.identifier" }, 
+			   also={ "MessageHeader.sender", "Organization.endpoint.identifier", "Endpoint.name", "Endpoint.identifier" }, 
 			   comment="Sending Application")
 	public void setSourceSenderEndpoint(Identifier senderEndpoint) {
 		mh.getSource().setEndpoint(senderEndpoint.getSystem());
@@ -95,20 +99,21 @@ public class MSHParser extends AbstractSegmentParser {
 		Endpoint ep = createResource(Endpoint.class);
 		ep.setName(senderEndpoint.getSystem());
 		ep.addIdentifier().setValue(senderEndpoint.getSystem());
-		sendingOrganization.getEndpoint().add(ParserUtils.toReference(ep));
-		ParserUtils.toReference(sendingOrganization);
+		sendingOrganization.getEndpoint().add(ParserUtils.toReference(ep, sendingOrganization, "endpoint"));
+		mh.setSender(ParserUtils.toReference(sendingOrganization, mh, SENDER));
 	}
 	
 	/**
 	 * Set the sending facility
 	 * @param sendingFacility The sending facility
 	 */
-	@ComesFrom(path="MessageHeader.source.name", field = 4, comment="Sending Facility")
+	@ComesFrom(path="MessageHeader.source.name", field = 4, comment="Sending Facility",
+			also="MessageHeader.sender")
 	public void setSourceSenderName(Identifier sendingFacility) {
 		mh.getSource().setName(sendingFacility.getSystem());
 		Organization sendingOrganization = getOrganization(SENDING_ORGANIZATION);
 		sendingOrganization.setName(sendingFacility.getSystem());
-		ParserUtils.toReference(sendingOrganization);
+		mh.setSender(ParserUtils.toReference(sendingOrganization, mh, SENDER));
 	}
 	
 	private Organization getOrganization(String organizationType) {
@@ -116,11 +121,11 @@ public class MSHParser extends AbstractSegmentParser {
 		if (organization == null) {
 			if (SENDING_ORGANIZATION.equals(organizationType)) {
 				organization = createResource(Organization.class);
-				mh.setSender(ParserUtils.toReference(organization));
+				mh.setSender(ParserUtils.toReference(organization, mh, SENDER));
 				mh.setUserData(organizationType, organization);
 			} else if (DESTINATION_ORGANIZATION.equals(organizationType)) {
 				organization = createResource(Organization.class);
-				mh.getDestinationFirstRep().setReceiver(ParserUtils.toReference(organization));
+				mh.getDestinationFirstRep().setReceiver(ParserUtils.toReference(organization, mh, RECEIVER));
 				mh.setUserData(organizationType, organization);
 			} else {
 				throw new IllegalArgumentException("Unrecognized organization type: " + organizationType);
@@ -149,7 +154,7 @@ public class MSHParser extends AbstractSegmentParser {
 				receivingOrganization.addEndpoint(endpoint);
 			}
 		}
-		ParserUtils.toReference(receivingOrganization);
+		mh.getDestinationFirstRep().setReceiver(ParserUtils.toReference(receivingOrganization, mh, RECEIVER));
 	}
 	
 	
@@ -165,9 +170,8 @@ public class MSHParser extends AbstractSegmentParser {
 		Organization organization = getOrganization(DESTINATION_ORGANIZATION);
 		Endpoint endpoint = createResource(Endpoint.class);
 		endpoint.addIdentifier(receiverEndpoint);
-		organization.addEndpoint(ParserUtils.toReference(endpoint));
-		ParserUtils.toReference(organization);
-				
+		organization.addEndpoint(ParserUtils.toReference(endpoint, organization, "endpoint"));
+		mh.getDestinationFirstRep().setReceiver(ParserUtils.toReference(organization, mh, RECEIVER));
 	}
 	
 	/**
@@ -178,10 +182,9 @@ public class MSHParser extends AbstractSegmentParser {
 			   also="MessageHeader.destination.receiver.Organization.identifier")
 	public void setDestinationReceiverName(Identifier receiverName) {
 		mh.getDestinationFirstRep().setName(receiverName.getSystem());
-		
 		Organization organization = getOrganization(DESTINATION_ORGANIZATION);
 		organization.addIdentifier(new Identifier().setValue(receiverName.getSystem()));
-		ParserUtils.toReference(organization);
+		mh.getDestinationFirstRep().setReceiver(ParserUtils.toReference(organization, mh, RECEIVER));
 	}
 	
 	

@@ -287,7 +287,7 @@ public class ContactPointParser implements DatatypeParser<ContactPoint> {
 					.setValue(url)
 					.setSystem(system);
 		}
-		if (url.matches("^([\\-a-zA-Z0-9]+|[0-9]{1,3})([.\\-a-zA-Z0-9]+|[0-9]{1-3})+(/.*)?$")) {
+		if (url.matches("^([\\-a-zA-Z0-9]+|\\d{1,3})([.\\-a-zA-Z0-9]+|\\d{1,3})+(/.*)?$")) {
 			if (url.startsWith("www") || url.contains("/")) {
 				url = "http://" + url;
 				system = ContactPointSystem.URL;

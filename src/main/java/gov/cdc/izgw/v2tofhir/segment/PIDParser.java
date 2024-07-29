@@ -23,8 +23,10 @@ import org.hl7.fhir.r4.model.HumanName.NameUse;
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.InstantType;
 import org.hl7.fhir.r4.model.IntegerType;
+import org.hl7.fhir.r4.model.MessageHeader;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.Provenance;
+import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.RelatedPerson;
 import org.hl7.fhir.r4.model.StringType;
 
@@ -93,6 +95,13 @@ public class PIDParser extends AbstractSegmentParser {
 	@Override 
 	public IBaseResource setup() {
 		patient = this.createResource(Patient.class);
+		
+		MessageHeader mh = getFirstResource(MessageHeader.class);
+		if (mh != null) {
+			Reference ref = ParserUtils.toReference(patient, mh, "focus");
+			mh.addFocus(ref);
+		}
+
 		return patient;
 	}
 	
@@ -312,7 +321,12 @@ public class PIDParser extends AbstractSegmentParser {
 			// Deal with common legacy codes
 			Coding c = new Coding(Systems.CDCREC, getRaceCategory(code), null);
 			if (c.hasCode()) {
-				raceExtension.addExtension(OMB_CATEGORY, c);
+				Extension category = raceExtension.getExtensionByUrl(OMB_CATEGORY);
+				if (category == null) {
+					raceExtension.addExtension(OMB_CATEGORY, c);
+				} else {
+					category.setValue(c);
+				}
 				return true;
 			} 
 		}
@@ -349,18 +363,29 @@ public class PIDParser extends AbstractSegmentParser {
 	}
 	
 	private boolean setCategoryAndDetail(Extension extension, Coding coding, String code, UnaryOperator<String> categorize) {
+		Extension category = extension.getExtensionByUrl(OMB_CATEGORY);
+ 
 		if ("ASKU".equals(code) || "UNK".equals(code)) {
 			// Set OMB category to code and quit
 			extension.setExtension(null);  // Clear prior extensions, only ombCategory can be present
-			extension.addExtension(OMB_CATEGORY, new Coding(Systems.NULL_FLAVOR, code, null));
+			if (category == null) {
+				extension.addExtension(OMB_CATEGORY, new Coding(Systems.NULL_FLAVOR, code, null));
+			} else {
+				category.setValue(new Coding(Systems.NULL_FLAVOR, code, null));
+			}
 			return true;
 		}
 		
 		// Figure out category and detail codes
-		Coding category = new Coding().setCode(categorize.apply(code)).setSystem(Systems.CDCREC);
-		if (category.hasCode()) {
+		Coding categoryCode = new Coding().setCode(categorize.apply(code)).setSystem(Systems.CDCREC);
+		if (categoryCode.hasCode()) {
 			// if category has a code, it was a legitimate race code
-			extension.addExtension(OMB_CATEGORY, category);
+			if (category == null) {
+				extension.addExtension(OMB_CATEGORY, categoryCode);
+			} else {
+				category.setValue(categoryCode);
+			}
+
 			// If if smells enough like a CDCREC code
 			if (coding.getCode().matches("^[1-2]\\d{3}-\\d$")) {
 				// Add to detailed.
@@ -422,7 +447,12 @@ public class PIDParser extends AbstractSegmentParser {
 			// Deal with common legacy codes
 			Coding c = new Coding(Systems.CDCREC, getEthnicityCategory(code), null);
 			if (c.hasCode()) {
-				ethnicityExtension.addExtension(OMB_CATEGORY, c);
+				Extension category = ethnicityExtension.getExtensionByUrl(OMB_CATEGORY);
+				if (category == null) {
+					ethnicityExtension.addExtension(OMB_CATEGORY, c);
+				} else {
+					category.setValue(c);
+				}
 				return;
 			}
 		}
@@ -614,7 +644,7 @@ public class PIDParser extends AbstractSegmentParser {
 		account.addIdentifier(accountId);
 		if (isNotEmpty(patient)) {
 			account.setStatus(AccountStatus.ACTIVE);
-			account.addSubject(ParserUtils.toReference(patient));
+			account.addSubject(ParserUtils.toReference(patient, account, "patient", "subject"));
 		}
 	}
 
@@ -651,7 +681,7 @@ public class PIDParser extends AbstractSegmentParser {
 			patient.setUserData("mother", rp);
 		}
 		rp.addIdentifier(mother);
-		rp.setPatient(ParserUtils.toReference(patient));
+		rp.setPatient(ParserUtils.toReference(patient, rp, "patient"));
 		rp.addRelationship(Codes.MOTHER);
 	}
 	

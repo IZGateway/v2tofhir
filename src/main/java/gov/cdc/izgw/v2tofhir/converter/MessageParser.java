@@ -14,7 +14,6 @@ import java.util.function.Supplier;
 import org.hl7.fhir.instance.model.api.IBaseMetaType;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Attachment;
-import org.hl7.fhir.r4.model.Binary;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Bundle.BundleType;
@@ -35,6 +34,7 @@ import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.model.Segment;
 import ca.uhn.hl7v2.model.Structure;
 import ca.uhn.hl7v2.model.Type;
+import ca.uhn.hl7v2.parser.PipeParser;
 import gov.cdc.izgw.v2tofhir.segment.ERRParser;
 import gov.cdc.izgw.v2tofhir.segment.StructureParser;
 import gov.cdc.izgw.v2tofhir.utils.Codes;
@@ -150,6 +150,16 @@ public class MessageParser {
 	}
 	
 	/**
+	 * Convert the hl7Message to a new Message using a PipeParser and then convert it.
+	 * @param hl7Message	The HL7 Message
+	 * @return The converted bundle
+	 * @throws HL7Exception if an error occurred while parsing.
+	 */
+	public Bundle convert(String hl7Message) throws HL7Exception {
+    	return convert(new PipeParser().parse(hl7Message)); 
+	}
+	
+	/**
 	 * Convert an HL7 V2 message into a Bundle of FHIR Resources.
 	 * 
 	 * The message is iterated over to the segment level, and each segment is then converted
@@ -169,9 +179,6 @@ public class MessageParser {
 		} catch (HL7Exception e) {
 			warn("Cannot retrieve MSH segment from message");
 		}
-		Binary messageData = createResource(Binary.class);
-		// See https://confluence.hl7.org/display/V2MG/HL7+locally+registered+V2+Media+Types
-		messageData.setContentType("application/x.hl7v2+er7; charset=utf-8");
 		byte[] data;
 		try {
 			data = msg.encode().getBytes(StandardCharsets.UTF_8);
@@ -185,19 +192,17 @@ public class MessageParser {
 		} catch (HL7Exception e) {
 			warnException("Could not encode the message: {}", e.getMessage(), e);
 		}
-		messageData.setData(data);
 		DocumentReference dr = createResource(DocumentReference.class);
+		dr.setUserData("source", MessageParser.class.getName()); // Mark infrastructure created resources
 		dr.setStatus(DocumentReferenceStatus.CURRENT);
+		// See https://confluence.hl7.org/display/V2MG/HL7+locally+registered+V2+Media+Types
 		Attachment att = dr.addContent().getAttachment().setContentType("application/x.hl7v2+er7; charset=utf-8");
-				
-		att.setUrl(messageData.getIdElement().toString());
 		att.setData(data);
 
 		// Add the encoded message as the original text for the content in both the binary
 		// and document reference resources.
 		if (encoded != null) {
 			StringType e = new StringType(encoded);
-			messageData.getContentElement().addExtension(ORIGINAL_TEXT, e);
 			dr.getContentFirstRep().addExtension(ORIGINAL_TEXT, e);
 		}
 
@@ -469,8 +474,9 @@ public class MessageParser {
 		updated.add(resource);
 		if (getContext().isStoringProvenance() && resource instanceof DomainResource dr) { 
 			Provenance p = createResource(Provenance.class);
+			p.setUserData("source", MessageParser.class.getName());	// Mark infrastructure created resources
 			resource.setUserData(Provenance.class.getName(), p);
-			p.addTarget(ParserUtils.toReference(dr));
+			p.addTarget(ParserUtils.toReference(dr, p, "target"));
 			p.setRecorded(new Date());
 			// Copy constants so that they are not modified.
 			p.setActivity(Codes.CREATE_ACTIVITY.copy());
@@ -478,20 +484,18 @@ public class MessageParser {
 			p.addAgent().setType(Codes.ASSEMBLER_AGENT.copy());
 			DocumentReference doc = getFirstResource(DocumentReference.class);
 			if (doc != null) {
-				p.addEntity().setRole(ProvenanceEntityRole.QUOTATION).setWhat(ParserUtils.toReference(doc));
+				p.addEntity().setRole(ProvenanceEntityRole.QUOTATION).setWhat(ParserUtils.toReference(doc, p, "entity"));
 			}
 		}
-		if (resource instanceof Location location) {
+		if (resource instanceof Location location && location.hasPartOf()) {
 			// Location resources can be created by the DatatypeConverter
 			// in hierarchical form.  Add any partOf resources as well.
-			if (location.hasPartOf()) {
-				addResource(
-					null, 
-					ParserUtils.getResource(
-						Location.class, location.getPartOf()
-					)
-				);
-			}
+			addResource(
+				null, 
+				ParserUtils.getResource(
+					Location.class, location.getPartOf()
+				)
+			);
 		}
 		return resource;
 	}
