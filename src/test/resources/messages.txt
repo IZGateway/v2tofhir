@@ -1,0 +1,1109 @@
+# RSP Response Messages
+MSH|^~\&|\
+	TEST|MOCK|\
+	DEST|DAPP|\
+	20240618083101-0400||\
+	RSP^K11^RSP_K11|\
+	RESULT-01|\
+	P|2.5.1|||\
+	ER|AL|\
+	||||Z32^CDCPHINVS
+	@MessageHeader.count() = 1 // It has one message header	
+	@MessageHeader.source.name = "MOCK"
+	@MessageHeader.source.endpoint = "TEST"
+	@MessageHeader.destination.name = "DAPP"
+	@MessageHeader.destination.endpoint = "DEST"
+	@Bundle.timestamp = "2024-06-18T08:31:01-04:00" 
+	@MessageHeader.event.code.exists($this = "K11") // The event code is K11
+	@MessageHeader.meta.tag.code.exists($this = "RSP")   // The message type is RSP
+	@MessageHeader.meta.tag.count() = 1   // There's but one message tag
+	@MessageHeader.definition.exists($this.endsWith("RSP_K11")) // The profile is RSP_K11
+	@MessageHeader.definition.count() = 1   // There's but one definition
+MSA|AA|QUERY-01
+	@OperationOutcome.count() >= 1	// There's at least one OperationOutcome resource
+	@MessageHeader.response.code.exists($this="ok")	// Response code is OK (FHIR coded value translation from AA)
+	@MessageHeader.response.identifier.exists($this="QUERY-01")	// response identifier is QUERY-01
+	@OperationOutcome.issue.code.exists($this = "informational")	// issue.code is INFORMATIONAL
+	@OperationOutcome.issue.severity.exists($this = "information")	// issue.severity is INFORMATION
+	@OperationOutcome.issue.details.coding.exists($this.code = "AA" and $this.system.endsWith("0008")) \
+		// issues.details.coding has a code of AA from HL7-0008 
+QAK|QUERY-01|OK|Z34^Request Immunization History^CDCPHINVS
+	@OperationOutcome.count() >= 2	// There's at least two OperationOutcome resources
+	@OperationOutcome[1].issue.code.exists($this = "informational")	// issue.code is INFORMATIONAL
+	@OperationOutcome[1].issue.severity.exists($this = "information") // issue.code is INFORMATION
+	@OperationOutcome[1].issue.details.coding.exists($this.code = "OK" and $this.system.endsWith("0208")) \
+		// issues.details.coding has a code of OK from HL7-0208
+ERR|||0^Message Accepted^HL70357|I||||3 of 3 immunizations have been added to IIS
+	@OperationOutcome[0].issue.location.empty() // No location set
+	@OperationOutcome[0].issue.details.coding  \
+		.where($this.code = "0" and $this.system.endsWith("0357") and $this.display = "Message Accepted") \
+		// Code is OK (Message Accepted) from table HL70357
+	@OperationOutcome[0].issue.code.exists($this = "informational") // Code is informational
+	@OperationOutcome[0].issue.severity.exists($this = "information") // Severity is information
+	@OperationOutcome[0].issue.details.coding.where(code="I" and system.endsWith("0516")) \
+		// Error code is I from Table 0516
+	@OperationOutcome[0].issue.diagnostics.exists($this = "3 of 3 immunizations have been added to IIS") \
+		// details.text is 3 of 3 immunizations ...
+QPD|Z34^Request Immunization History^CDCPHINVS|QUERY-01|234814^^^MYEHR^MR
+	@Parameters.meta.tag[0].exists( \
+		$this.code = "Z34" and \ 
+		$this.display = "Request Immunization History" and \
+		$this.system = "urn:oid:2.16.840.1.113883.12.471") \
+		// tag[1] is Z34 (Request Immunization History) from CDVPHINVS system
+	@Parameters.meta.tag[0].system.exists($this = "urn:oid:2.16.840.1.113883.12.471") // What is the actual value of CDCPHINVS
+	@Parameters.meta.tag[1].exists($this.code = "QUERY-01" and $this.system = "QueryTag") \
+		// tag[1] is QUERY-01 from QueryTag system
+	@Parameters.parameter.where(\
+		"patient.identifier" = name and \
+		value.ofType(Identifier) \
+			 .where(value = "234814" and system = "MYEHR") \
+			 .where("MR" in type.coding.code) \
+	) \
+	// The patient.identifier parameter is an identifier with a value of 234814 from the MYEHR system and the type is MR (Medical Record Number)
+	//  .parameter.where("PatientList" = $this.name) \
+	//	.exists($this.name = "PatientList") \
+	// 	.value.ofType(Identifier).exists() \
+	//	.where(value = "234814") \
+	//	.where(system = "MYEHR") \
+	//	.where("MR" in type.coding.code).exists() \
+	@%context.entry.where(resource.ofType(Parameters)).request.url.exists($this = "/fhir/Immunization?patient.identifier=MYEHR%7C234814")
+PID|1||234814^^^MYEHR^MR||\
+	FagenAIRA^TheodoricAIRA^ElbertAIRA^^^^L|\
+	DifferentAIRA^TheodoricAIRA^^^^^M|\
+	19631226|M||ASIAN|\
+	1517 Huth Ave^^Wyndmere^ND^58081^^L||\
+	8005551212|||||||||\
+	not HISPANIC
+	@Patient.identifier.exists(value = "234814" and system = "MYEHR" and type.coding.code = "MR") \
+	// Patient MR# is 234814 from MYEHR
+	@Patient.identifier.system.exists($this = "MYEHR") \
+	// identifier system is MYEHR
+	@Patient.name.count() = 1
+	@Patient.name.given[0] = 'TheodoricAIRA'
+	@Patient.name.given[1] = 'ElbertAIRA' 
+	@Patient.name.family = 'FagenAIRA'
+	@Patient.name.exists($this.use = "official")
+	@Patient.extension.exists(\
+		$this.url = "http://hl7.org/fhir/StructureDefinition/patient-mothersMaidenName" and \
+		$this.value = 'DifferentAIRA') // Mother's maiden name is DifferentAIRA 
+	// 19631226|M||ASIAN|
+	@Patient.birthDate = "1963-12-26"
+	@Patient.gender='male'
+	@Patient.extension('http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension \
+		.exists(url="ombCategory" and value.code="2028-9") \
+		// Translated from legacy code for ASIAN to CDCREC 2028-9 
+	@Patient.extension('http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension \
+		.exists(url="text" and value="ASIAN") \
+		// The actual text was ASIAN
+	@Patient.extension('http://hl7.org/fhir/us/core/StructureDefinition/us-core-race')\
+			.where(url='detailed' and value).exists().not() 
+	// 1517 Huth Ave^^Wyndmere^ND^58081^^L||\
+	@Patient.address.count() = 1
+	@Patient.address.line.count().where(1=1).exists($this = 1)
+	@Patient.address.line = '1517 Huth Ave'
+	@Patient.address.city = 'Wyndmere'
+	@Patient.address.state = 'ND'
+	@Patient.address.postalCode='58081'
+	@Patient.address.use.empty()
+	@Patient.telecom.count() = 1
+	@Patient.telecom.value='8005551212' 	
+	@Patient.extension('http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity')
+			.extension.exists(url="ombCategory" and value.code="2186-5") \
+		// Translated from legacy code for not HISPANIC to CDCREC 2186-5 
+	@Patient.extension('http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity')
+			.extension.exists(url="text" and value="not HISPANIC") \
+		// The actual text was not HISPANIC
+	@Patient.extension('http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity')
+			.extension('detailed').not() // There is no detailed ethnicity.  
+NK1|1|FagenAIRA^TheodoricAIRA^^^^^L|MTH^Mom^HL70063|1517 Huth Ave^^Wyndmere^ND^58081^^L
+ORC|RE||65930^DCS||||||20120113|^FagenAIRA^TheodoricAIRA||^FagenAIRA^TheodoricAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20210516||208^208^CVX|0.3|ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^FagenAIRA^TheodoricAIRA||^FagenAIRA^TheodoricAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+
+MSH|^~\&|TEST|MOCK|IZGW|IZGW|20240618083102-0400||RSP^K11^RSP_K11|RESULT-02|P|2.5.1|||ER|AL|||||Z32^CDCPHINVS
+MSA|AA|QUERY-02
+QAK|QUERY-02|OK|Z34^Request Immunization History^CDCPHINVS
+ERR||PD1^^16|101^Required field missing^HL70357|W||||patient immunization registry status is missing|
+QPD|Z34^Request Immunization History^CDCPHINVS|QUERY-02|234815^^^MYEHR^MR
+PID|1||234815^^^MYEHR^MR||FagenAIRA^ChristosAIRA^DemarionAIRA^^^^L|FagenAIRA^ChristosAIRA^^^^^M|20040315|M||ASIAN|1606 Ealfsen St^^Bismarck^ND^58501^^L||{{Telephone Number}}|||||||||not HISPANIC
+NK1|1|FagenAIRA^ChristosAIRA^^^^^L|MTH^Mom^HL70063|1606 Ealfsen St^^Bismarck^ND^58501^^L
+ORC|RE||65930^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20040315||08^08^CVX|.05|ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20040515||08^08^CVX|.05|ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20040515||116^116^CVX||ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20040515||106^106^CVX||ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20040515||49^49^CVX||ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20040515||10^10^CVX||ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20040715||116^116^CVX||ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20040715||106^106^CVX||ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20040715||49^49^CVX||ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20040715||10^10^CVX||ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20040915||08^08^CVX|.05|ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20040915||116^116^CVX||ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20040915||106^106^CVX||ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20040915||10^10^CVX||ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20050315||03^03^CVX|0.5|ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20050315||21^21^CVX||ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20050315||83^83^CVX||ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20050615||106^106^CVX||ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20050615||49^49^CVX||ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^FagenAIRA^ChristosAIRA||^FagenAIRA^ChristosAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+
+MSH|^~\&|TEST|MOCK|IZGW|IZGW|20240618083103-0400||RSP^K11^RSP_K11|RESULT-03|P|2.5.1|||ER|AL|||||Z32^CDCPHINVS
+MSA|AA|QUERY-03
+QAK|QUERY-03|OK|Z34^Request Immunization History^CDCPHINVS
+ERR||PID^1^24|101^Required field missing^HL70357|W||||patient multiple birth indicator is missing|
+QPD|Z34^Request Immunization History^CDCPHINVS|QUERY-03|234816^^^MYEHR^MR
+PID|1||234816^^^MYEHR^MR||FagenAIRA^SophoclesAIRA^JerrieAIRA^^^^L|FagenAIRA^SophoclesAIRA^^^^^M|19760128|M||ASIAN|1760 Ve Marne Ln^^Fargo^ND^58104^^L||{{Telephone Number}}|||||||||not HISPANIC
+NK1|1|FagenAIRA^SophoclesAIRA^^^^^L|MTH^Mom^HL70063|1760 Ve Marne Ln^^Fargo^ND^58104^^L
+ORC|RE||65930^DCS||||||20120113|^FagenAIRA^SophoclesAIRA||^FagenAIRA^SophoclesAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20210429||208^208^CVX|0.3|ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^FagenAIRA^SophoclesAIRA||^FagenAIRA^SophoclesAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^FagenAIRA^SophoclesAIRA||^FagenAIRA^SophoclesAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20210531||208^208^CVX|0.3|ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^FagenAIRA^SophoclesAIRA||^FagenAIRA^SophoclesAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+
+MSH|^~\&|TEST|MOCK|IZGW|IZGW|20240618083104-0400||RSP^K11^RSP_K11|RESULT-04|P|2.5.1|||ER|AL|||||Z32^CDCPHINVS
+MSA|AA|QUERY-04
+QAK|QUERY-04|OK|Z34^Request Immunization History^CDCPHINVS
+ERR||PID^1^7|101^required field missing^HL70357|E||||Birth Date is required.
+QPD|Z34^Request Immunization History^CDCPHINVS|QUERY-04|234817^^^MYEHR^MR
+PID|1||234817^^^MYEHR^MR||NuckollsAIRA^NurhanAIRA^InceAIRA^^^^L|NuckollsAIRA^NurhanAIRA^^^^^M|19521007|M||ASIAN|1154 Laadhoeke St^^Grand Forks^ND^58201^^L||{{Telephone Number}}|||||||||not HISPANIC
+NK1|1|NuckollsAIRA^NurhanAIRA^^^^^L|MTH^Mom^HL70063|1154 Laadhoeke St^^Grand Forks^ND^58201^^L
+ORC|RE||65930^DCS||||||20120113|^NuckollsAIRA^NurhanAIRA||^NuckollsAIRA^NurhanAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20210710||208^208^CVX|0.3|ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^NuckollsAIRA^NurhanAIRA||^NuckollsAIRA^NurhanAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^NuckollsAIRA^NurhanAIRA||^NuckollsAIRA^NurhanAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20210730||208^208^CVX|0.3|ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^NuckollsAIRA^NurhanAIRA||^NuckollsAIRA^NurhanAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+
+MSH|^~\&|TEST|MOCK|IZGW|IZGW|20240618083105-0400||RSP^K11^RSP_K11|RESULT-05|P|2.5.1|||ER|AL|||||Z32^CDCPHINVS
+MSA|AA|QUERY-05
+QAK|QUERY-05|OK|Z34^Request Immunization History^CDCPHINVS
+QPD|Z34^Request Immunization History^CDCPHINVS|QUERY-05|234818^^^MYEHR^MR
+PID|1||234818^^^MYEHR^MR||LaurelAIRA^ZechariahAIRA^KenverAIRA^^^^L|LaurelAIRA^ZechariahAIRA^^^^^M|19970705|M||ASIAN|1964 Aapelle Cir^^Fargo^ND^58104^^L||{{Telephone Number}}|||||||||not HISPANIC
+NK1|1|LaurelAIRA^ZechariahAIRA^^^^^L|MTH^Mom^HL70063|1964 Aapelle Cir^^Fargo^ND^58104^^L
+ORC|RE||65930^DCS||||||20120113|^LaurelAIRA^ZechariahAIRA||^LaurelAIRA^ZechariahAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20210510||208^208^CVX|0.3|ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^LaurelAIRA^ZechariahAIRA||^LaurelAIRA^ZechariahAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^LaurelAIRA^ZechariahAIRA||^LaurelAIRA^ZechariahAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20210611||208^208^CVX|0.3|ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^LaurelAIRA^ZechariahAIRA||^LaurelAIRA^ZechariahAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+
+MSH|^~\&|TEST|MOCK|IZGW|IZGW|20240618083106-0400||RSP^K11^RSP_K11|RESULT-06|P|2.5.1|||ER|AL|||||Z32^CDCPHINVS
+MSA|AA|QUERY-06
+QAK|QUERY-06|OK|Z34^Request Immunization History^CDCPHINVS
+ERR||MSH^1^11|202^Unsupported Processing ID^HL70357|E||||The only Processing ID used to submit HL7 messages to the IIS is \"P\". Debug mode cannot be used. - Message Rejected|
+QPD|Z34^Request Immunization History^CDCPHINVS|QUERY-06|234819^^^MYEHR^MR
+PID|1||234819^^^MYEHR^MR||NavarroAIRA^ZaylinAIRA^DonteAIRA^^^^L|NavarroAIRA^ZaylinAIRA^^^^^M|20100628|F||ASIAN|1719 Zuren Pl^^Kindred^ND^58051^^L||{{Telephone Number}}|||||||||not HISPANIC
+NK1|1|NavarroAIRA^ZaylinAIRA^^^^^L|MTH^Mom^HL70063|1719 Zuren Pl^^Kindred^ND^58051^^L
+ORC|RE||65930^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20100628||08^08^CVX|.05|ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20100828||08^08^CVX|.05|ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20100828||116^116^CVX||ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20100828||106^106^CVX||ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20100828||49^49^CVX||ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20100828||10^10^CVX||ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20101028||116^116^CVX||ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20101028||106^106^CVX||ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20101028||49^49^CVX||ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20101028||10^10^CVX||ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20101228||08^08^CVX|.05|ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20101228||116^116^CVX||ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20101228||106^106^CVX||ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20101228||10^10^CVX||ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20110628||03^03^CVX|0.5|ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20110628||21^21^CVX||ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20110628||83^83^CVX||ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20110928||106^106^CVX||ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20110928||49^49^CVX||ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^NavarroAIRA^ZaylinAIRA||^NavarroAIRA^ZaylinAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+
+MSH|^~\&|TEST|MOCK|IZGW|IZGW|20240618083107-0400||RSP^K11^RSP_K11|RESULT-07|P|2.5.1|||ER|AL|||||Z32^CDCPHINVS
+MSA|AA|QUERY-07
+QAK|QUERY-07|OK|Z34^Request Immunization History^CDCPHINVS
+ERR||PID^1^11^5|999^Application error^HL70357|W|1^illogical date error^HL70533|||12345 is not a valid zip code in MYIIS
+QPD|Z34^Request Immunization History^CDCPHINVS|QUERY-07|234820^^^MYEHR^MR
+PID|1||234820^^^MYEHR^MR||CuyahogaAIRA^MarnyAIRA^MalkaAIRA^^^^L|CuyahogaAIRA^MarnyAIRA^^^^^M|19600507|F||ASIAN|1663 Persoon Ave^^Williston^ND^58801^^L||{{Telephone Number}}|||||||||not HISPANIC
+NK1|1|CuyahogaAIRA^MarnyAIRA^^^^^L|MTH^Mom^HL70063|1663 Persoon Ave^^Williston^ND^58801^^L
+ORC|RE||65930^DCS||||||20120113|^CuyahogaAIRA^MarnyAIRA||^CuyahogaAIRA^MarnyAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20210623||208^208^CVX|0.3|ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^CuyahogaAIRA^MarnyAIRA||^CuyahogaAIRA^MarnyAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^CuyahogaAIRA^MarnyAIRA||^CuyahogaAIRA^MarnyAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20210726||208^208^CVX|0.3|ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^CuyahogaAIRA^MarnyAIRA||^CuyahogaAIRA^MarnyAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+
+MSH|^~\&|TEST|MOCK|IZGW|IZGW|20240618083108-0400||RSP^K11^RSP_K11|RESULT-08|P|2.5.1|||ER|AL|||||Z32^CDCPHINVS
+MSA|AA|QUERY-08
+QAK|QUERY-08|OK|Z34^Request Immunization History^CDCPHINVS
+ERR||RXA^1^5^^1|103^Table value not found^HL70357|W||||vaccination cvx code is unrecognized|
+QPD|Z34^Request Immunization History^CDCPHINVS|QUERY-08|234821^^^MYEHR^MR
+PID|1||234821^^^MYEHR^MR||LaurelAIRA^NyssaAIRA^^^^^L|LaurelAIRA^NyssaAIRA^^^^^M|19670703|F||ASIAN|1586 Dittenseradeel Pl^^Thompson^ND^58278^^L||{{Telephone Number}}|||||||||not HISPANIC
+NK1|1|LaurelAIRA^NyssaAIRA^^^^^L|MTH^Mom^HL70063|1586 Dittenseradeel Pl^^Thompson^ND^58278^^L
+ORC|RE||65930^DCS||||||20120113|^LaurelAIRA^NyssaAIRA||^LaurelAIRA^NyssaAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20210617||208^208^CVX|0.3|ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^LaurelAIRA^NyssaAIRA||^LaurelAIRA^NyssaAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+
+MSH|^~\&|TEST|MOCK|IZGW|IZGW|20240618083109-0400||RSP^K11^RSP_K11|RESULT-09|P|2.5.1|||ER|AL|||||Z32^CDCPHINVS
+MSA|AA|QUERY-09
+QAK|QUERY-09|OK|Z34^Request Immunization History^CDCPHINVS
+ERR||MSH^1^12|203^unsupported version id^HL70357|E||||Unsupported HL7 Version ID
+QPD|Z34^Request Immunization History^CDCPHINVS|QUERY-09|234822^^^MYEHR^MR
+PID|1||234822^^^MYEHR^MR||FagenAIRA^AitanAIRA^JessieAIRA^^^^L|FagenAIRA^AitanAIRA^^^^^M|19790705|M||ASIAN|1709 Eerneuzen Cir^^Williston^ND^58801^^L||{{Telephone Number}}|||||||||not HISPANIC
+NK1|1|FagenAIRA^AitanAIRA^^^^^L|MTH^Mom^HL70063|1709 Eerneuzen Cir^^Williston^ND^58801^^L
+ORC|RE||65930^DCS||||||20120113|^FagenAIRA^AitanAIRA||^FagenAIRA^AitanAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20210705||208^208^CVX|0.3|ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^FagenAIRA^AitanAIRA||^FagenAIRA^AitanAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65930^DCS||||||20120113|^FagenAIRA^AitanAIRA||^FagenAIRA^AitanAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20210727||208^208^CVX|0.3|ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^FagenAIRA^AitanAIRA||^FagenAIRA^AitanAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+
+MSH|^~\&|TEST|MOCK|IZGW|IZGW|20240618083110-0400||RSP^K11^RSP_K11|RESULT-10|P|2.5.1|||ER|AL|||||Z32^CDCPHINVS
+MSA|AA|QUERY-10
+QAK|QUERY-10|OK|Z34^Request Immunization History^CDCPHINVS
+ERR||ORC^^3|101^Required field missing^HL70357|W||||vaccination id is missing|
+QPD|Z34^Request Immunization History^CDCPHINVS|QUERY-10|234823^^^MYEHR^MR
+PID|1||234823^^^MYEHR^MR||NavarroAIRA^SaulAIRA^LaneyAIRA^^^^L|NavarroAIRA^SaulAIRA^^^^^M|19630204|M||ASIAN|1539 Meek Pl^^Belcourt^ND^58316^^L||{{Telephone Number}}|||||||||not HISPANIC
+NK1|1|NavarroAIRA^SaulAIRA^^^^^L|MTH^Mom^HL70063|1539 Meek Pl^^Belcourt^ND^58316^^L
+ORC|RE||65930^DCS||||||20120113|^NavarroAIRA^SaulAIRA||^NavarroAIRA^SaulAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20210706||208^208^CVX|0.3|ml||01^historical^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9 ^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F 
+ORC|RE||65949^DCS||||||20120113|^NavarroAIRA^SaulAIRA||^NavarroAIRA^SaulAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+
+# PIX and PDQ Messages (see https://openpixpdq.sourceforge.net/messagesamples.html)
+# Inbound feed:
+MSH|^~\&|OTHER_IBM_BRIDGE_TLS|IBM|PAT_IDENTITY_X_REF_MGR_MISYS|ALLSCRIPTS|20090224104145-0600||ADT^A04^ADT_A01|0851077658473390286|P|2.3.1
+EVN||20090224104145-0600
+PID|||101^^^IBOT&1.3.6.1.4.1.21367.2009.1.2.370&ISO||FARNSWORTH^STEVE||19661109|M
+PV1||O
+
+# Outbound ack:
+MSH|^~\&|PAT_IDENTITY_X_REF_MGR_MISYS_TLS|ALLSCRIPTS|OTHER_IBM_BRIDGE_TLS|IBM|20090224114149-0500||ACK^A04|OpenPIXPDQ10.243.0.65.19767899354465|P|2.3.1
+MSA|AA|0851077658473390286
+
+
+# PIX Feed (ADT^A01)
+# Inbound feed:
+MSH|^~\&|OTHER_IBM_BRIDGE_TLS|IBM|PAT_IDENTITY_X_REF_MGR_MISYS|ALLSCRIPTS|20090224104152-0600||ADT^A01^ADT_A01|8686183982575368499|P|2.3.1
+EVN||20090224104152-0600
+PID|||102^^^IBOT&1.3.6.1.4.1.21367.2009.1.2.370&ISO||SINGLETON^MARION||19661109|F
+PV1||I
+
+# Outbound ack:
+MSH|^~\&|PAT_IDENTITY_X_REF_MGR_MISYS_TLS|ALLSCRIPTS|OTHER_IBM_BRIDGE_TLS|IBM|20090224114157-0500||ACK^A01|OpenPIXPDQ10.243.0.65.19767899472211|P|2.3.1
+MSA|AA|8686183982575368499
+
+
+# PIX Feed (ADT^A04)
+# Inbound feed:
+MSH|^~\&|OTHER_IBM_BRIDGE_TLS|IBM|PAT_IDENTITY_X_REF_MGR_MISYS|ALLSCRIPTS|20090224104159-0600||ADT^A04^ADT_A01|5072521490828516081|P|2.3.1
+EVN||20090224104159-0600
+PID|||103^^^IBOT&1.3.6.1.4.1.21367.2009.1.2.370&ISO||OTHER_IBM_BRIDGE^MARY||19661109|F
+PV1||O
+
+# Outbound ack:
+MSH|^~\&|PAT_IDENTITY_X_REF_MGR_MISYS_TLS|ALLSCRIPTS|OTHER_IBM_BRIDGE_TLS|IBM|20090224114202-0500||ACK^A04|OpenPIXPDQ10.243.0.65.19767899555969|P|2.3.1
+MSA|AA|5072521490828516081
+
+
+# PIX Update (ADT^A08)
+# Inbound feed:
+MSH|^~\&|OTHER_IBM_BRIDGE_TLS|IBM|PAT_IDENTITY_X_REF_MGR_MISYS|ALLSCRIPTS|20090224104204-0600||ADT^A08^ADT_A01|9241351356666182528|P|2.3.1
+EVN||20090224104204-0600
+PID|||103^^^IBOT&1.3.6.1.4.1.21367.2009.1.2.370&ISO||OTHER_IBM_BRIDGE^MARION||19661109|F
+PV1||O
+
+# Outbound ack:
+MSH|^~\&|PAT_IDENTITY_X_REF_MGR_MISYS_TLS|ALLSCRIPTS|OTHER_IBM_BRIDGE_TLS|IBM|20090224114207-0500||ACK^A08|OpenPIXPDQ10.243.0.65.19767899641219|P|2.3.1
+MSA|AA|9241351356666182528
+
+# PIX Merge (ADT^A40)
+# Inbound feed:
+MSH|^~\&|OTHER_IBM_BRIDGE_TLS|IBM|PAT_IDENTITY_X_REF_MGR_MISYS|ALLSCRIPTS|20090224104210-0600||ADT^A40^ADT_A39|4143361005927619863|P|2.3.1
+EVN||20090224104210-0600
+PID|||103^^^IBOT&1.3.6.1.4.1.21367.2009.1.2.370&ISO||OTHER_IBM_BRIDGE^MARION||19661109|F
+MRG|102^^^IBOT&1.3.6.1.4.1.21367.2009.1.2.370&ISO
+PV1||O
+
+# Outbound ack:
+MSH|^~\&|PAT_IDENTITY_X_REF_MGR_MISYS_TLS|ALLSCRIPTS|OTHER_IBM_BRIDGE_TLS|IBM|20090224114212-0500||ACK^A40|OpenPIXPDQ10.243.0.65.19767899725457|P|2.3.1
+MSA|AA|4143361005927619863
+
+
+# PIX Query (QBP^Q23)
+# Inbound query:
+MSH|^~\&|PACS_FUJIFILM|FUJIFILM|PAT_IDENTITY_X_REF_MGR_MISYS|ALLSCRIPTS|20090223144546||QBP^Q23^QBP_Q21|1235421946|P|2.5|||||||
+QPD|IHEPIXQuery|Q231235421946|L101^^^IHELOCAL&1.3.6.1.4.1.21367.2009.1.2.310&ISO^PI|^^^IHENA&1.3.6.1.4.1.21367.2009.1.2.300&ISO
+RCP|I|
+
+# Outbound response:
+MSH|^~\&|PAT_IDENTITY_X_REF_MGR_MISYS|ALLSCRIPTS|PACS_FUJIFILM|FUJIFILM|20090223154549-0500||RSP^K23|OpenPIXPDQ10.243.0.65.19766751187011|P|2.5
+MSA|AA|1235421946
+QAK|Q231235421946|OK
+QPD|IHEPIXQuery|Q231235421946|L101^^^IHELOCAL&1.3.6.1.4.1.21367.2009.1.2.310&ISO^PI|^^^IHENA&1.3.6.1.4.1.21367.2009.1.2.300&ISO
+PID|||101^^^IHENA&1.3.6.1.4.1.21367.2009.1.2.300&ISO^PI||~^^^^^^S
+
+# PIX Update Notification (ADT^A31)
+# 3Outbound notification:
+MSH|^~\&|PAT_IDENTITY_X_REF_MGR_MISYS|ALLSCRIPTS|EHR_SPIRIT|SPIRIT|20090224190432-0500||ADT^A31|OpenPIXPDQ10.243.0.65.19768324363443|P|2.5
+EVN|A31|20090224190432-0500||||20090224190432-0500
+PID|||465884^^^IHENA&1.3.6.1.4.1.21367.2009.1.2.300&ISO^PI~465885^^^IHELOCAL&1.3.6.1.4.1.21367.2009.1.2.310&ISO^PI||
+PV1||N
+
+# Inbound ack:
+MSH|^~\&|ALLSCRIPTS|EHR_SPIRIT|PAT_IDENTITY_X_REF_MGR_MISYS|ALLSCRIPTS|20090225010432.959+0100||ACK^A31|75908|P|2.5
+MSA|AA|OpenPIXPDQ10.243.0.65.19768324363443
+
+
+# PDQ Multiple Query (QBP^Q22):
+# Inbound query:
+MSH|^~\&|OTHER_IBM_BRIDGE_TLS|IBM|PAT_IDENTITY_X_REF_MGR_MISYS|ALLSCRIPTS|20090226131520-0600||QBP^Q22^QBP_Q21|7965847682428535543|P|2.5
+QPD|Q22^Find Candidates^HL7|4870964660388599565096567512128|@PID.5.1.1^MOO*
+RCP|I|10^RD
+
+# Outbound response:
+MSH|^~\&|PAT_IDENTITY_X_REF_MGR_MISYS_TLS|ALLSCRIPTS|OTHER_IBM_BRIDGE_TLS|IBM|20090226141518-0500||RSP^K22|OpenPIXPDQ10.243.0.65.19770811493153|P|2.5
+MSA|AA|7965847682428535543
+QAK|4870964660388599565096567512128|OK||6|6|0
+QPD|Q22^Find Candidates^HL7|4870964660388599565096567512128|@PID.5.1.1^MOO*
+PID|1||LPDQ113XX04^^^IHELOCAL&1.3.6.1.4.1.21367.2009.1.2.310&ISO^PI~PDQ113XX04^^^IHENA&1.3.6.1.4.1.21367.2009.1.2.300&ISO^PI~TEMP000025^^^EMCO&1.3.6.1.4.1.21367.2009.1.2.348&ISO^PI||MOODY^WARREN||19780820|M|||1000 CLAYTON RD^^CLAYTON^MO^63105
+PID|2||LPDQ113XX05^^^IHELOCAL&1.3.6.1.4.1.21367.2009.1.2.310&ISO^PI~PDQ113XX05^^^IHENA&1.3.6.1.4.1.21367.2009.1.2.300&ISO^PI~TEMP000026^^^EMCO&1.3.6.1.4.1.21367.2009.1.2.348&ISO^PI~TEMP000026^^^EMCO&1.3.6.1.4.1.21367.2009.1.2.348&ISO^PI||MOONEY^STAN||19780920|M|||100 TAYLOR^^ST LOUIS^MO^63110
+PID|3||TEMP000020^^^EMCO&1.3.6.1.4.1.21367.2009.1.2.348&ISO^PI||MOORE^MARK||19380224|F|||^^Chicago^IL^65932
+PID|4||TEMP000019^^^EMCO&1.3.6.1.4.1.21367.2009.1.2.348&ISO^PI||MOORE^MARTHA||19820904|F|||^^Gainesville^FL^32609
+PID|5||LPDQ113XX02^^^IHELOCAL&1.3.6.1.4.1.21367.2009.1.2.310&ISO^PI~PDQ113XX02^^^IHENA&1.3.6.1.4.1.21367.2009.1.2.300&ISO^PI~PDQ113XX02^^^IHENA&1.3.6.1.4.1.21367.2009.1.2.300&ISO^PI||MOORE^RALPH||19510707|M|||510 S KINGSHIGHWAY^^ST. LOUIS^MO^63110^USA
+PID|6||39^^^MIEH&1.3.6.1.4.1.21367.2009.1.2.380&ISO^PI~39^^^MIEH&1.3.6.1.4.1.21367.2009.1.2.380&ISO^PI~LPDQ113XX01^^^IHELOCAL&1.3.6.1.4.1.21367.2009.1.2.310&ISO^PI~PDQ113XX01^^^IHENA&1.3.6.1.4.1.21367.2009.1.2.300&ISO^PI||MOORE^CHIP||19380224|M|||^^^IN
+
+# Inbound query:
+MSH|^~\&|OTHER_IBM_BRIDGE_TLS|IBM|PAT_IDENTITY_X_REF_MGR_MISYS|ALLSCRIPTS|20090226131524-0600||QBP^Q22^QBP_Q21|4384605233932006785|P|2.5
+QPD|Q22^FindCandidates^HL7|2846266284165483109045739371027|@PID.3.1^PDQ113XX05~@PID.3.4.1^IHENA~@PID.3.4.2^1.3.6.1.4.1.21367.2009.1.2.300~@PID.3.4.3^ISO
+RCP|I|10^RD
+
+# Outbound response:
+MSH|^~\&|PAT_IDENTITY_X_REF_MGR_MISYS_TLS|ALLSCRIPTS|OTHER_IBM_BRIDGE_TLS|IBM|20090226141522-0500||RSP^K22|OpenPIXPDQ10.243.0.65.19770811557491|P|2.5
+MSA|AA|4384605233932006785
+QAK|2846266284165483109045739371027|OK||1|1|0
+QPD|Q22^FindCandidates^HL7|2846266284165483109045739371027|@PID.3.1^PDQ113XX05~@PID.3.4.1^IHENA~@PID.3.4.2^1.3.6.1.4.1.21367.2009.1.2.300~@PID.3.4.3^ISO
+PID|1||LPDQ113XX05^^^IHELOCAL&1.3.6.1.4.1.21367.2009.1.2.310&ISO^PI~PDQ113XX05^^^IHENA&1.3.6.1.4.1.21367.2009.1.2.300&ISO^PI~TEMP000026^^^EMCO&1.3.6.1.4.1.21367.2009.1.2.348&ISO^PI~TEMP000026^^^EMCO&1.3.6.1.4.1.21367.2009.1.2.348&ISO^PI||MOONEY^STAN||19780920|M|||100 TAYLOR^^ST LOUIS^MO^63110
+
+# Inbound query:
+MSH|^~\&|OTHER_IBM_BRIDGE_TLS|IBM|PAT_IDENTITY_X_REF_MGR_MISYS|ALLSCRIPTS|20090226131528-0600||QBP^Q22^QBP_Q21|6615205736011743610|P|2.5
+QPD|Q22^FindCandidates^HL7|5319227404379208453030172570701|@PID.3.1^PDQ113*~@PID.3.4.1^IHENA~@PID.3.4.2^1.3.6.1.4.1.21367.2009.1.2.300~@PID.3.4.3^ISO
+RCP|I|10^RD
+
+# Outbound response:
+MSH|^~\&|PAT_IDENTITY_X_REF_MGR_MISYS_TLS|ALLSCRIPTS|OTHER_IBM_BRIDGE_TLS|IBM|20090226141526-0500||RSP^K22|OpenPIXPDQ10.243.0.65.19770811618339|P|2.5
+MSA|AA|6615205736011743610
+QAK|5319227404379208453030172570701|OK||5|5|0
+QPD|Q22^FindCandidates^HL7|5319227404379208453030172570701|@PID.3.1^PDQ113*~@PID.3.4.1^IHENA~@PID.3.4.2^1.3.6.1.4.1.21367.2009.1.2.300~@PID.3.4.3^ISO
+PID|1||LPDQ113XX03^^^IHELOCAL&1.3.6.1.4.1.21367.2009.1.2.310&ISO^PI~PDQ113XX03^^^IHENA&1.3.6.1.4.1.21367.2009.1.2.300&ISO^PI~TEMP000024^^^EMCO&1.3.6.1.4.1.21367.2009.1.2.348&ISO^PI||MOHR^ALICE||19580131|F|||820 JORIE BLVD.^^OAK BROOK^IL^60523
+PID|2||LPDQ113XX04^^^IHELOCAL&1.3.6.1.4.1.21367.2009.1.2.310&ISO^PI~PDQ113XX04^^^IHENA&1.3.6.1.4.1.21367.2009.1.2.300&ISO^PI~TEMP000025^^^EMCO&1.3.6.1.4.1.21367.2009.1.2.348&ISO^PI||MOODY^WARREN||19780820|M|||1000 CLAYTON RD^^CLAYTON^MO^63105
+PID|3||LPDQ113XX05^^^IHELOCAL&1.3.6.1.4.1.21367.2009.1.2.310&ISO^PI~PDQ113XX05^^^IHENA&1.3.6.1.4.1.21367.2009.1.2.300&ISO^PI~TEMP000026^^^EMCO&1.3.6.1.4.1.21367.2009.1.2.348&ISO^PI~TEMP000026^^^EMCO&1.3.6.1.4.1.21367.2009.1.2.348&ISO^PI||MOONEY^STAN||19780920|M|||100 TAYLOR^^ST LOUIS^MO^63110
+PID|4||LPDQ113XX02^^^IHELOCAL&1.3.6.1.4.1.21367.2009.1.2.310&ISO^PI~PDQ113XX02^^^IHENA&1.3.6.1.4.1.21367.2009.1.2.300&ISO^PI~PDQ113XX02^^^IHENA&1.3.6.1.4.1.21367.2009.1.2.300&ISO^PI||MOORE^RALPH||19510707|M|||510 S KINGSHIGHWAY^^ST. LOUIS^MO^63110^USA
+PID|5||39^^^MIEH&1.3.6.1.4.1.21367.2009.1.2.380&ISO^PI~39^^^MIEH&1.3.6.1.4.1.21367.2009.1.2.380&ISO^PI~LPDQ113XX01^^^IHELOCAL&1.3.6.1.4.1.21367.2009.1.2.310&ISO^PI~PDQ113XX01^^^IHENA&1.3.6.1.4.1.21367.2009.1.2.300&ISO^PI||MOORE^CHIP||19380224|M|||^^^IN
+
+# Inbound query:
+MSH|^~\&|OTHER_IBM_BRIDGE_TLS|IBM|PAT_IDENTITY_X_REF_MGR_MISYS|ALLSCRIPTS|20090226131532-0600||QBP^Q22^QBP_Q21|8635581430489875581|P|2.5
+QPD|Q22^Find Candidates^HL7|6644708965997494512161758864244|@PID.7.1^19780920
+RCP|I|10^RD
+
+# Outbound response:
+MSH|^~\&|PAT_IDENTITY_X_REF_MGR_MISYS_TLS|ALLSCRIPTS|OTHER_IBM_BRIDGE_TLS|IBM|20090226141529-0500||RSP^K22|OpenPIXPDQ10.243.0.65.19770811677697|P|2.5
+MSA|AA|8635581430489875581
+QAK|6644708965997494512161758864244|OK||2|2|0
+QPD|Q22^Find Candidates^HL7|6644708965997494512161758864244|@PID.7.1^19780920
+PID|1||LPDQ113XX05^^^IHELOCAL&1.3.6.1.4.1.21367.2009.1.2.310&ISO^PI~PDQ113XX05^^^IHENA&1.3.6.1.4.1.21367.2009.1.2.300&ISO^PI~TEMP000026^^^EMCO&1.3.6.1.4.1.21367.2009.1.2.348&ISO^PI~TEMP000026^^^EMCO&1.3.6.1.4.1.21367.2009.1.2.348&ISO^PI||MOONEY^STAN||19780920|M|||100 TAYLOR^^ST LOUIS^MO^63110
+PID|2||TEMP000018^^^EMCO&1.3.6.1.4.1.21367.2009.1.2.348&ISO^PI||RICHTER^CHARLES||19780920|M|||^^Gainesville^FL^32609
+
+# Inbound query:
+MSH|^~\&|OTHER_IBM_BRIDGE_TLS|IBM|PAT_IDENTITY_X_REF_MGR_MISYS|ALLSCRIPTS|20090226131536-0600||QBP^Q22^QBP_Q21|7597683905236566560|P|2.5
+QPD|Q22^Find Candidates^HL7|8494764101303661668890645833527|@PID.5.1.1^MO*~@PID.8^F
+RCP|I|10^RD
+
+# Outbound response:
+MSH|^~\&|PAT_IDENTITY_X_REF_MGR_MISYS_TLS|ALLSCRIPTS|OTHER_IBM_BRIDGE_TLS|IBM|20090226141533-0500||RSP^K22|OpenPIXPDQ10.243.0.65.19770811737041|P|2.5
+MSA|AA|7597683905236566560
+QAK|8494764101303661668890645833527|OK||3|3|0
+QPD|Q22^Find Candidates^HL7|8494764101303661668890645833527|@PID.5.1.1^MO*~@PID.8^F
+PID|1||LPDQ113XX03^^^IHELOCAL&1.3.6.1.4.1.21367.2009.1.2.310&ISO^PI~PDQ113XX03^^^IHENA&1.3.6.1.4.1.21367.2009.1.2.300&ISO^PI~TEMP000024^^^EMCO&1.3.6.1.4.1.21367.2009.1.2.348&ISO^PI||MOHR^ALICE||19580131|F|||820 JORIE BLVD.^^OAK BROOK^IL^60523
+PID|2||TEMP000020^^^EMCO&1.3.6.1.4.1.21367.2009.1.2.348&ISO^PI||MOORE^MARK||19380224|F|||^^Chicago^IL^65932
+PID|3||TEMP000019^^^EMCO&1.3.6.1.4.1.21367.2009.1.2.348&ISO^PI||MOORE^MARTHA||19820904|F|||^^Gainesville^FL^32609
+
+# Inbound query:
+MSH|^~\&|OTHER_IBM_BRIDGE_TLS|IBM|PAT_IDENTITY_X_REF_MGR_MISYS|ALLSCRIPTS|20090226131539-0600||QBP^Q22^QBP_Q21|4679266744837668258|P|2.5
+QPD|Q22^Find Candidates^HL7|1314273928499923525175380892595|@PID.5.1.1^MOORE~@PID.7.1^19380224
+RCP|I|10^RD
+
+# Outbound response:
+MSH|^~\&|PAT_IDENTITY_X_REF_MGR_MISYS_TLS|ALLSCRIPTS|OTHER_IBM_BRIDGE_TLS|IBM|20090226141537-0500||RSP^K22|OpenPIXPDQ10.243.0.65.19770811796403|P|2.5
+MSA|AA|4679266744837668258
+QAK|1314273928499923525175380892595|OK||2|2|0
+QPD|Q22^Find Candidates^HL7|1314273928499923525175380892595|@PID.5.1.1^MOORE~@PID.7.1^19380224
+PID|1||TEMP000020^^^EMCO&1.3.6.1.4.1.21367.2009.1.2.348&ISO^PI||MOORE^MARK||19380224|F|||^^Chicago^IL^65932
+PID|2||39^^^MIEH&1.3.6.1.4.1.21367.2009.1.2.380&ISO^PI~39^^^MIEH&1.3.6.1.4.1.21367.2009.1.2.380&ISO^PI~LPDQ113XX01^^^IHELOCAL&1.3.6.1.4.1.21367.2009.1.2.310&ISO^PI~PDQ113XX01^^^IHENA&1.3.6.1.4.1.21367.2009.1.2.300&ISO^PI||MOORE^CHIP||19380224|M|||^^^IN
+
+# Inbound query:
+MSH|^~\&|OTHER_IBM_BRIDGE_TLS|IBM|PAT_IDENTITY_X_REF_MGR_MISYS|ALLSCRIPTS|20090226131543-0600||QBP^Q22^QBP_Q21|6880881378099874844|P|2.5
+QPD|Q22^FindCandidates^HL7|6058651775104617438922166242613|@PID.5.1.1^MOORE~@PID.11.1.1^10 PINETREE
+RCP|I|10^RD
+
+# Outbound response:
+MSH|^~\&|PAT_IDENTITY_X_REF_MGR_MISYS_TLS|ALLSCRIPTS|OTHER_IBM_BRIDGE_TLS|IBM|20090226141540-0500||RSP^K22|OpenPIXPDQ10.243.0.65.19770811854243|P|2.5
+MSA|AA|6880881378099874844
+QAK|6058651775104617438922166242613|OK||1|1|0
+QPD|Q22^FindCandidates^HL7|6058651775104617438922166242613|@PID.5.1.1^MOORE~@PID.11.1.1^10 PINETREE
+PID|1||TEMP000020^^^EMCO&1.3.6.1.4.1.21367.2009.1.2.348&ISO^PI||MOORE^MARK||19380224|F|||10 PINETREE^^Chicago^IL^65932
+
+# Inbound query:
+MSH|^~\&|OTHER_IBM_BRIDGE_TLS|IBM|PAT_IDENTITY_X_REF_MGR_MISYS|ALLSCRIPTS|20090226131547-0600||QBP^Q22^QBP_Q21|2872542276009194118|P|2.5
+QPD|Q22^FindCandidates^HL7|7686684818086385492683445220529|@PID.5.1.1^OTHER_IBM_BRIDGE
+RCP|I|10^RD
+
+# Outbound response:
+MSH|^~\&|PAT_IDENTITY_X_REF_MGR_MISYS_TLS|ALLSCRIPTS|OTHER_IBM_BRIDGE_TLS|IBM|20090226141544-0500||RSP^K22|OpenPIXPDQ10.243.0.65.19770811913601|P|2.5
+MSA|AA|2872542276009194118
+QAK|7686684818086385492683445220529|OK||2|2|0
+QPD|Q22^Find Candidates^HL7|7686684818086385492683445220529|@PID.5.1.1^OTHER_IBM_BRIDGE
+PID|1||103^^^IBOT&1.3.6.1.4.1.21367.2009.1.2.370&ISO^PI||OTHER_IBM_BRIDGE^MARION||19661109|F
+PID|2||301^^^IBOT&1.3.6.1.4.1.21367.2009.1.2.370&ISO^PI||OTHER_IBM_BRIDGE^SONDRA||19671109|F
+
+
+# PDQ Continuation (QBP^Q22):
+# Inbound query:
+MSH|^~\&|OTHER_IBM_BRIDGE_TLS|IBM|PAT_IDENTITY_X_REF_MGR_MISYS|ALLSCRIPTS|20090225114602-0600||QBP^Q22^QBP_Q21|8926726860421415097|P|2.5
+QPD|Q22^Find Candidates^HL7|8090759437492216894170326616013|@PID.5.1.1^MOO*
+RCP|I|5^RD
+
+# Outbound response:
+MSH|^~\&|PAT_IDENTITY_X_REF_MGR_MISYS_TLS|ALLSCRIPTS|OTHER_IBM_BRIDGE_TLS|IBM|20090225124559-0500||RSP^K22|OpenPIXPDQ10.243.0.65.19769343351587|P|2.5
+MSA|AA|8926726860421415097
+QAK|8090759437492216894170326616013|OK||6|5|1
+QPD|Q22^Find Candidates^HL7|8090759437492216894170326616013|@PID.5.1.1^MOO*
+PID|1||LPDQ113XX04^^^IHELOCAL&1.3.6.1.4.1.21367.2009.1.2.310&ISO^PI~PDQ113XX04^^^IHENA&1.3.6.1.4.1.21367.2009.1.2.300&ISO^PI~TEMP000025^^^EMCO&1.3.6.1.4.1.21367.2009.1.2.348&ISO^PI||MOODY^WARREN||19780820|M|||1000 CLAYTON RD^^CLAYTON^MO^63105
+PID|2||LPDQ113XX05^^^IHELOCAL&1.3.6.1.4.1.21367.2009.1.2.310&ISO^PI~PDQ113XX05^^^IHENA&1.3.6.1.4.1.21367.2009.1.2.300&ISO^PI~TEMP000026^^^EMCO&1.3.6.1.4.1.21367.2009.1.2.348&ISO^PI~TEMP000026^^^EMCO&1.3.6.1.4.1.21367.2009.1.2.348&ISO^PI||MOONEY^STAN||19780920|M|||100 TAYLOR^^ST LOUIS^MO^63110
+PID|3||TEMP000020^^^EMCO&1.3.6.1.4.1.21367.2009.1.2.348&ISO^PI||MOORE^MARK||19380224|F|||^^Chicago^IL^65932
+PID|4||TEMP000019^^^EMCO&1.3.6.1.4.1.21367.2009.1.2.348&ISO^PI||MOORE^MARTHA||19820904|F|||^^Gainesville^FL^32609
+PID|5||LPDQ113XX02^^^IHELOCAL&1.3.6.1.4.1.21367.2009.1.2.310&ISO^PI~PDQ113XX02^^^IHENA&1.3.6.1.4.1.21367.2009.1.2.300&ISO^PI~PDQ113XX02^^^IHENA&1.3.6.1.4.1.21367.2009.1.2.300&ISO^PI||MOORE^RALPH||19510707|M|||510 S KINGSHIGHWAY^^ST. LOUIS^MO^63110^USA
+DSC|8090759437492216894170326616013:OpenPIXPDQ10.243.0.65.19769343352081|I
+
+# Inbound query:
+MSH|^~\&|OTHER_IBM_BRIDGE_TLS|IBM|PAT_IDENTITY_X_REF_MGR_MISYS|ALLSCRIPTS|20090225114602-0600||QBP^Q22^QBP_Q21|8926726860421415097|P|2.5
+QPD|Q22^Find Candidates^HL7|8090759437492216894170326616013|@PID.5.1.1^MOO*
+RCP|I|5^RD
+DSC|8090759437492216894170326616013:OpenPIXPDQ10.243.0.65.19769343352081|I
+
+# Outbound response:
+MSH|^~\&|PAT_IDENTITY_X_REF_MGR_MISYS_TLS|ALLSCRIPTS|OTHER_IBM_BRIDGE_TLS|IBM|20090225124601-0500||RSP^K22|OpenPIXPDQ10.243.0.65.19769343385249|P|2.5
+MSA|AA|8926726860421415097
+QAK|8090759437492216894170326616013|OK||6|1|0
+QPD|Q22^Find Candidates^HL7|8090759437492216894170326616013|@PID.5.1.1^MOO*
+PID|1||39^^^MIEH&1.3.6.1.4.1.21367.2009.1.2.380&ISO^PI~39^^^MIEH&1.3.6.1.4.1.21367.2009.1.2.380&ISO^PI~LPDQ113XX01^^^IHELOCAL&1.3.6.1.4.1.21367.2009.1.2.310&ISO^PI~PDQ113XX01^^^IHENA&1.3.6.1.4.1.21367.2009.1.2.300&ISO^PI||MOORE^CHIP||19380224|M|||^^^IN
+
+
+# PDQ Cancel Query (QCN^J01)
+# Inbound cancel request:
+MSH|^~\&|MESA_PD_CONSUMER|MESA_DEPARTMENT|MESA_PD_SUPPLIER|XYZ_HOSPITAL|||QCN^J01|11311110c2|P|2.5
+QID|QRY11335110|IHE PDQ Query
+
+# Outbound ack:
+MSH|^~\&|PAT_IDENTITY_X_REF_MGR_MISYSPLC|ALLSCRIPTS|MESA_PD_CONSUMER|MESA_DEPARTMENT|20090209185555-0500||ACK^J01|OpenPIXPDQ10.100.210.33.19747580088049|P|2.5
+MSA|AA|11311110c2
+
+# Examples messages from https://repository.immregistries.org/files/resources/5bef530428317/hl7_2_5_1_release_1_5__2018_update.pdf
+MSH|^~\&|MYEHR|DCS|MYIIS||201201130000-0500||VXU^V04^VXU_V04|45646ug|P|2.5.1|||ER|AL|||||Z22^CDCPHINVS 
+PID|1||432155^^^dcs^MR||Patient^Johnny^New^^^^L|Lastname^Sally^^^^^M |20110411|M||1002-5^Native American^HL70005|123 Any St^^Somewhere^WI^54000^^L||^PRN^PH^^^111^2320112|||||||||2186-5^not Hispanic^CDCREC
+NK1|1|Patient^Sally^^^^^L|MTH^Mom^HL70063|123 Any St^^Somewhere^WI^54000^^L
+ORC|RE||65929^DCS|||||||^Clerk^Myron||
+RXA|0|1|20110415||85^hep B, unspec^CVX|999|||01^historical^NIP001|||||||||||CP|A
+ORC|RE||65930^DCS||||||20120113|^Clerk^Myron||^Pediatric^Mary^^^^^^^^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20120113||110^DTaP HIB IPV^CVX|0.5|mL^^UCUM||00^New admin^NIP001|^Sticker^Nurse^^^^^^^^^^^^^^^^^^RN|^^^DCS_DC||||xy3939|20141212|SKB^GlaxoSmithKline^MVX|||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|RT^Right Thigh^HL70163
+OBX|1|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|2|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|3|CE|69764-9^Document type^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+ORC|RE||65949^DCS||||||20120113|^Clerk^Myron||^Pediatric^Mary^^^^^^^^^^^^^^^^^^MD|||||||||Dabig Clinic System
+RXA|0|1|20120113||48^HIB PRP-T^CVX|0.5|mL^^UCUM||00^New admin^NIP001|^Sticker^Nurse^^^^^^^^^^^^^^^^^^RN|^^^DCS_DC||||32k2a|20130309|PMC^sanofi^MVX|||CP|A
+RXR|C28161^IM^NCIT^IM^^HL70162|LT^left Thigh^HL70163
+OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
+OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
+OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+
+# Send Acknowledgement ACK In Response To VXU 
+MSH|^~\&|DCS|MYIIS|MYIIS||200906040000-0500||ACK^V04^ACK|1234567|P|2.5.1|||NE|NE|||||Z23^CDCPHINVS
+MSA|AA|9299381
+
+# Acknowledging An Error That Causes Message Rejection ( AR response): 
+MSH|^~\&|DCS|MYIIS|MYIIS||200906040000-0500||ACK^V04^ACK|12343467|P|2.5.1|||
+MSA|AR|9299381
+ERR||MSH^1^12|203^unsupported version id^^HL70357|E||||Unsupported HL7 Version ID—Message rejected
+
+# Acknowledging An HL7 Processing Error That Causes Message Rejection (AE response) 
+MSH|^~\&|DCS|MYIIS|MYIIS||200906040000-0500||ACK^V04^ACK|13434534|P|2.5.1|||
+MSA|AE|9299381
+ERR||PID^1^5|101^required field missing^HL70357|E|7^required data missing^HL70533||||Patient name is required 
+ERR||PID|100^required segment missing^HL70357|E||||PID is required segment. Message rejected 
+
+MSH|^~\&|DCS|MYIIS|MYIIS||200906040000-0500||ACK^V04^ACK|49348812|P|2.5.1
+MSA|AE|9299381
+ERR||RXA^1^5|103^table value not found^HL70357|E|5^table value not found^HL70533||||Vaccine code not recognized—field rejected 
+ERR||RXA^1^5|101^required field missing^HL70357|E|7^required data missing^HL70533||||RXA-5 is required segment rejected
+ERR||RXA|100^required segment missing^HL70357|E||||RXA is required segment segment-group rejected 
+
+# Acknowledging An HL7 Processing Error That Causes Segment Rejection: 
+MSH|^~\&|DCS|MYIIS|MYIIS||200906040000-0500||ACK^V04^ACK|49348812|P|2.5.1
+MSA|AE|9299381
+ERR||NK1^3|101^required field missing^HL70357|E|7^required data missing^HL70533||||Relationship missing -- segment rejected 
+
+# Acknowledging An HL7 Processing Error That Caused a Warning : 
+MSH|^~\&|DCS|MYIIS|MYIIS||200906040000-0500||ACK^V04^ACK|1234886|P|2.5.1
+MSA|AA|9299381
+ERR||PID^2||W||||PID-2 is not supported -- data ignored
+
+# Acknowledging an Application Error That Causes Message Rejection Due to Local Business Rule Violation; 
+MSH|^~\&|DCS|MYIIS|MYIIS||200906040000-0500||ACK^V04^ACK|9492823|P|2.5.1
+MSA|AE|9299381
+ERR||PID^1^7|101^required field missing^HL70357|E|1^illogical date error^HL70533||||Birth data after today 
+ERR||PID|100^required segment missing^HL70357|E||||PID is required segment. Message rejected 
+
+
+#Complete Example Of Evaluation And Forecasting: 
+MSH|^~\&|MYEHR|DCS|||200910311452-0500||RSP^K11^RSP_K11|3533469|P|2.5.1|||NE|NE|||||Z42^CDCPHINVS|DCS 
+MSA|AA|793543
+QAK|999|OK|Z44^Request Evaluated History and Forecast^CDCPHINVS
+QPD|Z44^Request Evaluated History and Forecast^CDCPHINVS|\
+	999|\
+	123456^^^MYEHR^MR|Child^Bobbie^Q^^^^L|Que^Suzy^^^^^M|20090214|M|10 East Main St^^Myfaircity^GA^^^L
+PID|1||123456^^^MYEHR^MR||Child^Bobbie^Q^^^^L||20090214|M|||10 East Main St^^Myfaircity^GA^^^L
+ORC|RE||197023^DCS|||||||^Clerk^Myron|||||||DCS^Dabig Clinical System^StateIIS
+RXA|0|1|20090415132511|20090415132511|31^Hep B Peds NOS^CVX|999|||01^historical record^NIP0001|||||||||||CP|A 
+OBX|1|CE|30956-7^vaccine type^LN|1|31^Hep B Peds NOS^CVX ||||||F
+OBX|2|CE|59779-9^Immunization Schedule used^LN|1|VXC16^ACIP^CDCPHINVS||||||F|||20090531
+OBX|3|NM|30973-2^dose number in series^LN|1|1||||||F|||20090531
+OBX|4|NM|59782-3^number of doses in series^LN|1|3||||||F|||20090531
+ORC|RE||197027^DCS|||||||^Clerk^Myron||^Pediatric^MARY^^^^^^^L^^^^^^ ^^^^^MD
+RXA|0|1|20090731132511|20090731132511|48^HIB PRPT^CVX|0.5|ML^^UCUM||00^new immunization record^NIP0001|^Sticker^Nurse|^^^DCS_DC||||33k2a||PMC^sanofi^MVX|||CP|A
+RXR|C28161^IM^NCIT^IM^IM^HL70162|
+OBX|5|CE|30956-7^vaccine type^LN|2|17^HIB NOS^CVX ||||||F
+OBX|6|CE|59779-9^Immunization Schedule used^LN|2|VXC16^ACIP^CDCPHINVS||||||F|||20090731
+OBX|7|NM|30973-2^dose number in series^LN|2|1||||||F
+OBX|8|NM|59782-3^number of doses in series^LN|2|4||||||F
+ORC|RE||197028^DCS|||||||^Clerk^Myron||^Pediatric^MARY^^^^^^^L^^^^^^ ^^^^^MD
+RXA|0|1|20091051132511|20091051132511|110^DTAP-Hep BIPV^CVX|0.5|ML^^UCUM||00^new immunization record^NIP0001|^Sticker^Nurse|^^^DCS_DC||||xy3939||SKB^GSK^MVX|||CP< CR> 
+RXR|IM^IM^HL70162^C28161^IM^NCIT|
+OBX|9|CE|30956-7^vaccine type^LN|1|31^Hep B Peds NOS^CVX ||||||F
+OBX|10|CE|59779-9^Immunization Schedule used^LN|3|VXC16^ACIP^CDCPHINVS||||||F|||20090531
+OBX|11|NM|30973-2^dose number in series^LN|3|2||||||F
+OBX|13|NM|59782-3^number of doses in series^LN|3|3||||||F
+OBX|14|CE|30956-7^vaccine type^LN|4|10^IPV^CVX ||||||F
+OBX|15|CE|59779-9^Immunization Schedule used^LN|2|VXC16^ACIP^CDCPHINVS||||||F|||20090103
+OBX|16|NM|30973-2^dose number in series^LN|4|1||||||F
+OBX|17|NM|59782-3^number of doses in series^LN|4|4||||||F
+OBX|18|CE|30956-7^vaccine type^LN|5|20^DTAP^CVX ||||||F
+OBX|19|CE|59779-9^Immunization Schedule used^LN|5|VXC16^ACIP^CDCPHINVS||||||F
+OBX|20|NM|30973-2^dose number in series^LN|5|1||||||F
+OBX|21|NM|59782-3^number of doses in series^LN|5|5||||||F
+ORC|RE||197023^DCS|||||||^Clerk^Myron|||||||DCS^Dabig Clinical System^StateIIS
+RXA|0|1|20091031|20091031|998^no vaccine admin^CVX|999||||||||||||||NA 
+OBX|22|CE|30956-7^vaccine type^LN|1|31^Hep B Peds NOS^CVX ||||||F
+OBX|23|CE|59779-9^Immunization Schedule used^LN|1|VXC16^ACIP^CDCPHINVS||||||F
+OBX|24|DT|30980-7^Date vaccination due^LN|1|20091015||||||F
+
+# Sample message for multiple recommendations: 
+MSH|^~\&|MYIIS|StatePH|MyEHR|DCS|20150131145233-0500||RSP^K11^RSP_K11|3533469|P|2.5.1|||NE|NE|||||Z42^CDCPHINVS|DCS^^^^^DCS^XX^^^6439432|StatePH 
+MSA|AA|793543 
+QAK|1039|OK|Z44^Request Evaluated History and Forecast^CDCPHINVS
+QPD|Z44^Request Evaluated History and Forecast^CDCPHINVS|1039|123456^^^MYEHR^MR|Child^Bobbie^Q^^^^L|Que^Suzy^^^^^M|20110214|M|10 East Main St^^Myfaircity^GA^^^L 
+PID|1||123456^^^MYEHR^MR~34500907^^^MyIIS^SR||Child^Bobbie^Q^^^^L||20110214|M|||10 East Main St^^Myfaircity^GA^^^L 
+ORC|RE|8788^IIS|197023^IIS 
+RXA|0|1|20150131|20150131|998^no vaccine admin^CVX|999||||||||||||||NA 
+OBX|22|CE|30956-7^vaccine type^LN|1|03^MMR^CVX||||||F|||20150131
+OBX|23|CE|59779-9^Immunization Schedule used^LN|1|VXC16^ACIP^CDCPHINVS||||||F|||20150131
+OBX|24|DT|30980-7^Date vaccination due^LN|1|20150214||||||F|||20150131 
+OBX|25|CE|30956-7^vaccine type^LN|2|10^IPV^CVX||||||F|||20150131
+OBX|26|CE|59779-9^Immunization Schedule used^LN|2|VXC16^ACIP^CDCPHINVS||||||F|||20150131
+OBX|27|DT|30980-7^Date vaccination due^LN|2|20150214||||||F|||20150131 
+OBX|28|CE|30956-7^vaccine type^LN|3|107^DTAP^CVX||||||F|||20150131
+OBX|29|CE|59779-9^Immunization Schedule used^LN|3|VXC16^ACIP^CDCPHINVS||||||F|||20150131
+OBX|30|DT|30980-7^Date vaccination due^LN|3|20150214||||||F|||20150131 
+
+#  Send Request for Complete Immunization History (QBP/RSP) 
+# Process for requesting Immunization History 
+MSH|^~\&|||||201405150010-0500||QBP^Q11^QBP_Q11|793543|P|2.5.1|||||||||Z34^CDCPHINVS
+QPD|Z34^Request Immunization History^CDCPHINVS|1057|123456^^^MYEHR^MR|Child^Bobbie^Q^^^^L|Que^Suzy^^^^^M|20050512|M|10 East Main St^^Myfaircity^GA^^^L
+RCP|I|5^RD&records&HL70126 
+
+# Returning a list of candidate clients in response to QBP^Q11 query 
+MSH|^~\&|SOME_SYSTEM|A_Clinic |MYIIS|MyStateIIS|200911051000-0500||RSP^K11^RSP_K11|1061|P|2.5.1|||NE|NE|||||Z31^CDCPHINVS|A_Clinic 
+MSA|AA|793543
+QAK|1061|OK
+QPD|Z34^Request Immunization History^CDCPHINVS|1061|123456^^^MYEHR^MR|Child^Bobbie^Q^^^^L|Que^Suzy^^^^^M|20050512|M|10 East Main St^^Myfaircity^GA^^^L 
+PID|1||99445566^^^MYStateIIS^SR||Child^Robert^^^^^L||20050512|M
+NK1|1|Child^Susan|MTH^Mother^HL70063|^^Myfaircity^GA
+PID|2||123456^^^MYStateIIS^SR||Child^Robert^^^^^L||20050512|M
+
+# Returning an immunization history in response to a Request for Immunization History query 
+MSH|^~\&|MYIIS|MyStateIIS|MYEHR|Myclinic|200911300200-0500||RSP^K11^RSP_K11|7731029|P|2.5.1|||NE|NE|||||Z32^CDCPHINVS|MyStateIIS|Myclinic
+MSA|AA|793543
+QAK|1072|OK|Z34^Request Immunization History^CDCPHINVS
+QPD|Z34^Request Immunization History^CDCPHINVS|1072|123456^^^MYEHR^MR|Child^Bobbie^Q^^^^L|Que^Suzy^^^^^M|20050512|M|10 East Main St^^Myfaircity^GA^^^L 
+PID|1||123456^^^MYEHR^MR~987633^^^MYIIS^SR||Child^Robert^Quenton^^^^L|Que^Suzy^^^^^M|||||10 East Main St^^Myfaircity^GA
+PD1||||||||||||N|20091130
+NK1|1|Child^Suzy^^^^^L|MTH^Mother^HL70063
+ORC|RE||142324567^YOUR_EHR|||||||^Shotgiver^Fred||^Orderwriter^Sally^^^^^^^^^^^^^^^^^^MD
+RXA|0|1|20050725||03^MMR^CVX|0.5|mL^^UCUM||00^New Immunization Record^NIP001
+RXR|SC^^HL70162
+
+# Note that the response returned the medical record number from the MYEHR system. It also returned the IIS id.   
+# Acknowledging Query That Returns No Clients/Patients 
+# Acknowledging a Query that finds no candidate clients 
+MSH|^~\&|MYIIS|MyStateIIS||MYEHR|200911302300-0500||RSP^K11^RSP_K11|7731029|P|2.5.1|||NE|NE|||||Z33^CDCPHINVS|MyStateIIS|MYEHR
+MSA|AA|793543
+QAK|1086|NF|Z34^request Immunization history^CDCPHINVS
+QPD|Z34^Request Immunization History^CDCPHINVS|1086|123456^^^MYEHR^MR|Child^Bobbie^Q^^^^L|Que^Suzy^^^^^M|20050512|M|10 East Main St^^Myfaircity^GA^^^L
+
+# Acknowledging a query that finds more candidates than requested 
+MSH|^~\&|MYIIS|MyStateIIS||MYEHR|200911300000-0500||RSP^K11^RSP_K11|7731029|P|2.5.1|||NE|NE|||||Z33^CDCPHINVS|MyStateIIS|MYEHR 
+MSA|AA|793543
+QAK|1092|TM|Z34^request Immunization history^CDCPHINVS
+QPD|Z34^Request Immunization History^CDCPHINVS|1092|123456^^^MYEHR^MR|Child^Bobbie^Q^^^^L|Que^Suzy^^^^^M|20050512|M|10 East Main St^^Myfaircity^GA^^^L
+
+# Using a Two-step process to request an immunization history 
+MSH|^~\&||SendingOrg||ReceivingOrg|2009113000-0500||QBP^Q11^QBP_Q11|793543|P|2.5.1|||ER|AL|||||Z34^CDCPHINVS|SendingOrg|ReceivingOrg
+QPD|Z34^Request Immunization History^CDCPHINVS||123456^^^MYEHR^MR|Child^Bobbie^Q^^^^L|Que^Suzy^^^^^M|20050512|M|10 East Main St^^Myfaircity^GA^^^L
+MSH|^~\&|MYIIS|ReceivingOrg||SendingOrg|200911300000-0500||RSP^K11^RSP_K11|7731029|P|2.5.1|||NE|NE|||||Z33^CDCPHINVS|ReceivingOrg|SendingOrg 
+MSA|AE|7731029
+ERR||QPD^1^2|101^required field missing^HL70357|E
+QAK||AE|Z34^CDCPHINVS
+QPD|Z34^Request Immunization History^CDCPHINVS||123456^^^MYEHR^MR|Child^Bobbie^Q^^^^L|Que^Suzy^^^^^M|20050512|M|10 East Main St^^Myfaircity^GA^^^L
+
+# Message Is Rejected Due to Unrecognized Message Type  
+MSH|^~\&|MYIIS|MyStateIIS||MYEHR|200911301000-0500||ACK^Q11^ACK||P|2.5.1
+MSA|AR|
+

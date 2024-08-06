@@ -5,6 +5,8 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.TreeMap;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * NamedArrayList is used to make automated lists test cases which
  * are intended to be extensive in what they test.  
@@ -17,13 +19,20 @@ import java.util.TreeMap;
  * offers the capability to generate a selection from the total set
  * for more frequent regression testing vs. release testing.
  */
+@Slf4j
 public class NamedArrayList 
 	extends ArrayList<String> 
 	implements Comparable<NamedArrayList> 
 {
 	private static final long serialVersionUID = 1L;
 	private static Map<String, NamedArrayList> cachedResults = new TreeMap<>();
+	/** The name of the list */
 	private final String name;
+	/**
+	 * Construct a named array list with a name and values
+	 * @param name The name of the array
+	 * @param values	The values to store
+	 */
 	public NamedArrayList(String name, String ...values) {
 		this.name = name;
 		if (cachedResults.get(name) != null) {
@@ -34,9 +43,21 @@ public class NamedArrayList
 			this.addAll(Arrays.asList(values));
 		}
 	}
+	/**
+	 * Construct a named array list with a singleton value that is both
+	 * name and value.
+	 * @param name	The singletone
+	 * @return	The NamedArrayList
+	 */
 	public static NamedArrayList singleton(String name) {
 		return l(name, name);
 	}
+	/**
+	 * Construct a named array list with a name and values
+	 * @param name	The name
+	 * @param values the values
+	 * @return	The named array list
+	 */
 	public static NamedArrayList l(String name, String ... values) {
 		NamedArrayList l = cachedResults.get(name);
 		if (l != null) {
@@ -46,6 +67,11 @@ public class NamedArrayList
 		l.addAll(Arrays.asList(values));
 		return l;
 	}
+	/**
+	 * Find an existing named array list
+	 * @param name	The name
+	 * @return	The found list
+	 */
 	public static NamedArrayList find(String name) {
 		NamedArrayList found = cachedResults.get(name);
 		if (found != null) {
@@ -53,6 +79,10 @@ public class NamedArrayList
 		}
 		return new NamedArrayList(name);
 	}
+	/**
+	 * Get the name of this list
+	 * @return	The name of the list
+	 */
 	public String name() {
 		return name;
 	}
@@ -63,17 +93,27 @@ public class NamedArrayList
 		}
 		return this.name.compareTo(that.name); 
 	}
+	/**
+	 * Return true if the list is not empty
+	 * @return true if not empty, false otherwise
+	 */
 	public NamedArrayList notEmpty() {
-		System.out.println(name + " has " + size() + " elements.");
+		log.debug("{} has {} elements", name, size());
 		TestUtils.assertNotEmpty(this);
 		return this;
 	}
 	
+	/**
+	 * Truncate the list to the new size if necessary (used to save space
+	 * for large cross-combinations)
+	 * @param newSize	The new size
+	 * @return	the NamedArrayList (which was modified in place)
+	 */
 	public NamedArrayList truncate(int newSize) {
 		if (size() < newSize || newSize < 0) {
 			return this;
 		}
-		System.out.printf("Truncating %s(%d) to %d%n", name(), size(), newSize);
+		log.debug("Truncating {}({}) to {}", name(), size(), newSize);
 		ArrayList<String> l = new ArrayList<>();
 		// Choose every Nth item from original test cases so we get 
 		// examples from each subgroup within the list instead of truncating 

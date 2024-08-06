@@ -1,0 +1,5 @@
+HL7 v2,,,Condition (IF True),,,HL7 FHIR,,,,,Comments
+Code,Text,Code System,Computable ANTLR,Computable FHIRPath,Narrative,Code,,Display,Code System,,
+E,Emergency,HL70004,,,emergency,EMER,,http://terminology.hl7.org/ValueSet/v3-ActEncounterCode,,
+I,Inpatient,HL70004,,,inpatient,IMP,,http://terminology.hl7.org/ValueSet/v3-ActEncounterCode,,
+O,Outpatient,HL70004,,,ambulatory,AMB,,http://terminology.hl7.org/ValueSet/v3-ActEncounterCode,,
