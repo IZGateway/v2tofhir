@@ -66,7 +66,7 @@ public class RXAParser extends AbstractSegmentParser {
 	@Override
 	public IBaseResource setup() {
 		izDetail = IzDetail.get(getMessageParser());
-		izDetail.initializeResources();
+		izDetail.initializeResources(false, getSegment());
 		if (izDetail.hasImmunization()) {
 			return izDetail.immunization;
 		} else if (izDetail.hasRecommendation()) {

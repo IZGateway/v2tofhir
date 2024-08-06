@@ -239,9 +239,9 @@ public class IzQuery {
 	}
 
 	private void setMothersMaidenName(String param) throws HL7Exception {
-		if (getName().getFamilyName().getSurname().isEmpty()) {
-			getName().getFamilyName().getSurname().setValue(param);
-			getName().getNameTypeCode().setValue("M");
+		if (getMaiden().getFamilyName().getSurname().isEmpty()) {
+			getMaiden().getFamilyName().getSurname().setValue(param);
+			getMaiden().getNameTypeCode().setValue("M");
 		} else {
 			throw new IllegalArgumentException(IzQuery.CANNOT_REPEAT + param);
 		}

@@ -12,6 +12,7 @@ import org.hl7.fhir.r4.model.MessageHeader;
 import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.Patient;
 
+import ca.uhn.hl7v2.model.Segment;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
 import gov.cdc.izgw.v2tofhir.utils.Mapping;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
@@ -25,6 +26,16 @@ import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 
 public class IzDetail {
 	private final MessageParser mp;
+	
+	private Boolean hasImmunization = null;
+	Immunization immunization;
+	
+	private Boolean hasImmunizationRecommendation = null;
+	ImmunizationRecommendation immunizationRecommendation;
+	
+	Organization requestingOrganization;
+	private Segment segment;
+	
 	private IzDetail(MessageParser mp) {
 		this.mp = mp;
 	}
@@ -59,14 +70,6 @@ public class IzDetail {
 			mp.getContext().setProperty(detail);
 		}
 	}
-	
-	private Boolean hasImmunization = null;
-	Immunization immunization;
-	
-	private Boolean hasImmunizationRecommendation = null;
-	ImmunizationRecommendation immunizationRecommendation;
-	
-	Organization requestingOrganization;
 
 	boolean hasRecommendation() {
 		if (hasImmunizationRecommendation != null) {
@@ -85,32 +88,81 @@ public class IzDetail {
 	}
 	
 	private void checkForImmunization() {
-		// Look at the message Header.
+		// Look at the RXA, Profile and Message Header
 		hasImmunization = Boolean.FALSE;
 		hasImmunizationRecommendation = Boolean.FALSE;
-		
-		MessageHeader mh = mp.getFirstResource(MessageHeader.class);
-		if (mh == null) {
-			// there is no message header, so not an immunization or recommendation.
+		immunization = null;
+		immunizationRecommendation = null;
+
+		if (checkRXA()) {
+			// We figured it out from the RXA
 			return;
 		}
+		
+		// RXA couldn't be checked, fall back to MSH profile.
 		for (CanonicalType url: mp.getBundle().getMeta().getProfile()) {
 			if ("CDCPHINVS#Z32".equals(url.getValue()) || "CDCPHINVS#Z22".equals(url.getValue())) {
 				// An RSP_K11 conforming to Z32, or a VXU_V04 conforming to Z22 
-				// will have Immunization resources
+				// will always have Immunization resources
 				hasImmunization = Boolean.TRUE;
-			} else if ("CDCPHINVS#Z42".equals(url.getValue())) {
-				// Whereas an RSP_K11 conforming to a Z42 will have an ImmunizationRecommendation
+				hasImmunizationRecommendation = Boolean.FALSE;
+				return;
+			} 
+			
+			if ("CDCPHINVS#Z42".equals(url.getValue())) {
+				// Whereas an RSP_K11 conforming to a Z42 will have an ImmunizationRecommendation or 
+				// an Immunization.  We must look at the RXA to determine which of these two cases
+				// are possible.  If RXA-5 = 998^No Vaccine Administered^CVX, then it's a recommendation.
+				hasImmunization = Boolean.FALSE;
 				hasImmunizationRecommendation = Boolean.TRUE;
+				return;
 			}
 		}
+		
+		// Nope, still haven't figured it out.
+		MessageHeader mh = mp.getFirstResource(MessageHeader.class);
+		if (mh == null) {
+			// there is no message header, so not an immunization or recommendation.
+			hasImmunization = Boolean.FALSE;
+			hasImmunizationRecommendation = Boolean.FALSE;
+			return;
+		}
+		
 		for (Coding tag: mh.getMeta().getTag()) {
 			if (Mapping.v2Table("0076").equals(tag.getSystem()) && "VXU".equals(tag.getCode())) {
+				// VXU, so must be an Immunization
 				hasImmunization = Boolean.TRUE;
+				hasImmunizationRecommendation = Boolean.FALSE;
 			}
 		}
 	}
 	
+	/**
+	 * Looks at the RXA to see whether this is an Immunization or ImmunizationRecommendation
+	 * 
+	 * @return	true if RXA was checked, false if it could not be checked.
+	 */
+	private boolean checkRXA() {
+		// Set default value
+		boolean defaulted = true;
+		hasImmunizationRecommendation = true;
+		if (segment != null) {
+			Segment rxa = null;
+			if ("ORC".equals(segment.getName())) {
+				rxa = ParserUtils.getFollowingSegment(segment, "RXA");
+			} else if ("RXA".equals(segment.getName())) {
+				rxa = segment;
+			}
+			if (rxa != null) {
+				hasImmunizationRecommendation = "998".equals(ParserUtils.toString(rxa, 5));
+				defaulted = false;
+			} 
+			// else ORC but NO RXA, assume recommendation (e.g., old WIR 2.3 based response)
+		} 
+		// else No segment, but known to be a Z42, assume testing for ImmunizationRecommendation
+		hasImmunization = !hasImmunizationRecommendation;
+		return !defaulted;
+	}
 	/**
 	 * Get the recommendation component.
 	 * @return The recommendation from the ImmunizationRecommendation resource.
@@ -128,12 +180,18 @@ public class IzDetail {
 	}
 	
 	/**
-	 * Initialize the resources on receipt of a new RXA segment. 
+	 * Initialize the resources on receipt of a new ORC or RXA segment. 
+	 * @param initialize If true, created new resource always, not just if missing
+	 * @param segment The segment currently being parsed
 	 */
-	public void initializeResources() {
+	public void initializeResources(boolean initialize, Segment segment) {
 		// Create the necessary resources.
 		DomainResource created = null;
 		Patient p = mp.getLastResource(Patient.class);
+		this.segment = segment;
+		if (initialize) {
+			checkForImmunization();
+		}
 		if (hasRecommendation() && immunizationRecommendation == null) {
 			created = immunizationRecommendation = mp.createResource(ImmunizationRecommendation.class);
 			if (p != null) {

@@ -131,10 +131,10 @@ public class NK1Parser extends AbstractSegmentParser {
 	 * Set the phone number
 	 * @param phoneNumber the phone number
 	 */
-	@ComesFrom(path = "relatedPerson.telecom", field = 5, comment = "Phone Number")
-	@ComesFrom(path = "relatedPerson.telecom", field = 31, comment = "Contact Person's Telephone Number")
-	@ComesFrom(path = "relatedPerson.telecom", field = 40, comment = "Next of Kin Telecommunication Information")
-	@ComesFrom(path = "relatedPerson.telecom", field = 41, comment = "Contact Person's Telecommunication Information")
+	@ComesFrom(path = "RelatedPerson.telecom", field = 5, comment = "Phone Number")
+	@ComesFrom(path = "RelatedPerson.telecom", field = 31, comment = "Contact Person's Telephone Number")
+	@ComesFrom(path = "RelatedPerson.telecom", field = 40, comment = "Next of Kin Telecommunication Information")
+	@ComesFrom(path = "RelatedPerson.telecom", field = 41, comment = "Contact Person's Telecommunication Information")
 	public void setPhoneNumber(ContactPoint phoneNumber) {
 		relatedPerson.addTelecom(phoneNumber);
 	}
@@ -143,7 +143,7 @@ public class NK1Parser extends AbstractSegmentParser {
 	 * Set the business phone number
 	 * @param businessPhoneNumber the business phone number
 	 */
-	@ComesFrom(path = "relatedPerson.telecom", field = 6, comment = "Business Phone Number")
+	@ComesFrom(path = "RelatedPerson.telecom", field = 6, comment = "Business Phone Number")
 	public void setBusinessPhoneNumber(ContactPoint businessPhoneNumber) {
 		businessPhoneNumber.setUse(ContactPointUse.WORK);
 		relatedPerson.addTelecom(businessPhoneNumber);
@@ -153,7 +153,7 @@ public class NK1Parser extends AbstractSegmentParser {
 	 * Set the start date
 	 * @param startDate the start date
 	 */
-	@ComesFrom(path = "relatedPerson.period.start", field = 8, comment = "Start Date")
+	@ComesFrom(path = "RelatedPerson.period.start", field = 8, comment = "Start Date")
 	public void setStartDate(DateType startDate) {
 		relatedPerson.getPeriod().setStart(startDate.getValue());
 	}
@@ -162,7 +162,7 @@ public class NK1Parser extends AbstractSegmentParser {
 	 * Set the end date
 	 * @param endDate the end date
 	 */
-	@ComesFrom(path = "relatedPerson.period.end", field = 9, comment = "End Date")
+	@ComesFrom(path = "RelatedPerson.period.end", field = 9, comment = "End Date")
 	public void setEndDate(DateType endDate) {
 		relatedPerson.getPeriod().setEnd(endDate.getValue());
 	}
@@ -171,8 +171,8 @@ public class NK1Parser extends AbstractSegmentParser {
 	 * Set the identifier
 	 * @param nextofKinAssociatedPartiesEmployeeNumber The identifier
 	 */
-	@ComesFrom(path = "relatedPerson.identifier", field = 12, comment = "Next of Kin / Associated Parties Employee Number")
-	@ComesFrom(path = "relatedPerson.identifier", field = 33, comment = "Next of Kin/Associated Party's Identifiers")
+	@ComesFrom(path = "RelatedPerson.identifier", field = 12, comment = "Next of Kin / Associated Parties Employee Number")
+	@ComesFrom(path = "RelatedPerson.identifier", field = 33, comment = "Next of Kin/Associated Party's Identifiers")
 	public void setNextofKinAssociatedPartiesEmployeeNumber(Identifier nextofKinAssociatedPartiesEmployeeNumber) {
 		relatedPerson.addIdentifier(nextofKinAssociatedPartiesEmployeeNumber);
 	}
@@ -181,7 +181,7 @@ public class NK1Parser extends AbstractSegmentParser {
 	 * Map gender from table 0001
 	 * @param administrativeSex	The gender from table 0001
 	 */
-	@ComesFrom(path = "relatedPerson.gender", field = 15, table = "", comment = "Administrative Sex")
+	@ComesFrom(path = "RelatedPerson.gender", field = 15, table = "", comment = "Administrative Sex")
 	public void setAdministrativeSex(Coding administrativeSex) {
 		PIDParser.setGenderFromTable0001(relatedPerson.getGenderElement(), administrativeSex);
 	}
@@ -190,7 +190,7 @@ public class NK1Parser extends AbstractSegmentParser {
 	 * Set the birthDate
 	 * @param dateTimeofBirth	The birth Date
 	 */
-	@ComesFrom(path = "relatedPerson.birthDate", field = 16, comment = "Date/Time of Birth")
+	@ComesFrom(path = "RelatedPerson.birthDate", field = 16, comment = "Date/Time of Birth")
 	public void setDateTimeofBirth(DateTimeType dateTimeofBirth) {
 		relatedPerson.setBirthDate(dateTimeofBirth.getValue());
 	}
@@ -199,7 +199,7 @@ public class NK1Parser extends AbstractSegmentParser {
 	 * Set the language
 	 * @param primaryLanguage the language
 	 */
-	@ComesFrom(path = "relatedPerson.communication.language", field = 20, comment = "Primary Language")
+	@ComesFrom(path = "RelatedPerson.communication.language", field = 20, comment = "Primary Language")
 	public void setPrimaryLanguage(CodeableConcept primaryLanguage) {
 		relatedPerson.addCommunication().setLanguage(primaryLanguage);
 	}
@@ -208,7 +208,7 @@ public class NK1Parser extends AbstractSegmentParser {
 	 * Set the ssn
 	 * @param contactPersonSocialSecurityNumber	The ssn
 	 */
-	@ComesFrom(path = "relatedPerson.identifier.value", field = 37, comment = "Contact Person Social Security Number")
+	@ComesFrom(path = "RelatedPerson.identifier.value", field = 37, comment = "Contact Person Social Security Number")
 	public void setContactPersonSocialSecurityNumber(StringType contactPersonSocialSecurityNumber) {
 		Identifier ssn = new Identifier().setSystem(Systems.SSN).setValueElement(contactPersonSocialSecurityNumber);
 		relatedPerson.addIdentifier(ssn);

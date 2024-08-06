@@ -67,8 +67,12 @@ public class ORCParser extends AbstractSegmentParser {
 	@Override
 	public IBaseResource setup() {
 		izDetail = IzDetail.get(getMessageParser());
-		izDetail.initializeResources();
+		izDetail.initializeResources(true, getSegment());
 		order = createResource(ServiceRequest.class);
+		if (izDetail.hasImmunization()) {
+			// Reports an Immunization performed, and reported by filler, so this is a filler order 
+			order.setIntent(ServiceRequestIntent.FILLERORDER);
+		}
 		Patient patient = this.getLastResource(Patient.class);
 		if (patient != null) {
 			order.setSubject(ParserUtils.toReference(patient, order, "patient", "subject"));

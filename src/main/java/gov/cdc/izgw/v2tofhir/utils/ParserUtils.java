@@ -29,6 +29,7 @@ import ca.uhn.hl7v2.model.Structure;
 import ca.uhn.hl7v2.model.Type;
 import ca.uhn.hl7v2.model.Varies;
 import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
+import gov.cdc.izgw.v2tofhir.segment.IzDetail;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -739,5 +740,45 @@ public class ParserUtils {
 		default:
 			return null;  // NOSONAR null = No cleanup needed
 		}
+	}
+
+	/**
+	 * Given a segment, find the segment following it with the given name.
+	 * Stops at the end of the group the segment is in, or once it finds
+	 * a repetition of the same original segment.
+	 * @param segment	The segment to start the search from.
+	 * @param findName	The segment type to find
+	 * @return	The found segment, or null of it could not be found.
+	 */
+	public static Segment getFollowingSegment(Segment segment, String findName) {
+		Segment found = null;
+		String myName = segment.getName();
+		// We've got some segment, get to the immediately following segment in findName
+		try {
+			Group g = segment.getParent();
+			if (g == null) {
+				return null;
+			}
+			
+			boolean foundMe = false;
+			for (String name: g.getNames()) {
+				if (!foundMe) {
+					foundMe = name.startsWith(myName) && g.get(name) == segment;
+					continue;
+				}
+				
+				if (name.startsWith(findName)) {
+					found = (Segment)g.get(name);
+					break;
+				} 
+				
+				if (name.startsWith(myName)) {
+					break;
+				}
+			}
+		} catch (HL7Exception e) {
+			log.warn("Unexpected HL7Exception: {}", e.getMessage(), e);
+		}
+		return found;
 	}
 }

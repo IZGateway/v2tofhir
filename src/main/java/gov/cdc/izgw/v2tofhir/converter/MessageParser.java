@@ -263,7 +263,7 @@ public class MessageParser {
 				} catch (Exception e) {
 					warnException("Unexpected {} parsing {}: {}", e.getClass().getSimpleName(), structure.getName(), e.getMessage(), e);
 				} finally {
-					addProcesssed(structure);
+					addProcessed(structure);
 				}
 			} else {
 				// Indicate processed structures that were skipped by other processors
@@ -308,7 +308,7 @@ public class MessageParser {
 	 * 
 	 * @param structure	The structure that was processed.
 	 */
-	public void addProcesssed(Structure structure) {
+	public void addProcessed(Structure structure) {
 		if (structure != null) {
 			processed.put(structure, processor.getClass().getSimpleName());
 		}
