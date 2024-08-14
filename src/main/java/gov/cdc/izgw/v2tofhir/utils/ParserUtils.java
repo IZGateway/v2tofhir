@@ -29,7 +29,6 @@ import ca.uhn.hl7v2.model.Structure;
 import ca.uhn.hl7v2.model.Type;
 import ca.uhn.hl7v2.model.Varies;
 import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
-import gov.cdc.izgw.v2tofhir.segment.IzDetail;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -40,6 +39,9 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class ParserUtils {
+	/** Where the reference is stored in user data */
+	private static final String REFERENCE_LINK = "Reference";
+	private static final String UNEXPECTED_HL7_EXCEPTION = "Unexpected HL7Exception: {}";
 	/** Key under which search names are stored for a reference */
 	public static final String SEARCH_NAMES = "searchNames";
 	/** Key under which reverse search names are stored for a reference */
@@ -217,7 +219,7 @@ public class ParserUtils {
 		try {
 			return type.isEmpty();
 		} catch (HL7Exception e) {
-			warn("Unexpected HL7Exception: {}", e.getMessage(), e);
+			warn(UNEXPECTED_HL7_EXCEPTION, e.getMessage(), e);
 			return true;
 		}
 	}
@@ -421,7 +423,7 @@ public class ParserUtils {
 					}
 				}
 			} catch (HL7Exception e) {
-				log.error("Unexpected HL7Exception: {}", e.getMessage(), e);
+				log.error(UNEXPECTED_HL7_EXCEPTION, e.getMessage(), e);
 			}
 		}
 	}
@@ -587,43 +589,78 @@ public class ParserUtils {
 	 * @return	The created Reference
 	 */
 	public static Reference toReference(Resource resource, Resource source, String ... searchNames) {
-		Reference ref = toReference(resource, SEARCH_NAMES, searchNames);
+		Reference ref = createReferenceWithSearch(resource, SEARCH_NAMES, searchNames);
 
 		if (source != null) {
 			// Track forward references
 			addIncludeReferences(source, ref, true);
 			
 			// Track Reverse references
-			Reference rev = toReference(source, REVERSE_NAMES, searchNames);
+			Reference rev = createReferenceWithSearch(source, REVERSE_NAMES, searchNames);
 			addIncludeReferences(resource, rev, false);
 		}
 		
 		return ref;
 	}
-
-	private static Reference toReference(Resource resource, String userDataNamesField, String ...searchNames) {
+	
+	/**
+	 * Make the references to a later resource point to the first resource instead.
+	 * Enables merging of two resources into one.
+	 * 
+	 * @param first	The first resource
+	 * @param later	The later resource
+	 */
+	public static void mergeReferences(Resource first, Resource later) {
+		Reference fRef = (Reference) first.getUserData(REFERENCE_LINK);
+		Reference lRef = (Reference) later.getUserData(REFERENCE_LINK);
 		
+		lRef.setReferenceElement(fRef.getReferenceElement());
+		// If the first reference doesn't have an identifier, copy the identifier
+		// from lRef into it.
+		if (fRef.getIdentifier() == null) {
+			fRef.setIdentifier(lRef.getIdentifier());
+		}
+		if (lRef.getIdentifier() == null) {
+			lRef.setIdentifier(fRef.getIdentifier());
+		}
+		// The two references should now look identical, and will both point
+		// to the first resource.
+		
+		/*
+		 * TODO: Merge the searchNames and reverseNames fields.
+		 * searchNames 
+		 */
+		
+		updateReference(first, fRef);
+		updateReference(later, lRef);
+	}
+
+	private static Reference createReferenceWithSearch(Resource resource, String userDataNamesField, String ...searchNames) {
 		if (resource == null) {
 			throw new NullPointerException("Resource cannot be null");
 		}
-		IdType id = resource.getIdElement();
-		
-		Reference ref = (Reference) resource.getUserData("Reference");
+		Reference ref = createReference(resource);
+		addSearchNames(ref, userDataNamesField, searchNames);
+		updateReference(resource, ref);
+		return ref;
+	}
+
+	private static Reference createReference(Resource resource) {
+		Reference ref = (Reference) resource.getUserData(REFERENCE_LINK);
 		
 		if (ref == null) {
 			ref = new Reference();
 			// Link the resource to the reference
-			resource.setUserData("Reference", ref);
+			resource.setUserData(REFERENCE_LINK, ref);
 			// And the reference to the resource
 			ref.setUserData("Resource", resource);
 		}
-		addSearchNames(ref, userDataNamesField, searchNames);
 		
+		IdType id = resource.getIdElement();
 		if (id != null) {
 			ref.setReferenceElement(id);
 		}
 		
-		updateReference(resource, ref);
 		return ref;
 	}
 
@@ -777,7 +814,7 @@ public class ParserUtils {
 				}
 			}
 		} catch (HL7Exception e) {
-			log.warn("Unexpected HL7Exception: {}", e.getMessage(), e);
+			log.warn(UNEXPECTED_HL7_EXCEPTION, e.getMessage(), e);
 		}
 		return found;
 	}

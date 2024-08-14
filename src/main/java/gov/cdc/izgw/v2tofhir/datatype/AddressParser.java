@@ -1,6 +1,10 @@
 package gov.cdc.izgw.v2tofhir.datatype;
 
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
@@ -40,9 +44,8 @@ public class AddressParser implements DatatypeParser<Address> {
 
 	private static final Pattern postalCodePattern = Pattern.compile(
 			"^\\d{5}$|^\\d{5}-\\d{4}$|^[a-zA-Z]\\d[a-zA-Z]-\\d[a-zA-Z]\\d$");
-
-	private static final Pattern statePattern = ParserUtils.toPattern("AL",
-			"Alabama", "AK", "Alaska", "AZ", "Arizona", "AR", "Arkansas", "AS",
+	private static final String[] states = {
+			"AL", "Alabama", "AK", "Alaska", "AZ", "Arizona", "AR", "Arkansas", "AS",
 			"American Samoa", "CA", "California", "CO", "Colorado", "CT",
 			"Connecticut", "DE", "Delaware", "DC", "District of Columbia", "FL",
 			"Florida", "GA", "Georgia", "GU", "Guam", "HI", "Hawaii", "ID",
@@ -73,7 +76,18 @@ public class AddressParser implements DatatypeParser<Address> {
 			"NUEVO LEON", "OA", "OAXACA", "PU", "PUEBLA", "QE", "QUERETARO",
 			"QI", "QUINTANA ROO", "SI", "SINALOA", "SL", "SAN LUIS POTOSI",
 			"SO", "SONORA", "TA", "TAMAULIPAS", "TB", "TABASCO", "TL",
-			"TLAXCALA", "VC", "VERACRUZ", "YU", "YUCATAN", "ZA", "ZACATECA");
+			"TLAXCALA", "VC", "VERACRUZ", "YU", "YUCATAN", "ZA", "ZACATECA"
+	};
+	private static final Pattern statePattern = ParserUtils.toPattern(states);
+	private static Map<String, String[]> STATE_MAP = new LinkedHashMap<>();
+	static {
+		for (int i = 0; i < states.length; i += 2) {
+			String[] stateAndAbbreviation = { states[i], states[i + 1] };
+			STATE_MAP.put(stateAndAbbreviation[0], stateAndAbbreviation);
+			STATE_MAP.put(stateAndAbbreviation[1].toUpperCase(), stateAndAbbreviation);
+		}
+	}
+
 	// See https://pe.usps.com/text/pub28/28apc_002.htm
 	private static final Pattern streetPattern = ParserUtils.toPattern("ALLEE",
 			"ALLEY", "ALLY", "ALY", "ANEX", "ANNEX", "ANNX", "ANX", "ARC",
@@ -180,6 +194,26 @@ public class AddressParser implements DatatypeParser<Address> {
 	 */
 	public AddressParser() {
 		// Construct the default address parser
+	}
+	
+	/**
+	 * Get state abbreviation for state name or abbreviation
+	 * @param state state name or abbreviation
+	 * @return	The state abbreviation
+	 */
+	public static String getStateAbbreviation(String state) {
+		String[] array = STATE_MAP.get(StringUtils.upperCase(state));
+		return array == null ? null : array[0];
+	}
+	
+	/**
+	 * Get state name for state name or abbreviation
+	 * @param state state name or abbreviation
+	 * @return	The state name
+	 */
+	public static String getStateName(String state) {
+		String[] array = STATE_MAP.get(StringUtils.upperCase(state));
+		return array == null ? null : array[1];
 	}
 	
 	@Override

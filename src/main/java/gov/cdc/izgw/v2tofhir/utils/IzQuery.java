@@ -2,6 +2,7 @@ package gov.cdc.izgw.v2tofhir.utils;
 
 import java.util.List;
 
+import org.hl7.fhir.instance.model.api.IAnyResource;
 import org.hl7.fhir.r4.model.Immunization;
 import org.hl7.fhir.r4.model.Patient;
 import ca.uhn.fhir.rest.param.DateParam;
@@ -27,7 +28,8 @@ import lombok.Data;
  */
 @Data
 public class IzQuery {
-	private static final String COUNT = "_count";
+	/** The number of results to return */
+	public static final String COUNT = "_count";
 	/** Code used for an Immunization History Request */
 	public static final String HISTORY = "Z34";
 	/** Search parameter for Patient Address Lines */
@@ -46,6 +48,7 @@ public class IzQuery {
 	public static final String PATIENT_GENDER = Immunization.SP_PATIENT + "." + Patient.SP_GENDER;
 	/** Search parameter for Patient Phone */
 	public static final String PATIENT_HOMEPHONE = Immunization.SP_PATIENT + "." + Patient.SP_PHONE;
+
 	/** Search parameter for PatientList */
 	public static final String PATIENT_LIST = Immunization.SP_PATIENT + "." + Patient.SP_IDENTIFIER;
 	/** Search parameter for Mothers Maiden Name Extension */
@@ -120,6 +123,7 @@ public class IzQuery {
 			case COUNT:
 				setCount(param);
 				break;
+				
 			case PATIENT_LIST: //	QPD-3	PatientList (can repeat)
 				setPatientList(fhirParamName, param);
 				break;

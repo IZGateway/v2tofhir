@@ -761,7 +761,7 @@ public class DatatypeConverter {
 			return null;
 		}
 		Location location = new Location();
-    	location.setUserData("source", DatatypeConverter.class.getName());
+    	location.setUserData(MessageParser.SOURCE, DatatypeConverter.class.getName());
 
 		if (t instanceof Primitive) {
 			location.setName(ParserUtils.toString(t));
@@ -787,14 +787,17 @@ public class DatatypeConverter {
 			location.addType(toCodeableConcept(ParserUtils.getComponent(comp, 0)));
 			break;
 		case "PL":
+			location.setMode(LocationMode.INSTANCE);
 			toLocationFromComposite(location, comp);
 			location.setDescription(ParserUtils.toString(comp, 9));
 			break;
 		case "LA1":
+			location.setMode(LocationMode.INSTANCE);
 			toLocationFromComposite(location, comp);
 			location.setAddress(toAddress(ParserUtils.getComponent(comp, 8)));
 			break;
 		case "LA2":
+			location.setMode(LocationMode.INSTANCE);
 			toLocationFromComposite(location, comp);
 			location.setAddress(toAddress(comp));
 			break;
@@ -839,7 +842,7 @@ public class DatatypeConverter {
 
 			if (curl.hasName()) {
 				Location partOf = new Location();
-		    	partOf.setUserData("source", DatatypeConverter.class.getName());
+		    	partOf.setUserData(MessageParser.SOURCE, DatatypeConverter.class.getName());
 				curl.setPartOf(ParserUtils.toReference(partOf, curl, "partof"));
 				curl = partOf;
 			}
@@ -927,7 +930,7 @@ public class DatatypeConverter {
     public static Organization toOrganization(Type t) {
     	t = adjustIfVaries(t);
     	Organization org = new Organization();
-    	org.setUserData("source", DatatypeConverter.class.getName());
+    	org.setUserData(MessageParser.SOURCE, DatatypeConverter.class.getName());
 		org.setName(ParserUtils.toString(t));
 
     	if ("XON".equals(t.getName())) {
@@ -945,7 +948,7 @@ public class DatatypeConverter {
     public static Practitioner toPractitioner(Type t) {
     	t = adjustIfVaries(t);
     	Practitioner pract = new Practitioner();
-    	pract.setUserData("source", DatatypeConverter.class.getName());
+    	pract.setUserData(MessageParser.SOURCE, DatatypeConverter.class.getName());
 
 		pract.addName(toHumanName(t));
 		if (PEOPLE_TYPES.contains(t.getName())) {
@@ -962,7 +965,7 @@ public class DatatypeConverter {
     public static RelatedPerson toRelatedPerson(Type t) {
     	t = adjustIfVaries(t);
     	RelatedPerson person = new RelatedPerson();
-    	person.setUserData("source", DatatypeConverter.class.getName());
+    	person.setUserData(MessageParser.SOURCE, DatatypeConverter.class.getName());
 
     	person.addName(toHumanName(t));
 		if (PEOPLE_TYPES.contains(t.getName())) {

@@ -4,6 +4,7 @@ import java.io.PrintStream;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.IllegalFormatCodePointException;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -28,12 +29,41 @@ public class FhirIdCodec {
 	
 	private static Base64.Encoder ENCODER = Base64.getUrlEncoder();
 	private static Base64.Decoder DECODER = Base64.getUrlDecoder();
+
+	/**
+	 * Encode a string into the FHIR id character set.
+	 * 
+	 * @param value	The string to encode
+	 * @return	The encoded value
+	 */
+	public static String encode(String value) {
+		byte[] data = value.getBytes(StandardCharsets.UTF_8);
+		return StringUtils.replaceChars(ENCODER.encodeToString(data), "_=", ".");
+	}
+	/**
+	 * Decode a string into the FHIR id character set.
+	 * 
+	 * @param value	The string to decode
+	 * @return	The decoded value
+	 * @throws IllegalFormatCodePointException if the value could properly not be decoded as a Unicode String
+	 */
+	public static String decode(String value) {
+		value = value.replace(".", "_");
+		byte[] data = DECODER.decode(value);
+		String result = new String(data, StandardCharsets.UTF_8);
+		if (result.contains("\uFFFD")) {
+			throw new IllegalFormatCodePointException(0xFFFD);
+		}
+		return result;
+	}
+	
+
 	/**
 	 * Encode an ASCII string into the FHIR id character set.
 	 * @param value	The value to encode.
 	 * @return	The encoded value.
 	 */
-	public static String encode(String value) {
+	public static String encodeAscii(String value) {
 		if (!StringUtils.isAsciiPrintable(value)) {
 			throw new IllegalArgumentException("Value contains non ASCII-printable characters");
 		} 
@@ -41,6 +71,37 @@ public class FhirIdCodec {
 		byte[] data = value.getBytes(StandardCharsets.US_ASCII);
 		data = packAsciiBytes(data);
 		return StringUtils.replaceChars(ENCODER.encodeToString(data), "_=", ".");
+	}
+	
+	/**
+	 * Decode an ASCII string from the FHIR id character set.
+	 * @param value	The value to decode.
+	 * @return A string containing the decoded value.
+	 * @throws IllegalFormatCodePointException if the decoded characters are non-ASCII
+	 */
+	public static String decodeAscii(String value) {
+		value = value.replace(".", "_");
+		byte[] data = DECODER.decode(value);
+		BigInteger result = new BigInteger(data);
+		StringBuilder b = new StringBuilder();
+		BigInteger mult = BigInteger.valueOf(96);
+		while (!result.equals(BigInteger.ZERO)) {
+			BigInteger[] div = result.divideAndRemainder(mult);
+			byte v = div[1].byteValue();
+			result = div[0];
+			if (v < 0 || v >= 96) {
+				throw new IllegalFormatCodePointException(v + 32);
+			}
+			v += 32;
+			b.append((char)v);
+		}
+		// Reverse the data
+		for (int i = 0, j = b.length() - 1; i < j; i++, j--) {
+			char left = b.charAt(i);
+			b.setCharAt(i, b.charAt(j));
+			b.setCharAt(j, left);
+		}
+		return b.toString();
 	}
 	
 	/**
@@ -62,33 +123,6 @@ public class FhirIdCodec {
 			if (++counter % 8 == 0) out.print(" ");
 		}
 		out.println();
-	}
-	
-	/**
-	 * Decode an ASCII string from the FHIR id character set.
-	 * @param value	The value to decode.
-	 * @return A string containing the decoded value.
-	 */
-	private static String decode(String value) {
-		value = value.replace(".", "_");
-		byte[] data = DECODER.decode(value);
-		BigInteger result = new BigInteger(data);
-		StringBuilder b = new StringBuilder();
-		BigInteger mult = BigInteger.valueOf(96);
-		while (!result.equals(BigInteger.ZERO)) {
-			BigInteger[] div = result.divideAndRemainder(mult);
-			byte v = div[1].byteValue();
-			result = div[0];
-			v += 32;
-			b.append((char)v);
-		}
-		// Reverse the data
-		for (int i = 0, j = b.length() - 1; i < j; i++, j--) {
-			char left = b.charAt(i);
-			b.setCharAt(i, b.charAt(j));
-			b.setCharAt(j, left);
-		}
-		return b.toString();
 	}
 	
 	/**

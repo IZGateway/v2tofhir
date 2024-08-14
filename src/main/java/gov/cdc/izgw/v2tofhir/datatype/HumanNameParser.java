@@ -71,7 +71,6 @@ public class HumanNameParser implements DatatypeParser<HumanName> {
 		return HumanName.class;
 	}
 
-	@Override
 	/**
 	 * Parse a human name from a string. The parser recognizes common prefixes and
 	 * suffixes and puts them in the prefix and suffix fields of the human name. It
@@ -81,7 +80,21 @@ public class HumanNameParser implements DatatypeParser<HumanName> {
 	 * @param name The name to parse
 	 * @return The parsed name in a HumanName object
 	 */
+	@Override
 	public HumanName fromString(String name) {
+		return computeFromString(name);
+	}
+	
+	/**
+	 * Parse a human name from a string. The parser recognizes common prefixes and
+	 * suffixes and puts them in the prefix and suffix fields of the human name. It
+	 * puts the first space separated string into the first given name, and any
+	 * susbsequent strings except the last.
+	 * 
+	 * @param name The name to parse
+	 * @return The parsed name in a HumanName object
+	 */
+	public static HumanName computeFromString(String name) {
 		HumanName hn = new HumanName();
 		hn.setText(name);
 		String[] parts = name.split("\\s");
@@ -108,47 +121,53 @@ public class HumanNameParser implements DatatypeParser<HumanName> {
 		return hn;
 	}
 
-	private void updateNamePart(HumanName hn, StringBuilder familyName, String part) {
+	private static void updateNamePart(HumanName hn, StringBuilder familyName, String part) {
 		NamePart classification = classifyNamePart(part);
 		switch (classification) {
-		case PREFIXANDSUFFIX, PREFIX:
+		case PREFIXANDSUFFIX:
 			if (!hn.hasGiven() && familyName.isEmpty()) {
 				hn.addPrefix(part);
-				break;
+				return;
 			} 
-			if (NamePart.PREFIXANDSUFFIX.equals(classification)) {
-				if (!familyName.isEmpty()) { // Some are both a prefix and a suffix
-					hn.addSuffix(part);
-				} else {
-					familyName.append(part).append(" ");
-				}
-			} else if (!familyName.isEmpty()) { // Some are both a prefix and a suffix
-				hn.addSuffix(part);
+			if (familyName.isEmpty()) { 
+				// could be a prefix or a suffix, but we haven't yet started
+				// on suffixes and are beyond prefixes.  
+				// Only thing that is both is "sr".
+				// We add it as a given name.
+				hn.addGiven(part);
+				return;
 			}
-			break;
+			// Fall through to add suffix if we have some part of familyName
+		case SUFFIX:
+			hn.addSuffix(part);
+			return;
+		case PREFIX:
+			if (!hn.hasGiven() && familyName.isEmpty()) {
+				hn.addPrefix(part);
+				return;
+			} 
+			familyName.append(part).append(" ");
+			return;
 		case AFFIX:
 			if (!hn.hasGiven()) {
 				hn.addGiven(part);
-			} else {
-				familyName.append(part).append(" ");
-			}
-			break;
-		case FAMILY, GIVEN, NAME:
-			if (!familyName.isEmpty()) {
-				familyName.append(part).append(" ");
-			} else {
+				return;
+			} 
+			familyName.append(part).append(" ");
+			return;
+		case NAME:
+			if (familyName.isEmpty()) {
 				hn.addGiven(part);
-			}
-			break;
-		case SUFFIX:
-			hn.addSuffix(part);
-			break;
+				return;
+			} 
+			familyName.append(part).append(" ");
+			return;
 		default:
-			break;
+			return;
 		}
 	}
 
-	private NamePart classifyNamePart(String part) {
+	private static NamePart classifyNamePart(String part) {
 		if (isPrefix(part)) {
 			return isSuffix(part) ? NamePart.PREFIXANDSUFFIX : NamePart.PREFIX;
 		}
@@ -276,20 +295,40 @@ public class HumanNameParser implements DatatypeParser<HumanName> {
 		}
 	}
 
-	private static boolean isAffix(String part) {
-		return AFFIXES.contains(part.toLowerCase());
+	/**
+	 * Sees if the string is an affix
+	 * @param part	The string to check
+	 * @return	True if it is an affix to the name.
+	 */
+	public static boolean isAffix(String part) {
+		return AFFIXES.contains(StringUtils.lowerCase(part));
 	}
 
-	private static boolean isPrefix(String part) {
-		return PREFIXES.contains(part.toLowerCase().replace(".", ""));
+	/**
+	 * Sees if the string is an prefix
+	 * @param part	The string to check
+	 * @return	True if it is an prefix to the name.
+	 */
+	public static boolean isPrefix(String part) {
+		return PREFIXES.contains(StringUtils.replace(StringUtils.lowerCase(part), ".", ""));
 	}
 
-	private static boolean isSuffix(String part) {
-		return SUFFIXES.contains(part.toLowerCase().replace(".", ""));
+	/**
+	 * Sees if the string is an suffix
+	 * @param part	The string to check
+	 * @return	True if it is an suffix to the name.
+	 */
+	public static boolean isSuffix(String part) {
+		return SUFFIXES.contains(StringUtils.replace(StringUtils.lowerCase(part), ".", ""));
 	}
 
-	private static boolean isDegree(String part) {
-		return DEGREES.contains(part.toLowerCase().replace(".", ""));
+	/**
+	 * Sees if the string is a degree (e.g., MD)
+	 * @param part	The string to check
+	 * @return	True if it is a degree following the name
+	 */
+	public static boolean isDegree(String part) {
+		return DEGREES.contains(StringUtils.replace(StringUtils.lowerCase(part), ".", ""));
 	}
 
 }

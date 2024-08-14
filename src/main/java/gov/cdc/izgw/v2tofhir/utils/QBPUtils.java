@@ -132,13 +132,17 @@ public class QBPUtils {
 	 * @param qbp	The QBP message to update
 	 * @param map	A map such as that returned by ServletRequest.getParameters() 
 	 * containing the request parameters
+	 * @param isPatient 
 	 * @return	The updated QPD Segment
 	 * @throws HL7Exception If an error occurs
 	 */
-	public static IzQuery addRequestToQPD(QBP_Q11 qbp, Map<String, String[]> map) throws HL7Exception {
+	public static IzQuery addRequestParamsToQPD(QBP_Q11 qbp, Map<String, String[]> map, boolean isPatient) throws HL7Exception {
 		IzQuery query = new IzQuery(qbp.getQPD());
 		for (Map.Entry<String, String[]> e: map.entrySet()) {
-			query.addParameter(e.getKey(), Arrays.asList(e.getValue()));
+			// Modify the parameter name for patient queries so that the 
+			// keys are preceded by "patient."
+			String param = isPatient ? "patient." + e.getKey() : e.getKey();
+			query.addParameter(param, Arrays.asList(e.getValue()));
 		}
 		query.update();
 		return query;
@@ -151,13 +155,17 @@ public class QBPUtils {
 	 * @param map	A map similar to that returned by ServletRequest.getParameters() 
 	 * containing the request parameters, save that arrays are lists.  NOTE: Only
 	 * patient.identifier can be repeated.  
+	 * @param isPatient True if the request is for the Patient resource
 	 * @return	The updated QPD Segment
 	 * @throws HL7Exception If an error occurs
 	 */
-	public static IzQuery addParamsToQPD(QBP_Q11 qbp, Map<String, List<String>> map) throws HL7Exception {
+	public static IzQuery addParamsToQPD(QBP_Q11 qbp, Map<String, List<String>> map, boolean isPatient) throws HL7Exception {
 		IzQuery query = new IzQuery(qbp.getQPD());
 		for (Map.Entry<String, List<String>> e: map.entrySet()) {
-			query.addParameter(e.getKey(), e.getValue());
+			// Modify the parameter name for patient queries so that the 
+			// keys are preceded by "patient."
+			String param = isPatient ? "patient." + e.getKey() : e.getKey();
+			query.addParameter(param, e.getValue());
 		}
 		query.update();
 		return query;

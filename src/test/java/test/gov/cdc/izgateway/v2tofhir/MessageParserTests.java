@@ -371,7 +371,7 @@ class MessageParserTests extends TestBase {
 			values.add(URLDecoder.decode(value, StandardCharsets.UTF_8));
 		}
 		
-		QBPUtils.addParamsToQPD(qbp, m);
+		QBPUtils.addParamsToQPD(qbp, m, false);
 
 		// Copy over the query tag.
 		Type queryTag = segment.segment().getField(2, 0);
