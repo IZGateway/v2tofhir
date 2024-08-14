@@ -3,7 +3,6 @@ package gov.cdc.izgw.v2tofhir.converter;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -13,7 +12,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.function.Supplier;
 
 import org.apache.commons.codec.binary.StringUtils;
@@ -326,29 +324,7 @@ public class MessageParser {
 						// Skip cases where resources aren't of the same type.
 						continue;
 					}
-					Resource toRemove = null;
-					switch (first.fhirType()) {
-					case "Endpoint":
-						toRemove = merge((Endpoint)first, (Endpoint)later);
-						break;
-					case "Location":
-						toRemove = merge((Location)first, (Location)later);
-						break;
-					case "Organization":
-						toRemove = merge((Organization)first, (Organization)later);
-						break;
-					case "Practitioner":
-						toRemove = merge((Practitioner)first, (Practitioner)later);
-						break;
-					case "PractitionerRole":
-						toRemove = merge((PractitionerRole)first, (PractitionerRole)later);
-						break;
-					case "RelatedPerson":
-						toRemove = merge((RelatedPerson)first, (RelatedPerson)later);
-						break;
-					default:
-						break;
-					}
+					Resource toRemove = mergeResources(first, later);
 					if (toRemove != null) {
 						resourcesToRemove.add(toRemove);
 					}
@@ -363,6 +339,33 @@ public class MessageParser {
 				it.remove();
 			}
 		}
+	}
+
+	private static Resource mergeResources(Resource first, Resource later) {
+		Resource toRemove = null;
+		switch (first.fhirType()) {
+		case "Endpoint":
+			toRemove = merge((Endpoint)first, (Endpoint)later);
+			break;
+		case "Location":
+			toRemove = merge((Location)first, (Location)later);
+			break;
+		case "Organization":
+			toRemove = merge((Organization)first, (Organization)later);
+			break;
+		case "Practitioner":
+			toRemove = merge((Practitioner)first, (Practitioner)later);
+			break;
+		case "PractitionerRole":
+			toRemove = merge((PractitionerRole)first, (PractitionerRole)later);
+			break;
+		case "RelatedPerson":
+			toRemove = merge((RelatedPerson)first, (RelatedPerson)later);
+			break;
+		default:
+			break;
+		}
+		return toRemove;
 	}
 	
 	/**
@@ -448,19 +451,6 @@ public class MessageParser {
 		l.setText(null);
 		
 		return f.equalsShallow(l);
-	}
-	
-	private static int compareStringType(StringType s1, StringType s2) {
-		if (Objects.equals(s1,  s2)) {
-			return 0;
-		}
-		if (s1 == null) {
-			return -1;
-		}
-		if (s2 == null) {
-			return 1;
-		}
-		return s1.asStringValue().compareTo(s2.asStringValue());
 	}
 	
 	/**

@@ -2,7 +2,6 @@ package gov.cdc.izgw.v2tofhir.utils;
 
 import java.util.List;
 
-import org.hl7.fhir.instance.model.api.IAnyResource;
 import org.hl7.fhir.r4.model.Immunization;
 import org.hl7.fhir.r4.model.Patient;
 import ca.uhn.fhir.rest.param.DateParam;

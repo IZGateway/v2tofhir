@@ -1,9 +1,7 @@
 package gov.cdc.izgw.v2tofhir.datatype;
 
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -79,7 +77,7 @@ public class AddressParser implements DatatypeParser<Address> {
 			"TLAXCALA", "VC", "VERACRUZ", "YU", "YUCATAN", "ZA", "ZACATECA"
 	};
 	private static final Pattern statePattern = ParserUtils.toPattern(states);
-	private static Map<String, String[]> STATE_MAP = new LinkedHashMap<>();
+	private static final Map<String, String[]> STATE_MAP = new LinkedHashMap<>();
 	static {
 		for (int i = 0; i < states.length; i += 2) {
 			String[] stateAndAbbreviation = { states[i], states[i + 1] };
