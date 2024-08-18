@@ -6,6 +6,7 @@ import org.hl7.fhir.r4.model.Immunization;
 import org.hl7.fhir.r4.model.Patient;
 import ca.uhn.fhir.rest.param.DateParam;
 import ca.uhn.fhir.rest.param.NumberParam;
+import ca.uhn.fhir.rest.param.ReferenceParam;
 import ca.uhn.fhir.rest.param.TokenParam;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.v251.datatype.CX;
@@ -122,7 +123,13 @@ public class IzQuery {
 			case COUNT:
 				setCount(param);
 				break;
-				
+			
+			case Immunization.SP_PATIENT:
+				ReferenceParam refParam = new ReferenceParam();
+				refParam.setValueAsQueryToken(null, Immunization.SP_PATIENT, null, param);
+				String ident = FhirIdCodec.decode(refParam.getIdPart());
+				setPatientList(fhirParamName, ident);
+				break;
 			case PATIENT_LIST: //	QPD-3	PatientList (can repeat)
 				setPatientList(fhirParamName, param);
 				break;
@@ -330,7 +337,7 @@ public class IzQuery {
 	}
 
 	private void setPatientFamilyName(String param) throws HL7Exception{
-		if (!getName().isEmpty()) {
+		if (!getName().getFamilyName().isEmpty()) {
 			throw new IllegalArgumentException(IzQuery.CANNOT_REPEAT + param);
 		}
 		getName().getFamilyName().getSurname().setValue(param);
@@ -384,6 +391,7 @@ public class IzQuery {
 	private void setPatientPhone(String param) throws HL7Exception{
 		TokenParam token;
 		token = new TokenParam();
+		param = param.split(",")[0]; // Take the first value provided
 		token.setValueAsQueryToken(QBPUtils.R4, PATIENT_HOMEPHONE, null, param);
 		if (!getTelephone().isEmpty()) {
 			throw new IllegalArgumentException(IzQuery.CANNOT_REPEAT + param);

@@ -584,8 +584,7 @@ public class Mapping {
 			Map<String, Coding> cm = codingMaps.get(system);
 			if (cm == null) {
 				if (!codingMaps.containsKey(system)) {
-					// Report this error once during an application session.
-					warn("Unknown code system: {}", table);
+					log.debug("Unknown code system: {}", table);
 					codingMaps.put(system, null);
 				}
 				return null;
