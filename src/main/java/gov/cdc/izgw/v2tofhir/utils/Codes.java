@@ -45,26 +45,29 @@ public class Codes {
 	 */
 	
 	public static final CodeableConcept ASSEMBLER_AGENT = new CodeableConcept().addCoding(new Coding("http://terminology.hl7.org/CodeSystem/provenance-participant-type", "assembler", "Assembler"));
+	
+	private static final String V2TABLES = "http://terminology.hl7.org/CodeSystem/v2-";
+	
 	/**
 	 * The function code for an Ordering Provider
 	 */
 	public static final CodeableConcept ORDERING_PROVIDER_FUNCTION_CODE = 
-			new CodeableConcept().addCoding(new Coding(Mapping.v2Table("0433"), "OP", "Ordering Provider"));
+			new CodeableConcept().addCoding(new Coding(V2TABLES + "0433", "OP", "Ordering Provider"));
 	/**
 	 * The function code for an Administrating Provider
 	 */
 	public static final CodeableConcept ADMIN_PROVIDER_FUNCTION_CODE = 
-			new CodeableConcept().addCoding(new Coding(Mapping.v2Table("0433"), "AP", "Administrating Provider"));
+			new CodeableConcept().addCoding(new Coding(V2TABLES + "0433", "AP", "Administrating Provider"));
 
 	/**
 	 * The role code for the Medical Director of laboratory or other observation producing facility. 
 	 */
 	public static final CodeableConcept MEDICAL_DIRECTOR_ROLE_CODE = 
-			new CodeableConcept().addCoding(new Coding(Mapping.v2Table("0912"), "MDIR", "Medical Director"));
+			new CodeableConcept().addCoding(new Coding(V2TABLES + "0912", "MDIR", "Medical Director"));
 	
 	/** The code for a Social Security Number found on Identifier.type */
 	public static final CodeableConcept SSN_TYPE = new CodeableConcept().addCoding(
-			new Coding("http://terminology.hl7.org/CodeSystem/v2-0203", "SS", "Social Security Number")
+			new Coding(V2TABLES + "0203", "SS", "Social Security Number")
 		);
 	
 	/** The concept of MOTHER */
@@ -103,7 +106,7 @@ public class Codes {
 	/** Visit Number */
 	public static final CodeableConcept VISIT_NUMBER = new CodeableConcept()
 			.addCoding(
-					new Coding(Mapping.v2Table("0203"), "VN", "visit number")
+					new Coding(V2TABLES + "0203", "VN", "visit number")
 				);
 	
 	private Codes() {}

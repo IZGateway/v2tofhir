@@ -218,9 +218,10 @@ public class IzQuery {
 		rcp.getQuantityLimitedRequest().getUnits().getNameOfCodingSystem().setValue("HL70126");
 		
 		if (!isHasId() && 
-			(getName().isEmpty() || getGender().isEmpty() || getBirthDate().isEmpty()) ) {
+			(getName().isEmpty() || 
+			 getBirthDate().isEmpty()) ) {
 			throw new IllegalArgumentException("A query must contain either a "
-					+ "patient.identifier or the patient name, gender, and birthDate");
+					+ "patient.identifier or the patient name and birthDate");
 		}
 	}
 
