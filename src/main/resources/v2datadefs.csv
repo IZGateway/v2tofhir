@@ -1,0 +1,4207 @@
+﻿Description,Item#,Seg,Seq#,Len,DT,Rep,Table,Chapter
+Discharge Care Provider ,01514,ABS,1,250,XCN,,0010,6.5.12.1
+Transfer Medical Service Code ,01515,ABS,2,250,CE,,0069,6.5.12.2
+Severity of Illness Code ,01516,ABS,3,250,CE,,0421,6.5.12.3
+Date/Time of Attestation ,01517,ABS,4,26,TS,,,6.5.12.4
+Attested By ,01518,ABS,5,250,XCN,,,6.5.12.5
+Triage Code ,01519,ABS,6,250,CE,,0422,6.5.12.6
+Abstract Completion Date/Time ,01520,ABS,7,26,TS,,,6.5.12.7
+Abstracted By ,01521,ABS,8,250,XCN,,,6.5.12.8
+Case Category Code ,01522,ABS,9,250,CE,,0423,6.5.12.9
+Caesarian Section Indicator ,01523,ABS,10,1,ID,,0136,6.5.12.10
+Gestation Category Code ,01524,ABS,11,250,CE,,0424,6.5.12.11
+Gestation Period - Weeks ,01525,ABS,12,3,NM,,,6.5.12.12
+Newborn Code ,01526,ABS,13,250,CE,,0425,6.5.12.13
+Stillborn Indicator ,01527,ABS,14,1,ID,,0136,6.5.12.14
+Accident Date/Time ,00527,ACC,1,26,TS,,,6.5.9.1
+Accident Code ,00528,ACC,2,250,CE,,0050,6.5.9.2
+Accident Location ,00529,ACC,3,25,ST,,,6.5.9.3
+Auto Accident State ,00812,ACC,4,250,CE,,0347,6.5.9.4
+Accident Job Related Indicator ,00813,ACC,5,1,ID,,0136,6.5.9.5
+Accident Death Indicator ,00814,ACC,6,12,ID,,0136,6.5.9.6
+Entered By ,00224,ACC,7,250,XCN,,,6.5.9.7
+Accident Description ,01503,ACC,8,25,ST,,,6.5.9.8
+Brought In By ,01504,ACC,9,80,ST,,,6.5.9.9
+Police Notified Indicator ,01505,ACC,10,1,ID,,0136,6.5.9.10
+Accident Address ,01853,ACC,11,250,XAD,,,6.5.9.11
+Addendum Continuation Pointer ,00066,ADD,1,65536,ST,,,2.15.1.1
+Set ID - AFF ,01427,AFF,1,60,SI,,,15.4.1.1
+Professional Organization ,01444,AFF,2,250,XON,,,15.4.1.2
+Professional Organization Address ,01445,AFF,3,250,XAD,,,15.4.1.3
+Professional Organization Affiliation Date Range,01446,AFF,4,52,DR,Y,,15.4.1.4
+Professional Affiliation Additional Information,01447,AFF,5,60,ST,,,15.4.1.5
+Set ID - AIG ,00896,AIG,1,4,SI,,,10.6.5.1
+Segment Action Code ,00763,AIG,2,3,ID,,0206,10.6.5.2
+Resource ID ,00897,AIG,3,250,CE,,,10.6.5.3
+Resource Type ,00898,AIG,4,250,CE,,,10.6.5.4
+Resource Group ,00899,AIG,5,250,CE,Y,,10.6.5.5
+Resource Quantity ,00900,AIG,6,5,NM,,,10.6.5.6
+Resource Quantity Units ,00901,AIG,7,250,CE,,,10.6.5.7
+Start Date/Time ,01202,AIG,8,26,TS,,,10.6.5.8
+Start Date/Time Offset ,00891,AIG,9,20,NM,,,10.6.5.9
+Start Date/Time Offset Units ,00892,AIG,10,250,CE,,,10.6.5.10
+Duration ,00893,AIG,11,20,NM,,,10.6.5.11
+Duration Units ,00894,AIG,12,250,CE,,,10.6.5.12
+Allow Substitution Code ,00895,AIG,13,10,IS,,0279,10.6.5.13
+Filler Status Code ,00889,AIG,14,250,CE,,0278,10.6.5.14
+Set ID - AIL ,00902,AIL,1,4,SI,,,10.6.6.1
+Segment Action Code ,00763,AIL,2,3,ID,,0206,10.6.6.2
+Location Resource ID ,00903,AIL,3,80,PL,Y,,10.6.6.3
+Location Type-AIL ,00904,AIL,4,250,CE,,0305,10.6.6.4
+Location Group ,00905,AIL,5,250,CE,,,10.6.6.5
+Start Date/Time ,01202,AIL,6,26,TS,,,10.6.6.6
+Start Date/Time Offset ,00891,AIL,7,20,NM,,,10.6.6.7
+Start Date/Time Offset Units ,00892,AIL,8,250,CE,,,10.6.6.8
+Duration ,00893,AIL,9,20,NM,,,10.6.6.9
+Duration Units ,00894,AIL,10,250,CE,,,10.6.6.10
+Allow Substitution Code ,00895,AIL,11,10,IS,,0279,10.6.6.11
+Filler Status Code ,00889,AIL,12,250,CE,,0278,10.6.6.12
+Set ID - AIP ,00906,AIP,1,4,SI,,,10.6.7.1
+Segment Action Code ,00763,AIP,2,3,ID,,0206,10.6.7.2
+Personnel Resource ID ,00913,AIP,3,250,XCN,Y,,10.6.7.3
+Resource Type ,00907,AIP,4,250,CE,,0182,10.6.7.4
+Resource Group ,00899,AIP,5,250,CE,,,10.6.7.5
+Start Date/Time ,01202,AIP,6,26,TS,,,10.6.7.6
+Start Date/Time Offset ,00891,AIP,7,20,NM,,,10.6.7.7
+Start Date/Time Offset Units ,00892,AIP,8,250,CE,,,10.6.7.8
+Duration ,00893,AIP,9,20,NM,,,10.6.7.9
+Duration Units ,00894,AIP,10,250,CE,,,10.6.7.10
+Allow Substitution Code ,00895,AIP,11,10,IS,,0279,10.6.7.11
+Filler Status Code ,00889,AIP,12,250,CE,,0278,10.6.7.12
+Set ID - AIS ,00890,AIS,1,4,SI,,,10.6.4.1
+Segment Action Code ,00763,AIS,2,3,ID,,0206,10.6.4.2
+Universal Service Identifier ,00238,AIS,3,250,CE,,,10.6.4.3
+Start Date/Time ,01202,AIS,4,26,TS,,,10.6.4.4
+Start Date/Time Offset ,00891,AIS,5,20,NM,,,10.6.4.5
+Start Date/Time Offset Units ,00892,AIS,6,250,CE,,,10.6.4.6
+Duration ,00893,AIS,7,20,NM,,,10.6.4.7
+Duration Units ,00894,AIS,8,250,CE,,,10.6.4.8
+Allow Substitution Code ,00895,AIS,9,10,IS,,0279,10.6.4.9
+Filler Status Code ,00889,AIS,10,250,CE,,0278,10.6.4.10
+Placer Supplemental Service Information ,01474,AIS,11,250,CE,Y,0411,10.6.4.11
+Filler Supplemental Service Information ,01475,AIS,12,250,CE,Y,0411,10.6.4.12
+Set ID - AL1 ,00203,AL1,1,4,SI,,,3.4.6.1
+Allergen Type Code ,00204,AL1,2,250,CE,,0127,3.4.6.2
+Allergen Code/Mnemonic/Description ,00205,AL1,3,250,CE,,,3.4.6.3
+Allergy Severity Code ,00206,AL1,4,250,CE,,0128,3.4.6.4
+Allergy Reaction Code ,00207,AL1,5,15,ST,Y,,3.4.6.5
+Identification Date ,00208,AL1,6,8,DT,,,3.4.6.6
+Time Selection Criteria ,00908,APR,1,80,SCV,Y,0294,10.6.8.1
+Resource Selection Criteria ,00909,APR,2,80,SCV,Y,0294,10.6.8.2
+Location Selection Criteria ,00910,APR,3,80,SCV,Y,0294,10.6.8.3
+Slot Spacing Criteria ,00911,APR,4,5,NM,,,10.6.8.4
+Filler Override Criteria ,00912,APR,5,80,SCV,Y,,10.6.8.5
+Placer Appointment ID ,00860,ARQ,1,75,EI,,,10.6.1.1
+Filler Appointment ID ,00861,ARQ,2,75,EI,,,10.6.1.2
+Occurrence Number ,00862,ARQ,3,5,NM,,,10.6.1.3
+Placer Group Number ,00218,ARQ,4,22,EI,,,10.6.1.4
+Schedule ID ,00864,ARQ,5,250,CE,,,10.6.1.5
+Request Event Reason ,00865,ARQ,6,250,CE,,,10.6.1.6
+Appointment Reason ,00866,ARQ,7,250,CE,,0276,10.6.1.7
+Appointment Type ,00867,ARQ,8,250,CE,,0277,10.6.1.8
+Appointment Duration ,00868,ARQ,9,20,NM,,,10.6.1.9
+Appointment Duration Units ,00869,ARQ,10,250,CE,,,10.6.1.10
+Requested Start Date/Time Range ,00870,ARQ,11,53,DR,Y,,10.6.1.11
+Priority-ARQ ,00871,ARQ,12,5,ST,,,10.6.1.12
+Repeating Interval ,00872,ARQ,13,100,RI,,,10.6.1.13
+Repeating Interval Duration ,00873,ARQ,14,5,ST,,,10.6.1.14
+Placer Contact Person ,00874,ARQ,15,250,XCN,Y,,10.6.1.15
+Placer Contact Phone Number ,00875,ARQ,16,250,XTN,Y,,10.6.1.16
+Placer Contact Address ,00876,ARQ,17,250,XAD,Y,,10.6.1.17
+Placer Contact Location ,00877,ARQ,18,80,PL,,,10.6.1.18
+Entered By Person ,00878,ARQ,19,250,XCN,Y,,10.6.1.19
+Entered By Phone Number ,00879,ARQ,20,250,XTN,Y,,10.6.1.20
+Entered By Location ,00880,ARQ,21,80,PL,,,10.6.1.21
+Parent Placer Appointment ID ,00881,ARQ,22,75,EI,,,10.6.1.22
+Parent Filler Appointment ID ,00882,ARQ,23,75,EI,,,10.6.1.23
+Placer Order Number ,00216,ARQ,24,22,EI,Y,,10.6.1.24
+Filler Order Number ,00217,ARQ,25,22,EI,Y,,10.6.1.25
+"Authorizing Payor, Plan ID ",01146,AUT,1,250,CE,,0072,11.6.2.1
+"Authorizing Payor, Company ID ",01147,AUT,2,250,CE,,0285,11.6.2.2
+"Authorizing Payor, Company Name ",01148,AUT,3,45,ST,,,11.6.2.3
+Authorization Effective Date ,01149,AUT,4,26,TS,,,11.6.2.4
+Authorization Expiration Date ,01150,AUT,5,26,TS,,,11.6.2.5
+Authorization Identifier ,01151,AUT,6,30,EI,,,11.6.2.6
+Reimbursement Limit ,01152,AUT,7,25,CP,,,11.6.2.7
+Requested Number of Treatments ,01153,AUT,8,2,NM,,,11.6.2.8
+Authorized Number of Treatments ,01154,AUT,9,2,NM,,,11.6.2.9
+Process Date ,01145,AUT,10,26,TS,,,11.6.2.10
+Batch Field Separator ,00081,BHS,1,1,ST,,,2.15.2.1
+Batch Encoding Characters ,00082,BHS,2,3,ST,,,2.15.2.2
+Batch Sending Application ,00083,BHS,3,227,HD,,,2.15.2.3
+Batch Sending Facility ,00084,BHS,4,227,HD,,,2.15.2.4
+Batch Receiving Application ,00085,BHS,5,227,HD,,,2.15.2.5
+Batch Receiving Facility ,00086,BHS,6,227,HD,,,2.15.2.6
+Batch Creation Date/Time ,00087,BHS,7,26,TS,,,2.15.2.7
+Batch Security ,00088,BHS,8,40,ST,,,2.15.2.8
+Batch Name/ID/Type ,00089,BHS,9,20,ST,,,2.15.2.9
+Batch Comment ,00090,BHS,10,80,ST,,,2.15.2.10
+Batch Control ID ,00091,BHS,11,20,ST,,,2.15.2.11
+Reference Batch Control ID ,00092,BHS,12,20,ST,,,2.15.2.12
+Blood Product Code ,01528,BLC,1,250,CE,,0426,6.5.13.1
+Blood Amount ,01529,BLC,2,267,CQ,,,6.5.13.2
+When to Charge ,00234,BLG,1,40,CCD,,0100,4.5.2.1
+Charge Type ,00235,BLG,2,50,ID,,0122,4.5.2.2
+Account ID ,00236,BLG,3,100,CX,,,4.5.2.3
+Charge Type Reason ,01645,BLG,4,60,CWE,,0475,4.5.2.4
+Set ID - BPO ,01700,BPO,1,4,SI,,,4.21.1.1
+BP Universal Service ID ,01701,BPO,2,250,CWE,,,4.21.1.2
+BP Processing Requirements ,01702,BPO,3,250,CWE,Y,0508,4.21.1.3
+BP Quantity ,01703,BPO,4,5,NM,,,4.21.1.4
+BP Amount ,01704,BPO,5,5,NM,,,4.21.1.5
+BP Units ,01705,BPO,6,250,CE,,,4.21.1.6
+BP Intended Use Date/Time ,01706,BPO,7,26,TS,,,4.21.1.7
+BP Intended Dispense From Location ,01707,BPO,8,80,PL,,,4.21.1.8
+BP Intended Dispense From Address ,01708,BPO,9,250,XAD,,,4.21.1.9
+BP Requested Dispense Date/Time ,01709,BPO,10,26,TS,,,4.21.1.10
+BP Requested Dispense To Location ,01710,BPO,11,80,PL,,,4.21.1.11
+BP Requested Dispense To Address ,01711,BPO,12,250,XAD,,,4.21.1.12
+BP Indication for Use ,01712,BPO,13,250,CWE,Y,0509,4.21.1.13
+BP Informed Consent Indicator ,01713,BPO,14,1,ID,,0136,4.21.1.14
+Set ID - BPX ,01714,BPX,1,4,SI,,,4.21.2.1
+BP Dispense Status ,01715,BPX,2,250,CWE,,0510,4.21.2.2
+BP Status ,01716,BPX,3,1,ID,,0511,4.21.2.3
+BP Date/Time of Status ,01717,BPX,4,26,TS,,,4.21.2.4
+BC Donation ID ,01718,BPX,5,22,EI,,,4.21.2.5
+BC Component ,01719,BPX,6,250,CNE,,,4.21.2.6
+BC Donation Type / Intended Use ,01720,BPX,7,250,CNE,,,4.21.2.7
+CP Commercial Product ,01721,BPX,8,250,CWE,,0512,4.21.2.8
+CP Manufacturer ,01722,BPX,9,250,XON,,,4.21.2.9
+CP Lot Number ,01723,BPX,10,22,EI,,,4.21.2.10
+BP Blood Group ,01724,BPX,11,250,CNE,,,4.21.2.11
+BC Special Testing ,01725,BPX,12,250,CNE,Y,,4.21.2.12
+BP Expiration Date/Time ,01726,BPX,13,26,TS,,,4.21.2.13
+BP Quantity ,01727,BPX,14,5,NM,,,4.21.2.14
+BP Amount ,01728,BPX,15,5,NM,,,4.21.2.15
+BP Units ,01729,BPX,16,250,CE,,,4.21.2.16
+BP Unique ID ,01730,BPX,17,22,EI,,,4.21.2.17
+BP Actual Dispensed To Location ,01731,BPX,18,80,PL,,,4.21.2.18
+BP Actual Dispensed To Address ,01732,BPX,19,250,XAD,,,4.21.2.19
+BP Dispensed to Receiver ,01733,BPX,20,250,XCN,,,4.21.2.20
+BP Dispensing Individual ,01734,BPX,21,250,XCN,,,4.21.2.21
+Batch Message Count ,00093,BTS,1,10,ST,,,2.15.3.1
+Batch Comment ,00090,BTS,2,80,ST,,,2.15.3.2
+Batch Totals ,00095,BTS,3,100,NM,Y,,2.15.3.3
+Set ID - BTX ,01735,BTX,1,4,SI,,,4.21.3.1
+BC Donation ID ,01736,BTX,2,22,EI,,,4.21.3.2
+BC Component ,01737,BTX,3,250,CNE,,,4.21.3.3
+BC Blood Group ,01738,BTX,4,250,CNE,,,4.21.3.4
+CP Commercial Product ,01739,BTX,5,250,CWE,,0512,4.21.3.5
+CP Manufacturer ,01740,BTX,6,250,XON,,,4.21.3.6
+CP Lot Number ,01741,BTX,7,22,EI,,,4.21.3.7
+BP Quantity ,01742,BTX,8,5,NM,,,4.21.3.8
+BP Amount ,01743,BTX,9,5,NM,,,4.21.3.9
+BP Units ,01744,BTX,10,250,CE,,,4.21.3.10
+BP Transfusion/Disposition Status ,01745,BTX,11,250,CWE,,0513,4.21.3.11
+BP Message Status ,01746,BTX,12,1,ID,,0511,4.21.3.12
+BP Date/Time of Status ,01747,BTX,13,26,TS,,,4.21.3.13
+BP Administrator ,01748,BTX,14,250,XCN,,,4.21.3.14
+BP Verifier ,01749,BTX,15,250,XCN,,,4.21.3.15
+BP Transfusion Start Date/Time of Status ,01750,BTX,16,26,TS,,,4.21.3.16
+BP Transfusion End Date/Time of Status ,01751,BTX,17,26,TS,,,4.21.3.17
+BP Adverse Reaction Type ,01752,BTX,18,250,CWE,Y,0514,4.21.3.18
+BP Transfusion Interrupted Reason ,01753,BTX,19,250,CWE,,0515,4.21.3.19
+Primary Key Value - CDM ,01306,CDM,1,250,CE,,0132,8.10.2.1
+Charge Code Alias ,00983,CDM,2,250,CE,Y,,8.10.2.2
+Charge Description Short ,00984,CDM,3,20,ST,,,8.10.2.3
+Charge Description Long ,00985,CDM,4,250,ST,,,8.10.2.4
+Description Override Indicator ,00986,CDM,5,1,IS,,0268,8.10.2.5
+Exploding Charges ,00987,CDM,6,250,CE,Y,,8.10.2.6
+Procedure Code ,00393,CDM,7,250,CE,Y,0088,8.10.2.7
+Active/Inactive Flag ,00675,CDM,8,1,ID,,0183,8.10.2.8
+Inventory Number ,00990,CDM,9,250,CE,Y,0463,8.10.2.9
+Resource Load ,00991,CDM,10,12,NM,,,8.10.2.10
+Contract Number ,00992,CDM,11,250,CX,Y,,8.10.2.11
+Contract Organization ,00993,CDM,12,250,XON,Y,,8.10.2.12
+Room Fee Indicator ,00994,CDM,13,1,ID,,0136,8.10.2.13
+Set ID - CER ,01856,CER,1,4,SI,,,15.4.2.1
+Serial Number ,01857,CER,2,80,ST,,,15.4.2.2
+Version ,01858,CER,3,80,ST,,,15.4.2.3
+Granting Authority ,01859,CER,4,250,XON,,,15.4.2.4
+Issuing Authority ,01860,CER,5,250,XCN,,,15.4.2.5
+Signature of Issuing Authority ,01861,CER,6,65536,ED,,,15.4.2.6
+Granting Country ,01862,CER,7,3,ID,,0399,15.4.2.7
+Granting State/Province ,01863,CER,8,250,CWE,,0347,15.4.2.8
+Granting County/Parish ,01864,CER,9,250,CWE,,0289,15.4.2.9
+Certificate Type ,01865,CER,10,250,CWE,,,15.4.2.10
+Certificate Domain ,01866,CER,11,250,CWE,,,15.4.2.11
+Subject ID ,01867,CER,12,250,ID,,,15.4.2.12
+Subject Name ,01907,CER,13,250,ST,,,15.4.2.13
+Subject Directory Attribute Extension (Health Professional Data),01868,CER,14,250,CWE,Y,,15.4.2.14
+Subject Public Key Info ,01869,CER,15,250,CWE,,,15.4.2.15
+Authority Key Identifier ,01870,CER,16,250,CWE,,,15.4.2.16
+Basic Constraint ,01871,CER,17,250,ID,,0136,15.4.2.17
+CRL Distribution Point ,01872,CER,18,250,CWE,Y,,15.4.2.18
+Jurisdiction Country ,01875,CER,19,3,ID,,0399,15.4.2.19
+Jurisdiction State/Province ,01873,CER,20,250,CWE,,0347,15.4.2.20
+Jurisdiction County/Parish ,01874,CER,21,250,CWE,,0289,15.4.2.21
+Jurisdiction Breadth ,01895,CER,22,250,CWE,Y,0547,15.4.2.22
+Granting Date ,01876,CER,23,26,TS,,,15.4.2.23
+Issuing Date ,01877,CER,24,26,TS,,,15.4.2.24
+Activation Date ,01878,CER,25,26,TS,,,15.4.2.25
+Inactivation Date ,01879,CER,26,26,TS,,,15.4.2.26
+Expiration Date ,01880,CER,27,26,TS,,,15.4.2.27
+Renewal Date ,01881,CER,28,26,TS,,,15.4.2.28
+Revocation Date ,01882,CER,29,26,TS,,,15.4.2.29
+Revocation Reason Code ,01883,CER,30,250,CE,,,15.4.2.30
+Certificate Status ,01884,CER,31,250,CWE,,0536,15.4.2.31
+Set ID - CM0 ,01010,CM0,1,4,SI,,,8.11.2.1
+Sponsor Study ID ,01011,CM0,2,60,EI,,,8.11.2.2
+Alternate Study ID ,01036,CM0,3,60,EI,Y,,8.11.2.3
+Title of Study ,01013,CM0,4,300,ST,,,8.11.2.4
+Chairman of Study ,01014,CM0,5,250,XCN,Y,,8.11.2.5
+Last IRB Approval Date ,01015,CM0,6,8,DT,,,8.11.2.6
+Total Accrual to Date ,01016,CM0,7,8,NM,,,8.11.2.7
+Last Accrual Date ,01017,CM0,8,8,DT,,,8.11.2.8
+Contact for Study ,01018,CM0,9,250,XCN,Y,,8.11.2.9
+Contact's Telephone Number ,01019,CM0,10,250,XTN,,,8.11.2.10
+Contact's Address ,01020,CM0,11,250,XAD,Y,,8.11.2.11
+Set ID - CM1 ,01021,CM1,1,4,SI,,,8.11.3.1
+Study Phase Identifier ,01022,CM1,2,250,CE,,,8.11.3.2
+Description of Study Phase ,01023,CM1,3,300,ST,,,8.11.3.3
+Set ID - CM2 ,01024,CM2,1,4,SI,,,8.11.4.1
+Scheduled Time Point ,01025,CM2,2,250,CE,,,8.11.4.2
+Description of Time Point ,01026,CM2,3,300,ST,,,8.11.4.3
+Events Scheduled This Time Point ,01027,CM2,4,250,CE,Y,,8.11.4.4
+Starting Notification Reference Number ,01402,CNS,1,20,NM,,,13.4.8.1
+Ending Notification Reference Number ,01403,CNS,2,20,NM,,,13.4.8.2
+Starting Notification Date/Time ,01404,CNS,3,26,TS,,,13.4.8.3
+Ending Notification Date/Time ,01405,CNS,4,26,TS,,,13.4.8.4
+Starting Notification Code ,01406,CNS,5,250,CE,,,13.4.8.5
+Ending Notification Code ,01407,CNS,6,250,CE,,,13.4.8.6
+Set ID - CON ,01776,CON,1,4,SI,,,9.9.4.1
+Consent Type ,01777,CON,2,250,CWE,,0496,9.9.4.2
+Consent Form ID ,01778,CON,3,40,ST,,,9.9.4.3
+Consent Form Number ,01779,CON,4,180,EI,,,9.9.4.4
+Consent Text ,01780,CON,5,65536,FT,Y,,9.9.4.5
+Subject-specific Consent Text ,01781,CON,6,65536,FT,Y,,9.9.4.6
+Consent Background ,01782,CON,7,65536,FT,Y,,9.9.4.7
+Subject-specific Consent Background ,01783,CON,8,65536,FT,Y,,9.9.4.8
+Consenter-imposed limitations ,01784,CON,9,65536,FT,Y,,9.9.4.9
+Consent Mode ,01785,CON,10,2,CNE,,0497,9.9.4.10
+Consent Status ,01786,CON,11,2,CNE,,0498,9.9.4.11
+Consent Discussion Date/Time ,01787,CON,12,26,TS,,,9.9.4.12
+Consent Decision Date/Time ,01788,CON,13,26,TS,,,9.9.4.13
+Consent Effective Date/Time ,01789,CON,14,26,TS,,,9.9.4.14
+Consent End Date/Time ,01790,CON,15,26,TS,,,9.9.4.15
+Subject Competence Indicator ,01791,CON,16,1,ID,,0136,9.9.4.16
+Translator Assistance Indicator ,01792,CON,17,1,ID,,0136,9.9.4.17
+Language Translated To ,01793,CON,18,1,ID,,0296,9.9.4.18
+Informational Material Supplied Indicator ,01794,CON,19,1,ID,,0136,9.9.4.19
+Consent Bypass Reason ,01795,CON,20,250,CWE,,0499,9.9.4.20
+Consent Disclosure Level ,01796,CON,21,1,ID,,0500,9.9.4.21
+Consent Non-disclosure Reason ,01797,CON,22,250,CWE,,0501,9.9.4.22
+Non-subject Consenter Reason ,01798,CON,23,250,CWE,,0502,9.9.4.23
+Consenter ID ,01909,CON,24,250,XPN,Y,,9.9.4.24
+Relationship to Subject Table ,01898,CON,25,100,IS,Y,0548,9.9.4.25
+Study Phase Identifier ,01022,CSP,1,250,CE,,,7.8.2.1
+Date/time Study Phase Began ,01052,CSP,2,26,TS,,,7.8.2.2
+Date/time Study Phase Ended ,01053,CSP,3,26,TS,,,7.8.2.3
+Study Phase Evaluability ,01054,CSP,4,250,CE,,,7.8.2.4
+Sponsor Study ID ,01011,CSR,1,60,EI,,,7.8.1.1
+Alternate Study ID ,01036,CSR,2,60,EI,,,7.8.1.2
+Institution Registering the Patient ,01037,CSR,3,250,CE,,,7.8.1.3
+Sponsor Patient ID ,01038,CSR,4,30,CX,,,7.8.1.4
+Alternate Patient ID - CSR ,01039,CSR,5,30,CX,,,7.8.1.5
+Date/Time Of Patient Study Registration ,01040,CSR,6,26,TS,,,7.8.1.6
+Person Performing Study Registration ,01041,CSR,7,250,XCN,Y,,7.8.1.7
+Study Authorizing Provider ,01042,CSR,8,250,XCN,Y,,7.8.1.8
+Date/time Patient Study Consent Signed ,01043,CSR,9,26,TS,,,7.8.1.9
+Patient Study Eligibility Status ,01044,CSR,10,250,CE,,,7.8.1.10
+Study Randomization Date/time ,01045,CSR,11,26,TS,Y,,7.8.1.11
+Randomized Study Arm ,01046,CSR,12,250,CE,Y,,7.8.1.12
+Stratum for Study Randomization ,01047,CSR,13,250,CE,Y,,7.8.1.13
+Patient Evaluability Status ,01048,CSR,14,250,CE,,,7.8.1.14
+Date/time Ended Study ,01049,CSR,15,26,TS,,,7.8.1.15
+Reason Ended Study ,01050,CSR,16,250,CE,,,7.8.1.16
+Study Scheduled Time Point ,01055,CSS,1,250,CE,,,7.8.3.1
+Study Scheduled Patient Time Point ,01056,CSS,2,26,TS,,,7.8.3.2
+Study Quality Control Codes ,01057,CSS,3,250,CE,Y,,7.8.3.3
+Contact Role ,00196,CTD,1,250,CE,Y,0131,11.6.4.1
+Contact Name ,01165,CTD,2,250,XPN,Y,,11.6.4.2
+Contact Address ,01166,CTD,3,250,XAD,Y,,11.6.4.3
+Contact Location ,01167,CTD,4,60,PL,,,11.6.4.4
+Contact Communication Information ,01168,CTD,5,250,XTN,Y,,11.6.4.5
+Preferred Method of Contact ,00684,CTD,6,250,CE,,0185,11.6.4.6
+Contact Identifiers ,01171,CTD,7,100,PLN,Y,,11.6.4.7
+Sponsor Study ID ,01011,CTI,1,60,EI,,,7.8.4.1
+Study Phase Identifier ,01022,CTI,2,250,CE,,,7.8.4.2
+Study Scheduled Time Point ,01055,CTI,3,250,CE,,,7.8.4.3
+Set ID - DB1 ,01283,DB1,1,4,SI,,,3.4.11.1
+Disabled Person Code ,01284,DB1,2,2,IS,,0334,3.4.11.2
+Disabled Person Identifier ,01285,DB1,3,250,CX,Y,,3.4.11.3
+Disabled Indicator ,01286,DB1,4,1,ID,,0136,3.4.11.4
+Disability Start Date ,01287,DB1,5,8,DT,,,3.4.11.5
+Disability End Date ,01288,DB1,6,8,DT,,,3.4.11.6
+Disability Return to Work Date ,01289,DB1,7,8,DT,,,3.4.11.7
+Disability Unable to Work Date ,01290,DB1,8,8,DT,,,3.4.11.8
+Set ID - DG1 ,00375,DG1,1,4,SI,,,6.5.2.1
+Diagnosis Coding Method ,00376,DG1,2,2,ID,,0053,6.5.2.2
+Diagnosis Code - DG1 ,00377,DG1,3,250,CE,,0051,6.5.2.3
+Diagnosis Description ,00378,DG1,4,40,ST,,,6.5.2.4
+Diagnosis Date/Time ,00379,DG1,5,26,TS,,,6.5.2.5
+Diagnosis Type ,00380,DG1,6,2,IS,,0052,6.5.2.6
+Major Diagnostic Category ,00381,DG1,7,250,CE,,0118,6.5.2.7
+Diagnostic Related Group ,00382,DG1,8,250,CE,,0055,6.5.2.8
+DRG Approval Indicator ,00383,DG1,9,1,ID,,0136,6.5.2.9
+DRG Grouper Review Code ,00384,DG1,10,2,IS,,0056,6.5.2.10
+Outlier Type ,00385,DG1,11,250,CE,,0083,6.5.2.11
+Outlier Days ,00386,DG1,12,3,NM,,,6.5.2.12
+Outlier Cost ,00387,DG1,13,12,CP,,,6.5.2.13
+Grouper Version And Type ,00388,DG1,14,4,ST,,,6.5.2.14
+Diagnosis Priority ,00389,DG1,15,2,ID,,0359,6.5.2.15
+Diagnosing Clinician ,00390,DG1,16,250,XCN,Y,,6.5.2.16
+Diagnosis Classification ,00766,DG1,17,3,IS,,0228,6.5.2.17
+Confidential Indicator ,00767,DG1,18,1,ID,,0136,6.5.2.18
+Attestation Date/Time ,00768,DG1,19,26,TS,,,6.5.2.19
+Diagnosis Identifier ,01850,DG1,20,427,EI,,,6.5.2.20
+Diagnosis Action Code ,01894,DG1,21,1,ID,,0206,6.5.2.21
+Diagnostic Related Group ,00382,DRG,1,250,CE,,0055,6.5.3.1
+DRG Assigned Date/Time ,00769,DRG,2,26,TS,,,6.5.3.2
+DRG Approval Indicator ,00383,DRG,3,1,ID,,0136,6.5.3.3
+DRG Grouper Review Code ,00384,DRG,4,2,IS,,0056,6.5.3.4
+Outlier Type ,00385,DRG,5,250,CE,,0083,6.5.3.5
+Outlier Days ,00386,DRG,6,3,NM,,,6.5.3.6
+Outlier Cost ,00387,DRG,7,12,CP,,,6.5.3.7
+DRG Payor ,00770,DRG,8,1,IS,,0229,6.5.3.8
+Outlier Reimbursement ,00771,DRG,9,9,CP,,,6.5.3.9
+Confidential Indicator ,00767,DRG,10,1,ID,,0136,6.5.3.10
+DRG Transfer Type ,01500,DRG,11,21,IS,,0415,6.5.3.11
+Continuation Pointer ,00014,DSC,1,180,ST,,,2.15.4.1
+Continuation Style ,01354,DSC,2,1,ID,,0398,2.15.4.2
+Set ID - DSP ,00061,DSP,1,4,SI,,,5.5.1.1
+Display Level ,00062,DSP,2,4,SI,,,5.5.1.2
+Data Line ,00063,DSP,3,300,TX,,,5.5.1.3
+Logical Break Point ,00064,DSP,4,2,ST,,,5.5.1.4
+Result ID ,00065,DSP,5,20,TX,,,5.5.1.5
+Reference Command Number ,01390,ECD,1,20,NM,,,13.4.5.1
+Remote Control Command ,01391,ECD,2,250,CE,,0368,13.4.5.2
+Response Required ,01392,ECD,3,80,ID,,0136,13.4.5.3
+Requested Completion Time ,01393,ECD,4,200,TQ,,,13.4.5.4
+Parameters ,01394,ECD,5,65536,TX,Y,,13.4.5.5
+Command Response ,01395,ECR,1,250,CE,,0387,13.4.6.1
+Date/Time Completed ,01396,ECR,2,26,TS,,,13.4.6.2
+Command Response Parameters ,01397,ECR,3,65536,TX,Y,,13.4.6.3
+Set ID - EDU ,01448,EDU,1,60,SI,,,15.4.3.1
+Academic Degree ,01449,EDU,2,10,IS,,0360,15.4.3.2
+Academic Degree Program Date Range ,01597,EDU,3,52,DR,,,15.4.3.3
+Academic Degree Program Participation Date Range ,01450,EDU,4,52,DR,,,15.4.3.4
+Academic Degree Granted Date ,01451,EDU,5,8,DT,,,15.4.3.5
+School ,01452,EDU,6,250,XON,,,15.4.3.6
+School Type Code ,01453,EDU,7,250,CE,,0402,15.4.3.7
+School Address ,01454,EDU,8,250,XAD,,,15.4.3.8
+Major Field of Study ,01885,EDU,9,250,CWE,Y,,15.4.3.9
+Query Tag ,00696,EQL,1,32,ST,,,5.10.5.1.1
+Query/Response Format Code ,00697,EQL,2,1,ID,,0106,5.10.5.1.2
+EQL Query Name ,00709,EQL,3,250,CE,,,5.10.5.1.3
+EQL Query Statement ,00710,EQL,4,4096,ST,,,5.10.5.1.4
+Event type ,01430,EQP,1,250,CE,,0450,13.4.12.1
+File Name ,01431,EQP,2,20,ST,,,13.4.12.2
+Start Date/Time ,01202,EQP,3,26,TS,,,13.4.12.3
+End Date/Time ,01432,EQP,4,26,TS,,,13.4.12.4
+Transaction Data ,01433,EQP,5,65536,FT,,,13.4.12.5
+Equipment Instance Identifier ,01479,EQU,1,22,EI,,,13.4.1.1
+Event Date/Time ,01322,EQU,2,26,TS,,,13.4.1.2
+Equipment State ,01323,EQU,3,250,CE,,0365,13.4.1.3
+Local/Remote Control State ,01324,EQU,4,250,CE,,0366,13.4.1.4
+Alert Level ,01325,EQU,5,250,CE,,0367,13.4.1.5
+Query Tag ,00696,ERQ,1,32,ST,,,5.10.5.2.1
+Event Identifier ,00706,ERQ,2,250,CE,,,5.10.5.2.2
+Input Parameter List ,00705,ERQ,3,256,QIP,Y,,5.10.5.2.3
+Error Code and Location ,00024,ERR,1,493,ELD,Y,,2.15.5.1
+Error Location ,01812,ERR,2,18,ERL,Y,,2.15.5.2
+HL7 Error Code ,01813,ERR,3,705,CWE,,0357,2.15.5.3
+Severity ,01814,ERR,4,2,ID,,0516,2.15.5.4
+Application Error Code ,01815,ERR,5,705,CWE,,0533,2.15.5.5
+Application Error Parameter ,01816,ERR,6,80,ST,Y,,2.15.5.6
+Diagnostic Information ,01817,ERR,7,2048,TX,,,2.15.5.7
+User Message ,01818,ERR,8,250,TX,,,2.15.5.8
+Inform Person Indicator ,01819,ERR,9,20,IS,Y,0517,2.15.5.9
+Override Type ,01820,ERR,10,705,CWE,,0518,2.15.5.10
+Override Reason Code ,01821,ERR,11,705,CWE,Y,0519,2.15.5.11
+Help Desk Contact Point ,01822,ERR,12,652,XTN,Y,,2.15.5.12
+Event Type Code ,00099,EVN,1,3,ID,,0003,3.4.1.1
+Recorded Date/Time ,00100,EVN,2,26,TS,,,3.4.1.2
+Date/Time Planned Event ,00101,EVN,3,26,TS,,,3.4.1.3
+Event Reason Code ,00102,EVN,4,3,IS,,0062,3.4.1.4
+Operator ID ,00103,EVN,5,250,XCN,Y,0188,3.4.1.5
+Event Occurred ,01278,EVN,6,26,TS,,,3.4.1.6
+Event Facility ,01534,EVN,7,241,HD,,,3.4.1.7
+Facility ID-FAC ,01262,FAC,1,20,EI,,,7.12.6.1
+Facility Type ,01263,FAC,2,1,ID,,0331,7.12.6.2
+Facility Address ,01264,FAC,3,250,XAD,Y,,7.12.6.3
+Facility Telecommunication ,01265,FAC,4,250,XTN,,,7.12.6.4
+Contact Person ,01266,FAC,5,250,XCN,Y,,7.12.6.5
+Contact Title ,01267,FAC,6,60,ST,Y,,7.12.6.6
+Contact Address ,01166,FAC,7,250,XAD,Y,,7.12.6.7
+Contact Telecommunication ,01269,FAC,8,250,XTN,Y,,7.12.6.8
+Signature Authority ,01270,FAC,9,250,XCN,Y,,7.12.6.9
+Signature Authority Title ,01271,FAC,10,60,ST,,,7.12.6.10
+Signature Authority Address ,01272,FAC,11,250,XAD,Y,,7.12.6.11
+Signature Authority Telecommunication ,01273,FAC,12,250,XTN,,,7.12.6.12
+File Field Separator ,00067,FHS,1,1,ST,,,2.15.6.1
+File Encoding Characters ,00068,FHS,2,4,ST,,,2.15.6.2
+File Sending Application ,00069,FHS,3,227,HD,,,2.15.6.3
+File Sending Facility ,00070,FHS,4,227,HD,,,2.15.6.4
+File Receiving Application ,00071,FHS,5,227,HD,,,2.15.6.5
+File Receiving Facility ,00072,FHS,6,227,HD,,,2.15.6.6
+File Creation Date/Time ,00073,FHS,7,26,TS,,,2.15.6.7
+File Security ,00074,FHS,8,40,ST,,,2.15.6.8
+File Name/ID ,00075,FHS,9,20,ST,,,2.15.6.9
+File Header Comment ,00076,FHS,10,80,ST,,,2.15.6.10
+File Control ID ,00077,FHS,11,20,ST,,,2.15.6.11
+Reference File Control ID ,00078,FHS,12,20,ST,,,2.15.6.12
+Set ID - FT1 ,00355,FT1,1,4,SI,,,6.5.1.1
+Transaction ID ,00356,FT1,2,12,ST,,,6.5.1.2
+Transaction Batch ID ,00357,FT1,3,10,ST,,,6.5.1.3
+Transaction Date ,00358,FT1,4,53,DR,,,6.5.1.4
+Transaction Posting Date ,00359,FT1,5,26,TS,,,6.5.1.5
+Transaction Type ,00360,FT1,6,8,IS,,0017,6.5.1.6
+Transaction Code ,00361,FT1,7,250,CE,,0132,6.5.1.7
+Transaction Description ,00362,FT1,8,40,ST,,,6.5.1.8
+Transaction Description - Alt ,00363,FT1,9,40,ST,,,6.5.1.9
+Transaction Quantity ,00364,FT1,10,6,NM,,,6.5.1.10
+Transaction Amount - Extended ,00365,FT1,11,12,CP,,,6.5.1.11
+Transaction Amount - Unit ,00366,FT1,12,12,CP,,,6.5.1.12
+Department Code ,00367,FT1,13,250,CE,,0049,6.5.1.13
+Insurance Plan ID ,00368,FT1,14,250,CE,,0072,6.5.1.14
+Insurance Amount ,00369,FT1,15,12,CP,,,6.5.1.15
+Assigned Patient Location ,00133,FT1,16,80,PL,,,6.5.1.16
+Fee Schedule ,00370,FT1,17,1,IS,,0024,6.5.1.17
+Patient Type ,00148,FT1,18,2,IS,,0018,6.5.1.18
+Diagnosis Code - FT1 ,00371,FT1,19,250,CE,Y,0051,6.5.1.19
+Performed By Code ,00372,FT1,20,250,XCN,Y,0084,6.5.1.20
+Ordered By Code ,00373,FT1,21,250,XCN,Y,,6.5.1.21
+Unit Cost ,00374,FT1,22,12,CP,,,6.5.1.22
+Filler Order Number ,00217,FT1,23,22,EI,,,6.5.1.23
+Entered By Code ,00765,FT1,24,250,XCN,Y,,6.5.1.24
+Procedure Code ,00393,FT1,25,250,CE,,0088,6.5.1.25
+Procedure Code Modifier ,01316,FT1,26,250,CE,Y,0340,6.5.1.26
+Advanced Beneficiary Notice Code ,01310,FT1,27,250,CE,,0339,6.5.1.27
+Medically Necessary Duplicate Procedure Reason.,01646,FT1,28,250,CWE,,0476,6.5.1.28
+NDC Code ,01845,FT1,29,250,CNE,,0549,6.5.1.29
+Payment Reference ID ,01846,FT1,30,250,CX,,,6.5.1.30
+Transaction Reference Key ,01847,FT1,31,4,SI,Y,,6.5.1.31
+File Batch Count ,00079,FTS,1,10,NM,,,2.15.7.1
+File Trailer Comment ,00080,FTS,2,80,ST,,,2.15.7.2
+Action Code ,00816,GOL,1,2,ID,,0287,12.4.1.1
+Action Date/Time ,00817,GOL,2,26,TS,,,12.4.1.2
+Goal ID ,00818,GOL,3,250,CE,,,12.4.1.3
+Goal Instance ID ,00819,GOL,4,60,EI,,,12.4.1.4
+Episode of Care ID ,00820,GOL,5,60,EI,,,12.4.1.5
+Goal List Priority ,00821,GOL,6,60,NM,,,12.4.1.6
+Goal Established Date/Time ,00822,GOL,7,26,TS,,,12.4.1.7
+Expected Goal Achieve Date/Time ,00824,GOL,8,26,TS,,,12.4.1.8
+Goal Classification ,00825,GOL,9,250,CE,,,12.4.1.9
+Goal Management Discipline ,00826,GOL,10,250,CE,,,12.4.1.10
+Current Goal Review Status ,00827,GOL,11,250,CE,,,12.4.1.11
+Current Goal Review Date/Time ,00828,GOL,12,26,TS,,,12.4.1.12
+Next Goal Review Date/Time ,00829,GOL,13,26,TS,,,12.4.1.13
+Previous Goal Review Date/Time ,00830,GOL,14,26,TS,,,12.4.1.14
+Goal Review Interval ,00831,GOL,15,200,TQ,,,12.4.1.15
+Goal Evaluation ,00832,GOL,16,250,CE,,,12.4.1.16
+Goal Evaluation Comment ,00833,GOL,17,300,ST,Y,,12.4.1.17
+Goal Life Cycle Status ,00834,GOL,18,250,CE,,,12.4.1.18
+Goal Life Cycle Status Date/Time ,00835,GOL,19,26,TS,,,12.4.1.19
+Goal Target Type ,00836,GOL,20,250,CE,Y,,12.4.1.20
+Goal Target Name ,00837,GOL,21,250,XPN,Y,,12.4.1.21
+Type of Bill Code ,01599,GP1,1,3,IS,,0455,6.5.15.1
+Revenue Code ,01600,GP1,2,3,IS,Y,0456,6.5.15.2
+Overall Claim Disposition Code ,01601,GP1,3,1,IS,,0457,6.5.15.3
+OCE Edits per Visit Code ,01602,GP1,4,2,IS,Y,0458,6.5.15.4
+Outlier Cost ,00387,GP1,5,12,CP,,,6.5.15.5
+Revenue Code ,01600,GP2,1,3,IS,,0456,6.5.16.1
+Number of Service Units ,01604,GP2,2,7,NM,,,6.5.16.2
+Charge ,01605,GP2,3,12,CP,,,6.5.16.3
+Reimbursement Action Code ,01606,GP2,4,1,IS,,0459,6.5.16.4
+Denial or Rejection Code ,01607,GP2,5,1,IS,,0460,6.5.16.5
+OCE Edit Code ,01608,GP2,6,3,IS,Y,0458,6.5.16.6
+Ambulatory Payment Classification Code ,01609,GP2,7,250,CE,,0466,6.5.16.7
+Modifier Edit Code ,01610,GP2,8,1,IS,Y,0467,6.5.16.8
+Payment Adjustment Code ,01611,GP2,9,1,IS,,0468,6.5.16.9
+Packaging Status Code ,01617,GP2,10,1,IS,,0469,6.5.16.10
+Expected CMS Payment Amount ,01618,GP2,11,12,CP,,,6.5.16.11
+Reimbursement Type Code ,01619,GP2,12,2,IS,,0470,6.5.16.12
+Co-Pay Amount ,01620,GP2,13,12,CP,,,6.5.16.13
+Pay Rate per Service Unit ,01621,GP2,14,4,NM,,,6.5.16.14
+Set ID - GT1 ,00405,GT1,1,4,SI,,,6.5.5.1
+Guarantor Number ,00406,GT1,2,250,CX,Y,,6.5.5.2
+Guarantor Name ,00407,GT1,3,250,XPN,Y,,6.5.5.3
+Guarantor Spouse Name ,00408,GT1,4,250,XPN,Y,,6.5.5.4
+Guarantor Address ,00409,GT1,5,250,XAD,Y,,6.5.5.5
+Guarantor Ph Num - Home ,00410,GT1,6,250,XTN,Y,,6.5.5.6
+Guarantor Ph Num - Business ,00411,GT1,7,250,XTN,Y,,6.5.5.7
+Guarantor Date/Time Of Birth ,00412,GT1,8,26,TS,,,6.5.5.8
+Guarantor Administrative Sex ,00413,GT1,9,1,IS,,0001,6.5.5.9
+Guarantor Type ,00414,GT1,10,2,IS,,0068,6.5.5.10
+Guarantor Relationship ,00415,GT1,11,250,CE,,0063,6.5.5.11
+Guarantor SSN ,00416,GT1,12,11,ST,,,6.5.5.12
+Guarantor Date - Begin ,00417,GT1,13,8,DT,,,6.5.5.13
+Guarantor Date - End ,00418,GT1,14,8,DT,,,6.5.5.14
+Guarantor Priority ,00419,GT1,15,2,NM,,,6.5.5.15
+Guarantor Employer Name ,00420,GT1,16,250,XPN,Y,,6.5.5.16
+Guarantor Employer Address ,00421,GT1,17,250,XAD,Y,,6.5.5.17
+Guarantor Employer Phone Number ,00422,GT1,18,250,XTN,Y,,6.5.5.18
+Guarantor Employee ID Number ,00423,GT1,19,250,CX,Y,,6.5.5.19
+Guarantor Employment Status ,00424,GT1,20,2,IS,,0066,6.5.5.20
+Guarantor Organization Name ,00425,GT1,21,250,XON,Y,,6.5.5.21
+Guarantor Billing Hold Flag ,00773,GT1,22,1,ID,,0136,6.5.5.22
+Guarantor Credit Rating Code ,00774,GT1,23,250,CE,,0341,6.5.5.23
+Guarantor Death Date And Time ,00775,GT1,24,26,TS,,,6.5.5.24
+Guarantor Death Flag ,00776,GT1,25,1,ID,,0136,6.5.5.25
+Guarantor Charge Adjustment Code ,00777,GT1,26,250,CE,,0218,6.5.5.26
+Guarantor Household Annual Income ,00778,GT1,27,10,CP,,,6.5.5.27
+Guarantor Household Size ,00779,GT1,28,3,NM,,,6.5.5.28
+Guarantor Employer ID Number ,00780,GT1,29,250,CX,Y,,6.5.5.29
+Guarantor Marital Status Code ,00781,GT1,30,250,CE,,0002,6.5.5.30
+Guarantor Hire Effective Date ,00782,GT1,31,8,DT,,,6.5.5.31
+Employment Stop Date ,00783,GT1,32,8,DT,,,6.5.5.32
+Living Dependency ,00755,GT1,33,2,IS,,0223,6.5.5.33
+Ambulatory Status ,00145,GT1,34,2,IS,Y,0009,6.5.5.34
+Citizenship ,00129,GT1,35,250,CE,Y,0171,6.5.5.35
+Primary Language ,00118,GT1,36,250,CE,,0296,6.5.5.36
+Living Arrangement ,00742,GT1,37,2,IS,,0220,6.5.5.37
+Publicity Code ,00743,GT1,38,250,CE,,0215,6.5.5.38
+Protection Indicator ,00744,GT1,39,1,ID,,0136,6.5.5.39
+Student Indicator ,00745,GT1,40,2,IS,,0231,6.5.5.40
+Religion ,00120,GT1,41,250,CE,,0006,6.5.5.41
+Mother's Maiden Name ,00109,GT1,42,250,XPN,Y,,6.5.5.42
+Nationality ,00739,GT1,43,250,CE,,0212,6.5.5.43
+Ethnic Group ,00125,GT1,44,250,CE,Y,0189,6.5.5.44
+Contact Person's Name ,00748,GT1,45,250,XPN,Y,,6.5.5.45
+Contact Person's Telephone Number ,00749,GT1,46,250,XTN,Y,,6.5.5.46
+Contact Reason ,00747,GT1,47,250,CE,,0222,6.5.5.47
+Contact Relationship ,00784,GT1,48,3,IS,,0063,6.5.5.48
+Job Title ,00785,GT1,49,20,ST,,,6.5.5.49
+Job Code/Class ,00786,GT1,50,20,JCC,,,6.5.5.50
+Guarantor Employer's Organization Name ,01299,GT1,51,250,XON,Y,,6.5.5.51
+Handicap ,00753,GT1,52,2,IS,,0295,6.5.5.52
+Job Status ,00752,GT1,53,2,IS,,0311,6.5.5.53
+Guarantor Financial Class ,01231,GT1,54,50,FC,,,6.5.5.54
+Guarantor Race ,01291,GT1,55,250,CE,Y,0005,6.5.5.55
+Guarantor Birth Place ,01851,GT1,56,250,ST,,,6.5.5.56
+VIP Indicator ,00146,GT1,57,2,IS,,0099,6.5.5.57
+Set ID - IAM ,01612,IAM,1,4,SI,,,3.4.7.1
+Allergen Type Code ,00204,IAM,2,250,CE,,0127,3.4.7.2
+Allergen Code/Mnemonic/Description ,00205,IAM,3,250,CE,,,3.4.7.3
+Allergy Severity Code ,00206,IAM,4,250,CE,,0128,3.4.7.4
+Allergy Reaction Code ,00207,IAM,5,15,ST,Y,,3.4.7.5
+Allergy Action Code ,01551,IAM,6,250,CNE,,0323,3.4.7.6
+Allergy Unique Identifier ,01552,IAM,7,427,EI,,,3.4.7.7
+Action Reason ,01553,IAM,8,60,ST,,,3.4.7.8
+Sensitivity to Causative Agent Code ,01554,IAM,9,250,CE,,0436,3.4.7.9
+Allergen Group Code/Mnemonic/Description ,01555,IAM,10,250,CE,,,3.4.7.10
+Onset Date ,01556,IAM,11,8,DT,,,3.4.7.11
+Onset Date Text ,01557,IAM,12,60,ST,,,3.4.7.12
+Reported Date/Time ,01558,IAM,13,8,TS,,,3.4.7.13
+Reported By ,01559,IAM,14,250,XPN,,,3.4.7.14
+Relationship to Patient Code ,01560,IAM,15,250,CE,,0063,3.4.7.15
+Alert Device Code ,01561,IAM,16,250,CE,,0437,3.4.7.16
+Allergy Clinical Status Code ,01562,IAM,17,250,CE,,0438,3.4.7.17
+Statused by Person ,01563,IAM,18,250,XCN,,,3.4.7.18
+Statused by Organization ,01564,IAM,19,250,XON,,,3.4.7.19
+Statused at Date/Time ,01565,IAM,20,8,TS,,,3.4.7.20
+Primary Key Value - IIM ,01897,IIM,1,250,CWE,,,8.12.2.1
+Service Item Code ,01799,IIM,2,250,CWE,,,8.12.2.2
+Inventory Lot Number ,01800,IIM,3,250,ST,,,8.12.2.3
+Inventory Expiration Date ,01801,IIM,4,26,TS,,,8.12.2.4
+Inventory Manufacturer Name ,01802,IIM,5,250,CWE,,,8.12.2.5
+Inventory Location ,01803,IIM,6,250,CWE,,,8.12.2.6
+Inventory Received Date ,01804,IIM,7,26,TS,,,8.12.2.7
+Inventory Received Quantity ,01805,IIM,8,12,NM,,,8.12.2.8
+Inventory Received Quantity Unit ,01806,IIM,9,250,CWE,,,8.12.2.9
+Inventory Received Item Cost ,01807,IIM,10,12,MO,,,8.12.2.10
+Inventory On Hand Date ,01808,IIM,11,26,TS,,,8.12.2.11
+Inventory On Hand Quantity ,01809,IIM,12,12,NM,,,8.12.2.12
+Inventory On Hand Quantity Unit ,01810,IIM,13,250,CWE,,,8.12.2.13
+Procedure Code ,00393,IIM,14,250,CE,,0088,8.12.2.14
+Procedure Code Modifier ,01316,IIM,15,250,CE,Y,0340,8.12.2.15
+Set ID - IN1 ,00426,IN1,1,4,SI,,,6.5.6.1
+Insurance Plan ID ,00368,IN1,2,250,CE,,0072,6.5.6.2
+Insurance Company ID ,00428,IN1,3,250,CX,Y,,6.5.6.3
+Insurance Company Name ,00429,IN1,4,250,XON,Y,,6.5.6.4
+Insurance Company Address ,00430,IN1,5,250,XAD,Y,,6.5.6.5
+Insurance Co Contact Person ,00431,IN1,6,250,XPN,Y,,6.5.6.6
+Insurance Co Phone Number ,00432,IN1,7,250,XTN,Y,,6.5.6.7
+Group Number ,00433,IN1,8,12,ST,,,6.5.6.8
+Group Name ,00434,IN1,9,250,XON,Y,,6.5.6.9
+Insured's Group Emp ID ,00435,IN1,10,250,CX,Y,,6.5.6.10
+Insured's Group Emp Name ,00436,IN1,11,250,XON,Y,,6.5.6.11
+Plan Effective Date ,00437,IN1,12,8,DT,,,6.5.6.12
+Plan Expiration Date ,00438,IN1,13,8,DT,,,6.5.6.13
+Authorization Information ,00439,IN1,14,239,AUI,,,6.5.6.14
+Plan Type ,00440,IN1,15,3,IS,,0086,6.5.6.15
+Name Of Insured ,00441,IN1,16,250,XPN,Y,,6.5.6.16
+Insured's Relationship To Patient ,00442,IN1,17,250,CE,,0063,6.5.6.17
+Insured's Date Of Birth ,00443,IN1,18,26,TS,,,6.5.6.18
+Insured's Address ,00444,IN1,19,250,XAD,Y,,6.5.6.19
+Assignment Of Benefits ,00445,IN1,20,2,IS,,0135,6.5.6.20
+Coordination Of Benefits ,00446,IN1,21,2,IS,,0173,6.5.6.21
+Coord Of Ben. Priority ,00447,IN1,22,2,ST,,,6.5.6.22
+Notice Of Admission Flag ,00448,IN1,23,1,ID,,0136,6.5.6.23
+Notice Of Admission Date ,00449,IN1,24,8,DT,,,6.5.6.24
+Report Of Eligibility Flag ,00450,IN1,25,1,ID,,0136,6.5.6.25
+Report Of Eligibility Date ,00451,IN1,26,8,DT,,,6.5.6.26
+Release Information Code ,00452,IN1,27,2,IS,,0093,6.5.6.27
+Pre-Admit Cert (PAC) ,00453,IN1,28,15,ST,,,6.5.6.28
+Verification Date/Time ,00454,IN1,29,26,TS,,,6.5.6.29
+Verification By ,00455,IN1,30,250,XCN,Y,,6.5.6.30
+Type Of Agreement Code ,00456,IN1,31,2,IS,,0098,6.5.6.31
+Billing Status ,00457,IN1,32,2,IS,,0022,6.5.6.32
+Lifetime Reserve Days ,00458,IN1,33,4,NM,,,6.5.6.33
+Delay Before L.R. Day ,00459,IN1,34,4,NM,,,6.5.6.34
+Company Plan Code ,00460,IN1,35,8,IS,,0042,6.5.6.35
+Policy Number ,00461,IN1,36,15,ST,,,6.5.6.36
+Policy Deductible ,00462,IN1,37,12,CP,,,6.5.6.37
+Policy Limit - Amount ,00463,IN1,38,12,CP,,,6.5.6.38
+Policy Limit - Days ,00464,IN1,39,4,NM,,,6.5.6.39
+Room Rate - Semi-Private ,00465,IN1,40,12,CP,,,6.5.6.40
+Room Rate - Private ,00466,IN1,41,12,CP,,,6.5.6.41
+Insured's Employment Status ,00467,IN1,42,250,CE,,0066,6.5.6.42
+Insured's Administrative Sex ,00468,IN1,43,1,IS,,0001,6.5.6.43
+Insured's Employer's Address ,00469,IN1,44,250,XAD,Y,,6.5.6.44
+Verification Status ,00470,IN1,45,2,ST,,,6.5.6.45
+Prior Insurance Plan ID ,00471,IN1,46,8,IS,,0072,6.5.6.46
+Coverage Type ,01227,IN1,47,3,IS,,0309,6.5.6.47
+Handicap ,00753,IN1,48,2,IS,,0295,6.5.6.48
+Insured's ID Number ,01230,IN1,49,250,CX,Y,,6.5.6.49
+Signature Code ,01854,IN1,50,1,IS,,0535,6.5.6.50
+Signature Code Date ,01855,IN1,51,8,DT,,,6.5.6.51
+Insured's Birth Place ,01899,IN1,52,250,ST,,,6.5.6.52
+VIP Indicator ,01852,IN1,53,2,IS,,0099,6.5.6.53
+Insured's Employee ID ,00472,IN2,1,250,CX,Y,,6.5.7.1
+Insured's Social Security Number ,00473,IN2,2,11,ST,,,6.5.7.2
+Insured's Employer's Name and ID ,00474,IN2,3,250,XCN,Y,,6.5.7.3
+Employer Information Data ,00475,IN2,4,1,IS,,0139,6.5.7.4
+Mail Claim Party ,00476,IN2,5,1,IS,Y,0137,6.5.7.5
+Medicare Health Ins Card Number ,00477,IN2,6,15,ST,,,6.5.7.6
+Medicaid Case Name ,00478,IN2,7,250,XPN,Y,,6.5.7.7
+Medicaid Case Number ,00479,IN2,8,15,ST,,,6.5.7.8
+Military Sponsor Name ,00480,IN2,9,250,XPN,Y,,6.5.7.9
+Military ID Number ,00481,IN2,10,20,ST,,,6.5.7.10
+Dependent Of Military Recipient ,00482,IN2,11,250,CE,,0342,6.5.7.11
+Military Organization ,00483,IN2,12,25,ST,,,6.5.7.12
+Military Station ,00484,IN2,13,25,ST,,,6.5.7.13
+Military Service ,00485,IN2,14,14,IS,,0140,6.5.7.14
+Military Rank/Grade ,00486,IN2,15,2,IS,,0141,6.5.7.15
+Military Status ,00487,IN2,16,3,IS,,0142,6.5.7.16
+Military Retire Date ,00488,IN2,17,8,DT,,,6.5.7.17
+Military Non-Avail Cert On File ,00489,IN2,18,1,ID,,0136,6.5.7.18
+Baby Coverage ,00490,IN2,19,1,ID,,0136,6.5.7.19
+Combine Baby Bill ,00491,IN2,20,1,ID,,0136,6.5.7.20
+Blood Deductible ,00492,IN2,21,1,ST,,,6.5.7.21
+Special Coverage Approval Name ,00493,IN2,22,250,XPN,Y,,6.5.7.22
+Special Coverage Approval Title ,00494,IN2,23,30,ST,,,6.5.7.23
+Non-Covered Insurance Code ,00495,IN2,24,8,IS,Y,0143,6.5.7.24
+Payor ID ,00496,IN2,25,250,CX,Y,,6.5.7.25
+Payor Subscriber ID ,00497,IN2,26,250,CX,Y,,6.5.7.26
+Eligibility Source ,00498,IN2,27,1,IS,,0144,6.5.7.27
+Room Coverage Type/Amount ,00499,IN2,28,82,RMC,Y,,6.5.7.28
+Policy Type/Amount ,00500,IN2,29,56,PTA,Y,,6.5.7.29
+Daily Deductible ,00501,IN2,30,25,DDI,,,6.5.7.30
+Living Dependency ,00755,IN2,31,2,IS,,0223,6.5.7.31
+Ambulatory Status ,00145,IN2,32,2,IS,Y,0009,6.5.7.32
+Citizenship ,00129,IN2,33,250,CE,Y,0171,6.5.7.33
+Primary Language ,00118,IN2,34,250,CE,,0296,6.5.7.34
+Living Arrangement ,00742,IN2,35,2,IS,,0220,6.5.7.35
+Publicity Code ,00743,IN2,36,250,CE,,0215,6.5.7.36
+Protection Indicator ,00744,IN2,37,1,ID,,0136,6.5.7.37
+Student Indicator ,00745,IN2,38,2,IS,,0231,6.5.7.38
+Religion ,00120,IN2,39,250,CE,,0006,6.5.7.39
+Mother's Maiden Name ,00109,IN2,40,250,XPN,Y,,6.5.7.40
+Nationality ,00739,IN2,41,250,CE,,0212,6.5.7.41
+Ethnic Group ,00125,IN2,42,250,CE,Y,0189,6.5.7.42
+Marital Status ,00119,IN2,43,250,CE,Y,0002,6.5.7.43
+Insured's Employment Start Date ,00787,IN2,44,8,DT,,,6.5.7.44
+Employment Stop Date ,00783,IN2,45,8,DT,,,6.5.7.45
+Job Title ,00785,IN2,46,20,ST,,,6.5.7.46
+Job Code/Class ,00786,IN2,47,20,JCC,,,6.5.7.47
+Job Status ,00752,IN2,48,2,IS,,0311,6.5.7.48
+Employer Contact Person Name ,00789,IN2,49,250,XPN,Y,,6.5.7.49
+Employer Contact Person Phone Number ,00790,IN2,50,250,XTN,Y,,6.5.7.50
+Employer Contact Reason ,00791,IN2,51,2,IS,,0222,6.5.7.51
+Insured's Contact Person's Name ,00792,IN2,52,250,XPN,Y,,6.5.7.52
+Insured's Contact Person Phone Number ,00793,IN2,53,250,XTN,Y,,6.5.7.53
+Insured's Contact Person Reason ,00794,IN2,54,2,IS,Y,0222,6.5.7.54
+Relationship to the Patient Start Date ,00795,IN2,55,8,DT,,,6.5.7.55
+Relationship to the Patient Stop Date ,00796,IN2,56,8,DT,Y,,6.5.7.56
+Insurance Co. Contact Reason ,00797,IN2,57,2,IS,,0232,6.5.7.57
+Insurance Co Contact Phone Number ,00798,IN2,58,250,XTN,,,6.5.7.58
+Policy Scope ,00799,IN2,59,2,IS,,0312,6.5.7.59
+Policy Source ,00800,IN2,60,2,IS,,0313,6.5.7.60
+Patient Member Number ,00801,IN2,61,250,CX,,,6.5.7.61
+Guarantor's Relationship to Insured ,00802,IN2,62,250,CE,,0063,6.5.7.62
+Insured's Phone Number - Home ,00803,IN2,63,250,XTN,Y,,6.5.7.63
+Insured's Employer Phone Number ,00804,IN2,64,250,XTN,Y,,6.5.7.64
+Military Handicapped Program ,00805,IN2,65,250,CE,,0343,6.5.7.65
+Suspend Flag ,00806,IN2,66,1,ID,,0136,6.5.7.66
+Copay Limit Flag ,00807,IN2,67,1,ID,,0136,6.5.7.67
+Stoploss Limit Flag ,00808,IN2,68,1,ID,,0136,6.5.7.68
+Insured Organization Name and ID ,00809,IN2,69,250,XON,Y,,6.5.7.69
+Insured Employer Organization Name and ID ,00810,IN2,70,250,XON,Y,,6.5.7.70
+Race ,00113,IN2,71,250,CE,Y,0005,6.5.7.71
+CMS Patient's Relationship to Insured ,00811,IN2,72,250,CE,,0344,6.5.7.72
+Set ID - IN3 ,00502,IN3,1,4,SI,,,6.5.8.1
+Certification Number ,00503,IN3,2,250,CX,,,6.5.8.2
+Certified By ,00504,IN3,3,250,XCN,Y,,6.5.8.3
+Certification Required ,00505,IN3,4,1,ID,,0136,6.5.8.4
+Penalty ,00506,IN3,5,23,MOP,,,6.5.8.5
+Certification Date/Time ,00507,IN3,6,26,TS,,,6.5.8.6
+Certification Modify Date/Time ,00508,IN3,7,26,TS,,,6.5.8.7
+Operator ,00509,IN3,8,250,XCN,Y,,6.5.8.8
+Certification Begin Date ,00510,IN3,9,8,DT,,,6.5.8.9
+Certification End Date ,00511,IN3,10,8,DT,,,6.5.8.10
+Days ,00512,IN3,11,6,DTN,,,6.5.8.11
+Non-Concur Code/Description ,00513,IN3,12,250,CE,,0233,6.5.8.12
+Non-Concur Effective Date/Time ,00514,IN3,13,26,TS,,,6.5.8.13
+Physician Reviewer ,00515,IN3,14,250,XCN,Y,0010,6.5.8.14
+Certification Contact ,00516,IN3,15,48,ST,,,6.5.8.15
+Certification Contact Phone Number ,00517,IN3,16,250,XTN,Y,,6.5.8.16
+Appeal Reason ,00518,IN3,17,250,CE,,0345,6.5.8.17
+Certification Agency ,00519,IN3,18,250,CE,,0346,6.5.8.18
+Certification Agency Phone Number ,00520,IN3,19,250,XTN,Y,,6.5.8.19
+Pre-Certification Requirement ,00521,IN3,20,40,ICD,Y,,6.5.8.20
+Case Manager ,00522,IN3,21,48,ST,,,6.5.8.21
+Second Opinion Date ,00523,IN3,22,8,DT,,,6.5.8.22
+Second Opinion Status ,00524,IN3,23,1,IS,,0151,6.5.8.23
+Second Opinion Documentation Received ,00525,IN3,24,1,IS,Y,0152,6.5.8.24
+Second Opinion Physician ,00526,IN3,25,250,XCN,Y,0010,6.5.8.25
+Substance Identifier ,01372,INV,1,250,CE,,0451,13.4.4.1
+Substance Status ,01373,INV,2,250,CE,Y,0383,13.4.4.2
+Substance Type ,01374,INV,3,250,CE,,0384,13.4.4.3
+Inventory Container Identifier ,01532,INV,4,250,CE,,,13.4.4.4
+Container Carrier Identifier ,01376,INV,5,250,CE,,,13.4.4.5
+Position on Carrier ,01377,INV,6,250,CE,,,13.4.4.6
+Initial Quantity ,01378,INV,7,20,NM,,,13.4.4.7
+Current Quantity ,01379,INV,8,20,NM,,,13.4.4.8
+Available Quantity ,01380,INV,9,20,NM,,,13.4.4.9
+Consumption Quantity ,01381,INV,10,20,NM,,,13.4.4.10
+Quantity Units ,01382,INV,11,250,CE,,,13.4.4.11
+Expiration Date/Time ,01383,INV,12,26,TS,,,13.4.4.12
+First Used Date/Time ,01384,INV,13,26,TS,,,13.4.4.13
+On Board Stability Duration ,01385,INV,14,200,TQ,,,13.4.4.14
+Test/Fluid Identifier(s) ,01386,INV,15,250,CE,Y,,13.4.4.15
+Manufacturer Lot Number ,01387,INV,16,200,ST,,,13.4.4.16
+Manufacturer Identifier ,00286,INV,17,250,CE,,0385,13.4.4.17
+Supplier Identifier ,01389,INV,18,250,CE,,0386,13.4.4.18
+On Board Stability Time ,01626,INV,19,20,CQ,,,13.4.4.19
+Target Value ,01896,INV,20,20,CQ,,,13.4.4.20
+Accession Identifier ,01330,IPC,1,80,EI,,,4.5.6.1
+Requested Procedure ID ,01658,IPC,2,22,EI,,,4.5.6.2
+Study Instance UID ,01659,IPC,3,70,EI,,,4.5.6.3
+Scheduled Procedure Step ID ,01660,IPC,4,22,EI,,,4.5.6.4
+Modality ,01661,IPC,5,16,CE,,,4.5.6.5
+Protocol Code ,01662,IPC,6,250,CE,Y,,4.5.6.6
+Scheduled Station Name ,01663,IPC,7,22,EI,,,4.5.6.7
+Scheduled Procedure Step Location ,01664,IPC,8,250,CE,Y,,4.5.6.8
+Scheduled AE Title ,01665,IPC,9,16,ST,,,4.5.6.9
+Reference Interaction Number (unique identifier),01326,ISD,1,20,NM,,,13.4.2.1
+Interaction Type Identifier ,01327,ISD,2,250,CE,,0368,13.4.2.2
+Interaction Active State ,01328,ISD,3,250,CE,,0387,13.4.2.3
+Set ID - LAN ,01455,LAN,1,60,SI,,,15.4.4.1
+Language Code ,01456,LAN,2,250,CE,,0296,15.4.4.2
+Language Ability Code ,01457,LAN,3,250,CE,Y,0403,15.4.4.3
+Language Proficiency Code ,01458,LAN,4,250,CE,,0404,15.4.4.4
+Primary Key Value - LCC ,00979,LCC,1,200,PL,,,8.9.6.1
+Location Department ,00964,LCC,2,250,CE,,0264,8.9.6.2
+Accommodation Type ,00980,LCC,3,250,CE,Y,0129,8.9.6.3
+Charge Code ,00981,LCC,4,250,CE,Y,0132,8.9.6.4
+Primary Key Value - LCH ,01305,LCH,1,200,PL,,,8.9.3.1
+Segment Action Code ,00763,LCH,2,3,ID,,0206,8.9.3.2
+Segment Unique Key ,00764,LCH,3,80,EI,,,8.9.3.3
+Location Characteristic ID ,01295,LCH,4,250,CE,,0324,8.9.3.4
+Location Characteristic Value-LCH ,01294,LCH,5,250,CE,,0136,8.9.3.5
+Primary Key Value - LDP ,00963,LDP,1,200,PL,,,8.9.5.1
+Location Department ,00964,LDP,2,250,CE,,0264,8.9.5.2
+Location Service ,00965,LDP,3,3,IS,Y,0069,8.9.5.3
+Specialty Type ,00966,LDP,4,250,CE,Y,0265,8.9.5.4
+Valid Patient Classes ,00967,LDP,5,1,IS,Y,0004,8.9.5.5
+Active/Inactive Flag ,00675,LDP,6,1,ID,,0183,8.9.5.6
+Activation Date LDP ,00969,LDP,7,26,TS,,,8.9.5.7
+Inactivation Date - LDP ,00970,LDP,8,26,TS,,,8.9.5.8
+Inactivated Reason ,00971,LDP,9,80,ST,,,8.9.5.9
+Visiting Hours ,00976,LDP,10,80,VH,Y,0267,8.9.5.10
+Contact Phone ,00978,LDP,11,250,XTN,,,8.9.5.11
+Location Cost Center ,01584,LDP,12,250,CE,,0462,8.9.5.12
+Primary Key Value - LOC ,01307,LOC,1,200,PL,,,8.9.2.1
+Location Description ,00944,LOC,2,48,ST,,,8.9.2.2
+Location Type - LOC ,00945,LOC,3,2,IS,Y,0260,8.9.2.3
+Organization Name - LOC ,00947,LOC,4,250,XON,Y,,8.9.2.4
+Location Address ,00948,LOC,5,250,XAD,Y,,8.9.2.5
+Location Phone ,00949,LOC,6,250,XTN,Y,,8.9.2.6
+License Number ,00951,LOC,7,250,CE,Y,0461,8.9.2.7
+Location Equipment ,00953,LOC,8,3,IS,Y,0261,8.9.2.8
+Location Service Code ,01583,LOC,9,1,IS,,0442,8.9.2.9
+Primary Key Value - LRL ,00943,LRL,1,200,PL,,,8.9.4.1
+Segment Action Code ,00763,LRL,2,3,ID,,0206,8.9.4.2
+Segment Unique Key ,00764,LRL,3,80,EI,,,8.9.4.3
+Location Relationship ID ,01277,LRL,4,250,CE,,0325,8.9.4.4
+Organizational Location Relationship Value ,01301,LRL,5,250,XON,Y,,8.9.4.5
+Patient Location Relationship Value ,01292,LRL,6,80,PL,,,8.9.4.6
+Record-Level Event Code ,00664,MFA,1,3,ID,,0180,8.5.3.1
+MFN Control ID ,00665,MFA,2,20,ST,,,8.5.3.2
+Event Completion Date/Time ,00668,MFA,3,26,TS,,,8.5.3.3
+MFN Record Level Error Return ,00669,MFA,4,250,CE,,0181,8.5.3.4
+Primary Key Value - FA ,01308,MFA,5,0,var,Y,9999,8.5.3.5.5
+Primary Key Value Type - MFA ,01320,MFA,6,3,ID,Y,0355,8.5.3.6
+Record-Level Event Code ,00664,MFE,1,3,ID,,0180,8.5.2.1
+MFN Control ID ,00665,MFE,2,20,ST,,,8.5.2.2
+Effective Date/Time ,00662,MFE,3,26,TS,,,8.5.2.3
+Primary Key Value - MFE ,00667,MFE,4,0,var,Y,9999,8.5.2.4.4
+Primary Key Value Type ,01319,MFE,5,3,ID,Y,0355,8.5.2.5
+Master File Identifier ,00658,MFI,1,250,CE,,0175,8.5.1.1
+Master File Application Identifier ,00659,MFI,2,180,HD,,0361,8.5.1.2
+File-Level Event Code ,00660,MFI,3,3,ID,,0178,8.5.1.3
+Entered Date/Time ,00661,MFI,4,26,TS,,,8.5.1.4
+Effective Date/Time ,00662,MFI,5,26,TS,,,8.5.1.5
+Response Level Code ,00663,MFI,6,2,ID,,0179,8.5.1.6
+Prior Patient Identifier List ,00211,MRG,1,250,CX,Y,,3.4.9.1
+Prior Alternate Patient ID ,00212,MRG,2,250,CX,Y,,3.4.9.2
+Prior Patient Account Number ,00213,MRG,3,250,CX,,,3.4.9.3
+Prior Patient ID ,00214,MRG,4,250,CX,,,3.4.9.4
+Prior Visit Number ,01279,MRG,5,250,CX,,,3.4.9.5
+Prior Alternate Visit ID ,01280,MRG,6,250,CX,,,3.4.9.6
+Prior Patient Name ,01281,MRG,7,250,XPN,Y,,3.4.9.7
+Acknowledgment Code ,00018,MSA,1,2,ID,,0008,2.15.8.1
+Message Control ID ,00010,MSA,2,20,ST,,,2.15.8.2
+Text Message ,00020,MSA,3,80,ST,,,2.15.8.3
+Expected Sequence Number ,00021,MSA,4,15,NM,,,2.15.8.4
+Delayed Acknowledgment Type ,00022,MSA,5,0,ST,,,2.15.8.5.5
+Error Condition ,00023,MSA,6,250,CE,,0357,2.15.8.6
+Field Separator ,00001,MSH,1,1,ST,,,2.15.9.1
+Encoding Characters ,00002,MSH,2,4,ST,,,2.15.9.2
+Sending Application ,00003,MSH,3,227,HD,,0361,2.15.9.3
+Sending Facility ,00004,MSH,4,227,HD,,0362,2.15.9.4
+Receiving Application ,00005,MSH,5,227,HD,,0361,2.15.9.5
+Receiving Facility ,00006,MSH,6,227,HD,,0362,2.15.9.6
+Date/Time Of Message ,00007,MSH,7,26,TS,,,2.15.9.7
+Security ,00008,MSH,8,40,ST,,,2.15.9.8
+Message Type ,00009,MSH,9,15,MSG,,,2.15.9.9
+Message Control ID ,00010,MSH,10,20,ST,,,2.15.9.10
+Processing ID ,00011,MSH,11,3,PT,,,2.15.9.11
+Version ID ,00012,MSH,12,60,VID,,,2.15.9.12
+Sequence Number ,00013,MSH,13,15,NM,,,2.15.9.13
+Continuation Pointer ,00014,MSH,14,180,ST,,,2.15.9.14
+Accept Acknowledgment Type ,00015,MSH,15,2,ID,,0155,2.15.9.15
+Application Acknowledgment Type ,00016,MSH,16,2,ID,,0155,2.15.9.16
+Country Code ,00017,MSH,17,3,ID,,0399,2.15.9.17
+Character Set ,00692,MSH,18,16,ID,Y,0211,2.15.9.18
+Principal Language Of Message ,00693,MSH,19,250,CE,,,2.15.9.19
+Alternate Character Set Handling Scheme ,01317,MSH,20,20,ID,,0356,2.15.9.20
+Message Profile Identifier ,01598,MSH,21,427,EI,Y,,2.15.9.21
+System Date/Time ,01172,NCK,1,26,TS,,,14.4.1.1
+Notification Reference Number ,01398,NDS,1,20,NM,,,13.4.7.1
+Notification Date/Time ,01399,NDS,2,26,TS,,,13.4.7.2
+Notification Alert Severity ,01400,NDS,3,250,CE,,0367,13.4.7.3
+Notification Code ,01401,NDS,4,250,CE,,,13.4.7.4
+Set ID - NK1 ,00190,NK1,1,4,SI,,,3.4.5.1
+Name ,00191,NK1,2,250,XPN,Y,,3.4.5.2
+Relationship ,00192,NK1,3,250,CE,,0063,3.4.5.3
+Address ,00193,NK1,4,250,XAD,Y,,3.4.5.4
+Phone Number ,00194,NK1,5,250,XTN,Y,,3.4.5.5
+Business Phone Number ,00195,NK1,6,250,XTN,Y,,3.4.5.6
+Contact Role ,00196,NK1,7,250,CE,,0131,3.4.5.7
+Start Date ,00197,NK1,8,8,DT,,,3.4.5.8
+End Date ,00198,NK1,9,8,DT,,,3.4.5.9
+Next of Kin / Associated Parties Job Title ,00199,NK1,10,60,ST,,,3.4.5.10
+Next of Kin / Associated Parties Job Code/Class,00200,NK1,11,20,JCC,,0327,3.4.5.11
+Next of Kin / Associated Parties Employee Number,00201,NK1,12,250,CX,,,3.4.5.12
+Organization Name - NK1 ,00202,NK1,13,250,XON,Y,,3.4.5.13
+Marital Status ,00119,NK1,14,250,CE,,0002,3.4.5.14
+Administrative Sex ,00111,NK1,15,1,IS,,0001,3.4.5.15
+Date/Time of Birth ,00110,NK1,16,26,TS,,,3.4.5.16
+Living Dependency ,00755,NK1,17,2,IS,Y,0223,3.4.5.17
+Ambulatory Status ,00145,NK1,18,2,IS,Y,0009,3.4.5.18
+Citizenship ,00129,NK1,19,250,CE,Y,0171,3.4.5.19
+Primary Language ,00118,NK1,20,250,CE,,0296,3.4.5.20
+Living Arrangement ,00742,NK1,21,2,IS,,0220,3.4.5.21
+Publicity Code ,00743,NK1,22,250,CE,,0215,3.4.5.22
+Protection Indicator ,00744,NK1,23,1,ID,,0136,3.4.5.23
+Student Indicator ,00745,NK1,24,2,IS,,0231,3.4.5.24
+Religion ,00120,NK1,25,250,CE,,0006,3.4.5.25
+Mother's Maiden Name ,00109,NK1,26,250,XPN,Y,,3.4.5.26
+Nationality ,00739,NK1,27,250,CE,,0212,3.4.5.27
+Ethnic Group ,00125,NK1,28,250,CE,Y,0189,3.4.5.28
+Contact Reason ,00747,NK1,29,250,CE,Y,0222,3.4.5.29
+Contact Person's Name ,00748,NK1,30,250,XPN,Y,,3.4.5.30
+Contact Person's Telephone Number ,00749,NK1,31,250,XTN,Y,,3.4.5.31
+Contact Person's Address ,00750,NK1,32,250,XAD,Y,,3.4.5.32
+Next of Kin/Associated Party's Identifiers ,00751,NK1,33,250,CX,Y,,3.4.5.33
+Job Status ,00752,NK1,34,2,IS,,0311,3.4.5.34
+Race ,00113,NK1,35,250,CE,Y,0005,3.4.5.35
+Handicap ,00753,NK1,36,2,IS,,0295,3.4.5.36
+Contact Person Social Security Number ,00754,NK1,37,16,ST,,,3.4.5.37
+Next of Kin Birth Place ,01905,NK1,38,250,ST,,,3.4.5.38
+VIP Indicator ,00146,NK1,39,2,IS,,0099,3.4.5.39
+Bed Location ,00209,NPU,1,80,PL,,,3.4.8.1
+Bed Status ,00170,NPU,2,1,IS,,0116,3.4.8.2
+Application Change Type ,01188,NSC,1,4,IS,,0409,14.4.2.1
+Current CPU ,01189,NSC,2,30,ST,,,14.4.2.2
+Current Fileserver ,01190,NSC,3,30,ST,,,14.4.2.3
+Current Application ,01191,NSC,4,30,HD,,,14.4.2.4
+Current Facility ,01192,NSC,5,30,HD,,,14.4.2.5
+New CPU ,01193,NSC,6,30,ST,,,14.4.2.6
+New Fileserver ,01194,NSC,7,30,ST,,,14.4.2.7
+New Application ,01195,NSC,8,30,HD,,,14.4.2.8
+New Facility ,01196,NSC,9,30,HD,,,14.4.2.9
+Statistics Available ,01173,NST,1,1,ID,,0136,14.4.3.1
+Source Identifier ,01174,NST,2,30,ST,,,14.4.3.2
+Source Type ,01175,NST,3,3,ID,,0332,14.4.3.3
+Statistics Start ,01176,NST,4,26,TS,,,14.4.3.4
+Statistics End ,01177,NST,5,26,TS,,,14.4.3.5
+Receive Character Count ,01178,NST,6,10,NM,,,14.4.3.6
+Send Character Count ,01179,NST,7,10,NM,,,14.4.3.7
+Messages Received ,01180,NST,8,10,NM,,,14.4.3.8
+Messages Sent ,01181,NST,9,10,NM,,,14.4.3.9
+Checksum Errors Received ,01182,NST,10,10,NM,,,14.4.3.10
+Length Errors Received ,01183,NST,11,10,NM,,,14.4.3.11
+Other Errors Received ,01184,NST,12,10,NM,,,14.4.3.12
+Connect Timeouts ,01185,NST,13,10,NM,,,14.4.3.13
+Receive Timeouts ,01186,NST,14,10,NM,,,14.4.3.14
+Application control-level Errors ,01187,NST,15,10,NM,,,14.4.3.15
+Set ID - NTE ,00096,NTE,1,4,SI,,,2.15.10.1
+Source of Comment ,00097,NTE,2,8,ID,,0105,2.15.10.2
+Comment ,00098,NTE,3,65536,FT,Y,,2.15.10.3
+Comment Type ,01318,NTE,4,250,CE,,0364,2.15.10.4
+Set ID - OBR ,00237,OBR,1,4,SI,,,4.5.3.1
+Placer Order Number ,00216,OBR,2,22,EI,,,4.5.3.2
+Filler Order Number ,00217,OBR,3,22,EI,,,4.5.3.3
+Universal Service Identifier ,00238,OBR,4,250,CE,,,4.5.3.4
+Priority - OBR ,00239,OBR,5,2,ID,,,4.5.3.5
+Requested Date/Time ,00240,OBR,6,26,TS,,,4.5.3.6
+Observation Date/Time ,00241,OBR,7,26,TS,,,4.5.3.7
+Observation End Date/Time ,00242,OBR,8,26,TS,,,4.5.3.8
+Collection Volume ,00243,OBR,9,20,CQ,,,4.5.3.9
+Collector Identifier ,00244,OBR,10,250,XCN,Y,,4.5.3.10
+Specimen Action Code ,00245,OBR,11,1,ID,,0065,4.5.3.11
+Danger Code ,00246,OBR,12,250,CE,,,4.5.3.12
+Relevant Clinical Information ,00247,OBR,13,300,ST,,,4.5.3.13
+Specimen Received Date/Time ,00248,OBR,14,26,TS,,,4.5.3.14
+Specimen Source ,00249,OBR,15,300,SPS,,,4.5.3.15
+Ordering Provider ,00226,OBR,16,250,XCN,Y,,4.5.3.16
+Order Callback Phone Number ,00250,OBR,17,250,XTN,Y,,4.5.3.17
+Placer Field 1 ,00251,OBR,18,60,ST,,,4.5.3.18
+Placer Field 2 ,00252,OBR,19,60,ST,,,4.5.3.19
+Filler Field 1 ,00253,OBR,20,60,ST,,,4.5.3.20
+Filler Field 2 ,00254,OBR,21,60,ST,,,4.5.3.21
+Results Rpt/Status Chng - Date/Time ,00255,OBR,22,26,TS,,,4.5.3.22
+Charge to Practice ,00256,OBR,23,40,MOC,,,4.5.3.23
+Diagnostic Serv Sect ID ,00257,OBR,24,10,ID,,0074,4.5.3.24
+Result Status ,00258,OBR,25,1,ID,,0123,4.5.3.25
+Parent Result ,00259,OBR,26,400,PRL,,,4.5.3.26
+Quantity/Timing ,00221,OBR,27,200,TQ,Y,,4.5.3.27
+Result Copies To ,00260,OBR,28,250,XCN,Y,,4.5.3.28
+Parent ,00261,OBR,29,200,EIP,,,4.5.3.29
+Transportation Mode ,00262,OBR,30,20,ID,,0124,4.5.3.30
+Reason for Study ,00263,OBR,31,250,CE,Y,,4.5.3.31
+Principal Result Interpreter ,00264,OBR,32,200,NDL,,,4.5.3.32
+Assistant Result Interpreter ,00265,OBR,33,200,NDL,Y,,4.5.3.33
+Technician ,00266,OBR,34,200,NDL,Y,,4.5.3.34
+Transcriptionist ,00267,OBR,35,200,NDL,Y,,4.5.3.35
+Scheduled Date/Time ,00268,OBR,36,26,TS,,,4.5.3.36
+Number of Sample Containers * ,01028,OBR,37,4,NM,,,4.5.3.37
+Transport Logistics of Collected Sample ,01029,OBR,38,250,CE,Y,,4.5.3.38
+Collector's Comment * ,01030,OBR,39,250,CE,Y,,4.5.3.39
+Transport Arrangement Responsibility ,01031,OBR,40,250,CE,,,4.5.3.40
+Transport Arranged ,01032,OBR,41,30,ID,,0224,4.5.3.41
+Escort Required ,01033,OBR,42,1,ID,,0225,4.5.3.42
+Planned Patient Transport Comment ,01034,OBR,43,250,CE,Y,,4.5.3.43
+Procedure Code ,00393,OBR,44,250,CE,,0088,4.5.3.44
+Procedure Code Modifier ,01316,OBR,45,250,CE,Y,0340,4.5.3.45
+Placer Supplemental Service Information ,01474,OBR,46,250,CE,Y,0411,4.5.3.46
+Filler Supplemental Service Information ,01475,OBR,47,250,CE,Y,0411,4.5.3.47
+Medically Necessary Duplicate Procedure Reason.,01646,OBR,48,250,CWE,,0476,4.5.3.48
+Result Handling ,01647,OBR,49,2,IS,,0507,4.5.3.49
+Parent Universal Service Identifier ,02286,OBR,50,250,CWE,,,4.5.3.50
+Set ID - OBX ,00569,OBX,1,4,SI,,,7.4.2.1
+Value Type ,00570,OBX,2,2,ID,,0125,7.4.2.2
+Observation Identifier ,00571,OBX,3,250,CE,,,7.4.2.3
+Observation Sub-ID ,00572,OBX,4,20,ST,,,7.4.2.4
+Observation Value ,00573,OBX,5,0,var,Y,,7.4.2.5.5
+Units ,00574,OBX,6,250,CE,,,7.4.2.6
+References Range ,00575,OBX,7,60,ST,,,7.4.2.7
+Abnormal Flags ,00576,OBX,8,5,IS,Y,0078,7.4.2.8
+Probability ,00577,OBX,9,5,NM,,,7.4.2.9
+Nature of Abnormal Test ,00578,OBX,10,2,ID,Y,0080,7.4.2.10
+Observation Result Status ,00579,OBX,11,1,ID,,0085,7.4.2.11
+Effective Date of Reference Range Values ,00580,OBX,12,26,TS,,,7.4.2.12
+User Defined Access Checks ,00581,OBX,13,20,ST,,,7.4.2.13
+Date/Time of the Observation ,00582,OBX,14,26,TS,,,7.4.2.14
+Producer's Reference ,00583,OBX,15,250,CE,,,7.4.2.15
+Responsible Observer ,00584,OBX,16,250,XCN,Y,,7.4.2.16
+Observation Method ,00936,OBX,17,250,CE,Y,,7.4.2.17
+Equipment Instance Identifier ,01479,OBX,18,22,EI,Y,,7.4.2.18
+Date/Time of the Analysis ,01480,OBX,19,26,TS,,,7.4.2.19
+Performing Organization Name ,02283,OBX,23,567,XON,,,7.4.2.23
+Performing Organization Address ,02284,OBX,24,631,XAD,,,7.4.2.24
+Performing Organization Medical Director ,02285,OBX,25,3002,XCN,,,7.4.2.25
+Type ,00269,ODS,1,1,ID,,0159,4.8.1.1
+Service Period ,00270,ODS,2,250,CE,Y,,4.8.1.2
+"Diet, Supplement, or Preference Code ",00271,ODS,3,250,CE,Y,,4.8.1.3
+Text Instruction ,00272,ODS,4,80,ST,Y,,4.8.1.4
+Tray Type ,00273,ODT,1,250,CE,,0160,4.8.2.1
+Service Period ,00270,ODT,2,250,CE,Y,,4.8.2.2
+Text Instruction,00272,ODT,3,80,ST,,,4.8.2.3
+Sequence Number - Test/Observation Master File,00586,OM1,1,4,NM,,,8.8.8.1
+Producer's Service/Test/Observation ID ,00587,OM1,2,250,CE,,9999,8.8.8.2
+Permitted Data Types ,00588,OM1,3,12,ID,Y,0125,8.8.8.3
+Specimen Required ,00589,OM1,4,1,ID,,0136,8.8.8.4
+Producer ID ,00590,OM1,5,250,CE,,9999,8.8.8.5
+Observation Description ,00591,OM1,6,200,TX,,,8.8.8.6
+Other Service/Test/Observation IDs for the Observation,00592,OM1,7,250,CE,,9999,8.8.8.7
+Other Names ,00593,OM1,8,200,ST,Y,,8.8.8.8
+Preferred Report Name for the Observation ,00594,OM1,9,30,ST,,,8.8.8.9
+Preferred Short Name or Mnemonic for Observation,00595,OM1,10,8,ST,,,8.8.8.10
+Preferred Long Name for the Observation ,00596,OM1,11,200,ST,,,8.8.8.11
+Orderability ,00597,OM1,12,1,ID,,0136,8.8.8.12
+Identity of Instrument Used to Perform this Study,00598,OM1,13,250,CE,Y,9999,8.8.8.13
+Coded Representation of Method ,00599,OM1,14,250,CE,Y,9999,8.8.8.14
+Portable Device Indicator ,00600,OM1,15,1,ID,,0136,8.8.8.15
+Observation Producing Department/Section ,00601,OM1,16,250,CE,Y,9999,8.8.8.16
+Telephone Number of Section ,00602,OM1,17,250,XTN,,,8.8.8.17
+Nature of Service/Test/Observation ,00603,OM1,18,1,IS,,0174,8.8.8.18
+Report Subheader ,00604,OM1,19,250,CE,,9999,8.8.8.19
+Report Display Order ,00605,OM1,20,20,ST,,,8.8.8.20
+Date/Time Stamp for any change in Definition for the Observation,00606,OM1,21,26,TS,,,8.8.8.21
+Effective Date/Time of Change ,00607,OM1,22,26,TS,,,8.8.8.22
+Typical Turn-Around Time ,00608,OM1,23,20,NM,,,8.8.8.23
+Processing Time ,00609,OM1,24,20,NM,,,8.8.8.24
+Processing Priority ,00610,OM1,25,40,ID,Y,0168,8.8.8.25
+Reporting Priority ,00611,OM1,26,5,ID,,0169,8.8.8.26
+Outside Site(s) Where Observation may be Performed,00612,OM1,27,250,CE,Y,9999,8.8.8.27
+Address of Outside Site(s) ,00613,OM1,28,250,XAD,Y,,8.8.8.28
+Phone Number of Outside Site ,00614,OM1,29,250,XTN,,,8.8.8.29
+Confidentiality Code ,00615,OM1,30,250,CWE,,0177,8.8.8.30
+Observations Required to Interpret the Observation,00616,OM1,31,250,CE,,9999,8.8.8.31
+Interpretation of Observations ,00617,OM1,32,65536,TX,,,8.8.8.32
+Contraindications to Observations ,00618,OM1,33,250,CE,,9999,8.8.8.33
+Reflex Tests/Observations ,00619,OM1,34,250,CE,Y,9999,8.8.8.34
+Rules that Trigger Reflex Testing ,00620,OM1,35,80,TX,,,8.8.8.35
+Fixed Canned Message ,00621,OM1,36,250,CE,,9999,8.8.8.36
+Patient Preparation ,00622,OM1,37,200,TX,,,8.8.8.37
+Procedure Medication ,00623,OM1,38,250,CE,,9999,8.8.8.38
+Factors that may Affect the Observation ,00624,OM1,39,200,TX,,,8.8.8.39
+Service/Test/Observation Performance Schedule,00625,OM1,40,60,ST,Y,,8.8.8.40
+Description of Test Methods ,00626,OM1,41,65536,TX,,,8.8.8.41
+Kind of Quantity Observed ,00937,OM1,42,250,CE,,0254,8.8.8.42
+Point Versus Interval ,00938,OM1,43,250,CE,,0255,8.8.8.43
+Challenge Information ,00939,OM1,44,200,TX,,0256,8.8.8.44
+Relationship Modifier ,00940,OM1,45,250,CE,,0258,8.8.8.45
+Target Anatomic Site Of Test ,00941,OM1,46,250,CE,,9999,8.8.8.46
+Modality Of Imaging Measurement ,00942,OM1,47,250,CE,,0259,8.8.8.47
+Sequence Number - Test/Observation Master File,00586,OM2,1,4,NM,,,8.8.9.1
+Units of Measure ,00627,OM2,2,250,CE,,9999,8.8.9.2
+Range of Decimal Precision ,00628,OM2,3,10,NM,Y,,8.8.9.3
+Corresponding SI Units of Measure ,00629,OM2,4,250,CE,,9999,8.8.9.4
+SI Conversion Factor ,00630,OM2,5,60,TX,,,8.8.9.5
+Reference (Normal) Range - Ordinal and Continuous Observations,00631,OM2,6,250,RFR,Y,,8.8.9.6
+Critical Range for Ordinal and Continuous Observations,00632,OM2,7,205,RFR,Y,,8.8.9.7
+Absolute Range for Ordinal and Continuous Observations ,00633,OM2,8,250,RFR,,,8.8.9.8
+Delta Check Criteria ,00634,OM2,9,250,DLT,Y,,8.8.9.9
+Minimum Meaningful Increments ,00635,OM2,10,20,NM,,,8.8.9.10
+Sequence Number - Test/Observation Master File,00586,OM3,1,4,NM,,,8.8.10.1
+Preferred Coding System ,00636,OM3,2,250,CE,,9999,8.8.10.2
+"Valid Coded ""Answers"" ",00637,OM3,3,250,CE,,9999,8.8.10.3
+Normal Text/Codes for Categorical Observations,00638,OM3,4,250,CE,Y,9999,8.8.10.4
+Abnormal Text/Codes for Categorical Observations ,00639,OM3,5,250,CE,Y,9999,8.8.10.5
+Critical Text/Codes for Categorical Observations,00640,OM3,6,250,CE,Y,9999,8.8.10.6
+Value Type ,00570,OM3,7,2,ID,,0125,8.8.10.7
+Sequence Number - Test/Observation Master File,00586,OM4,1,4,NM,,,8.8.11.1
+Derived Specimen ,00642,OM4,2,1,ID,,0170,8.8.11.2
+Container Description ,00643,OM4,3,60,TX,,,8.8.11.3
+Container Volume ,00644,OM4,4,20,NM,,,8.8.11.4
+Container Units ,00645,OM4,5,250,CE,,9999,8.8.11.5
+Specimen ,00646,OM4,6,250,CE,,9999,8.8.11.6
+Additive ,00647,OM4,7,250,CWE,,0371,8.8.11.7
+Preparation ,00648,OM4,8,10240,TX,,,8.8.11.8
+Special Handling Requirements ,00649,OM4,9,10240,TX,,,8.8.11.9
+Normal Collection Volume ,00650,OM4,10,20,CQ,,,8.8.11.10
+Minimum Collection Volume ,00651,OM4,11,20,CQ,,,8.8.11.11
+Specimen Requirements ,00652,OM4,12,10240,TX,,,8.8.11.12
+Specimen Priorities ,00653,OM4,13,1,ID,Y,0027,8.8.11.13
+Specimen Retention Time ,00654,OM4,14,20,CQ,,,8.8.11.14
+Sequence Number - Test/Observation Master File,00586,OM5,1,4,NM,,,8.8.12.1
+Test/Observations Included within an Ordered Test Battery,00655,OM5,2,250,CE,Y,9999,8.8.12.2
+Observation ID Suffixes ,00656,OM5,3,250,ST,,,8.8.12.3
+Sequence Number - Test/Observation Master File,00586,OM6,1,4,NM,,,8.8.13.1
+Derivation Rule ,00657,OM6,2,10240,TX,,,8.8.13.2
+Sequence Number - Test/Observation Master File,00586,OM7,1,4,NM,,,8.8.14.1
+Universal Service Identifier ,00238,OM7,2,250,CE,,,8.8.14.2
+Category Identifier ,01481,OM7,3,250,CE,Y,0412,8.8.14.3
+Category Description ,01482,OM7,4,200,TX,,,8.8.14.4
+Category Synonym ,01483,OM7,5,200,ST,Y,,8.8.14.5
+Effective Test/Service Start Date/Time ,01484,OM7,6,26,TS,,,8.8.14.6
+Effective Test/Service End Date/Time ,01485,OM7,7,26,TS,,,8.8.14.7
+Test/Service Default Duration Quantity ,01486,OM7,8,5,NM,,,8.8.14.8
+Test/Service Default Duration Units ,01487,OM7,9,250,CE,,9999,8.8.14.9
+Test/Service Default Frequency ,01488,OM7,10,60,IS,,0335,8.8.14.10
+Consent Indicator ,01489,OM7,11,1,ID,,0136,8.8.14.11
+Consent Identifier ,01490,OM7,12,250,CE,,0413,8.8.14.12
+Consent Effective Start Date/Time ,01491,OM7,13,26,TS,,,8.8.14.13
+Consent Effective End Date/Time ,01492,OM7,14,26,TS,,,8.8.14.14
+Consent Interval Quantity ,01493,OM7,15,5,NM,,,8.8.14.15
+Consent Interval Units ,01494,OM7,16,250,CE,,0414,8.8.14.16
+Consent Waiting Period Quantity ,01495,OM7,17,5,NM,,,8.8.14.17
+Consent Waiting Period Units ,01496,OM7,18,250,CE,,0414,8.8.14.18
+Effective Date/Time of Change ,00607,OM7,19,26,TS,,,8.8.14.19
+Entered By ,00224,OM7,20,250,XCN,,,8.8.14.20
+Orderable-at Location ,01497,OM7,21,200,PL,Y,,8.8.14.21
+Formulary Status ,01498,OM7,22,1,IS,,0473,8.8.14.22
+Special Order Indicator ,01499,OM7,23,1,ID,,0136,8.8.14.23
+Primary Key Value - CDM ,01306,OM7,24,250,CE,Y,0132,8.8.14.24
+Order Control ,00215,ORC,1,2,ID,,0119,4.5.1.1
+Placer Order Number ,00216,ORC,2,22,EI,,,4.5.1.2
+Filler Order Number ,00217,ORC,3,22,EI,,,4.5.1.3
+Placer Group Number ,00218,ORC,4,22,EI,,,4.5.1.4
+Order Status ,00219,ORC,5,2,ID,,0038,4.5.1.5
+Response Flag ,00220,ORC,6,1,ID,,0121,4.5.1.6
+Quantity/Timing ,00221,ORC,7,200,TQ,Y,,4.5.1.7
+Parent ,00222,ORC,8,200,EIP,,,4.5.1.8
+Date/Time of Transaction ,00223,ORC,9,26,TS,,,4.5.1.9
+Entered By ,00224,ORC,10,250,XCN,Y,,4.5.1.10
+Verified By ,00225,ORC,11,250,XCN,Y,,4.5.1.11
+Ordering Provider ,00226,ORC,12,250,XCN,Y,,4.5.1.12
+Enterer's Location ,00227,ORC,13,80,PL,,,4.5.1.13
+Call Back Phone Number ,00228,ORC,14,250,XTN,Y,,4.5.1.14
+Order Effective Date/Time ,00229,ORC,15,26,TS,,,4.5.1.15
+Order Control Code Reason ,00230,ORC,16,250,CE,,,4.5.1.16
+Entering Organization ,00231,ORC,17,250,CE,,,4.5.1.17
+Entering Device ,00232,ORC,18,250,CE,,,4.5.1.18
+Action By ,00233,ORC,19,250,XCN,Y,,4.5.1.19
+Advanced Beneficiary Notice Code ,01310,ORC,20,250,CE,,0339,4.5.1.20
+Ordering Facility Name ,01311,ORC,21,250,XON,Y,,4.5.1.21
+Ordering Facility Address ,01312,ORC,22,250,XAD,Y,,4.5.1.22
+Ordering Facility Phone Number ,01313,ORC,23,250,XTN,Y,,4.5.1.23
+Ordering Provider Address ,01314,ORC,24,250,XAD,Y,,4.5.1.24
+Order Status Modifier ,01473,ORC,25,250,CWE,,,4.5.1.25
+Advanced Beneficiary Notice Override Reason,01641,ORC,26,60,CWE,,0552,4.5.1.26
+Filler's Expected Availability Date/Time ,01642,ORC,27,26,TS,,,4.5.1.27
+Confidentiality Code ,00615,ORC,28,250,CWE,,0177,4.5.1.28
+Order Type ,01643,ORC,29,250,CWE,,0482,4.5.1.29
+Enterer Authorization Mode ,01644,ORC,30,250,CNE,,0483,4.5.1.30
+Parent Universal Service Identifier ,02286,ORC,31,250,CWE,,,4.5.1.31
+Set ID - ORG ,01459,ORG,1,60,SI,,,15.4.5.1
+Organization Unit Code ,01460,ORG,2,250,CE,,0405,15.4.5.2
+Organization Unit Type Code ,01625,ORG,3,250,CE,,0474,15.4.5.3
+Primary Org Unit Indicator ,01462,ORG,4,1,ID,,0136,15.4.5.4
+Practitioner Org Unit Identifier ,01463,ORG,5,60,CX,,,15.4.5.5
+Health Care Provider Type Code ,01464,ORG,6,250,CE,,0452,15.4.5.6
+Health Care Provider Classification Code ,01614,ORG,7,250,CE,,0453,15.4.5.7
+Health Care Provider Area of Specialization Code,01615,ORG,8,250,CE,,0454,15.4.5.8
+Effective Date Range ,01465,ORG,9,52,DR,,,15.4.5.9
+Employment Status Code ,01276,ORG,10,250,CE,,0066,15.4.5.10
+Board Approval Indicator ,01467,ORG,11,1,ID,,0136,15.4.5.11
+Primary Care Physician Indicator ,01468,ORG,12,1,ID,,0136,15.4.5.12
+Business Rule Override Type ,01829,OVR,1,705,CWE,,0518,2.15.11.1
+Business Rule Override Code ,01830,OVR,2,705,CWE,,0521,2.15.11.2
+Override Comments ,01831,OVR,3,200,TX,,,2.15.11.3
+Override Entered By ,01832,OVR,4,250,XCN,,,2.15.11.4
+Override Authorized By ,01833,OVR,5,250,XCN,,,2.15.11.5
+Implicated Product ,01098,PCR,1,250,CE,,,7.12.3.1
+Generic Product ,01099,PCR,2,1,IS,,0249,7.12.3.2
+Product Class ,01100,PCR,3,250,CE,,,7.12.3.3
+Total Duration Of Therapy ,01101,PCR,4,8,CQ,,,7.12.3.4
+Product Manufacture Date ,01102,PCR,5,26,TS,,,7.12.3.5
+Product Expiration Date ,01103,PCR,6,26,TS,,,7.12.3.6
+Product Implantation Date ,01104,PCR,7,26,TS,,,7.12.3.7
+Product Explantation Date ,01105,PCR,8,26,TS,,,7.12.3.8
+Single Use Device ,01106,PCR,9,8,IS,,0244,7.12.3.9
+Indication For Product Use ,01107,PCR,10,250,CE,,,7.12.3.10
+Product Problem ,01108,PCR,11,8,IS,,0245,7.12.3.11
+Product Serial/Lot Number ,01109,PCR,12,30,ST,Y,,7.12.3.12
+Product Available For Inspection ,01110,PCR,13,1,IS,,0246,7.12.3.13
+Product Evaluation Performed ,01111,PCR,14,250,CE,,,7.12.3.14
+Product Evaluation Status ,01112,PCR,15,250,CE,,0247,7.12.3.15
+Product Evaluation Results ,01113,PCR,16,250,CE,,,7.12.3.16
+Evaluated Product Source ,01114,PCR,17,8,ID,,0248,7.12.3.17
+Date Product Returned To Manufacturer ,01115,PCR,18,26,TS,,,7.12.3.18
+Device Operator Qualifications ,01116,PCR,19,1,ID,,0242,7.12.3.19
+Relatedness Assessment ,01117,PCR,20,1,ID,,0250,7.12.3.20
+Action Taken In Response To The Event ,01118,PCR,21,2,ID,Y,0251,7.12.3.21
+Event Causality Observations ,01119,PCR,22,2,ID,Y,0252,7.12.3.22
+Indirect Exposure Mechanism ,01120,PCR,23,1,ID,Y,0253,7.12.3.23
+Living Dependency ,00755,PD1,1,2,IS,Y,0223,3.4.10.1
+Living Arrangement ,00742,PD1,2,2,IS,,0220,3.4.10.2
+Patient Primary Facility ,00756,PD1,3,250,XON,Y,,3.4.10.3
+Patient Primary Care Provider Name & ID No.,00757,PD1,4,250,XCN,Y,,3.4.10.4
+Student Indicator ,00745,PD1,5,2,IS,,0231,3.4.10.5
+Handicap ,00753,PD1,6,2,IS,,0295,3.4.10.6
+Living Will Code ,00759,PD1,7,2,IS,,0315,3.4.10.7
+Organ Donor Code ,00760,PD1,8,2,IS,,0316,3.4.10.8
+Separate Bill ,00761,PD1,9,1,ID,,0136,3.4.10.9
+Duplicate Patient ,00762,PD1,10,250,CX,Y,,3.4.10.10
+Publicity Code ,00743,PD1,11,250,CE,,0215,3.4.10.11
+Protection Indicator ,00744,PD1,12,1,ID,,0136,3.4.10.12
+Protection Indicator Effective Date ,01566,PD1,13,8,DT,,,3.4.10.13
+Place of Worship ,01567,PD1,14,250,XON,Y,,3.4.10.14
+Advance Directive Code ,01568,PD1,15,250,CE,Y,0435,3.4.10.15
+Immunization Registry Status ,01569,PD1,16,1,IS,,0441,3.4.10.16
+Immunization Registry Status Effective Date ,01570,PD1,17,8,DT,,,3.4.10.17
+Publicity Code Effective Date ,01571,PD1,18,8,DT,,,3.4.10.18
+Military Branch ,01572,PD1,19,5,IS,,0140,3.4.10.19
+Military Rank/Grade ,00486,PD1,20,2,IS,,0141,3.4.10.20
+Military Status ,01573,PD1,21,3,IS,,0142,3.4.10.21
+Death Cause Code ,01574,PDA,1,250,CE,Y,,3.4.12.1
+Death Location ,01575,PDA,2,80,PL,,,3.4.12.2
+Death Certified Indicator ,01576,PDA,3,1,ID,,0136,3.4.12.3
+Death Certificate Signed Date/Time ,01577,PDA,4,26,TS,,,3.4.12.4
+Death Certified By ,01578,PDA,5,250,XCN,,,3.4.12.5
+Autopsy Indicator ,01579,PDA,6,1,ID,,0136,3.4.12.6
+Autopsy Start and End Date/Time ,01580,PDA,7,53,DR,,,3.4.12.7
+Autopsy Performed By ,01581,PDA,8,250,XCN,,,3.4.12.8
+Coroner Indicator ,01582,PDA,9,1,ID,,0136,3.4.12.9
+Manufacturer/Distributor ,01247,PDC,1,250,XON,Y,,7.12.5.1
+Country ,01248,PDC,2,250,CE,,,7.12.5.2
+Brand Name ,01249,PDC,3,60,ST,,,7.12.5.3
+Device Family Name ,01250,PDC,4,60,ST,,,7.12.5.4
+Generic Name ,01251,PDC,5,250,CE,,,7.12.5.5
+Model Identifier ,01252,PDC,6,60,ST,Y,,7.12.5.6
+Catalogue Identifier ,01253,PDC,7,60,ST,,,7.12.5.7
+Other Identifier ,01254,PDC,8,60,ST,Y,,7.12.5.8
+Product Code ,01255,PDC,9,250,CE,,,7.12.5.9
+Marketing Basis ,01256,PDC,10,4,ID,,0330,7.12.5.10
+Marketing Approval ID ,01257,PDC,11,60,ST,,,7.12.5.11
+Labeled Shelf Life ,01258,PDC,12,12,CQ,,,7.12.5.12
+Expected Shelf Life ,01259,PDC,13,12,CQ,,,7.12.5.13
+Date First Marketed ,01260,PDC,14,26,TS,,,7.12.5.14
+Date Last Marketed ,01261,PDC,15,26,TS,,,7.12.5.15
+Event Identifiers Used ,01073,PEO,1,250,CE,Y,,7.12.2.1
+Event Symptom/Diagnosis Code ,01074,PEO,2,250,CE,Y,,7.12.2.2
+Event Onset Date/Time ,01075,PEO,3,26,TS,,,7.12.2.3
+Event Exacerbation Date/Time ,01076,PEO,4,26,TS,,,7.12.2.4
+Event Improved Date/Time ,01077,PEO,5,26,TS,,,7.12.2.5
+Event Ended Data/Time ,01078,PEO,6,26,TS,,,7.12.2.6
+Event Location Occurred Address ,01079,PEO,7,250,XAD,Y,,7.12.2.7
+Event Qualification ,01080,PEO,8,1,ID,Y,0237,7.12.2.8
+Event Serious ,01081,PEO,9,1,ID,,0238,7.12.2.9
+Event Expected ,01082,PEO,10,1,ID,,0239,7.12.2.10
+Event Outcome ,01083,PEO,11,1,ID,Y,0240,7.12.2.11
+Patient Outcome ,01084,PEO,12,1,ID,,0241,7.12.2.12
+Event Description From Others ,01085,PEO,13,600,FT,Y,,7.12.2.13
+Event From Original Reporter ,01086,PEO,14,600,FT,Y,,7.12.2.14
+Event Description From Patient ,01087,PEO,15,600,FT,Y,,7.12.2.15
+Event Description From Practitioner ,01088,PEO,16,600,FT,Y,,7.12.2.16
+Event Description From Autopsy ,01089,PEO,17,600,FT,Y,,7.12.2.17
+Cause Of Death ,01090,PEO,18,250,CE,Y,,7.12.2.18
+Primary Observer Name ,01091,PEO,19,250,XPN,Y,,7.12.2.19
+Primary Observer Address ,01092,PEO,20,250,XAD,Y,,7.12.2.20
+Primary Observer Telephone ,01093,PEO,21,250,XTN,Y,,7.12.2.21
+Primary Observer's Qualification ,01094,PEO,22,1,ID,,0242,7.12.2.22
+Confirmation Provided By ,01095,PEO,23,1,ID,,0242,7.12.2.23
+Primary Observer Aware Date/Time ,01096,PEO,24,26,TS,,,7.12.2.24
+Primary Observer's identity May Be Divulged ,01097,PEO,25,1,ID,,0243,7.12.2.25
+Sender Organization Name ,01059,PES,1,250,XON,Y,,7.12.1.1
+Sender Individual Name ,01060,PES,2,250,XCN,Y,,7.12.1.2
+Sender Address ,01062,PES,3,250,XAD,Y,,7.12.1.3
+Sender Telephone ,01063,PES,4,250,XTN,Y,,7.12.1.4
+Sender Event Identifier ,01064,PES,5,75,EI,,,7.12.1.5
+Sender Sequence Number ,01065,PES,6,2,NM,,,7.12.1.6
+Sender Event Description ,01066,PES,7,600,FT,Y,,7.12.1.7
+Sender Comment ,01067,PES,8,600,FT,,,7.12.1.8
+Sender Aware Date/Time ,01068,PES,9,26,TS,,,7.12.1.9
+Event Report Date ,01069,PES,10,26,TS,,,7.12.1.10
+Event Report Timing/Type ,01070,PES,11,3,ID,Y,0234,7.12.1.11
+Event Report Source ,01071,PES,12,1,ID,,0235,7.12.1.12
+Event Reported To ,01072,PES,13,1,ID,Y,0236,7.12.1.13
+Set ID - PID ,00104,PID,1,4,SI,,,3.4.2.1
+Patient ID ,00105,PID,2,20,CX,,,3.4.2.2
+Patient Identifier List ,00106,PID,3,250,CX,Y,,3.4.2.3
+Alternate Patient ID - PID ,00107,PID,4,20,CX,Y,,3.4.2.4
+Patient Name ,00108,PID,5,250,XPN,Y,,3.4.2.5
+Mother's Maiden Name ,00109,PID,6,250,XPN,Y,,3.4.2.6
+Date/Time of Birth ,00110,PID,7,26,TS,,,3.4.2.7
+Administrative Sex ,00111,PID,8,1,IS,,0001,3.4.2.8
+Patient Alias ,00112,PID,9,250,XPN,Y,,3.4.2.9
+Race ,00113,PID,10,250,CE,Y,0005,3.4.2.10
+Patient Address ,00114,PID,11,250,XAD,Y,,3.4.2.11
+County Code ,00115,PID,12,4,IS,,0289,3.4.2.12
+Phone Number - Home ,00116,PID,13,250,XTN,Y,,3.4.2.13
+Phone Number - Business ,00117,PID,14,250,XTN,Y,,3.4.2.14
+Primary Language ,00118,PID,15,250,CE,,0296,3.4.2.15
+Marital Status ,00119,PID,16,250,CE,,0002,3.4.2.16
+Religion ,00120,PID,17,250,CE,,0006,3.4.2.17
+Patient Account Number ,00121,PID,18,250,CX,,,3.4.2.18
+SSN Number - Patient ,00122,PID,19,16,ST,,,3.4.2.19
+Driver's License Number - Patient ,00123,PID,20,25,DLN,,,3.4.2.20
+Mother's Identifier ,00124,PID,21,250,CX,Y,,3.4.2.21
+Ethnic Group ,00125,PID,22,250,CE,Y,0189,3.4.2.22
+Birth Place ,00126,PID,23,250,ST,,,3.4.2.23
+Multiple Birth Indicator ,00127,PID,24,1,ID,,0136,3.4.2.24
+Birth Order ,00128,PID,25,2,NM,,,3.4.2.25
+Citizenship ,00129,PID,26,250,CE,Y,0171,3.4.2.26
+Veterans Military Status ,00130,PID,27,250,CE,,0172,3.4.2.27
+Nationality ,00739,PID,28,250,CE,,0212,3.4.2.28
+Patient Death Date and Time ,00740,PID,29,26,TS,,,3.4.2.29
+Patient Death Indicator ,00741,PID,30,1,ID,,0136,3.4.2.30
+Identity Unknown Indicator ,01535,PID,31,1,ID,,0136,3.4.2.31
+Identity Reliability Code ,01536,PID,32,20,IS,Y,0445,3.4.2.32
+Last Update Date/Time ,01537,PID,33,26,TS,,,3.4.2.33
+Last Update Facility ,01538,PID,34,241,HD,,,3.4.2.34
+Species Code ,01539,PID,35,250,CE,,0446,3.4.2.35
+Breed Code ,01540,PID,36,250,CE,,0447,3.4.2.36
+Strain ,01541,PID,37,80,ST,,,3.4.2.37
+Production Class Code ,01542,PID,38,250,CE,,0429,3.4.2.38
+Tribal Citizenship ,01840,PID,39,250,CWE,Y,0171,3.4.2.39
+Set ID - PR1 ,00391,PR1,1,4,SI,,,6.5.4.1
+Procedure Coding Method ,00392,PR1,2,3,IS,,0089,6.5.4.2
+Procedure Code ,00393,PR1,3,250,CE,,0088,6.5.4.3
+Procedure Description ,00394,PR1,4,40,ST,,,6.5.4.4
+Procedure Date/Time ,00395,PR1,5,26,TS,,,6.5.4.5
+Procedure Functional Type ,00396,PR1,6,2,IS,,0230,6.5.4.6
+Procedure Minutes ,00397,PR1,7,4,NM,,,6.5.4.7
+Anesthesiologist ,00398,PR1,8,250,XCN,Y,0010,6.5.4.8
+Anesthesia Code ,00399,PR1,9,2,IS,,0019,6.5.4.9
+Anesthesia Minutes ,00400,PR1,10,4,NM,,,6.5.4.10
+Surgeon ,00401,PR1,11,250,XCN,Y,0010,6.5.4.11
+Procedure Practitioner ,00402,PR1,12,250,XCN,Y,0010,6.5.4.12
+Consent Code ,00403,PR1,13,250,CE,,0059,6.5.4.13
+Procedure Priority ,00404,PR1,14,2,ID,,0418,6.5.4.14
+Associated Diagnosis Code ,00772,PR1,15,250,CE,,0051,6.5.4.15
+Procedure Code Modifier ,01316,PR1,16,250,CE,Y,0340,6.5.4.16
+Procedure DRG Type ,01501,PR1,17,20,IS,,0416,6.5.4.17
+Tissue Type Code ,01502,PR1,18,250,CE,Y,0417,6.5.4.18
+Procedure Identifier ,01848,PR1,19,427,EI,,,6.5.4.19
+Procedure Action Code ,01849,PR1,20,1,ID,,0206,6.5.4.20
+Primary Key Value - PRA ,00685,PRA,1,250,CE,,9999,15.4.6.1
+Practitioner Group ,00686,PRA,2,250,CE,Y,0358,15.4.6.2
+Practitioner Category ,00687,PRA,3,3,IS,Y,0186,15.4.6.3
+Provider Billing ,00688,PRA,4,1,ID,,0187,15.4.6.4
+Specialty ,00689,PRA,5,112,SPD,Y,0337,15.4.6.5
+Practitioner ID Numbers ,00690,PRA,6,99,PLN,Y,0338,15.4.6.6
+Privileges ,00691,PRA,7,770,PIP,Y,,15.4.6.7
+Date Entered Practice ,01296,PRA,8,8,DT,,,15.4.6.8
+Institution ,01613,PRA,9,250,CE,,0537,15.4.6.9
+Date Left Practice ,01348,PRA,10,8,DT,,,15.4.6.10
+Government Reimbursement Billing Eligibility,01388,PRA,11,250,CE,Y,0401,15.4.6.11
+Set ID - PRA ,01616,PRA,12,60,SI,,,15.4.6.12
+Action Code ,00816,PRB,1,2,ID,,0287,12.4.2.1
+Action Date/Time ,00817,PRB,2,26,TS,,,12.4.2.2
+Problem ID ,00838,PRB,3,250,CE,,,12.4.2.3
+Problem Instance ID ,00839,PRB,4,60,EI,,,12.4.2.4
+Episode of Care ID ,00820,PRB,5,60,EI,,,12.4.2.5
+Problem List Priority ,00841,PRB,6,60,NM,,,12.4.2.6
+Problem Established Date/Time ,00842,PRB,7,26,TS,,,12.4.2.7
+Anticipated Problem Resolution Date/Time ,00843,PRB,8,26,TS,,,12.4.2.8
+Actual Problem Resolution Date/Time ,00844,PRB,9,26,TS,,,12.4.2.9
+Problem Classification ,00845,PRB,10,250,CE,,,12.4.2.10
+Problem Management Discipline ,00846,PRB,11,250,CE,Y,,12.4.2.11
+Problem Persistence ,00847,PRB,12,250,CE,,,12.4.2.12
+Problem Confirmation Status ,00848,PRB,13,250,CE,,,12.4.2.13
+Problem Life Cycle Status ,00849,PRB,14,250,CE,,,12.4.2.14
+Problem Life Cycle Status Date/Time ,00850,PRB,15,26,TS,,,12.4.2.15
+Problem Date of Onset ,00851,PRB,16,26,TS,,,12.4.2.16
+Problem Onset Text ,00852,PRB,17,80,ST,,,12.4.2.17
+Problem Ranking ,00853,PRB,18,250,CE,,,12.4.2.18
+Certainty of Problem ,00854,PRB,19,250,CE,,,12.4.2.19
+Probability of Problem (0-1) ,00855,PRB,20,5,NM,,,12.4.2.20
+Individual Awareness of Problem ,00856,PRB,21,250,CE,,,12.4.2.21
+Problem Prognosis ,00857,PRB,22,250,CE,,,12.4.2.22
+Individual Awareness of Prognosis ,00858,PRB,23,250,CE,,,12.4.2.23
+Family/Significant Other Awareness of Problem/Prognosis,00859,PRB,24,200,ST,,,12.4.2.24
+Security/Sensitivity ,00823,PRB,25,250,CE,,,12.4.2.25
+Primary Key Value - PRC ,00982,PRC,1,250,CE,,0132,8.10.3.1
+Facility ID - PRC ,00995,PRC,2,250,CE,Y,0464,8.10.3.2
+Department ,00676,PRC,3,250,CE,Y,0184,8.10.3.3
+Valid Patient Classes ,00967,PRC,4,1,IS,Y,0004,8.10.3.4
+Price ,00998,PRC,5,12,CP,Y,,8.10.3.5
+Formula ,00999,PRC,6,200,ST,Y,,8.10.3.6
+Minimum Quantity ,01000,PRC,7,4,NM,,,8.10.3.7
+Maximum Quantity ,01001,PRC,8,4,NM,,,8.10.3.8
+Minimum Price ,01002,PRC,9,12,MO,,,8.10.3.9
+Maximum Price ,01003,PRC,10,12,MO,,,8.10.3.10
+Effective Start Date ,01004,PRC,11,26,TS,,,8.10.3.11
+Effective End Date ,01005,PRC,12,26,TS,,,8.10.3.12
+Price Override Flag ,01006,PRC,13,1,IS,,0268,8.10.3.13
+Billing Category ,01007,PRC,14,250,CE,Y,0293,8.10.3.14
+Chargeable Flag ,01008,PRC,15,1,ID,,0136,8.10.3.15
+Active/Inactive Flag ,00675,PRC,16,1,ID,,0183,8.10.3.16
+Cost ,00989,PRC,17,12,MO,,,8.10.3.17
+Charge On Indicator ,01009,PRC,18,1,IS,,0269,8.10.3.18
+Provider Role ,01155,PRD,1,250,CE,Y,0286,11.6.3.1
+Provider Name ,01156,PRD,2,250,XPN,Y,,11.6.3.2
+Provider Address ,01157,PRD,3,250,XAD,Y,,11.6.3.3
+Provider Location ,01158,PRD,4,60,PL,,,11.6.3.4
+Provider Communication Information ,01159,PRD,5,250,XTN,Y,,11.6.3.5
+Preferred Method of Contact ,00684,PRD,6,250,CE,,0185,11.6.3.6
+Provider Identifiers ,01162,PRD,7,100,PLN,Y,,11.6.3.7
+Effective Start Date of Provider Role ,01163,PRD,8,26,TS,,,11.6.3.8
+Effective End Date of Provider Role ,01164,PRD,9,26,TS,,,11.6.3.9
+Report Type ,01233,PSH,1,60,ST,,,7.12.4.1
+Report Form Identifier ,01297,PSH,2,60,ST,,,7.12.4.2
+Report Date ,01235,PSH,3,26,TS,,,7.12.4.3
+Report Interval Start Date ,01236,PSH,4,26,TS,,,7.12.4.4
+Report Interval End Date ,01237,PSH,5,26,TS,,,7.12.4.5
+Quantity Manufactured ,01238,PSH,6,12,CQ,,,7.12.4.6
+Quantity Distributed ,01239,PSH,7,12,CQ,,,7.12.4.7
+Quantity Distributed Method ,01240,PSH,8,1,ID,,0329,7.12.4.8
+Quantity Distributed Comment ,01241,PSH,9,600,FT,,,7.12.4.9
+Quantity in Use ,01242,PSH,10,12,CQ,,,7.12.4.10
+Quantity in Use Method ,01243,PSH,11,1,ID,,0329,7.12.4.11
+Quantity in Use Comment ,01244,PSH,12,600,FT,,,7.12.4.12
+Number of Product Experience Reports Filed by Facility,01245,PSH,13,2,NM,Y,,7.12.4.13
+Number of Product Experience Reports Filed by Distributor,01246,PSH,14,2,NM,Y,,7.12.4.14
+Action Code ,00816,PTH,1,2,ID,,0287,12.4.4.1
+Pathway ID ,01207,PTH,2,250,CE,,,12.4.4.2
+Pathway Instance ID ,01208,PTH,3,60,EI,,,12.4.4.3
+Pathway Established Date/Time ,01209,PTH,4,26,TS,,,12.4.4.4
+Pathway Life Cycle Status ,01210,PTH,5,250,CE,,,12.4.4.5
+Change Pathway Life Cycle Status Date/Time ,01211,PTH,6,26,TS,,,12.4.4.6
+Set ID - PV1 ,00131,PV1,1,4,SI,,,3.4.3.1
+Patient Class ,00132,PV1,2,1,IS,,0004,3.4.3.2
+Assigned Patient Location ,00133,PV1,3,80,PL,,,3.4.3.3
+Admission Type ,00134,PV1,4,2,IS,,0007,3.4.3.4
+Preadmit Number ,00135,PV1,5,250,CX,,,3.4.3.5
+Prior Patient Location ,00136,PV1,6,80,PL,,,3.4.3.6
+Attending Doctor ,00137,PV1,7,250,XCN,Y,0010,3.4.3.7
+Referring Doctor ,00138,PV1,8,250,XCN,Y,0010,3.4.3.8
+Consulting Doctor ,00139,PV1,9,250,XCN,Y,0010,3.4.3.9
+Hospital Service ,00140,PV1,10,3,IS,,0069,3.4.3.10
+Temporary Location ,00141,PV1,11,80,PL,,,3.4.3.11
+Preadmit Test Indicator ,00142,PV1,12,2,IS,,0087,3.4.3.12
+Re-admission Indicator ,00143,PV1,13,2,IS,,0092,3.4.3.13
+Admit Source ,00144,PV1,14,6,IS,,0023,3.4.3.14
+Ambulatory Status ,00145,PV1,15,2,IS,Y,0009,3.4.3.15
+VIP Indicator ,00146,PV1,16,2,IS,,0099,3.4.3.16
+Admitting Doctor ,00147,PV1,17,250,XCN,Y,0010,3.4.3.17
+Patient Type ,00148,PV1,18,2,IS,,0018,3.4.3.18
+Visit Number ,00149,PV1,19,250,CX,,,3.4.3.19
+Financial Class ,00150,PV1,20,50,FC,Y,0064,3.4.3.20
+Charge Price Indicator ,00151,PV1,21,2,IS,,0032,3.4.3.21
+Courtesy Code ,00152,PV1,22,2,IS,,0045,3.4.3.22
+Credit Rating ,00153,PV1,23,2,IS,,0046,3.4.3.23
+Contract Code ,00154,PV1,24,2,IS,Y,0044,3.4.3.24
+Contract Effective Date ,00155,PV1,25,8,DT,Y,,3.4.3.25
+Contract Amount ,00156,PV1,26,12,NM,Y,,3.4.3.26
+Contract Period ,00157,PV1,27,3,NM,Y,,3.4.3.27
+Interest Code ,00158,PV1,28,2,IS,,0073,3.4.3.28
+Transfer to Bad Debt Code ,00159,PV1,29,4,IS,,0110,3.4.3.29
+Transfer to Bad Debt Date ,00160,PV1,30,8,DT,,,3.4.3.30
+Bad Debt Agency Code ,00161,PV1,31,10,IS,,0021,3.4.3.31
+Bad Debt Transfer Amount ,00162,PV1,32,12,NM,,,3.4.3.32
+Bad Debt Recovery Amount ,00163,PV1,33,12,NM,,,3.4.3.33
+Delete Account Indicator ,00164,PV1,34,1,IS,,0111,3.4.3.34
+Delete Account Date ,00165,PV1,35,8,DT,,,3.4.3.35
+Discharge Disposition ,00166,PV1,36,3,IS,,0112,3.4.3.36
+Discharged to Location ,00167,PV1,37,47,DLD,,0113,3.4.3.37
+Diet Type ,00168,PV1,38,250,CE,,0114,3.4.3.38
+Servicing Facility ,00169,PV1,39,2,IS,,0115,3.4.3.39
+Bed Status ,00170,PV1,40,1,IS,,0116,3.4.3.40
+Account Status ,00171,PV1,41,2,IS,,0117,3.4.3.41
+Pending Location ,00172,PV1,42,80,PL,,,3.4.3.42
+Prior Temporary Location ,00173,PV1,43,80,PL,,,3.4.3.43
+Admit Date/Time ,00174,PV1,44,26,TS,,,3.4.3.44
+Discharge Date/Time ,00175,PV1,45,26,TS,Y,,3.4.3.45
+Current Patient Balance ,00176,PV1,46,12,NM,,,3.4.3.46
+Total Charges ,00177,PV1,47,12,NM,,,3.4.3.47
+Total Adjustments ,00178,PV1,48,12,NM,,,3.4.3.48
+Total Payments ,00179,PV1,49,12,NM,,,3.4.3.49
+Alternate Visit ID ,00180,PV1,50,250,CX,,0203,3.4.3.50
+Visit Indicator ,01226,PV1,51,1,IS,,0326,3.4.3.51
+Other Healthcare Provider ,01274,PV1,52,250,XCN,Y,0010,3.4.3.52
+Prior Pending Location ,00181,PV2,1,80,PL,,,3.4.4.1
+Accommodation Code ,00182,PV2,2,250,CE,,0129,3.4.4.2
+Admit Reason ,00183,PV2,3,250,CE,,,3.4.4.3
+Transfer Reason ,00184,PV2,4,250,CE,,,3.4.4.4
+Patient Valuables ,00185,PV2,5,25,ST,Y,,3.4.4.5
+Patient Valuables Location ,00186,PV2,6,25,ST,,,3.4.4.6
+Visit User Code ,00187,PV2,7,2,IS,Y,0130,3.4.4.7
+Expected Admit Date/Time ,00188,PV2,8,26,TS,,,3.4.4.8
+Expected Discharge Date/Time ,00189,PV2,9,26,TS,,,3.4.4.9
+Estimated Length of Inpatient Stay ,00711,PV2,10,3,NM,,,3.4.4.10
+Actual Length of Inpatient Stay ,00712,PV2,11,3,NM,,,3.4.4.11
+Visit Description ,00713,PV2,12,50,ST,,,3.4.4.12
+Referral Source Code ,00714,PV2,13,250,XCN,Y,,3.4.4.13
+Previous Service Date ,00715,PV2,14,8,DT,,,3.4.4.14
+Employment Illness Related Indicator ,00716,PV2,15,1,ID,,0136,3.4.4.15
+Purge Status Code ,00717,PV2,16,1,IS,,0213,3.4.4.16
+Purge Status Date ,00718,PV2,17,8,DT,,,3.4.4.17
+Special Program Code ,00719,PV2,18,2,IS,,0214,3.4.4.18
+Retention Indicator ,00720,PV2,19,1,ID,,0136,3.4.4.19
+Expected Number of Insurance Plans ,00721,PV2,20,1,NM,,,3.4.4.20
+Visit Publicity Code ,00722,PV2,21,1,IS,,0215,3.4.4.21
+Visit Protection Indicator ,00723,PV2,22,1,ID,,0136,3.4.4.22
+Clinic Organization Name ,00724,PV2,23,250,XON,Y,,3.4.4.23
+Patient Status Code ,00725,PV2,24,2,IS,,0216,3.4.4.24
+Visit Priority Code ,00726,PV2,25,1,IS,,0217,3.4.4.25
+Previous Treatment Date ,00727,PV2,26,8,DT,,,3.4.4.26
+Expected Discharge Disposition ,00728,PV2,27,2,IS,,0112,3.4.4.27
+Signature on File Date ,00729,PV2,28,8,DT,,,3.4.4.28
+First Similar Illness Date ,00730,PV2,29,8,DT,,,3.4.4.29
+Patient Charge Adjustment Code ,00731,PV2,30,250,CE,,0218,3.4.4.30
+Recurring Service Code ,00732,PV2,31,2,IS,,0219,3.4.4.31
+Billing Media Code ,00733,PV2,32,1,ID,,0136,3.4.4.32
+Expected Surgery Date and Time ,00734,PV2,33,26,TS,,,3.4.4.33
+Military Partnership Code ,00735,PV2,34,1,ID,,0136,3.4.4.34
+Military Non-Availability Code ,00736,PV2,35,1,ID,,0136,3.4.4.35
+Newborn Baby Indicator ,00737,PV2,36,1,ID,,0136,3.4.4.36
+Baby Detained Indicator ,00738,PV2,37,1,ID,,0136,3.4.4.37
+Mode of Arrival Code ,01543,PV2,38,250,CE,,0430,3.4.4.38
+Recreational Drug Use Code ,01544,PV2,39,250,CE,Y,0431,3.4.4.39
+Admission Level of Care Code ,01545,PV2,40,250,CE,,0432,3.4.4.40
+Precaution Code ,01546,PV2,41,250,CE,Y,0433,3.4.4.41
+Patient Condition Code ,01547,PV2,42,250,CE,,0434,3.4.4.42
+Living Will Code ,00759,PV2,43,2,IS,,0315,3.4.4.43
+Organ Donor Code ,00760,PV2,44,2,IS,,0316,3.4.4.44
+Advance Directive Code ,01548,PV2,45,250,CE,Y,0435,3.4.4.45
+Patient Status Effective Date ,01549,PV2,46,8,DT,,,3.4.4.46
+Expected LOA Return Date/Time ,01550,PV2,47,26,TS,,,3.4.4.47
+Expected Pre-admission Testing Date/Time ,01841,PV2,48,26,TS,,,3.4.4.48
+Notify Clergy Code ,01842,PV2,49,20,IS,Y,0534,3.4.4.49
+Query Tag ,00696,QAK,1,32,ST,,,5.5.2.1
+Query Response Status ,00708,QAK,2,2,ID,,0208,5.5.2.2
+Message Query Name ,01375,QAK,3,250,CE,,0471,5.5.2.3
+Hit Count ,01434,QAK,4,10,NM,,,5.5.2.4
+This payload ,01622,QAK,5,10,NM,,,5.5.2.5
+Hits remaining ,01623,QAK,6,10,NM,,,5.5.2.6
+Query Tag ,00696,QID,1,32,ST,,,5.5.3.1
+Message Query Name ,01375,QID,2,250,CE,,0471,5.5.3.2
+Message Query Name ,01375,QPD,1,250,CE,,0471,5.5.4.1
+Query Tag ,00696,QPD,2,32,ST,,,5.5.4.2
+User Parameters (in successive fields) ,01435,QPD,3,0,var,,,5.5.4.3.3
+Query Date/Time ,00025,QRD,1,26,TS,,,5.10.5.3.1
+Query Format Code ,00026,QRD,2,1,ID,,0106,5.10.5.3.2
+Query Priority ,00027,QRD,3,1,ID,,0091,5.10.5.3.3
+Query ID ,00028,QRD,4,10,ST,,,5.10.5.3.4
+Deferred Response Type ,00029,QRD,5,1,ID,,0107,5.10.5.3.5
+Deferred Response Date/Time ,00030,QRD,6,26,TS,,,5.10.5.3.6
+Quantity Limited Request ,00031,QRD,7,10,CQ,,0126,5.10.5.3.7
+Who Subject Filter ,00032,QRD,8,250,XCN,Y,,5.10.5.3.8
+What Subject Filter ,00033,QRD,9,250,CE,Y,0048,5.10.5.3.9
+What Department Data Code ,00034,QRD,10,250,CE,Y,,5.10.5.3.1
+What Data Code Value Qual. ,00035,QRD,11,20,VR,Y,,5.10.5.3.1
+Query Results Level ,00036,QRD,12,1,ID,,0108,5.10.5.3.1
+Where Subject Filter ,00037,QRF,1,20,ST,Y,,5.10.5.4.1
+When Data Start Date/Time ,00038,QRF,2,26,TS,,,5.10.5.4.2
+When Data End Date/Time ,00039,QRF,3,26,TS,,,5.10.5.4.3
+What User Qualifier ,00040,QRF,4,60,ST,Y,,5.10.5.4.4
+Other QRY Subject Filter ,00041,QRF,5,60,ST,Y,,5.10.5.4.5
+Which Date/Time Qualifier ,00042,QRF,6,12,ID,Y,0156,5.10.5.4.6
+Which Date/Time Status Qualifier ,00043,QRF,7,12,ID,Y,0157,5.10.5.4.7
+Date/Time Selection Qualifier ,00044,QRF,8,12,ID,Y,0158,5.10.5.4.8
+When Quantity/Timing Qualifier ,00694,QRF,9,60,TQ,,,5.10.5.4.9
+Search Confidence Threshold ,01442,QRF,10,10,NM,,,5.10.5.4.1
+Candidate Confidence ,01436,QRI,1,10,NM,,,5.5.5.1
+Match Reason Code ,01437,QRI,2,2,IS,Y,0392,5.5.5.2
+Algorithm Descriptor ,01438,QRI,3,250,CE,,0393,5.5.5.3
+Query Priority ,00027,RCP,1,1,ID,,0091,5.5.6.1
+Quantity Limited Request ,00031,RCP,2,10,CQ,,0126,5.5.6.2
+Response Modality ,01440,RCP,3,250,CE,,0394,5.5.6.3
+Execution and Delivery Time ,01441,RCP,4,26,TS,,,5.5.6.4
+Modify Indicator ,01443,RCP,5,1,ID,,0395,5.5.6.5
+Sort-by Field ,01624,RCP,6,512,SRT,Y,,5.5.6.6
+Segment group inclusion ,01594,RCP,7,256,ID,Y,,5.5.6.7
+Number of Columns per Row ,00701,RDF,1,3,NM,,,5.5.7.1
+Column Description ,00702,RDF,2,40,RCD,Y,0440,5.5.7.2
+Column Value ,00703,RDT,1,0,var,,,5.5.8.1.1
+Referral Status ,01137,RF1,1,250,CE,,0283,11.6.1.1
+Referral Priority ,01138,RF1,2,250,CE,,0280,11.6.1.2
+Referral Type ,01139,RF1,3,250,CE,,0281,11.6.1.3
+Referral Disposition ,01140,RF1,4,250,CE,Y,0282,11.6.1.4
+Referral Category ,01141,RF1,5,250,CE,,0284,11.6.1.5
+Originating Referral Identifier ,01142,RF1,6,30,EI,,,11.6.1.6
+Effective Date ,01143,RF1,7,26,TS,,,11.6.1.7
+Expiration Date ,01144,RF1,8,26,TS,,,11.6.1.8
+Process Date ,01145,RF1,9,26,TS,,,11.6.1.9
+Referral Reason ,01228,RF1,10,250,CE,Y,0336,11.6.1.10
+External Referral Identifier ,01300,RF1,11,30,EI,Y,,11.6.1.11
+Set ID - RGS ,01203,RGS,1,4,SI,,,10.6.3.1
+Segment Action Code ,00763,RGS,2,3,ID,,0206,10.6.3.2
+Resource Group ID ,01204,RGS,3,250,CE,,,10.6.3.3
+Risk Management Incident Code ,01530,RMI,1,250,CE,,0427,6.5.14.1
+Date/Time Incident ,01531,RMI,2,26,TS,,,6.5.14.2
+Incident Type Code ,01533,RMI,3,250,CE,,0428,6.5.14.3
+Role Instance ID ,01206,ROL,1,60,EI,,,15.4.7.1
+Action Code ,00816,ROL,2,2,ID,,0287,15.4.7.2
+Role-ROL ,01197,ROL,3,250,CE,,0443,15.4.7.3
+Role Person ,01198,ROL,4,250,XCN,Y,,15.4.7.4
+Role Begin Date/Time ,01199,ROL,5,26,TS,,,15.4.7.5
+Role End Date/Time ,01200,ROL,6,26,TS,,,15.4.7.6
+Role Duration ,01201,ROL,7,250,CE,,,15.4.7.7
+Role Action Reason ,01205,ROL,8,250,CE,,,15.4.7.8
+Provider Type ,01510,ROL,9,250,CE,Y,,15.4.7.9
+Organization Unit Type ,01461,ROL,10,250,CE,,0406,15.4.7.10
+Office/Home Address/Birthplace ,00679,ROL,11,250,XAD,Y,,15.4.7.11
+Phone ,00678,ROL,12,250,XTN,Y,,15.4.7.12
+Anticipated Price ,00285,RQ1,1,10,ST,,,4.11.2.1
+Manufacturer Identifier ,00286,RQ1,2,250,CE,,0385,4.11.2.2
+Manufacturer's Catalog ,00287,RQ1,3,16,ST,,,4.11.2.3
+Vendor ID ,00288,RQ1,4,250,CE,,,4.11.2.4
+Vendor Catalog ,00289,RQ1,5,16,ST,,,4.11.2.5
+Taxable ,00290,RQ1,6,1,ID,,0136,4.11.2.6
+Substitute Allowed ,00291,RQ1,7,1,ID,,0136,4.11.2.7
+Requisition Line Number ,00275,RQD,1,4,SI,,,4.11.1.1
+Item Code - Internal ,00276,RQD,2,250,CE,,,4.11.1.2
+Item Code - External ,00277,RQD,3,250,CE,,,4.11.1.3
+Hospital Item Code ,00278,RQD,4,250,CE,,,4.11.1.4
+Requisition Quantity ,00279,RQD,5,6,NM,,,4.11.1.5
+Requisition Unit of Measure ,00280,RQD,6,250,CE,,,4.11.1.6
+Dept. Cost Center ,00281,RQD,7,30,IS,,0319,4.11.1.7
+Item Natural Account Code ,00282,RQD,8,30,IS,,0320,4.11.1.8
+Deliver To ID ,00283,RQD,9,250,CE,,,4.11.1.9
+Date Needed ,00284,RQD,10,8,DT,,,4.11.1.10
+Give Sub-ID Counter ,00342,RXA,1,4,NM,,,4.14.7.1
+Administration Sub-ID Counter ,00344,RXA,2,4,NM,,,4.14.7.2
+Date/Time Start of Administration ,00345,RXA,3,26,TS,,,4.14.7.3
+Date/Time End of Administration ,00346,RXA,4,26,TS,,,4.14.7.4
+Administered Code ,00347,RXA,5,250,CE,,0292,4.14.7.5
+Administered Amount ,00348,RXA,6,20,NM,,,4.14.7.6
+Administered Units ,00349,RXA,7,250,CE,,,4.14.7.7
+Administered Dosage Form ,00350,RXA,8,250,CE,,,4.14.7.8
+Administration Notes ,00351,RXA,9,250,CE,Y,,4.14.7.9
+Administering Provider ,00352,RXA,10,250,XCN,Y,,4.14.7.10
+Administered-at Location ,00353,RXA,11,200,LA2,,,4.14.7.11
+Administered Per (Time Unit) ,00354,RXA,12,20,ST,,,4.14.7.12
+Administered Strength ,01134,RXA,13,20,NM,,,4.14.7.13
+Administered Strength Units ,01135,RXA,14,250,CE,,,4.14.7.14
+Substance Lot Number ,01129,RXA,15,20,ST,Y,,4.14.7.15
+Substance Expiration Date ,01130,RXA,16,26,TS,Y,,4.14.7.16
+Substance Manufacturer Name ,01131,RXA,17,250,CE,Y,0227,4.14.7.17
+Substance/Treatment Refusal Reason ,01136,RXA,18,250,CE,Y,,4.14.7.18
+Indication ,01123,RXA,19,250,CE,Y,,4.14.7.19
+Completion Status ,01223,RXA,20,2,ID,,0322,4.14.7.20
+Action Code - RXA ,01224,RXA,21,2,ID,,0323,4.14.7.21
+System Entry Date/Time ,01225,RXA,22,26,TS,,,4.14.7.22
+Administered Drug Strength Volume ,01696,RXA,23,5,NM,,,4.14.7.23
+Administered Drug Strength Volume Units ,01697,RXA,24,250,CWE,,,4.14.7.24
+Administered Barcode Identifier ,01698,RXA,25,60,CWE,,,4.14.7.25
+Pharmacy Order Type ,01699,RXA,26,1,ID,,0480,4.14.7.26
+RX Component Type ,00313,RXC,1,1,ID,,0166,4.14.3.1
+Component Code ,00314,RXC,2,250,CE,,,4.14.3.2
+Component Amount ,00315,RXC,3,20,NM,,,4.14.3.3
+Component Units ,00316,RXC,4,250,CE,,,4.14.3.4
+Component Strength ,01124,RXC,5,20,NM,,,4.14.3.5
+Component Strength Units ,01125,RXC,6,250,CE,,,4.14.3.6
+Supplementary Code ,01476,RXC,7,250,CE,Y,,4.14.3.7
+Component Drug Strength Volume ,01671,RXC,8,5,NM,,,4.14.3.8
+Component Drug Strength Volume Units ,01672,RXC,9,250,CWE,,,4.14.3.9
+Dispense Sub-ID Counter ,00334,RXD,1,4,NM,,,4.14.5.1
+Dispense/Give Code ,00335,RXD,2,250,CE,,0292,4.14.5.2
+Date/Time Dispensed ,00336,RXD,3,26,TS,,,4.14.5.3
+Actual Dispense Amount ,00337,RXD,4,20,NM,,,4.14.5.4
+Actual Dispense Units ,00338,RXD,5,250,CE,,,4.14.5.5
+Actual Dosage Form ,00339,RXD,6,250,CE,,,4.14.5.6
+Prescription Number ,00325,RXD,7,20,ST,,,4.14.5.7
+Number of Refills Remaining ,00326,RXD,8,20,NM,,,4.14.5.8
+Dispense Notes ,00340,RXD,9,200,ST,Y,,4.14.5.9
+Dispensing Provider ,00341,RXD,10,200,XCN,Y,,4.14.5.10
+Substitution Status ,00322,RXD,11,1,ID,,0167,4.14.5.11
+Total Daily Dose ,00329,RXD,12,10,CQ,,,4.14.5.12
+Dispense-to Location ,01303,RXD,13,200,LA2,,,4.14.5.13
+Needs Human Review ,00307,RXD,14,1,ID,,0136,4.14.5.14
+Pharmacy/Treatment Supplier's Special Dispensing Instructions,00330,RXD,15,250,CE,Y,,4.14.5.15
+Actual Strength ,01132,RXD,16,20,NM,,,4.14.5.16
+Actual Strength Unit ,01133,RXD,17,250,CE,,,4.14.5.17
+Substance Lot Number ,01129,RXD,18,20,ST,Y,,4.14.5.18
+Substance Expiration Date ,01130,RXD,19,26,TS,Y,,4.14.5.19
+Substance Manufacturer Name ,01131,RXD,20,250,CE,Y,0227,4.14.5.20
+Indication ,01123,RXD,21,250,CE,Y,,4.14.5.21
+Dispense Package Size ,01220,RXD,22,20,NM,,,4.14.5.22
+Dispense Package Size Unit ,01221,RXD,23,250,CE,,,4.14.5.23
+Dispense Package Method ,01222,RXD,24,2,ID,,0321,4.14.5.24
+Supplementary Code ,01476,RXD,25,250,CE,Y,,4.14.5.25
+Initiating Location ,01477,RXD,26,250,CE,,,4.14.5.26
+Packaging/Assembly Location ,01478,RXD,27,250,CE,,,4.14.5.27
+Actual Drug Strength Volume ,01686,RXD,28,5,NM,,,4.14.5.28
+Actual Drug Strength Volume Units ,01687,RXD,29,250,CWE,,,4.14.5.29
+Dispense to Pharmacy ,01688,RXD,30,180,CWE,,,4.14.5.30
+Dispense to Pharmacy Address ,01689,RXD,31,106,XAD,,,4.14.5.31
+Pharmacy Order Type ,01690,RXD,32,1,ID,,0480,4.14.5.32
+Dispense Type ,01691,RXD,33,250,CWE,,0484,4.14.5.33
+Quantity/Timing ,00221,RXE,1,200,TQ,,,4.14.4.1
+Give Code ,00317,RXE,2,250,CE,,0292,4.14.4.2
+Give Amount - Minimum ,00318,RXE,3,20,NM,,,4.14.4.3
+Give Amount - Maximum ,00319,RXE,4,20,NM,,,4.14.4.4
+Give Units ,00320,RXE,5,250,CE,,,4.14.4.5
+Give Dosage Form ,00321,RXE,6,250,CE,,,4.14.4.6
+Provider's Administration Instructions ,00298,RXE,7,250,CE,Y,,4.14.4.7
+Deliver-To Location ,00299,RXE,8,200,LA1,,,4.14.4.8
+Substitution Status ,00322,RXE,9,1,ID,,0167,4.14.4.9
+Dispense Amount ,00323,RXE,10,20,NM,,,4.14.4.10
+Dispense Units ,00324,RXE,11,250,CE,,,4.14.4.11
+Number Of Refills ,00304,RXE,12,3,NM,,,4.14.4.12
+Ordering Provider's DEA Number ,00305,RXE,13,250,XCN,Y,,4.14.4.13
+Pharmacist/Treatment Supplier's Verifier ID ,00306,RXE,14,250,XCN,Y,,4.14.4.14
+Prescription Number ,00325,RXE,15,20,ST,,,4.14.4.15
+Number of Refills Remaining ,00326,RXE,16,20,NM,,,4.14.4.16
+Number of Refills/Doses Dispensed ,00327,RXE,17,20,NM,,,4.14.4.17
+D/T of Most Recent Refill or Dose Dispensed ,00328,RXE,18,26,TS,,,4.14.4.18
+Total Daily Dose ,00329,RXE,19,10,CQ,,,4.14.4.19
+Needs Human Review ,00307,RXE,20,1,ID,,0136,4.14.4.20
+Pharmacy/Treatment Supplier's Special Dispensing Instructions,00330,RXE,21,250,CE,Y,,4.14.4.21
+Give Per (Time Unit) ,00331,RXE,22,20,ST,,,4.14.4.22
+Give Rate Amount ,00332,RXE,23,6,ST,,,4.14.4.23
+Give Rate Units ,00333,RXE,24,250,CE,,,4.14.4.24
+Give Strength ,01126,RXE,25,20,NM,,,4.14.4.25
+Give Strength Units ,01127,RXE,26,250,CE,,,4.14.4.26
+Give Indication ,01128,RXE,27,250,CE,Y,,4.14.4.27
+Dispense Package Size ,01220,RXE,28,20,NM,,,4.14.4.28
+Dispense Package Size Unit ,01221,RXE,29,250,CE,,,4.14.4.29
+Dispense Package Method ,01222,RXE,30,2,ID,,0321,4.14.4.30
+Supplementary Code ,01476,RXE,31,250,CE,Y,,4.14.4.31
+Original Order Date/Time ,01673,RXE,32,26,TS,,,4.14.4.32
+Give Drug Strength Volume ,01674,RXE,33,5,NM,,,4.14.4.33
+Give Drug Strength Volume Units ,01675,RXE,34,250,CWE,,,4.14.4.34
+Controlled Substance Schedule ,01676,RXE,35,60,CWE,,0477,4.14.4.35
+Formulary Status ,01677,RXE,36,1,ID,,0478,4.14.4.36
+Pharmaceutical Substance Alternative ,01678,RXE,37,60,CWE,Y,,4.14.4.37
+Pharmacy of Most Recent Fill ,01679,RXE,38,250,CWE,,,4.14.4.38
+Initial Dispense Amount ,01680,RXE,39,250,NM,,,4.14.4.39
+Dispensing Pharmacy ,01681,RXE,40,250,CWE,,,4.14.4.40
+Dispensing Pharmacy Address ,01682,RXE,41,250,XAD,,,4.14.4.41
+Deliver-to Patient Location ,01683,RXE,42,80,PL,,,4.14.4.42
+Deliver-to Address ,01684,RXE,43,250,XAD,,,4.14.4.43
+Pharmacy Order Type ,01685,RXE,44,1,ID,,0480,4.14.4.44
+Give Sub-ID Counter ,00342,RXG,1,4,NM,,,4.14.6.1
+Dispense Sub-ID Counter ,00334,RXG,2,4,NM,,,4.14.6.2
+Quantity/Timing ,00221,RXG,3,200,TQ,,,4.14.6.3
+Give Code ,00317,RXG,4,250,CE,,0292,4.14.6.4
+Give Amount - Minimum ,00318,RXG,5,20,NM,,,4.14.6.5
+Give Amount - Maximum ,00319,RXG,6,20,NM,,,4.14.6.6
+Give Units ,00320,RXG,7,250,CE,,,4.14.6.7
+Give Dosage Form ,00321,RXG,8,250,CE,,,4.14.6.8
+Administration Notes ,00351,RXG,9,250,CE,Y,,4.14.6.9
+Substitution Status ,00322,RXG,10,1,ID,,0167,4.14.6.10
+Dispense-to Location ,01303,RXG,11,200,LA2,,,4.14.6.11
+Needs Human Review ,00307,RXG,12,1,ID,,0136,4.14.6.12
+Pharmacy/Treatment Supplier's Special Administration Instructions,00343,RXG,13,250,CE,Y,,4.14.6.13
+Give Per (Time Unit) ,00331,RXG,14,20,ST,,,4.14.6.14
+Give Rate Amount ,00332,RXG,15,6,ST,,,4.14.6.15
+Give Rate Units ,00333,RXG,16,250,CE,,,4.14.6.16
+Give Strength ,01126,RXG,17,20,NM,,,4.14.6.17
+Give Strength Units ,01127,RXG,18,250,CE,,,4.14.6.18
+Substance Lot Number ,01129,RXG,19,20,ST,Y,,4.14.6.19
+Substance Expiration Date ,01130,RXG,20,26,TS,Y,,4.14.6.20
+Substance Manufacturer Name ,01131,RXG,21,250,CE,Y,0227,4.14.6.21
+Indication ,01123,RXG,22,250,CE,Y,,4.14.6.22
+Give Drug Strength Volume ,01692,RXG,23,5,NM,,,4.14.6.23
+Give Drug Strength Volume Units ,01693,RXG,24,250,CWE,,,4.14.6.24
+Give Barcode Identifier ,01694,RXG,25,60,CWE,,,4.14.6.25
+Pharmacy Order Type ,01695,RXG,26,1,ID,,0480,4.14.6.26
+Requested Give Code ,00292,RXO,1,250,CE,,,4.14.1.1
+Requested Give Amount - Minimum ,00293,RXO,2,20,NM,,,4.14.1.2
+Requested Give Amount - Maximum ,00294,RXO,3,20,NM,,,4.14.1.3
+Requested Give Units ,00295,RXO,4,250,CE,,,4.14.1.4
+Requested Dosage Form ,00296,RXO,5,250,CE,,,4.14.1.5
+Provider's Pharmacy/Treatment Instructions ,00297,RXO,6,250,CE,Y,,4.14.1.6
+Provider's Administration Instructions ,00298,RXO,7,250,CE,Y,,4.14.1.7
+Deliver-To Location ,00299,RXO,8,200,LA1,,,4.14.1.8
+Allow Substitutions ,00300,RXO,9,1,ID,,0161,4.14.1.9
+Requested Dispense Code ,00301,RXO,10,250,CE,,,4.14.1.10
+Requested Dispense Amount ,00302,RXO,11,20,NM,,,4.14.1.11
+Requested Dispense Units ,00303,RXO,12,250,CE,,,4.14.1.12
+Number Of Refills ,00304,RXO,13,3,NM,,,4.14.1.13
+Ordering Provider's DEA Number ,00305,RXO,14,250,XCN,Y,,4.14.1.14
+Pharmacist/Treatment Supplier's Verifier ID ,00306,RXO,15,250,XCN,Y,,4.14.1.15
+Needs Human Review ,00307,RXO,16,1,ID,,0136,4.14.1.16
+Requested Give Per (Time Unit) ,00308,RXO,17,20,ST,,,4.14.1.17
+Requested Give Strength ,01121,RXO,18,20,NM,,,4.14.1.18
+Requested Give Strength Units ,01122,RXO,19,250,CE,,,4.14.1.19
+Indication ,01123,RXO,20,250,CE,Y,,4.14.1.20
+Requested Give Rate Amount ,01218,RXO,21,6,ST,,,4.14.1.21
+Requested Give Rate Units ,01219,RXO,22,250,CE,,,4.14.1.22
+Total Daily Dose ,00329,RXO,23,10,CQ,,,4.14.1.23
+Supplementary Code ,01476,RXO,24,250,CE,Y,,4.14.1.24
+Requested Drug Strength Volume ,01666,RXO,25,5,NM,,,4.14.1.25
+Requested Drug Strength Volume Units ,01667,RXO,26,250,CWE,,,4.14.1.26
+Pharmacy Order Type ,01668,RXO,27,1,ID,,0480,4.14.1.27
+Dispensing Interval ,01669,RXO,28,20,NM,,,4.14.1.28
+Route ,00309,RXR,1,250,CE,,0162,4.14.2.1
+Administration Site ,00310,RXR,2,250,CWE,,0163,4.14.2.2
+Administration Device ,00311,RXR,3,250,CE,,0164,4.14.2.3
+Administration Method ,00312,RXR,4,250,CWE,,0165,4.14.2.4
+Routing Instruction ,01315,RXR,5,250,CE,,,4.14.2.5
+Administration Site Modifier ,01670,RXR,6,250,CWE,,0495,4.14.2.6
+External Accession Identifier ,01329,SAC,1,80,EI,,,13.4.3.1
+Accession Identifier ,01330,SAC,2,80,EI,,,13.4.3.2
+Container Identifier ,01331,SAC,3,80,EI,,,13.4.3.3
+Primary (parent) Container Identifier ,01332,SAC,4,80,EI,,,13.4.3.4
+Equipment Container Identifier ,01333,SAC,5,80,EI,,,13.4.3.5
+Specimen Source ,00249,SAC,6,300,SPS,,,13.4.3.6
+Registration Date/Time ,01334,SAC,7,26,TS,,,13.4.3.7
+Container Status ,01335,SAC,8,250,CE,,0370,13.4.3.8
+Carrier Type ,01336,SAC,9,250,CE,,0378,13.4.3.9
+Carrier Identifier ,01337,SAC,10,80,EI,,,13.4.3.10
+Position in Carrier ,01338,SAC,11,80,NA,,,13.4.3.11
+Tray Type - SAC ,01339,SAC,12,250,CE,,0379,13.4.3.12
+Tray Identifier ,01340,SAC,13,80,EI,,,13.4.3.13
+Position in Tray ,01341,SAC,14,80,NA,,,13.4.3.14
+Location ,01342,SAC,15,250,CE,Y,,13.4.3.15
+Container Height ,01343,SAC,16,20,NM,,,13.4.3.16
+Container Diameter ,01344,SAC,17,20,NM,,,13.4.3.17
+Barrier Delta ,01345,SAC,18,20,NM,,,13.4.3.18
+Bottom Delta ,01346,SAC,19,20,NM,,,13.4.3.19
+Container Height/Diameter/Delta Units ,01347,SAC,20,250,CE,,,13.4.3.20
+Container Volume ,00644,SAC,21,20,NM,,,13.4.3.21
+Available Specimen Volume ,01349,SAC,22,20,NM,,,13.4.3.22
+Initial Specimen Volume ,01350,SAC,23,20,NM,,,13.4.3.23
+Volume Units ,01351,SAC,24,250,CE,,,13.4.3.24
+Separator Type ,01352,SAC,25,250,CE,,0380,13.4.3.25
+Cap Type ,01353,SAC,26,250,CE,,0381,13.4.3.26
+Additive ,00647,SAC,27,250,CWE,Y,0371,13.4.3.27
+Specimen Component ,01355,SAC,28,250,CE,,,13.4.3.28
+Dilution Factor ,01356,SAC,29,20,SN,,,13.4.3.29
+Treatment ,01357,SAC,30,250,CE,,0373,13.4.3.30
+Temperature ,01358,SAC,31,20,SN,,,13.4.3.31
+Hemolysis Index ,01359,SAC,32,20,NM,,,13.4.3.32
+Hemolysis Index Units ,01360,SAC,33,250,CE,,,13.4.3.33
+Lipemia Index ,01361,SAC,34,20,NM,,,13.4.3.34
+Lipemia Index Units ,01362,SAC,35,250,CE,,,13.4.3.35
+Icterus Index ,01363,SAC,36,20,NM,,,13.4.3.36
+Icterus Index Units ,01364,SAC,37,250,CE,,,13.4.3.37
+Fibrin Index ,01365,SAC,38,20,NM,,,13.4.3.38
+Fibrin Index Units ,01366,SAC,39,250,CE,,,13.4.3.39
+System Induced Contaminants ,01367,SAC,40,250,CE,Y,0374,13.4.3.40
+Drug Interference ,01368,SAC,41,250,CE,Y,0382,13.4.3.41
+Artificial Blood ,01369,SAC,42,250,CE,,0375,13.4.3.42
+Special Handling Code ,01370,SAC,43,250,CWE,Y,0376,13.4.3.43
+Other Environmental Factors ,01371,SAC,44,250,CE,Y,0377,13.4.3.44
+Placer Appointment ID ,00860,SCH,1,75,EI,,,10.6.2.1
+Filler Appointment ID ,00861,SCH,2,75,EI,,,10.6.2.2
+Occurrence Number ,00862,SCH,3,5,NM,,,10.6.2.3
+Placer Group Number ,00218,SCH,4,22,EI,,,10.6.2.4
+Schedule ID ,00864,SCH,5,250,CE,,,10.6.2.5
+Event Reason ,00883,SCH,6,250,CE,,,10.6.2.6
+Appointment Reason ,00866,SCH,7,250,CE,,0276,10.6.2.7
+Appointment Type ,00867,SCH,8,250,CE,,0277,10.6.2.8
+Appointment Duration ,00868,SCH,9,20,NM,,,10.6.2.9
+Appointment Duration Units ,00869,SCH,10,250,CE,,,10.6.2.10
+Appointment Timing Quantity ,00884,SCH,11,200,TQ,Y,,10.6.2.11
+Placer Contact Person ,00874,SCH,12,250,XCN,Y,,10.6.2.12
+Placer Contact Phone Number ,00875,SCH,13,250,XTN,,,10.6.2.13
+Placer Contact Address ,00876,SCH,14,250,XAD,Y,,10.6.2.14
+Placer Contact Location ,00877,SCH,15,80,PL,,,10.6.2.15
+Filler Contact Person ,00885,SCH,16,250,XCN,Y,,10.6.2.16
+Filler Contact Phone Number ,00886,SCH,17,250,XTN,,,10.6.2.17
+Filler Contact Address ,00887,SCH,18,250,XAD,Y,,10.6.2.18
+Filler Contact Location ,00888,SCH,19,80,PL,,,10.6.2.19
+Entered By Person ,00878,SCH,20,250,XCN,Y,,10.6.2.20
+Entered By Phone Number ,00879,SCH,21,250,XTN,Y,,10.6.2.21
+Entered By Location ,00880,SCH,22,80,PL,,,10.6.2.22
+Parent Placer Appointment ID ,00881,SCH,23,75,EI,,,10.6.2.23
+Parent Filler Appointment ID ,00882,SCH,24,75,EI,,,10.6.2.24
+Filler Status Code ,00889,SCH,25,250,CE,,0278,10.6.2.25
+Placer Order Number ,00216,SCH,26,22,EI,Y,,10.6.2.26
+Filler Order Number ,00217,SCH,27,22,EI,Y,,10.6.2.27
+Software Vendor Organization ,01834,SFT,1,567,XON,,,2.15.12.1
+Software Certified Version or Release Number,01835,SFT,2,15,ST,,,2.15.12.2
+Software Product Name ,01836,SFT,3,20,ST,,,2.15.12.3
+Software Binary ID ,01837,SFT,4,20,ST,,,2.15.12.4
+Software Product Information ,01838,SFT,5,1024,TX,,,2.15.12.5
+Software Install Date ,01839,SFT,6,26,TS,,,2.15.12.6
+Application / Method Identifier ,01426,SID,1,250,CE,,,13.4.11.1
+Substance Lot Number ,01129,SID,2,20,ST,,,13.4.11.2
+Substance Container Identifier ,01428,SID,3,200,ST,,,13.4.11.3
+Substance Manufacturer Identifier ,01429,SID,4,250,CE,,0385,13.4.11.4
+Set ID - SPM ,01754,SPM,1,4,SI,,,7.4.3.1
+Specimen ID ,01755,SPM,2,80,EIP,,,7.4.3.2
+Specimen Parent IDs ,01756,SPM,3,80,EIP,Y,,7.4.3.3
+Specimen Type ,01900,SPM,4,250,CWE,,0487,7.4.3.4
+Specimen Type Modifier ,01757,SPM,5,250,CWE,Y,0541,7.4.3.5
+Specimen Additives ,01758,SPM,6,250,CWE,Y,0371,7.4.3.6
+Specimen Collection Method ,01759,SPM,7,250,CWE,,0488,7.4.3.7
+Specimen Source Site ,01901,SPM,8,250,CWE,,,7.4.3.8
+Specimen Source Site Modifier ,01760,SPM,9,250,CWE,Y,0542,7.4.3.9
+Specimen Collection Site ,01761,SPM,10,250,CWE,,0543,7.4.3.10
+Specimen Role ,01762,SPM,11,250,CWE,Y,0369,7.4.3.11
+Specimen Collection Amount ,01902,SPM,12,20,CQ,,,7.4.3.12
+Grouped Specimen Count ,01763,SPM,13,6,NM,,,7.4.3.13
+Specimen Description ,01764,SPM,14,250,ST,Y,,7.4.3.14
+Specimen Handling Code ,01908,SPM,15,250,CWE,Y,0376,7.4.3.15
+Specimen Risk Code ,01903,SPM,16,250,CWE,Y,0489,7.4.3.16
+Specimen Collection Date/Time ,01765,SPM,17,26,DR,,,7.4.3.17
+Specimen Received Date/Time ,00248,SPM,18,26,TS,,,7.4.3.18
+Specimen Expiration Date/Time ,01904,SPM,19,26,TS,,,7.4.3.19
+Specimen Availability ,01766,SPM,20,1,ID,,0136,7.4.3.20
+Specimen Reject Reason ,01767,SPM,21,250,CWE,Y,0490,7.4.3.21
+Specimen Quality ,01768,SPM,22,250,CWE,,0491,7.4.3.22
+Specimen Appropriateness ,01769,SPM,23,250,CWE,,0492,7.4.3.23
+Specimen Condition ,01770,SPM,24,250,CWE,Y,0493,7.4.3.24
+Specimen Current Quantity ,01771,SPM,25,20,CQ,,,7.4.3.25
+Number of Specimen Containers ,01772,SPM,26,4,NM,,,7.4.3.26
+Container Type ,01773,SPM,27,250,CWE,,,7.4.3.27
+Container Condition ,01774,SPM,28,250,CWE,,0544,7.4.3.28
+Specimen Child Role ,01775,SPM,29,250,CWE,,0494,7.4.3.29
+Query Tag ,00696,SPR,1,32,ST,,,5.10.5.5.1
+Query/Response Format Code ,00697,SPR,2,1,ID,,0106,5.10.5.5.2
+Stored Procedure Name ,00704,SPR,3,250,CE,,,5.10.5.5.3
+Input Parameter List ,00705,SPR,4,256,QIP,Y,,5.10.5.5.4
+Primary Key Value - STF ,00671,STF,1,250,CE,,9999,15.4.8.1
+Staff Identifier List ,00672,STF,2,250,CX,Y,,15.4.8.2
+Staff Name ,00673,STF,3,250,XPN,Y,,15.4.8.3
+Staff Type ,00674,STF,4,2,IS,Y,0182,15.4.8.4
+Administrative Sex ,00111,STF,5,1,IS,,0001,15.4.8.5
+Date/Time of Birth ,00110,STF,6,26,TS,,,15.4.8.6
+Active/Inactive Flag ,00675,STF,7,1,ID,,0183,15.4.8.7
+Department ,00676,STF,8,250,CE,Y,0184,15.4.8.8
+Hospital Service - STF ,00677,STF,9,250,CE,Y,0069,15.4.8.9
+Phone ,00678,STF,10,250,XTN,Y,,15.4.8.10
+Office/Home Address/Birthplace ,00679,STF,11,250,XAD,Y,,15.4.8.11
+Institution Activation Date ,00680,STF,12,276,DIN,Y,0537,15.4.8.12
+Institution Inactivation Date ,00681,STF,13,276,DIN,Y,0537,15.4.8.13
+Backup Person ID ,00682,STF,14,250,CE,Y,,15.4.8.14
+E-Mail Address ,00683,STF,15,40,ST,Y,,15.4.8.15
+Preferred Method of Contact ,00684,STF,16,250,CE,,0185,15.4.8.16
+Marital Status ,00119,STF,17,250,CE,,0002,15.4.8.17
+Job Title ,00785,STF,18,20,ST,,,15.4.8.18
+Job Code/Class ,00786,STF,19,20,JCC,,,15.4.8.19
+Employment Status Code ,01276,STF,20,250,CE,,0066,15.4.8.20
+Additional Insured on Auto ,01275,STF,21,1,ID,,0136,15.4.8.21
+Driver's License Number - Staff ,01302,STF,22,25,DLN,,,15.4.8.22
+Copy Auto Ins ,01229,STF,23,1,ID,,0136,15.4.8.23
+Auto Ins. Expires ,01232,STF,24,8,DT,,,15.4.8.24
+Date Last DMV Review ,01298,STF,25,8,DT,,,15.4.8.25
+Date Next DMV Review ,01234,STF,26,8,DT,,,15.4.8.26
+Race ,00113,STF,27,250,CE,,0005,15.4.8.27
+Ethnic Group ,00125,STF,28,250,CE,,0189,15.4.8.28
+Re-activation Approval Indicator ,01596,STF,29,1,ID,,0136,15.4.8.29
+Citizenship ,00129,STF,30,250,CE,Y,0171,15.4.8.30
+Death Date and Time ,01886,STF,31,8,TS,,,15.4.8.31
+Death Indicator ,01887,STF,32,1,ID,,0136,15.4.8.32
+Institution Relationship Type Code ,01888,STF,33,250,CWE,,0538,15.4.8.33
+Institution Relationship Period ,01889,STF,34,52,DR,,,15.4.8.34
+Expected Return Date ,01890,STF,35,8,DT,,,15.4.8.35
+Cost Center Code ,01891,STF,36,250,CWE,Y,0539,15.4.8.36
+Generic Classification Indicator ,01892,STF,37,1,ID,,0136,15.4.8.37
+Inactive Reason Code ,01893,STF,38,250,CWE,,0540,15.4.8.38
+Universal Service Identifier ,00238,TCC,1,250,CE,,,13.4.9.1
+Test Application Identifier ,01408,TCC,2,80,EI,,,13.4.9.2
+Specimen Source ,00249,TCC,3,300,SPS,,,13.4.9.3
+Auto-Dilution Factor Default ,01410,TCC,4,20,SN,,,13.4.9.4
+Rerun Dilution Factor Default ,01411,TCC,5,20,SN,,,13.4.9.5
+Pre-Dilution Factor Default ,01412,TCC,6,20,SN,,,13.4.9.6
+Endogenous Content of Pre-Dilution Diluent ,01413,TCC,7,20,SN,,,13.4.9.7
+Inventory Limits Warning Level ,01414,TCC,8,10,NM,,,13.4.9.8
+Automatic Rerun Allowed ,01415,TCC,9,1,ID,,0136,13.4.9.9
+Automatic Repeat Allowed ,01416,TCC,10,1,ID,,0136,13.4.9.10
+Automatic Reflex Allowed ,01417,TCC,11,1,ID,,0136,13.4.9.11
+Equipment Dynamic Range ,01418,TCC,12,20,SN,,,13.4.9.12
+Units ,00574,TCC,13,250,CE,,,13.4.9.13
+Processing Type ,01419,TCC,14,250,CE,,0388,13.4.9.14
+Universal Service Identifier ,00238,TCD,1,250,CE,,,13.4.10.1
+Auto-Dilution Factor ,01420,TCD,2,20,SN,,,13.4.10.2
+Rerun Dilution Factor ,01421,TCD,3,20,SN,,,13.4.10.3
+Pre-Dilution Factor ,01422,TCD,4,20,SN,,,13.4.10.4
+Endogenous Content of Pre-Dilution Diluent ,01413,TCD,5,20,SN,,,13.4.10.5
+Automatic Repeat Allowed ,01416,TCD,6,1,ID,,0136,13.4.10.6
+Reflex Allowed ,01424,TCD,7,1,ID,,0136,13.4.10.7
+Analyte Repeat Status ,01425,TCD,8,250,CE,,0389,13.4.10.8
+Set ID - TQ1 ,01627,TQ1,1,4,SI,,,4.5.4.1
+Quantity ,01628,TQ1,2,20,CQ,,,4.5.4.2
+Repeat Pattern ,01629,TQ1,3,540,RPT,Y,0335,4.5.4.3
+Explicit Time ,01630,TQ1,4,20,TM,Y,,4.5.4.4
+Relative Time and Units ,01631,TQ1,5,20,CQ,Y,,4.5.4.5
+Service Duration ,01632,TQ1,6,20,CQ,,,4.5.4.6
+Start date/time ,01633,TQ1,7,26,TS,,,4.5.4.7
+End date/time ,01634,TQ1,8,26,TS,,,4.5.4.8
+Priority ,01635,TQ1,9,250,CWE,Y,0485,4.5.4.9
+Condition text ,01636,TQ1,10,250,TX,,,4.5.4.10
+Text instruction ,01637,TQ1,11,250,TX,,,4.5.4.11
+Conjunction ,01638,TQ1,12,10,ID,,0427,4.5.4.12
+Occurrence duration ,01639,TQ1,13,20,CQ,,,4.5.4.13
+Total occurrence's ,01640,TQ1,14,10,NM,,,4.5.4.14
+Set ID - TQ2 ,01648,TQ2,1,4,SI,,,4.5.5.1
+Sequence/Results Flag ,01649,TQ2,2,1,ID,,0503,4.5.5.2
+Related Placer Number ,01650,TQ2,3,22,EI,Y,,4.5.5.3
+Related Filler Number ,01651,TQ2,4,22,EI,Y,,4.5.5.4
+Related Placer Group Number ,01652,TQ2,5,22,EI,Y,,4.5.5.5
+Sequence Condition Code ,01653,TQ2,6,2,ID,,0504,4.5.5.6
+Cyclic Entry/Exit Indicator ,01654,TQ2,7,1,ID,,0505,4.5.5.7
+Sequence Condition Time Interval ,01655,TQ2,8,20,CQ,,,4.5.5.8
+Cyclic Group Maximum Number of Repeats ,01656,TQ2,9,10,NM,,,4.5.5.9
+Special Service Request Relationship ,01657,TQ2,10,1,ID,,0506,4.5.5.10
+Set ID - TXA ,00914,TXA,1,4,SI,,,9.6.1.1
+Document Type ,00915,TXA,2,30,IS,,0270,9.6.1.2
+Document Content Presentation ,00916,TXA,3,2,ID,,0191,9.6.1.3
+Activity Date/Time ,00917,TXA,4,26,TS,,,9.6.1.4
+Primary Activity Provider Code/Name ,00918,TXA,5,250,XCN,Y,,9.6.1.5
+Origination Date/Time ,00919,TXA,6,26,TS,,,9.6.1.6
+Transcription Date/Time ,00920,TXA,7,26,TS,,,9.6.1.7
+Edit Date/Time ,00921,TXA,8,26,TS,Y,,9.6.1.8
+Originator Code/Name ,00922,TXA,9,250,XCN,Y,,9.6.1.9
+Assigned Document Authenticator ,00923,TXA,10,250,XCN,Y,,9.6.1.10
+Transcriptionist Code/Name ,00924,TXA,11,250,XCN,Y,,9.6.1.11
+Unique Document Number ,00925,TXA,12,30,EI,,,9.6.1.12
+Parent Document Number ,00926,TXA,13,30,EI,,,9.6.1.13
+Placer Order Number ,00216,TXA,14,22,EI,Y,,9.6.1.14
+Filler Order Number ,00217,TXA,15,22,EI,,,9.6.1.15
+Unique Document File Name ,00927,TXA,16,30,ST,,,9.6.1.16
+Document Completion Status ,00928,TXA,17,2,ID,,0271,9.6.1.17
+Document Confidentiality Status ,00929,TXA,18,2,ID,,0272,9.6.1.18
+Document Availability Status ,00930,TXA,19,2,ID,,0273,9.6.1.19
+Document Storage Status ,00932,TXA,20,2,ID,,0275,9.6.1.20
+Document Change Reason ,00933,TXA,21,30,ST,,,9.6.1.21
+"Authentication Person, Time Stamp ",00934,TXA,22,250,PPN,Y,,9.6.1.22
+Distributed Copies (Code and Name of Recipients),00935,TXA,23,250,XCN,Y,,9.6.1.23
+Set ID - UB1 ,00530,UB1,1,4,SI,,,6.5.10.1
+Blood Deductible (43) ,00531,UB1,2,1,NM,,,6.5.10.2
+Blood Furnished-Pints Of (40) ,00532,UB1,3,2,NM,,,6.5.10.3
+Blood Replaced-Pints (41) ,00533,UB1,4,2,NM,,,6.5.10.4
+Blood Not Replaced-Pints(42) ,00534,UB1,5,2,NM,,,6.5.10.5
+Co-Insurance Days (25) ,00535,UB1,6,2,NM,,,6.5.10.6
+Condition Code (35-39) ,00536,UB1,7,14,IS,Y,0043,6.5.10.7
+Covered Days - (23) ,00537,UB1,8,3,NM,,,6.5.10.8
+Non Covered Days - (24) ,00538,UB1,9,3,NM,,,6.5.10.9
+Value Amount & Code (46-49) ,00539,UB1,10,41,UVC,Y,,6.5.10.10
+Number Of Grace Days (90) ,00540,UB1,11,2,NM,,,6.5.10.11
+Special Program Indicator (44) ,00541,UB1,12,250,CE,,0348,6.5.10.12
+PSRO/UR Approval Indicator (87) ,00542,UB1,13,250,CE,,0349,6.5.10.13
+PSRO/UR Approved Stay-Fm (88) ,00543,UB1,14,8,DT,,,6.5.10.14
+PSRO/UR Approved Stay-To (89) ,00544,UB1,15,8,DT,,,6.5.10.15
+Occurrence (28-32) ,00545,UB1,16,259,OCD,Y,,6.5.10.16
+Occurrence Span (33) ,00546,UB1,17,250,CE,,0351,6.5.10.17
+Occur Span Start Date(33) ,00547,UB1,18,8,DT,,,6.5.10.18
+Occur Span End Date (33) ,00548,UB1,19,8,DT,,,6.5.10.19
+UB-82 Locator 2 ,00549,UB1,20,30,ST,,,6.5.10.20
+UB-82 Locator 9 ,00550,UB1,21,7,ST,,,6.5.10.21
+UB-82 Locator 27 ,00551,UB1,22,8,ST,,,6.5.10.22
+UB-82 Locator 45 ,00552,UB1,23,17,ST,,,6.5.10.23
+Set ID - UB2 ,00553,UB2,1,4,SI,,,6.5.11.1
+Co-Insurance Days (9) ,00554,UB2,2,3,ST,,,6.5.11.2
+Condition Code (24-30) ,00555,UB2,3,2,IS,Y,0043,6.5.11.3
+Covered Days (7) ,00556,UB2,4,3,ST,,,6.5.11.4
+Non-Covered Days (8) ,00557,UB2,5,4,ST,,,6.5.11.5
+Value Amount & Code ,00558,UB2,6,41,UVC,Y,,6.5.11.6
+Occurrence Code & Date (32-35) ,00559,UB2,7,259,OCD,Y,,6.5.11.7
+Occurrence Span Code/Dates (36) ,00560,UB2,8,268,OSP,Y,,6.5.11.8
+UB92 Locator 2 (State) ,00561,UB2,9,29,ST,Y,,6.5.11.9
+UB92 Locator 11 (State) ,00562,UB2,10,12,ST,Y,,6.5.11.10
+UB92 Locator 31 (National) ,00563,UB2,11,5,ST,,,6.5.11.11
+Document Control Number ,00564,UB2,12,23,ST,Y,,6.5.11.12
+UB92 Locator 49 (National) ,00565,UB2,13,4,ST,Y,,6.5.11.13
+UB92 Locator 56 (State) ,00566,UB2,14,14,ST,Y,,6.5.11.14
+UB92 Locator 57 (National) ,00567,UB2,15,27,ST,,,6.5.11.15
+UB92 Locator 78 (State) ,00568,UB2,16,2,ST,Y,,6.5.11.16
+Special Visit Count ,00815,UB2,17,3,NM,,,6.5.11.17
+R/U Date/Time ,00045,URD,1,26,TS,,,5.10.5.6.1
+Report Priority ,00046,URD,2,1,ID,,0109,5.10.5.6.2
+R/U Who Subject Definition ,00047,URD,3,250,XCN,Y,,5.10.5.6.3
+R/U What Subject Definition ,00048,URD,4,250,CE,Y,0048,5.10.5.6.4
+R/U What Department Code ,00049,URD,5,250,CE,Y,,5.10.5.6.5
+R/U Display/Print Locations ,00050,URD,6,20,ST,Y,,5.10.5.6.6
+R/U Results Level ,00051,URD,7,1,ID,,0108,5.10.5.6.7
+R/U Where Subject Definition ,00052,URS,1,20,ST,Y,,5.10.5.7.1
+R/U When Data Start Date/Time ,00053,URS,2,26,TS,,,5.10.5.7.2
+R/U When Data End Date/Time ,00054,URS,3,26,TS,,,5.10.5.7.3
+R/U What User Qualifier ,00055,URS,4,20,ST,Y,,5.10.5.7.4
+R/U Other Results Subject Definition ,00056,URS,5,20,ST,Y,,5.10.5.7.5
+R/U Which Date/Time Qualifier ,00057,URS,6,12,ID,Y,0156,5.10.5.7.6
+R/U Which Date/Time Status Qualifier ,00058,URS,7,12,ID,Y,0157,5.10.5.7.7
+R/U Date/Time Selection Qualifier ,00059,URS,8,12,ID,Y,0158,5.10.5.7.8
+R/U Quantity/Timing Qualifier ,00695,URS,9,60,TQ,,,5.10.5.7.9
+Variance Instance ID ,01212,VAR,1,60,EI,,,12.4.5.1
+Documented Date/Time ,01213,VAR,2,26,TS,,,12.4.5.2
+Stated Variance Date/Time ,01214,VAR,3,26,TS,,,12.4.5.3
+Variance Originator ,01215,VAR,4,250,XCN,Y,,12.4.5.4
+Variance Classification ,01216,VAR,5,250,CE,,,12.4.5.5
+Variance Description ,01217,VAR,6,512,ST,Y,,12.4.5.6
+Query Tag ,00696,VTQ,1,32,ST,,,5.10.5.8.1
+Query/Response Format Code ,00697,VTQ,2,1,ID,,0106,5.10.5.8.2
+VT Query Name ,00698,VTQ,3,250,CE,,,5.10.5.8.3
+Virtual Table Name ,00699,VTQ,4,250,CE,,,5.10.5.8.4
+Selection Criteria ,00700,VTQ,5,256,QSC,Y,,5.10.5.8.5
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,

@@ -1,6 +1,9 @@
 **/target
+**/doc
+**/*.log
 **/target/classes
 **/.mvn
 **/logs
 **/temp
 **/pom.xml.versionsBackup
+/~/

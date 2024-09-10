@@ -1,0 +1,92 @@
+# Examples fragments from https://repository.immregistries.org/files/resources/5bef530428317/hl7_2_5_1_release_1_5__2018_update.pdf
+# VFC Eligible Client Received Vaccine That Is VFC eligible 
+OBX|1|CE|64994-7^vaccine fund pgm elig cat^LN|1|V04^VFC eligible NA/AN^HL70064||||||F|||20090531|||XVC40XVC40^per imm^CDCPHINVS 
+
+# VFC Ineligible Client Received Vaccine That Is VFC eligible 
+OBX|1|CE|64994-7^vaccine fund pgm elig cat^LN|1|V01^Not VFC eligible^HL70064||||||F|||20090531||| XVC40XVC40^per imm^CDCPHINVS 
+
+# VFC Eligible Client Received Vaccine That Is Not VFC eligible RXA... 
+OBX|1|CE|64994-7^vaccine fund pgm elig cat^LN|1|V01^Not VFC eligigble^HL70064||||||F|||20090531|XVC40XVC40^per imm^CDCPHINVS 
+
+# VFC Eligible Client Received Vaccine That Is Eligible for Local Funding Program RXA... 
+OBX|1|CE|64994-7^vaccine fund pgm elig cat^LN|1|AKA01^Alaska Special Funding Program^AKA||||||F|||20090531|XVC40XVC40^per imm^CDCPHINVS 
+
+# Adverse Reaction: 
+ORC|RE||9999^DCS|||||||^Clerk^Myron| 
+RXA|0|1|20090412|20090412|998^No vaccine administered^CVX|999||||||||||||||NA
+OBX|1|CE|31044-1^Reaction^LN|1|39579001^Anaphylaxis^SCT||||||F|||20090412
+
+# Evidence of immunity: 
+ORC|RE||9999^DCS|||||||^Clerk^Myron| 
+RXA|0|1|20090412|20090412|998^No vaccine administered^CVX|999||||||||||||||NA
+OBX|1|CE|59784-9^Disease with presumed immunity ^LN|1|66071002^HISTORY OF HEP B INFECTION^SCT||||||F|||20090412
+
+# Contraindications to immunization: 
+OBX|1|CE|30945-0^Vaccination contraindication^LN|1|91930004^allergy to eggs^SCT||||||F|||20090415
+OBX|1|CE|30945-0^Vaccination contraindication^LN|1|VXC19^allergy to thimerasol(anaphylactic)^CDCPHINVS||||||F|||20090415
+
+# Factors which indicate the need for an immunization or a changed recommendation: 
+OBX|1|CE|59785-6^Special Indication for vaccination^LN|1|VXC7^exposure to rabies^CDCPHINVS||||||F|||20090415
+
+# RXA|... 
+OBX|1|CE| 69764-9^document type^LN|1|253088698300012711120420^MMR^ cdcgs1vis||||||F|||20091010
+OBX|2|TS|29769-7^VIS Presentation Date^LN|1|20091010||||||F|||20091010
+RXA|0|1|20091010||94^MMRV^CVX|… 
+OBX|1|CE|69764-9^Document Type^LN|1|253088698300012711120420^MMR^ cdcgs1vis ||||||F|||20091010
+OBX|2|TS|29769-7^VIS Presentation Date^LN|1|20101010||||||F|||20091010
+OBX|3|CE|69764-9^Document Type^LN|2|253088698300024011080313^varicella^ cdcgs1vis||||||F|||20091010
+OBX|4|TS|29769-7^VIS Presentation Date^LN|3|20101010||||||F
+
+# RXA|... 
+OBX|1|CE|30956-7^vaccine type^LN|1|03^MMR^CVX||||||F|||20120223
+OBX|2|TS|29768-9^VIS Publication Date^LN|1|20080110||||||F|||20120223
+OBX|3|TS|29769-7^VIS Presentation Date^LN|1|20091010||||||F|||20120223
+
+# VXU Example #8—Send Information Indicating Immunization Refusal 
+ORC|RE||9999^DCS|||||||^Clerk^Myron 
+RXA|0|1|20091010||107^DTAP-NOS^CVX|999||||||||||||00^Parental refusal^NIP002||RE
+
+# Two Vaccine Components Are Packaged Together And The Lot Numbers Are Inextricable Linked 
+RXA|0|1|20080907|20080907|120^DTAP-IPV-HIB^CVX^^^|0.5|mL^^UCUM||00^NEW IMMUNIZATION RECORD^NIP001|1234567890^SMITH^SALLY^S|||||1234ad||PMC^Sanofi^MVX|||CP|A
+
+# Adjuvant Is Recorded Separately From Vaccine 
+RXA|0|1|20140907|20140907|160^Influenza H5N1 -2013^CVX^^^|0.5|mL^^UCUM||00^NEW IMMUNIZATION RECORD^NIP001|1234567890^SMITH^SALLY^S|||||1234ad||IDB^ID Biomedical^MVX|||CP|A 
+RXA|0|1|20140907|20140907|801^AS03^CVX^^^ |0.5|mL^^UCUM||00^NEW IMMUNIZATION RECORD^NIP001|1234567890^SMITH^SALLY^S|||||455sd|| |||CP|A|
+
+# VXU Example #11—Recording an incompletely administered dose or a non-potent dose. 
+RXA|0|1|20091010||03^MMR^CVX|0.5|mL^^UCUM||||||||A23E1||MSD^^MVX|||PA|A
+
+# Send Acknowledgement ACK In Response To VXU 
+MSH|^~\&|DCS|MYIIS|MYIIS||200906040000-0500||ACK^V04^ACK|1234567|P|2.5.1|||NE|NE|||||Z23^CDCPHINVS 
+MSA|AA|9299381
+
+# Example Return an Evaluated History and Forecast (RSP(Z42)) 
+ORC|RE||197027^DCS|||||||^Clerk^Myron||^Pediatric^MARY^^^^^^^L^^^^^^^^^^^MD
+RXA|0|1|20090412|20090412|48^HIB PRP-T^CVX|0.5|mL^^UCUM||00^new immunization record^NIP0001|^Sticker^Nurse|^^^DCS_DC||||33k2a||PMC^sanofi^MVX|||CP|A
+RXR|C28161^IM^NCIT^IM^IM^HL70162|
+OBX|1|CE|59779-9^Schedule used^LN|1|VXC16^ACIP^CDCPHINVS||||||F|||20090415
+
+# Indicating Vaccine Group associated: 
+RXA|0|1|20091010||03^MMR^CVX|0.5|mL^^UCUM||||||||EZ342|20111001|MSD^ ^MVX|||CP|A
+OBX|1|CE|30956-7^vaccine type^LN|1|03^MMR^CVX||||||F|||20091010
+
+# Combination vaccine: 
+RXA|0|1|20091010||94^MMRV^CVX|0.5|mL^^UCUM||||||||EZ342|20111001|MSD ^^MVX|||CP|A
+OBX|1|CE|30956-7^vaccine type^LN |1|21^Varicella^CVX||||||F
+OBX|4|CE|30956-7^vaccine type^LN |2|03^MMR^CVX||||||F
+
+# Reporting the Ordinal Position In A Series: 
+ORC|RE||197027^DCS|||||||^Clerk^Myron||^Pediatric^MARY^^^^^^^L^^^^^^^^^ ^^MD
+RXA|0|1|20090412|20090412|48^HIB PRP-T^CVX|0.5|mL^^UCUM||00^new immunization record^NIP0001|^Sticker^Nurse|^^^DCS_DC||||33k2a||PMC^sanofi^MVX|||CP|A 
+RXR|C28161^IM^NCIT^IM^IM^HL70162|
+OBX|1|CE|30956-7^vaccine type^LN|1|17^HIB, NOS^CVX||||||F
+OBX|2|CE|59779-9^Immunization Schedule used^LN|1|VXC16^ACIP^CDCPHINVS||||||F|||20090415
+OBX|3|NM|30973-2^dose number in series^LN|1|1||||||F|||20090415 
+
+# Reporting the Number of Doses in a Series: 
+OBX|1|NM|59782-3^number of doses in series^LN|1|1||||||F|||20090415 Reporting Next Dose Recommendation Dates (forecast only): 
+RXA|0|1|20090412|20090412|998^No vaccine administered^CVX|999|||||||||||||NA
+OBX|1|CE|30956-7^vaccine type^LN|1|17^HIB, NOS^CVX||||||F
+OBX|2|CE|59779-9^Immunization Schedule used^LN|1|VXC16^ACIP^CDCPHINVS||||||F|||20090415
+OBX|3|DT|30980-7^Date vaccination due^LN|1|20090615||||||F|||20090415
+OBX|4|DT|59777-3^Latest date to give vaccine^LN|1|20100615||||||F|||20090415

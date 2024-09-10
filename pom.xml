@@ -3,12 +3,40 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.3.0</version>
+		<version>3.3.2</version>
 	</parent>
 	<groupId>cdc.gov.izgw</groupId>
 	<artifactId>v2tofhir</artifactId>
-	<version>0.0.1-IZGW-RELEASE</version>
+	<version>1.0.0-v2tofhir-SNAPSHOT</version>
 	<name>HL7 Version 2 to FHIR Conversion</name>
+	<description>This is the v2tofhir Converter core code for the IZ Gateway Transformation Service</description>
+	<url>http://github.com/IZGateway/v2tofhir</url>
+	<inceptionYear>2024</inceptionYear>
+	<licenses>
+		<license>
+			<name>MIT-LICENSE</name>
+			<url>https://opensource.org/license/MIT</url>
+			<distribution>repo</distribution>
+			<comments>A short and simple permissive license with conditions only requiring preservation of copyright and 
+				license notices. Licensed works, modifications, and larger works may be distributed under different 
+				terms and without source code.</comments>
+		</license>
+	</licenses>
+	<organization>
+		<name>Audacious Inquiry</name>
+		<url>https://pointclickcare.com/industry-solutions/federal-government/</url>
+	</organization>
+	<properties>
+		<buildno>${timestamp}</buildno>
+		<image.tag>${project.build.finalName}</image.tag>
+		<java.version>17</java.version>
+		<maven.build.timestamp.format>yyyyMMddHHmm</maven.build.timestamp.format>
+		<project.build.finalName>${project.artifactId}-${project.version}-${timestamp}</project.build.finalName>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.java.package>${project.groupId}</project.java.package>
+		<!-- 17 needs a certified encryption module -->
+		<timestamp>${maven.build.timestamp}</timestamp>
+	</properties>
 	<distributionManagement>
 		<repository>
 			<id>github</id>
@@ -16,21 +44,36 @@
 			<url>https://maven.pkg.github.com/IZGateway/v2tofhir</url>
 		</repository>
 	</distributionManagement>
+	<scm>
+		<connection>scm:git:https://github.com/IZGateway/v2tofhir</connection>
+		<developerConnection>scm:git:https://github.com/IZGateway/v2tofhir</developerConnection>
+		<url>https://github.com/IZGateway/v2tofhir</url>
+	</scm>
 	<dependencies>
 		<dependency>
 			<groupId>ca.uhn.hapi</groupId>
 			<artifactId>hapi-base</artifactId>
-			<version>2.3</version>
+			<version>2.5.1</version>
+		</dependency>
+		<dependency>
+			<groupId>ca.uhn.hapi</groupId>
+			<artifactId>hapi-structures-v231</artifactId>
+			<version>2.5.1</version>
+		</dependency>
+		<dependency>
+			<groupId>ca.uhn.hapi</groupId>
+			<artifactId>hapi-structures-v25</artifactId>
+			<version>2.5.1</version>
 		</dependency>
 		<dependency>
 			<groupId>ca.uhn.hapi</groupId>
 			<artifactId>hapi-structures-v251</artifactId>
-			<version>2.3</version>
+			<version>2.5.1</version>
 		</dependency>
 		<dependency>
 			<groupId>ca.uhn.hapi</groupId>
 			<artifactId>hapi-structures-v281</artifactId>
-			<version>2.3</version>
+			<version>2.5.1</version>
 		</dependency>
 		<dependency>
 			<groupId>ca.uhn.hapi.fhir</groupId>
@@ -40,6 +83,24 @@
 		<dependency>
 			<groupId>ca.uhn.hapi.fhir</groupId>
 			<artifactId>hapi-fhir-structures-r4</artifactId>
+			<version>7.2.1</version>
+		</dependency>
+		<!-- Needed for FHIRPath -->
+		<dependency>
+			<groupId>ca.uhn.hapi.fhir</groupId>
+			<artifactId>hapi-fhir-validation</artifactId>
+			<version>7.2.1</version>
+		</dependency>
+		<!-- Needed for FHIRPath -->
+		<dependency>
+			<groupId>ca.uhn.hapi.fhir</groupId>
+			<artifactId>hapi-fhir-validation-resources-r4</artifactId>
+			<version>7.2.1</version>
+		</dependency>
+		<!-- Needed by FHIRPath -->
+		<dependency>
+			<groupId>ca.uhn.hapi.fhir</groupId>
+			<artifactId>hapi-fhir-caching-caffeine</artifactId>
 			<version>7.2.1</version>
 		</dependency>
 		<dependency>
@@ -63,6 +124,10 @@
 			<artifactId>jackson-databind</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-yaml</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>com.opencsv</groupId>
 			<artifactId>opencsv</artifactId>
 			<version>5.9</version>
@@ -71,6 +136,16 @@
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
 			<version>[2.15.0,)</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-compress</artifactId>
+			<version>[1.26.2,)</version>
+		</dependency>
+		<dependency>
+			<groupId>commons-validator</groupId>
+			<artifactId>commons-validator</artifactId>
+			<version>1.9.0</version>
 		</dependency>
 		<dependency>
 			<groupId>io.azam.ulidj</groupId>
@@ -106,16 +181,161 @@
 			<plugins>
 				<plugin>
 					<artifactId>maven-compiler-plugin</artifactId>
-					<version>3.13.0</version>
-					<dependencies>
-						<dependency>
-							<groupId>org.projectlombok</groupId>
-							<artifactId>lombok</artifactId>
-							<version>${lombok.version}</version>
-						</dependency>
-					</dependencies>
+					<configuration>
+						<source>17</source>
+						<target>17</target>
+						<annotationProcessorPaths>
+							<path>
+								<groupId>org.projectlombok</groupId>
+								<artifactId>lombok</artifactId>
+								<version>${lombok.version}</version>
+							</path>
+						</annotationProcessorPaths>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-dependency-plugin</artifactId>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-enforcer-plugin</artifactId>
+					<executions>
+						<execution>
+							<id>enforce-java-version</id>
+						</execution>
+					</executions>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-jar-plugin</artifactId>
+					<executions>
+						<execution>
+							<id>default-jar</id>
+						</execution>
+						<execution>
+							<id>test-jar</id>
+						</execution>
+					</executions>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-source-plugin</artifactId>
+					<executions>
+						<execution>
+							<id>jar-sources</id>
+						</execution>
+						<execution>
+							<id>test-jar-sources</id>
+						</execution>
+					</executions>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-surefire-plugin</artifactId>
+					<configuration>
+						<useSystemClassLoader>true</useSystemClassLoader>
+						<reuseForks>true</reuseForks>
+						<testFailureIgnore>false</testFailureIgnore>
+						<systemPropertyVariables>
+							<elastic.api.key>${env.ELASTIC_API_KEY}</elastic.api.key>
+						</systemPropertyVariables>
+						<argLine>--add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED</argLine>
+						<includes>
+							<include>**/*Tests.java</include>
+						</includes>
+					</configuration>
+				</plugin>
+				<plugin>
+					<!-- Since all libraries are deliverable, this should in fact be
+                    the only dependency check required.
+                 -->
+					<groupId>org.owasp</groupId>
+					<artifactId>dependency-check-maven</artifactId>
+					<!-- 9.0 line uses NVD API and requires a key, which has flakey response right now -->
+					<version>8.4.3</version>
+					<configuration>
+						<!--nvdApiKey>${env.NVDAPIKEY}</nvdApiKey-->
+						<formats>
+							<format>HTML</format>
+						</formats>
+						<!-- Disable .NET Analyzer -->
+						<assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
+						<nugetconfAnalyzerEnabled>false</nugetconfAnalyzerEnabled>
+						<nuspecAnalyzerEnabled>false</nuspecAnalyzerEnabled>
+						<!-- Fail builds where this is used to 7 High to Critical -->
+						<failBuildOnCVSS>7</failBuildOnCVSS>
+						<!-- Don't fail on error (for cases where CVE REPO is bad) -->
+						<failOnError>false</failOnError>
+						<skip>${skipDependencyCheck}</skip>
+						<suppressionFile>${project.basedir}/dependency-suppression.xml</suppressionFile>
+					</configuration>
+					<executions>
+						<execution>
+							<goals>
+								<goal>check</goal>
+							</goals>
+						</execution>
+					</executions>
 				</plugin>
 			</plugins>
 		</pluginManagement>
 	</build>
+	<reporting>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>3.7.0</version>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-project-info-reports-plugin</artifactId>
+				<version>3.6.1</version>
+				<reportSets>
+					<reportSet>
+						<reports>
+							<report>index</report>
+							<report>dependencies</report>
+							<report>dependency-info</report>
+							<report>dependency-management</report>
+							<report>distribution-management</report>
+							<report>licenses</report>
+							<report>scm</report>
+							<report>summary</report>
+						</reports>
+					</reportSet>
+				</reportSets>
+			</plugin>
+			<plugin>
+				<groupId>org.owasp</groupId>
+				<artifactId>dependency-check-maven</artifactId>
+				<version>8.4.3</version>
+				<configuration>
+					<!--nvdApiKey>${env.NVDAPIKEY}</nvdApiKey-->
+					<formats>
+						<format>HTML</format>
+					</formats>
+					<!-- Disable .NET Analyzer -->
+					<assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
+					<nugetconfAnalyzerEnabled>false</nugetconfAnalyzerEnabled>
+					<nuspecAnalyzerEnabled>false</nuspecAnalyzerEnabled>
+					<!-- Fail builds where this is used to 7 High to Critical -->
+					<failBuildOnCVSS>7</failBuildOnCVSS>
+					<!-- Don't fail on error (for cases where CVE REPO is bad) -->
+					<failOnError>false</failOnError>
+					<skip>${skipDependencyCheck}</skip>
+					<suppressionFile>${project.basedir}/dependency-suppression.xml</suppressionFile>
+					<outputDirectory>target/site</outputDirectory>
+				</configuration>
+				<reportSets>
+					<reportSet>
+						<reports>
+							<report>check</report>
+						</reports>
+					</reportSet>
+				</reportSets>
+			</plugin>
+		</plugins>
+	</reporting>
 </project>

@@ -24,15 +24,28 @@ import ca.uhn.fhir.parser.IParser;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Segment;
 import ca.uhn.hl7v2.model.Type;
+import ca.uhn.hl7v2.model.Varies;
 import ca.uhn.hl7v2.model.Visitable;
-import gov.cdc.izgw.v2tofhir.converter.ParserUtils;
+import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * A variety of utility functions for testing FHIR Conversions
+ * 
+ * @author Audacious Inquiry
+ *
+ */
 @Slf4j
 public class TestUtils {
 	private static final String[] PAD_FORMATS = { " %s ", " %s", "%s ", "%s" };
 	private static final FhirContext ctx = FhirContext.forR4();
 	private static final IParser fhirParser = ctx.newJsonParser().setPrettyPrint(true);
+	
+	/** 
+	 * Check two strings for equality, where null and blank are considered equivalent
+	 * @param a	The first string to compare
+	 * @param b	The second string to compare
+	 */
 	public static void assertEqualStrings(String a, String b) {
 		// If one is empty or blank, the other one must be.
 		assertEquals(StringUtils.isBlank(a), StringUtils.isBlank(b), a + " <> '" + b + "'");
@@ -43,11 +56,21 @@ public class TestUtils {
 		}
 	}
 
+	/**
+	 * Verify a collection has a value
+	 * @param first	The collection
+	 */
 	public static void assertNotEmpty(Collection<String> first) {
 		assertNotNull(first);
 		assertFalse(first.isEmpty());
 	}
 
+	/**
+	 * Compare two resources by their JSON representations.
+	 * @param a	The first resource
+	 * @param b	The second resource
+	 * @return	The comparison
+	 */
 	public static int compare(
 			org.hl7.fhir.r4.model.Resource a,
 			org.hl7.fhir.r4.model.Resource b) {
@@ -58,6 +81,13 @@ public class TestUtils {
 		return StringUtils.compare(toString(a), toString(b));
 	}
 
+	/**
+	 * Compare V2 types by their V2 encoded representations.
+	 * 
+	 * @param a	The first type
+	 * @param b	The second type
+	 * @return	The comparison
+	 */
 	public static int compare(
 			org.hl7.fhir.r4.model.Type a,
 			org.hl7.fhir.r4.model.Type b) {
@@ -68,29 +98,30 @@ public class TestUtils {
 		return StringUtils.compare(toString(a), toString(b));
 	}
 
+	/**
+	 * Compare V2 structures (segments and groups) by their V2 encoded representations.
+	 * Used to provide an ordered list of V2 structures in tests
+	 * @param a	The first structures 
+	 * @param b	The second structures 
+	 * @return	The comparison
+	 */
 	public static int compare(Visitable a, Visitable b) {
 		int comp = compareObjects(a, b);
 		if (comp != 2) {
 			return comp;
 		}
-		// Two Types are equal if they encode to the same string values.
-		String a1;
-		try {
-			a1 = toString(a);
-		} catch (HL7Exception e) {
-			e.printStackTrace();
-			return -1;
-		}
-		String b1;
-		try {
-			b1 = toString(b);
-		} catch (HL7Exception e) {
-			e.printStackTrace();
-			return 1;
-		}
-		return StringUtils.compare(a1, b1);
+		return a.toString().compareTo(b.toString());
 	}
 
+	
+	/**
+	 * First half of compare that checks for equality based
+	 * only on class level information
+	 * 
+	 * @param a	The first object 
+	 * @param b	The second object
+	 * @return	The comparison value.  A value of 2 indicates the objects are non-null and of identical type
+	 */
 	public static int compareObjects(Object a, Object b) {
 		if (a == null && b == null) {
 			return 0;
@@ -108,9 +139,21 @@ public class TestUtils {
 		return 2;
 	}
 
+	/**
+	 * Serves as a basis for tests on primitive type conversions
+	 * 
+	 * @param <P>	A primitive Type (e.g., String, Integer, Boolean, etc)
+	 * @param <F>	The FHIR representation of the primitive type
+	 * @param v2Converter	The converter from a V2 type to a FHIR PrimitiveType 
+	 * @param toFhirFromString	A function to convert from a string to a FHIR type
+	 * @param normalizer	A normalizer to apply to the string
+	 * @param t	A V2 type to convert
+	 * @param expectedClass	The expected FHIR Type class
+	 * @throws HL7Exception If an HL7 exception occurs
+	 */
 	public static <P, F extends org.hl7.fhir.r4.model.PrimitiveType<P>> void compareStringValues(
-		Function<Type, F> conversionFunction, 
-		Function<String, F> stringFunction,
+		Function<Type, F> v2Converter, 
+		Function<String, F> toFhirFromString,
 		UnaryOperator<String> normalizer,
 		Type t,
 		Class<F> expectedClass
@@ -124,18 +167,19 @@ public class TestUtils {
 		if (t.encode() == null) {
 			log.warn("t is null for ", t.getMessage().encode());
 		}
+		boolean isDateTime = BaseDateTimeType.class.isAssignableFrom(expectedClass);
 		try {
-			String value = ParserUtils.unescapeV2Chars(t.encode());
+			String value = ParserUtils.toString(t);
 			
-			if (BaseDateTimeType.class.isAssignableFrom(expectedClass)) {
-				Boolean cleanupNeeded = needsIsoCleanup(t);
+			if (isDateTime) {
+				Boolean cleanupNeeded = ParserUtils.needsIsoCleanup(t);
 				if (cleanupNeeded != null) {
 					value = ParserUtils.cleanupIsoDateTime(value, cleanupNeeded);
 				}
 			} else if (UriType.class.equals(expectedClass) || CodeType.class.equals(expectedClass)) {
 				value = StringUtils.trim(value);
 			} 
-			expectedFhirType = stringFunction.apply(normalizer.apply(value));
+			expectedFhirType = toFhirFromString.apply(normalizer.apply(value));
 			expectedFhirType.setValue(expectedFhirType.getValue());  // Force renormalization of String
 			if (expectedFhirType != null) {
 				expectedFhirString = expectedFhirType.asStringValue();
@@ -145,7 +189,7 @@ public class TestUtils {
 		} catch (AssertionError err) {
 			fhirConversionFailure = err;
 		}
-		PrimitiveType<?> actualFhirType = conversionFunction.apply(t);
+		PrimitiveType<?> actualFhirType = v2Converter.apply(t);
 		// In these cases, if we reproduce the encoded value, count it as a win.
 		String actualString = (actualFhirType != null) ? actualFhirType.asStringValue() : null;
 		
@@ -154,16 +198,17 @@ public class TestUtils {
 			return;
 		}
 		assertNotNull(expectedFhirType);
+
+		// TimeType has a bug in that it doesn't parse the actual value in use.
+		if (!"time".equals(expectedFhirType.fhirType())) {
+			assertEqualStrings(expectedFhirType.asStringValue(), actualString);
+		}
+		
 		// The values are the same.
-		if (actualFhirType == null) {
-			// TimeType has a bug in that it doesn't parse the actual value
-			// in use.
-			if (!"time".equals(expectedFhirType.fhirType())) {
-				// assertEqualStrings(null, expectedFhirType.asStringValue());
-			}
-		} else {
+		if (actualFhirType != null) {
 			// Types are the same
 			assertEquals(expectedFhirType.fhirType(), actualFhirType.fhirType());
+			// Classes are the same
 			assertEquals(expectedClass, actualFhirType.getClass());
 			// String representations are essentially the same
 			assertEquals(isEmpty(actualString), isEmpty(expectedFhirString), 
@@ -175,38 +220,53 @@ public class TestUtils {
 		}
 	}
 
+	/**
+	 * Generic isEmpty for String, FHIR Type, Resource, V2 type or Collection
+	 * @param o	The object to check for emptiness
+	 * @return true if the object is null or otherwise empty
+	 */
 	public static boolean isEmpty(Object o) {
 		try {
 			return o == null || 
 				(o instanceof String s && StringUtils.isEmpty(s)) ||
 				(o instanceof org.hl7.fhir.r4.model.Type t && t.isEmpty()) || 
 				(o instanceof Resource r && r.isEmpty()) || 
-				(o instanceof Type t && t.isEmpty());
+				(o instanceof Type t && t.isEmpty() ||
+				(o instanceof Collection<?> c && c.isEmpty())		
+			);
 		} catch (HL7Exception e) {
 			return true;
 		} 
 	}
 
-	public static Boolean needsIsoCleanup(Type t) {
-		String typeName = t.getName();
-		switch (typeName) {
-		case "TM": return Boolean.FALSE;
-		case "DIN", "DLD", "DR", "DT", "DTM": 
-			return Boolean.TRUE;
-		default:
-			return null;  // No cleanup needed
-		}
+	/**
+	 * Convert a resource to a JSON String
+	 * @param r	The resource
+	 * @return	The JSON String
+	 */
+	public static String toString(org.hl7.fhir.r4.model.Resource r) {
+		return r == null ? null : fhirParser.encodeResourceToString(r);
 	}
 
-	public static String toString(org.hl7.fhir.r4.model.Resource a) {
-		return a == null ? null : fhirParser.encodeResourceToString(a);
+	/**
+	 * Convert a FHIR type to a JSON String
+	 * @param t	The type
+	 * @return	The JSON String
+	 */
+	public static String toString(org.hl7.fhir.r4.model.Type t) {
+		return t == null ? null : fhirParser.encodeToString(t);
 	}
 
-	public static String toString(org.hl7.fhir.r4.model.Type a) {
-		return a == null ? null : fhirParser.encodeToString(a);
-	}
-
+	/**
+	 * Convert a V2 Structure or Type to its encoded String
+	 * @param a	The Structure or Type 
+	 * @return	The V2 encoded String
+	 * @throws HL7Exception If an HL7 exception occurs during encoding
+	 */
 	public static String toString(Visitable a) throws HL7Exception {
+		if (a instanceof Varies v) {
+			a = v.getData();
+		}
 		if (a instanceof Type t) {
 			return t.encode();
 		} else if (a instanceof Segment s) {
@@ -228,6 +288,7 @@ public class TestUtils {
 	 * Format an object with multiple formatters. This method support the pad function above, and providing other formatting
 	 * for test data generators.
 	 * 
+	 * @param <T> The type of value
 	 * @param v	The object to format
 	 * @param test The test applied to the object and format before performing the formatting
 	 * @param formats	The format strings to use

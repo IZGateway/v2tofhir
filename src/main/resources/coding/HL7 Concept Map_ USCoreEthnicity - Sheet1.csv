@@ -1,0 +1,54 @@
+HL7 v2,,,Condition (IF True),,,HL7 FHIR,,,,,Comments
+Code,Text,Code System,Computable ANTLR,Computable FHIRPath,Narrative,Code,,Display,Code System,,
+2135-2,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2137-8,Spaniard,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2138-6,Andalusian,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2139-4,Asturian,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2140-2,Castillian,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2141-0,Catalonian,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2142-8,Belearic Islander,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2143-6,Gallego,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2144-4,Valencian,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2145-1,Canarian,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2146-9,Spanish Basque,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2148-5,Mexican,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2149-3,Mexican American,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2150-1,Mexicano,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2151-9,Chicano,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2152-7,La Raza,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2153-5,Mexican American Indian,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2155-0,Central American,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2156-8,Costa Rican,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2157-6,Guatemalan,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2158-4,Honduran,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2159-2,Nicaraguan,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2160-0,Panamanian,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2161-8,Salvadoran,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2162-6,Central American Indian,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2163-4,Canal Zone,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2165-9,South American,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2166-7,Argentinean,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2167-5,Bolivian,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2168-3,Chilean,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2169-1,Colombian,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2170-9,Ecuadorian,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2171-7,Paraguayan,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2172-5,Peruvian,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2173-3,Uruguayan,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2174-1,Venezuelan,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2175-8,South American Indian,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2176-6,Criollo,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2178-2,Latin American,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2180-8,Puerto Rican,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2182-4,Cuban,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2184-0,Dominican,urn:oid:2.16.840.1.113883.6.238,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+HISPANIC,,*,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+H,,*,,,,2135-2,,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+2186-5,Not Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238,,,,2186-5,,Not Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+NOT HISPANIC,,*,,,,2186-5,,Not Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+N,,*,,,,2186-5,,Not Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238
+UNKNOWN,,*,,,,UNK,,unknown,http://terminology.hl7.org/CodeSystem/v3-NullFlavor
+UNK,,*,,,,UNK,,unknown,http://terminology.hl7.org/CodeSystem/v3-NullFlavor
+U,,*,,,,UNK,,unknown,http://terminology.hl7.org/CodeSystem/v3-NullFlavor
+ASKU,,*,,,,ASKU,,unknown,http://terminology.hl7.org/CodeSystem/v3-NullFlavor
+PHC1175,,*,,,,UNK,,unknown,http://terminology.hl7.org/CodeSystem/v3-NullFlavor
