@@ -192,7 +192,7 @@ public class IzQuery {
 				break;
 			
 			default:
-				throw new IllegalArgumentException("Invalid query parameter: " + param);
+				throw new IllegalArgumentException("Invalid query parameter: " + fhirParamName);
 			}
 		}
 	}
