@@ -1031,7 +1031,7 @@ public class DatatypeConverter {
 			String prefix = "";
 			String value = ParserUtils.toString(types[offset + 1]);
 			if (types.length > offset + 2) {
-				String system = StringUtils.defaultIfEmpty(ParserUtils.toString(types[offset]), "");
+				String system = StringUtils.defaultIfEmpty(ParserUtils.toString(types[offset+2]), "");
 				switch (StringUtils.upperCase(system)) {
 				case "ISO":
 					prefix = "urn:oid:";
@@ -1048,6 +1048,7 @@ public class DatatypeConverter {
 				hdValues.add(prefix + value);
 			}
 		}
+		Collections.reverse(hdValues);
 		return hdValues;
 	}
 
