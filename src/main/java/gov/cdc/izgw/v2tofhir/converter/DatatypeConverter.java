@@ -48,6 +48,7 @@ import org.hl7.fhir.r4.model.UriType;
 import ca.uhn.fhir.model.api.TemporalPrecisionEnum;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Composite;
+import ca.uhn.hl7v2.model.DataTypeException;
 import ca.uhn.hl7v2.model.GenericComposite;
 import ca.uhn.hl7v2.model.GenericPrimitive;
 import ca.uhn.hl7v2.model.Primitive;
@@ -304,7 +305,7 @@ public class DatatypeConverter {
 		if (ParserUtils.isEmpty(codedElement)) {
 			return null;
 		}
-    	if (table != null && table.length() == 0) {
+    	if (table != null && table.isEmpty()) {
 			table = null;
 		}
 		if ((codedElement = adjustIfVaries(codedElement)) == null) {
@@ -514,7 +515,7 @@ public class DatatypeConverter {
 		if (codedElement == null) {
 			return null;
 		}
-		if (table != null && table.length() == 0) {
+		if (table != null && table.isEmpty()) {
 			table = null;
 		}
 		codedElement = adjustIfVaries(codedElement);
@@ -549,7 +550,7 @@ public class DatatypeConverter {
      * @return The Coding converted from the V2 datatype
      */
     public static Coding toCoding(Type type, String table) {
-		if (table != null && table.length() == 0) {
+		if (table != null && table.isEmpty()) {
 			table = null;
 		}
 
@@ -1077,13 +1078,20 @@ public class DatatypeConverter {
 	 *         small abuse of InstantType.
 	 */
 	public static InstantType toInstantType(String value) {
-		if (value == null || value.length() == 0) {
+		if (value == null || value.isEmpty()) {
 			return null;
+		}
+		try {
+			InstantType instant = new InstantType(value);
+			return instant;
+		} catch (Exception e) {
+			// Fall back to other methods
+			log.error("Exception converting instant", e);
 		}
 		value = value.strip();
 		String original = value; // Save trimmed string for use with FHIR Parser.
 
-		if (value.length() == 0) {
+		if (value.isEmpty()) {
 			return null;
 		}
 		value = removeIsoPunct(value);
@@ -1101,12 +1109,12 @@ public class DatatypeConverter {
 			if (value.contains(".")) {
 				decimal = "." + parts[1];
 			}
-			if (decimal.length() == 0) {
+			if (decimal.isEmpty()) {
 				zone = parts.length > 1 ? parts[1] : "";
 			} else {
 				zone = parts.length > 2 ? parts[2] : "";
 			}
-			if (zone.length() > 0) {
+			if (!zone.isEmpty()) {
 				zone = StringUtils.right(value, zone.length() + 1);
 			}
 			int len = numeric.length();
@@ -1167,7 +1175,7 @@ public class DatatypeConverter {
 		} else {
 			prec = TemporalPrecisionEnum.MILLI;
 		}
-		if (decimal.length() > 0) {
+		if (decimal.isEmpty()) {
 			prec = TemporalPrecisionEnum.MILLI;
 		}
 		return prec;
@@ -1186,15 +1194,13 @@ public class DatatypeConverter {
 		String left = value.substring(0, Math.min(11, value.length()));
 		String right = value.length() == left.length() ? "" : value.substring(left.length());
 		left = left.replace("-", "").replace("T", ""); // Remove - and T from date part
-		right = right.replace("-", "+"); // Change any - to +, and remove :
-		String tz = StringUtils.substringAfter(right, "+"); // Get TZ length after +
-		right = StringUtils.substringBefore(right, "+");
-		if (tz.length() != 0) {
-			tz = value.substring(value.length() - tz.length() - 1); // adjust TZ
-		} else if (right.endsWith("Z")) { // Check for ZULU time
-			right = right.substring(0, right.length() - 1);
-			tz = "Z";
+		String tz = "";
+		if (right.contains("+")) {
+			tz = "+" + StringUtils.substringAfter(right, "+");
+		} else if (right.contains("-")) {
+			tz = "-" + StringUtils.substringAfter(right, "-");
 		}
+		right = StringUtils.left(right, right.length() - tz.length());
 		right = right.replace(":", "");
 		value = left + right + tz.replace(":", "");
 		return value;
@@ -1207,8 +1213,19 @@ public class DatatypeConverter {
      */
     public static InstantType toInstantType(Type type) {
 		// This will convert the first primitive component of anything to an instant.
-		if (type instanceof TSComponentOne ts1) {
-			return toInstantType(ts1.getValue());
+		try {
+			if (type instanceof TSComponentOne ts1) {
+				return new InstantType(ts1.getValueAsCalendar());
+			} else if (type instanceof Composite comp && comp.getComponent(0) instanceof TSComponentOne ts1) {
+				return new InstantType(ts1.getValueAsCalendar());
+			} else if (type instanceof Primitive t) {
+				MyTSComponentOne ts1 = new MyTSComponentOne();
+				ts1.setValue(ParserUtils.toString(type));
+				return new InstantType(ts1.getValueAsCalendar());
+			}
+		} catch (DataTypeException dte) {
+			// Ignore and try via string
+			log.error("Exception converting type", dte);
 		}
 		return toInstantType(ParserUtils.toString(type));
 	}
@@ -1410,7 +1427,7 @@ public class DatatypeConverter {
 			if (!checkTime(wholePart, "time")) {
 				return null;
 			}
-			if (zonePart.length() == 0 || !checkTime(zonePart, "timezone")) {
+			if (zonePart.isEmpty() || !checkTime(zonePart, "timezone")) {
 				return null;
 			}
 		} catch (NumberFormatException ex) {
