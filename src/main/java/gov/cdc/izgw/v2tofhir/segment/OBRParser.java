@@ -71,12 +71,20 @@ public class OBRParser extends AbstractSegmentParser {
 		return order;
 	}
 
+	/**
+	 * Add the place order number for the service request
+	 * @param orderNumber	the order number 
+	 */
 	@ComesFrom(path = "ServiceRequest.identifier", field = 2, comment = "Placer Order Number")
 	@ComesFrom(path = "ServiceRequest.identifier", field = 53, comment = "Alternate Placer Order Number")
 	public void addPlacerOrderNumber(Identifier orderNumber) {
 		addOrderIdentifier(orderNumber, Codes.PLACER_ORDER_IDENTIFIER_TYPE);
 	}
 	
+	/**
+	 * Add the filler order number for the service request
+	 * @param orderNumber	the order number 
+	 */
 	@ComesFrom(path = "ServiceRequest.identifier", field = 3, comment = "Filler Order Number")
 	public void addFillerOrderNumber(Identifier orderNumber) {
 		addOrderIdentifier(orderNumber, Codes.FILLER_ORDER_IDENTIFIER_TYPE);
@@ -105,6 +113,10 @@ public class OBRParser extends AbstractSegmentParser {
 			StringUtils.equals(id1.getValue(), id2.getValue());
 	}
 
+	/**
+	 * Set the code for the Service Request
+	 * @param code	The code to set
+	 */
 	@ComesFrom(path = "ServiceRequest.code", field = 4, comment = "Universal Service Identifier")
 	@ComesFrom(path = "ServiceRequest.code", field = 44, comment = "Procedure Code")
 	public void setCode(CodeableConcept code) {
@@ -116,6 +128,10 @@ public class OBRParser extends AbstractSegmentParser {
 		order.setCode(code);
 	}
 
+	/**
+	 * Set the priority of the order
+	 * @param priority the priority
+	 */
 	@ComesFrom(path = "ServiceRequest.priority", field = 5, comment = "Priority")
 	public void setPriority(CodeType priority) {
 		if (priority.hasCode()) {
@@ -139,16 +155,28 @@ public class OBRParser extends AbstractSegmentParser {
 		}
 	}
 
+	/**
+	 * Set the time the order was placed 
+	 * @param requestedDateTime the time the order was placed
+	 */
 	@ComesFrom(path = "ServiceRequest.occurrenceDateTime", field = 6, comment = "Requested Date/Time")
 	public void setRequestedDateTime(InstantType requestedDateTime) {
 		order.setOccurrence(requestedDateTime);
 	}
 
+	/**
+	 * The the action code on the specimen
+	 * @param specimenActionCode	The action code
+	 */
 	@ComesFrom(path = "ServiceRequest.intent", field = 11, comment = "Specimen Action Code")
 	public void setSpecimenActionCode(CodeType specimenActionCode) {
 		// TODO: Figure this out
 	}
 
+	/**
+	 * The the ordering provider 
+	 * @param orderingProvider the ordering provider
+	 */
 	@ComesFrom(path = "ServiceRequest.requester(ServiceRequest.Practitioner)", field = 16, comment = "Ordering Provider")
 	public void setOrderingProvider(Practitioner orderingProvider) {
 		this.orderingProvider = orderingProvider;
@@ -156,6 +184,10 @@ public class OBRParser extends AbstractSegmentParser {
 		order.setRequester(ref);
 	}
 
+	/**
+	 * Set the phone number to call to reach the ordering provider 
+	 * @param orderCallbackPhoneNumber the phone number to call to reach the ordering provider 
+	 */
 	@ComesFrom(path = "ServiceRequest.requester.telecom", field = 17, comment = "Order Callback Phone Number")
 	public void setOrderCallbackPhoneNumber(ContactPoint orderCallbackPhoneNumber) {
 		if (orderingProvider != null) {
@@ -163,26 +195,46 @@ public class OBRParser extends AbstractSegmentParser {
 		}
 	}
 
+	/**
+	 * Set the quantity and timing for a repeating order
+	 * @param quantityTiming the quantity and timing 
+	 */
 	@ComesFrom(path = "ServiceRequest.occurence", field = 27, comment = "Quantity/Timing")
 	public void setQuantityTiming(DateTimeType quantityTiming) {
 		order.setOccurrence(quantityTiming);
 	}
 
+	/**
+	 * Set the identifier of the result the result is based on.
+	 * @param parentResultsObservationIdentifier the identifier of the parent result 
+	 */
 	@ComesFrom(path = "ServiceRequest.basedOn.identifier", field = 29, comment = "ParentResults Observation Identifier")
 	public void setParentResultsObservationIdentifier(Identifier parentResultsObservationIdentifier) {
 		order.addBasedOn().setIdentifier(parentResultsObservationIdentifier);
 	}
 
+	/**
+	 * Set the reason for the order
+	 * @param reasonforStudy the reason for the order
+	 */
 	@ComesFrom(path = "ServiceRequest.reasonCode", field = 31, comment = "Reason for Study")
 	public void setReasonforStudy(CodeableConcept reasonforStudy) {
 		order.addReasonCode(reasonforStudy);
 	}
 
+	/**
+	 * Set placer supplemental information
+	 * @param placerSupplementalServiceInformation placer supplemental information
+	 */
 	@ComesFrom(path = "ServiceRequest.orderDetail", field = 46, comment = "Placer Supplemental Service Information")
 	public void setPlacerSupplementalServiceInformation(CodeableConcept placerSupplementalServiceInformation) {
 		// TODO: Figure this out.
 	}
 
+	/**
+	 * Set filler supplemental information
+	 * @param fillerSupplementalServiceInformation filler supplemental information
+	 */
 	@ComesFrom(path = "ServiceRequest.orderDetail", field = 47, comment = "Filler Supplemental Service Information")
 	public void setFillerSupplementalServiceInformation(CodeableConcept fillerSupplementalServiceInformation) {
 		// TODO: Figure this out.

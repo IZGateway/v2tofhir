@@ -273,6 +273,10 @@ public class OBXParser extends AbstractSegmentParser {
 		}
 	}
 
+	/**
+	 * Set the units of the Observation 
+	 * @param units the units of the Observation 
+	 */
 	@ComesFrom(path = "Observation.valueQuantity.unit", field = 6, comment = "Observation Units")
 	public void setUnits(CodeableConcept units) {
 		org.hl7.fhir.r4.model.Type value = observation.getValue();

@@ -50,7 +50,6 @@ import org.hl7.fhir.r4.model.UriType;
 import ca.uhn.fhir.model.api.TemporalPrecisionEnum;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Composite;
-import ca.uhn.hl7v2.model.DataTypeException;
 import ca.uhn.hl7v2.model.GenericComposite;
 import ca.uhn.hl7v2.model.GenericPrimitive;
 import ca.uhn.hl7v2.model.Primitive;
@@ -1080,7 +1079,7 @@ public class DatatypeConverter {
 	 * operate differently and have overlapping coverage on their input string
 	 * ranges, so this provides the highest level of compatibility.
 	 * 
-	 * @param value The value to convert
+	 * @param original The value to convert
 	 * @return An InstantType set to the precision of the timestamp. NOTE: This is a
 	 *         small abuse of InstantType.
 	 */
