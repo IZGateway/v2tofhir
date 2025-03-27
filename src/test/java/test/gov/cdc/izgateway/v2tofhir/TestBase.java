@@ -53,21 +53,21 @@ public class TestBase {
 
 	// These are defined constants which indicate which V2 types should be used for
 	// testing.
-	final static List<String> CODING_TYPES = Arrays.asList("CE", "CWE", "CNE");
-	final static List<String> ID_TYPES = Arrays.asList("CX", "EI", "CNN", "XCN", "XON");
-	final static List<String> NAME_TYPES = Arrays.asList("CNN", "XCN", "XPN");
-	final static List<String> ADDR_TYPES = Arrays.asList("AD", "SAD", "XAD");
-	final static List<String> QUANTITY_TYPES = Arrays.asList("CQ", "NM");
-	final static List<String> CONTACT_TYPES = Arrays.asList("TN", "XTN");
+	static final List<String> CODING_TYPES = Arrays.asList("CE", "CWE", "CNE");
+	static final List<String> ID_TYPES = Arrays.asList("CX", "EI", "CNN", "XCN", "XON");
+	static final List<String> NAME_TYPES = Arrays.asList("CNN", "XCN", "XPN");
+	static final List<String> ADDR_TYPES = Arrays.asList("AD", "SAD", "XAD");
+	static final List<String> QUANTITY_TYPES = Arrays.asList("CQ", "NM");
+	static final List<String> CONTACT_TYPES = Arrays.asList("TN", "XTN");
 
 	// These are defined constants which indicate which V2 types should match when
 	// converted to text.
-	final static List<String> IS_CODING = CODING_TYPES;
-	final static List<String> IS_CONTACT = CONTACT_TYPES;
-	final static List<String> IS_ID = Arrays.asList("CX", "EI");
-	final static List<String> IS_NAME = NAME_TYPES;
-	final static List<String> IS_ADDR = ADDR_TYPES;
-	final static List<String> IS_QUANTITY = QUANTITY_TYPES;
+	static final List<String> IS_CODING = CODING_TYPES;
+	static final List<String> IS_CONTACT = CONTACT_TYPES;
+	static final List<String> IS_ID = Arrays.asList("CX", "EI");
+	static final List<String> IS_NAME = NAME_TYPES;
+	static final List<String> IS_ADDR = ADDR_TYPES;
+	static final List<String> IS_QUANTITY = QUANTITY_TYPES;
 
 	/** The FhirContext for R4 */
 	protected static final FhirContext ctx = FhirContext.forR4();
@@ -193,7 +193,7 @@ public class TestBase {
 		public String toString() {
 			String encoded = null;
 			try {
-				if (segment instanceof GenericSegment generic) {
+				if (segment instanceof GenericSegment) {
 					encoded = "Cannot encode from " + segment.getMessage().getVersion();
 				} else {
 					encoded = segment.encode();
@@ -226,7 +226,7 @@ public class TestBase {
 				log.error("Error parsing segment {}: {}", data.getTestData(), e.getMessage());
 			}
 		}
-		return testSegments.stream().map(s -> new NamedSegment(s)).toList();
+		return testSegments.stream().map(NamedSegment::new).toList();
 	}
 	
 	static List<NamedSegment> getTestSegments(String ...names) {
@@ -292,7 +292,7 @@ public class TestBase {
 	}
 
 	static Stream<String> testMessages() {
-		return TEST_MESSAGES.stream().map(td -> td.getTestData());
+		return TEST_MESSAGES.stream().map(TestData::getTestData);
 	}
 
 	static Stream<Message> getTestMessages() {

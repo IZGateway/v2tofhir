@@ -165,7 +165,7 @@ class MessageParserTests extends TestBase {
 		Terser t = new Terser(msg);
 		b.append("  @").append(ann.path()).append(".exists( \\\n");
 		for (String source: ann.source()) {
-			if (source.length() == 0) {
+			if (source.isEmpty()) {
 				continue;
 			}
 			// Source is a Terser path in the form SEG-#-#
@@ -177,11 +177,11 @@ class MessageParserTests extends TestBase {
 				log.warn("Error parsing message: {}", e.getMessage());
 			}
 		}
-		if (ann.fixed().length() != 0) {
+		if (!ann.fixed().isEmpty()) {
 			b.append("    /* fixed = \"").append(ann.fixed()).append("\" */ \\\n");
 		}
 		b.append("  ) \\\n");
-		if (ann.comment().length() != 0) {
+		if (!ann.comment().isEmpty()) {
 			b.append("  // ").append(ann.comment()).append("\n");
 		}
 		return b.toString();
@@ -197,7 +197,7 @@ class MessageParserTests extends TestBase {
 				b.append("\"").append(ann.source()[i]).append("\"");
 			}
 			b.append("})");
-		} else if (ann.fixed().length() > 0) {
+		} else if (!ann.fixed().isEmpty()) {
 			b.append("fixed = \"").append(ann.fixed()).append("\")");
 		}
 		b.append(" \\\n");
@@ -279,10 +279,8 @@ class MessageParserTests extends TestBase {
 			// Verify that there is a count if the segment as RCP-2
 			Parameters params = messageParser.getFirstResource(Parameters.class);
 			String value = ParserUtils.toString(segment.segment(), 2, 0);
-			if (value != null) {
-				if (params.getParameter("_search").getValue() instanceof StringType uri) {
-					assertTrue(uri.getValueAsString().endsWith("&_count=" + value));
-				}
+			if (value != null && params.getParameter("_search").getValue() instanceof StringType uri) {
+				assertTrue(uri.getValueAsString().endsWith("&_count=" + value));
 			}
 		} else {
 			assertTrue(b1.getEntry().stream()
@@ -321,7 +319,7 @@ class MessageParserTests extends TestBase {
 			}
 			// Some conversions are just to capture data for future
 			// processing, such as OBX-2 to get the type in OBX-5
-			if (from.path().length() != 0) {
+			if (!from.path().isEmpty()) {
 				String error = verify(segment.segment(), res, from);
 				assertNull(error);
 			}
@@ -341,7 +339,7 @@ class MessageParserTests extends TestBase {
 		Bundle b1 = new MessageParser().createBundle(Collections.singleton(segment.segment()));
 		Parameters parameters = b1.getEntry().stream()
 			.map(e -> e.getResource())
-			.filter(r -> r instanceof Parameters)
+			.filter(Parameters.class::isInstance)
 			.map(r -> (Parameters)r)
 			.findFirst().orElse(null);
 		
@@ -427,7 +425,7 @@ class MessageParserTests extends TestBase {
 			parts[0].length() < 4 || 			// at least 4, 
 			parts[0].length() > 14 ||			// and at most 14
 			(value.contains(".") && 			// decimal part can have 1-4 digits
-				(parts[1].length() < 1 || parts[1].length() > 4)) ||
+				(parts[1].isEmpty() || parts[1].length() > 4)) ||
 			(!value.contains(".") && parts.length > 1 && parts[1].length() != 4) ||	// TZ must be 4 digits if present
 			(value.contains(".") && 
 				(parts.length < 2 || parts[2].length() != 4))   // TZ must be 4 digits if present
@@ -479,7 +477,7 @@ class MessageParserTests extends TestBase {
 					}
 				}
 				log.info("{} <> {}", value, produced);
-			} else if (base instanceof InstantType instant) {
+			} else if (base instanceof InstantType) {
 				// Deal with missing data in V2 timestamps.
 				String[] parts = value.split("[\\-+]");
 				if (parts.length > 1) {
@@ -504,7 +502,7 @@ class MessageParserTests extends TestBase {
 		fieldValues = null;
 		fieldName = segment.getName() + "-" + from.field();
 		
-		if (from.fixed().length() == 0) {
+		if (from.fixed().isEmpty()) {
 			fieldValues = getFieldValues(segment, from);
 			if (from.component() > 0) {
 				fieldName += "-" + from.component();
@@ -524,7 +522,7 @@ class MessageParserTests extends TestBase {
 	private String getMappedValue(ComesFrom from, Type type) {
 		String value;
 		Mapping m = null;
-		if (from.map().length() != 0) {
+		if (!from.map().isEmpty()) {
 			m = Mapping.getMapping(from.map());
 			value = ParserUtils.toString(type);
 			String oldValue = value;
@@ -578,6 +576,9 @@ class MessageParserTests extends TestBase {
 			break;
 		case "PD1":
 			mp.createResource(Patient.class);
+			break;
+		default:
+			break;
 		}
 		String parserClass = PIDParser.class.getPackageName() + "." + segment.segment().getName() + "Parser";
 		@SuppressWarnings("unchecked")

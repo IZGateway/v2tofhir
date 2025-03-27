@@ -164,7 +164,7 @@ public class QBPUtils {
 		for (Map.Entry<String, List<String>> e: map.entrySet()) {
 			// Modify the parameter name for patient queries so that the 
 			// keys are preceded by "patient."
-			String param = isPatient ? "patient." + e.getKey() : e.getKey();
+			String param = isPatient && !e.getKey().startsWith("_") ? "patient." + e.getKey() : e.getKey();
 			query.addParameter(param, e.getValue());
 		}
 		query.update();
