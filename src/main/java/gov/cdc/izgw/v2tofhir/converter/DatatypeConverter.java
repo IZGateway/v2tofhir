@@ -27,6 +27,7 @@ import org.hl7.fhir.r4.model.ContactPoint;
 import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.DateType;
 import org.hl7.fhir.r4.model.DecimalType;
+import org.hl7.fhir.r4.model.Enumerations.ResourceType;
 import org.hl7.fhir.r4.model.Expression;
 import org.hl7.fhir.r4.model.HumanName;
 import org.hl7.fhir.r4.model.IdType;
@@ -40,6 +41,7 @@ import org.hl7.fhir.r4.model.PositiveIntType;
 import org.hl7.fhir.r4.model.Practitioner;
 import org.hl7.fhir.r4.model.PrimitiveType;
 import org.hl7.fhir.r4.model.Quantity;
+import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.RelatedPerson;
 import org.hl7.fhir.r4.model.StringType;
 import org.hl7.fhir.r4.model.TimeType;
@@ -424,10 +426,18 @@ public class DatatypeConverter {
 
 		for (int v : systemValues) {
 			if (types.length > v && !ParserUtils.isEmpty(types[v])) {
-				String system = getSystemOfIdentifier(types[v]);
+				List<String> system = getSystemsOfIdentifier(types[v]);
 				if (system != null) {
-					id.setSystem(system);
+					id.setSystem(system.get(0));
 					Mapping.mapSystem(id);
+					if (system.size() > 1) {
+						// Save the system name as the display name of the assigner organization
+						// but don't create a real reference to an organization.
+						Reference ref = new Reference();
+						ref.setDisplay(system.get(1));
+						ref.setType(ResourceType.ORGANIZATION.toCode());
+						id.setAssigner(ref);
+					}
 					if (id.getUserData("originalSystem") != null) {
 						break;
 					}
@@ -448,16 +458,13 @@ public class DatatypeConverter {
 		return id;
 	}
 
-	private static String getSystemOfIdentifier(Type type) {
+	private static List<String> getSystemsOfIdentifier(Type type) {
 		type = adjustIfVaries(type);
 		if (type instanceof Primitive pt) {
-			return pt.getValue();
+			return Collections.singletonList(pt.getValue());
 		} else if (type instanceof Composite comp2 && "HD".equals(comp2.getName()) // NOSONAR Name check is correct here
 		) {
-			List<String> l = DatatypeConverter.getSystemsFromHD(0, comp2.getComponents());
-			if (!l.isEmpty()) {
-				return l.get(0);
-			}
+			return DatatypeConverter.getSystemsFromHD(0, comp2.getComponents());
 		}
 		return null;
 	}
@@ -1077,24 +1084,23 @@ public class DatatypeConverter {
 	 * @return An InstantType set to the precision of the timestamp. NOTE: This is a
 	 *         small abuse of InstantType.
 	 */
-	public static InstantType toInstantType(String value) {
-		if (value == null || value.isEmpty()) {
+	public static InstantType toInstantType(String original) {
+		String value = original == null ? null : original.strip();
+		if (StringUtils.isEmpty(value)) {
 			return null;
 		}
+		value = removeIsoPunct(value);
 		try {
 			InstantType instant = new InstantType(value);
+			String[] parts = value.split("\\.");
+			instant.setPrecision(DatatypeConverter.getPrecision(parts.length > 1 ? parts[1] : null, parts[0].length()));
 			return instant;
 		} catch (Exception e) {
-			// Fall back to other methods
-			log.error("Exception converting instant", e);
 		}
-		value = value.strip();
-		String original = value; // Save trimmed string for use with FHIR Parser.
 
 		if (value.isEmpty()) {
 			return null;
 		}
-		value = removeIsoPunct(value);
 
 		TSComponentOne ts1 = new MyTSComponentOne();
 		try {
@@ -1175,7 +1181,7 @@ public class DatatypeConverter {
 		} else {
 			prec = TemporalPrecisionEnum.MILLI;
 		}
-		if (decimal.isEmpty()) {
+		if (!decimal.isEmpty()) {
 			prec = TemporalPrecisionEnum.MILLI;
 		}
 		return prec;
@@ -1212,21 +1218,6 @@ public class DatatypeConverter {
      * @return The InstantType converted from the V2 datatype
      */
     public static InstantType toInstantType(Type type) {
-		// This will convert the first primitive component of anything to an instant.
-		try {
-			if (type instanceof TSComponentOne ts1) {
-				return new InstantType(ts1.getValueAsCalendar());
-			} else if (type instanceof Composite comp && comp.getComponent(0) instanceof TSComponentOne ts1) {
-				return new InstantType(ts1.getValueAsCalendar());
-			} else if (type instanceof Primitive t) {
-				MyTSComponentOne ts1 = new MyTSComponentOne();
-				ts1.setValue(ParserUtils.toString(type));
-				return new InstantType(ts1.getValueAsCalendar());
-			}
-		} catch (DataTypeException dte) {
-			// Ignore and try via string
-			log.error("Exception converting type", dte);
-		}
 		return toInstantType(ParserUtils.toString(type));
 	}
 
