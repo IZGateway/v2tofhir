@@ -60,7 +60,7 @@ public class IzDetail {
 			detail.hasImmunizationRecommendation = false;
 			detail.immunization = mp.createResource(Immunization.class);
 			MessageHeader mh = mp.getFirstResource(MessageHeader.class);
-			if (mh != null) {
+			if (mh != null && detail.hasImmunization()) {
 				mh.addFocus(ParserUtils.toReference(detail.immunization, mh, "focus"));
 			}
 			Patient p = mp.getLastResource(Patient.class);
@@ -153,11 +153,13 @@ public class IzDetail {
 			} else if ("RXA".equals(segment.getName())) {
 				rxa = segment;
 			}
-			if (rxa != null) {
-				hasImmunizationRecommendation = "998".equals(ParserUtils.toString(rxa, 5));
-				defaulted = false;
-			} 
-			// else ORC but NO RXA, assume recommendation (e.g., old WIR 2.3 based response)
+			if (rxa == null) {
+				// ORC but NO RXA
+				hasImmunization = hasImmunizationRecommendation = false;
+				return false;
+			}
+			hasImmunizationRecommendation = "998".equals(ParserUtils.toString(rxa, 5));
+			defaulted = false;
 		} 
 		// else No segment, but known to be a Z42, assume testing for ImmunizationRecommendation
 		hasImmunization = !hasImmunizationRecommendation;

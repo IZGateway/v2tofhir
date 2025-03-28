@@ -510,14 +510,38 @@ class DateTimeParsingTests {
 			assertTrue(timesAreEquivalent(expected, actualValue), input + " is not equivalent to original FHIR string " + actualValue);
 		}
 	}
-
-	private boolean timesAreEquivalent(String expected, String actual) {
+	
+	private boolean timesAreEquivalent(String expectedValue, String actualValue) {
 		// Let -0: == 00: be OK 
-		expected = expected.replace("-0:", "00:").replace(":-0", ":00");
+		String expected = expectedValue.replace("-0:", "00:").replace(":-0", ":00").replace("+00:00", "Z").replace("-00:00", "Z");
+		String actual = actualValue.replace("+00:00", "Z").replace("-00:00", "Z");
+		
+		if (hasTimeZone(actual) && !hasTimeZone(expected)) {
+			actual = removeTimeZone(actual);
+		}
 		
 		if (expected.equals(actual)) {  // strings are equal
 			return true;
 		}
+		
+		String expHours = StringUtils.substringBefore(expected, ":");
+		String actHours = StringUtils.substringBefore(actual, ":");
+		if (expHours.equals(actHours)) {
+			String expMins = StringUtils.substringAfter(expected, ":");
+			String actMins = StringUtils.substringAfter(actual, ":");
+
+			// Second rollover works
+			if (expMins.contains(":60") && actMins.contains(":00")) {
+				expMins = StringUtils.substringBefore(expMins, ":60");
+				actMins = StringUtils.substringBefore(actMins, ":00");
+				if (StringUtils.isNumeric(expMins) && StringUtils.isNumeric(actMins) &&
+					(Integer.parseInt(actMins) - Integer.parseInt(expMins) == 1)
+				) {
+					return true;
+				}
+			}
+		}
+		
 		if (expected.contains(".") && actual.contains(".")) {  // Check for precision enhancement
 			if (expected.contains(".999") && actual.contains(".000") &&
 				StringUtils.substringBefore(actual, "T").equals(StringUtils.substringBefore(expected, "T"))
@@ -533,18 +557,25 @@ class DateTimeParsingTests {
 				return true;
 			}
 			log.debug("Precision Adjusted: actual {} {}", expected, actual); 
+		} else if (expected.contains(".") || actual.contains(".")) {
+			// Allow .000 to be removed
+			String exp = expected.replace(".000", "").replace("+00:00", "Z").replace("-00:00", "Z");
+			String act = actual.replace(".000", "").replace("+00:00", "Z").replace("-00:00", "Z");
+			if (exp.equals(act)) {
+				return true;
+			}
 		}
-		if (hasEquivalentTimeZones(expected, actual)) { // timestamp equal, time zones equivalent
-			return true;
+		
+		if (!hasEquivalentTimeZones(expected, actual)) { // Time zones equivalent
+			return false;
 		}
-		if ((expected+isoTZ).equals(actual)) {	// original without TZ has local TZ added. 
-			return true;
-		}
-		if (StringUtils.containsAny(expected + "+", ":60+", ":60-", ":60Z", ":60." ) &&
-			StringUtils.containsAny(actual + "+", ":00+", ":00-", ":00Z", "00.")
-		) {
-			// Roll-over on :60 seconds found.
-			return true;
+		expected = removeTimeZone(expected);
+		actual = removeTimeZone(actual);
+		
+		// Handle 08:00 vs 08:00:00
+		if (expected.endsWith(":00")) {
+			expected = StringUtils.substringBeforeLast(expected, ":00");
+			return expected.equals(actual);
 		}
 		return false;
 	}
@@ -567,31 +598,29 @@ class DateTimeParsingTests {
 		String tz = r.substring(rwotz.length());
 		return l + "." + StringUtils.right(rwotz + "000", 3) + tz;
 	}
-	private boolean hasEquivalentTimeZones(String s, String actualValue) {
-		String[] endingStrings = { "Z", "+00:00", "-00:00" };
-		
-		// There are four ways the time could end:
-		// With TZ of Z, +00:00, or -00:00, or without any of them.  If one of them
-		// is present, remove it on both sides.
-		if (StringUtils.endsWithAny(s, endingStrings)) {
-			s = removeEnding(s, endingStrings);
+	private boolean hasEquivalentTimeZones(String expectedValue, String actualValue) {
+		if (expectedValue.contains("+") && actualValue.contains("+")) {
+			return StringUtils.substringAfter(expectedValue, "+").equals(
+					StringUtils.substringAfter(actualValue, "+"));
 		}
-		if (StringUtils.endsWithAny(actualValue, endingStrings)) {
-			actualValue = removeEnding(actualValue, endingStrings);
+		if (expectedValue.contains("-") && actualValue.contains("-")) {
+			return StringUtils.substringAfter(expectedValue, "+").equals(
+					StringUtils.substringAfter(actualValue, "+"));
 		}
-		// Then compare the times without a time zone.
-		// This addresses the special case of an environment in UTC time zone,
-		// which is where the CI/CD build lives.
-		return s.equals(actualValue);
+		return expectedValue.endsWith("Z") && actualValue.endsWith("Z");
 	}
 
-	private String removeEnding(String s, String[] endingStrings) {
-		for (String ending : endingStrings) {
-			if (StringUtils.endsWith(s, ending)) {
-				return s.substring(0, s.length() - ending.length());
-			}
+	private boolean hasTimeZone(String value) {
+		value = StringUtils.substringAfter(value, "T");
+		return StringUtils.isEmpty(value) || StringUtils.containsAny(value, "+-Z");
+	}
+	
+	private String removeTimeZone(String value) {
+		String[] parts = value.split("T");
+		if (parts.length == 1) {
+			return value;
 		}
-		return s;
+		return parts[0] + "T" + StringUtils.substringBefore(parts[1].replace("-", "Z").replace("+", "Z"), "Z");
 	}
 
 	private void compareToString(String s, PrimitiveType<?> actual, boolean isValid) {

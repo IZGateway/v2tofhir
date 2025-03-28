@@ -79,7 +79,7 @@ public class ORCParser extends AbstractSegmentParser {
 		}
 		Encounter encounter = this.getLastResource(Encounter.class);
 		if (encounter != null) {
-			order.setSubject(ParserUtils.toReference(encounter, order, "encounter"));
+			order.setEncounter(ParserUtils.toReference(encounter, order, "encounter"));
 		}
 		order.setIntent(ServiceRequestIntent.ORDER);
 		return order;

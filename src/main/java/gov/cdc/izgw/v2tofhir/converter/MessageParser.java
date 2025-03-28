@@ -212,7 +212,7 @@ public class MessageParser {
 		dr.setUserData(SOURCE, MessageParser.class.getName()); // Mark infrastructure created resources
 		dr.setStatus(DocumentReferenceStatus.CURRENT);
 		// See https://confluence.hl7.org/display/V2MG/HL7+locally+registered+V2+Media+Types
-		Attachment att = dr.addContent().getAttachment().setContentType("application/x.hl7v2+er7; charset=utf-8");
+		Attachment att = dr.addContent().getAttachment().setContentType("text/hl7v2; charset=utf-8");
 		att.setData(data);
 
 		// Add the encoded message as the original text for the content in both the binary

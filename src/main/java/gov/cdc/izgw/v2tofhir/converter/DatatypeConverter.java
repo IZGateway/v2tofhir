@@ -27,6 +27,7 @@ import org.hl7.fhir.r4.model.ContactPoint;
 import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.DateType;
 import org.hl7.fhir.r4.model.DecimalType;
+import org.hl7.fhir.r4.model.Enumerations.ResourceType;
 import org.hl7.fhir.r4.model.Expression;
 import org.hl7.fhir.r4.model.HumanName;
 import org.hl7.fhir.r4.model.IdType;
@@ -40,6 +41,7 @@ import org.hl7.fhir.r4.model.PositiveIntType;
 import org.hl7.fhir.r4.model.Practitioner;
 import org.hl7.fhir.r4.model.PrimitiveType;
 import org.hl7.fhir.r4.model.Quantity;
+import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.RelatedPerson;
 import org.hl7.fhir.r4.model.StringType;
 import org.hl7.fhir.r4.model.TimeType;
@@ -304,7 +306,7 @@ public class DatatypeConverter {
 		if (ParserUtils.isEmpty(codedElement)) {
 			return null;
 		}
-    	if (table != null && table.length() == 0) {
+    	if (table != null && table.isEmpty()) {
 			table = null;
 		}
 		if ((codedElement = adjustIfVaries(codedElement)) == null) {
@@ -423,10 +425,18 @@ public class DatatypeConverter {
 
 		for (int v : systemValues) {
 			if (types.length > v && !ParserUtils.isEmpty(types[v])) {
-				String system = getSystemOfIdentifier(types[v]);
+				List<String> system = getSystemsOfIdentifier(types[v]);
 				if (system != null) {
-					id.setSystem(system);
+					id.setSystem(system.get(0));
 					Mapping.mapSystem(id);
+					if (system.size() > 1) {
+						// Save the system name as the display name of the assigner organization
+						// but don't create a real reference to an organization.
+						Reference ref = new Reference();
+						ref.setDisplay(system.get(1));
+						ref.setType(ResourceType.ORGANIZATION.toCode());
+						id.setAssigner(ref);
+					}
 					if (id.getUserData("originalSystem") != null) {
 						break;
 					}
@@ -447,16 +457,13 @@ public class DatatypeConverter {
 		return id;
 	}
 
-	private static String getSystemOfIdentifier(Type type) {
+	private static List<String> getSystemsOfIdentifier(Type type) {
 		type = adjustIfVaries(type);
 		if (type instanceof Primitive pt) {
-			return pt.getValue();
+			return Collections.singletonList(pt.getValue());
 		} else if (type instanceof Composite comp2 && "HD".equals(comp2.getName()) // NOSONAR Name check is correct here
 		) {
-			List<String> l = DatatypeConverter.getSystemsFromHD(0, comp2.getComponents());
-			if (!l.isEmpty()) {
-				return l.get(0);
-			}
+			return DatatypeConverter.getSystemsFromHD(0, comp2.getComponents());
 		}
 		return null;
 	}
@@ -514,7 +521,7 @@ public class DatatypeConverter {
 		if (codedElement == null) {
 			return null;
 		}
-		if (table != null && table.length() == 0) {
+		if (table != null && table.isEmpty()) {
 			table = null;
 		}
 		codedElement = adjustIfVaries(codedElement);
@@ -549,7 +556,7 @@ public class DatatypeConverter {
      * @return The Coding converted from the V2 datatype
      */
     public static Coding toCoding(Type type, String table) {
-		if (table != null && table.length() == 0) {
+		if (table != null && table.isEmpty()) {
 			table = null;
 		}
 
@@ -1031,7 +1038,8 @@ public class DatatypeConverter {
 			String prefix = "";
 			String value = ParserUtils.toString(types[offset + 1]);
 			if (types.length > offset + 2) {
-				switch (StringUtils.upperCase(ParserUtils.toString(types[offset]))) {
+				String system = StringUtils.defaultIfEmpty(ParserUtils.toString(types[offset+2]), "");
+				switch (StringUtils.upperCase(system)) {
 				case "ISO":
 					prefix = "urn:oid:";
 					break;
@@ -1047,6 +1055,7 @@ public class DatatypeConverter {
 				hdValues.add(prefix + value);
 			}
 		}
+		Collections.reverse(hdValues);
 		return hdValues;
 	}
 
@@ -1070,21 +1079,27 @@ public class DatatypeConverter {
 	 * operate differently and have overlapping coverage on their input string
 	 * ranges, so this provides the highest level of compatibility.
 	 * 
-	 * @param value The value to convert
+	 * @param original The value to convert
 	 * @return An InstantType set to the precision of the timestamp. NOTE: This is a
 	 *         small abuse of InstantType.
 	 */
-	public static InstantType toInstantType(String value) {
-		if (value == null || value.length() == 0) {
-			return null;
-		}
-		value = value.strip();
-		String original = value; // Save trimmed string for use with FHIR Parser.
-
-		if (value.length() == 0) {
+	public static InstantType toInstantType(String original) {
+		String value = original == null ? null : original.strip();
+		if (StringUtils.isEmpty(value)) {
 			return null;
 		}
 		value = removeIsoPunct(value);
+		try {
+			InstantType instant = new InstantType(value);
+			String[] parts = value.split("\\.");
+			instant.setPrecision(DatatypeConverter.getPrecision(parts.length > 1 ? parts[1] : null, parts[0].length()));
+			return instant;
+		} catch (Exception e) {
+		}
+
+		if (value.isEmpty()) {
+			return null;
+		}
 
 		TSComponentOne ts1 = new MyTSComponentOne();
 		try {
@@ -1099,12 +1114,12 @@ public class DatatypeConverter {
 			if (value.contains(".")) {
 				decimal = "." + parts[1];
 			}
-			if (decimal.length() == 0) {
+			if (decimal.isEmpty()) {
 				zone = parts.length > 1 ? parts[1] : "";
 			} else {
 				zone = parts.length > 2 ? parts[2] : "";
 			}
-			if (zone.length() > 0) {
+			if (!zone.isEmpty()) {
 				zone = StringUtils.right(value, zone.length() + 1);
 			}
 			int len = numeric.length();
@@ -1165,7 +1180,7 @@ public class DatatypeConverter {
 		} else {
 			prec = TemporalPrecisionEnum.MILLI;
 		}
-		if (decimal.length() > 0) {
+		if (!decimal.isEmpty()) {
 			prec = TemporalPrecisionEnum.MILLI;
 		}
 		return prec;
@@ -1184,15 +1199,13 @@ public class DatatypeConverter {
 		String left = value.substring(0, Math.min(11, value.length()));
 		String right = value.length() == left.length() ? "" : value.substring(left.length());
 		left = left.replace("-", "").replace("T", ""); // Remove - and T from date part
-		right = right.replace("-", "+"); // Change any - to +, and remove :
-		String tz = StringUtils.substringAfter(right, "+"); // Get TZ length after +
-		right = StringUtils.substringBefore(right, "+");
-		if (tz.length() != 0) {
-			tz = value.substring(value.length() - tz.length() - 1); // adjust TZ
-		} else if (right.endsWith("Z")) { // Check for ZULU time
-			right = right.substring(0, right.length() - 1);
-			tz = "Z";
+		String tz = "";
+		if (right.contains("+")) {
+			tz = "+" + StringUtils.substringAfter(right, "+");
+		} else if (right.contains("-")) {
+			tz = "-" + StringUtils.substringAfter(right, "-");
 		}
+		right = StringUtils.left(right, right.length() - tz.length());
 		right = right.replace(":", "");
 		value = left + right + tz.replace(":", "");
 		return value;
@@ -1204,10 +1217,6 @@ public class DatatypeConverter {
      * @return The InstantType converted from the V2 datatype
      */
     public static InstantType toInstantType(Type type) {
-		// This will convert the first primitive component of anything to an instant.
-		if (type instanceof TSComponentOne ts1) {
-			return toInstantType(ts1.getValue());
-		}
 		return toInstantType(ParserUtils.toString(type));
 	}
 
@@ -1408,7 +1417,7 @@ public class DatatypeConverter {
 			if (!checkTime(wholePart, "time")) {
 				return null;
 			}
-			if (zonePart.length() == 0 || !checkTime(zonePart, "timezone")) {
+			if (zonePart.isEmpty() || !checkTime(zonePart, "timezone")) {
 				return null;
 			}
 		} catch (NumberFormatException ex) {

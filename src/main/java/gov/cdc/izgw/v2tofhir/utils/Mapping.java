@@ -265,7 +265,7 @@ public class Mapping {
 			log.debug("{}: Loaded {} lines from {}", fileno, line, name);
 
 		} catch (Exception e) {
-			warnException(UNEXPECTED_ERROR_READING, e.getClass().getSimpleName(), file.getFilename(), line,
+			warn(UNEXPECTED_ERROR_READING, e.getClass().getSimpleName(), file.getFilename(), line,
 					e.getMessage(), e);
 		}
 		return m;
@@ -303,7 +303,7 @@ public class Mapping {
 			log.debug("{}: Loaded {} lines from {}", fileno, line, name);
 
 		} catch (Exception e) {
-			warnException(UNEXPECTED_ERROR_READING, e.getClass().getSimpleName(), file.getFilename(), line,
+			warn(UNEXPECTED_ERROR_READING, e.getClass().getSimpleName(), file.getFilename(), line,
 					e.getMessage(), e);
 		}
 	}
@@ -514,7 +514,7 @@ public class Mapping {
 				updateCodeLookup(coding);
 			}
 		} catch (Exception e) {
-			warnException(UNEXPECTED_ERROR_READING, e.getClass().getSimpleName(), file.getFilename(), line,
+			warn(UNEXPECTED_ERROR_READING, e.getClass().getSimpleName(), file.getFilename(), line,
 					e.getMessage(), e);
 		}
 		
@@ -670,10 +670,7 @@ public class Mapping {
 	private static void warn(String msg, Object ...args) {
 		log.warn(msg, args);
 	}
-	private static void warnException(String msg, Object ...args) {
-		log.warn(msg, args);
-	}
-
+	
 	/**
 	 * Map the V2 system value found in coding.system to the system URI expected in FHIR.
 	 * 

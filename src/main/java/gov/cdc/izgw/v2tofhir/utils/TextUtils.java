@@ -515,6 +515,16 @@ public class TextUtils {
 			} else {
 				type = identifier.getSystem();
 			}
+			
+			if (type != null &&
+				// If type is an OID
+				type.matches("\\d+(\\.\\d+)*$") &&
+				// and there's an assigner with a display name
+				identifier.hasAssigner() && identifier.getAssigner().hasDisplay()
+			) {
+				// Use the display name for type in the text representation
+				type = identifier.getAssigner().getDisplay();
+			}
 		}
 		return identifierToText(type, identifier.getValue(), null);
 	}
