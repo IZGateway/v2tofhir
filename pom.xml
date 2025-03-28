@@ -3,9 +3,9 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.3.2</version>
+		<version>3.4.4</version>
 	</parent>
-	<groupId>cdc.gov.izgw</groupId>
+	<groupId>gov.cdc.izgw</groupId>
 	<artifactId>v2tofhir</artifactId>
 	<version>1.0.0-v2tofhir-SNAPSHOT</version>
 	<name>HL7 Version 2 to FHIR Conversion</name>
