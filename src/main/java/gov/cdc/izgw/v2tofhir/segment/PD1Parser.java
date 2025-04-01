@@ -4,11 +4,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.hl7.fhir.instance.model.api.IBaseResource;
+import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.CodeableConcept;
+import org.hl7.fhir.r4.model.ContactPoint;
+import org.hl7.fhir.r4.model.HumanName;
+import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.Practitioner;
+import org.hl7.fhir.r4.model.PractitionerRole;
 import org.hl7.fhir.r4.model.Provenance;
+import org.hl7.fhir.r4.model.Reference;
 
 import com.ainq.fhir.utils.PathUtils;
 
@@ -29,6 +35,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class PD1Parser extends AbstractSegmentParser {
 	Patient patient;
+	PractitionerRole primaryCareProvider;
+	Organization primaryCareOrg;
+	Practitioner primaryCareDoc;
+	private Reference gpRef;
 	private static List<FieldHandler> fieldHandlers = new ArrayList<>();
 	static {
 		log.debug("{} loaded", PD1Parser.class.getName());
@@ -62,8 +72,29 @@ public class PD1Parser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path = "Patient.generalPractitioner.Organization", field = 3, comment = "Patient Primary Facility")
 	public void setPatientPrimaryFacility(Organization patientPrimaryFacility) {
-		addResource(patientPrimaryFacility);
-		patient.addGeneralPractitioner(ParserUtils.toReference(patientPrimaryFacility, patient, "general-practitioner"));
+		if (primaryCareProvider == null) {
+			primaryCareProvider = createResource(PractitionerRole.class);
+			gpRef = ParserUtils.toReference(primaryCareProvider, patient, "general-practitioner");
+			patient.addGeneralPractitioner(gpRef);
+		}
+		if (primaryCareProvider.hasOrganization()) {
+			if (patientPrimaryFacility.hasName()) {
+				primaryCareOrg.addAlias(patientPrimaryFacility.getName());
+			}
+			for (Identifier ident : patientPrimaryFacility.getIdentifier()) {
+				primaryCareOrg.addIdentifier(ident);
+			}
+			for (Address addr: patientPrimaryFacility.getAddress()) {
+				primaryCareOrg.addAddress(addr);
+			}
+			for (ContactPoint telecom: patientPrimaryFacility.getTelecom()) {
+				primaryCareOrg.addTelecom(telecom);
+			}
+		} else {
+			addResource(primaryCareOrg = patientPrimaryFacility);
+			primaryCareProvider.setOrganization(ParserUtils.toReference(patientPrimaryFacility, primaryCareProvider, "organization"));
+		}
+		ParserUtils.updateReference(primaryCareProvider, gpRef);
 	}
 
 	/**
@@ -72,8 +103,29 @@ public class PD1Parser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path = "Patient.generalPractitioner.Practitioner", field = 4, comment = "Patient Primary Care Provider Name & ID No.")
 	public void setPatientPrimaryCareProviderNameIdNo(Practitioner patientPrimaryCareProviderNameIdNo) {
-		addResource(patientPrimaryCareProviderNameIdNo);
-		patient.addGeneralPractitioner(ParserUtils.toReference(patientPrimaryCareProviderNameIdNo, patient, "general-practitioner"));
+		if (primaryCareProvider == null) {
+			primaryCareProvider = createResource(PractitionerRole.class);
+			gpRef = ParserUtils.toReference(primaryCareProvider, patient, "general-practitioner");
+			patient.addGeneralPractitioner(gpRef);
+		}
+		if (primaryCareProvider.hasPractitioner()) {
+			for (HumanName name: patientPrimaryCareProviderNameIdNo.getName()) {
+				primaryCareDoc.addName(name);
+			}
+			for (Identifier ident : patientPrimaryCareProviderNameIdNo.getIdentifier()) {
+				primaryCareDoc.addIdentifier(ident);
+			}
+			for (Address addr: patientPrimaryCareProviderNameIdNo.getAddress()) {
+				primaryCareDoc.addAddress(addr);
+			}
+			for (ContactPoint telecom: patientPrimaryCareProviderNameIdNo.getTelecom()) {
+				primaryCareDoc.addTelecom(telecom);
+			}
+		} else {
+			addResource(primaryCareDoc = patientPrimaryCareProviderNameIdNo);
+			primaryCareProvider.setPractitioner(ParserUtils.toReference(patientPrimaryCareProviderNameIdNo, primaryCareProvider, "practitioner"));
+		}
+		ParserUtils.updateReference(primaryCareProvider, gpRef);
 	}
 
 	/**

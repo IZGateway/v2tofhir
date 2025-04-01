@@ -101,10 +101,24 @@ public class RXAParser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path = "Immunization.vaccineCode", field = 5, table = "0292", comment = "Administered Code")
 	public void setVaccineCode(CodeableConcept vaccineCode) {
+		// CDC says RXA-5 cannot repeat, but STC example shows a repeat, handle the
+		// repeat as additional codes.
 		if (izDetail.hasImmunization()) {
-			izDetail.immunization.setVaccineCode(vaccineCode);
+			if (izDetail.immunization.hasVaccineCode()) {
+				for (Coding coding: vaccineCode.getCoding()) {
+					izDetail.immunization.getVaccineCode().addCoding(coding);
+				}
+			} else {
+				izDetail.immunization.setVaccineCode(vaccineCode);
+			}
 		} else if (izDetail.hasRecommendation()) {
-			recommendation.addVaccineCode(vaccineCode);
+			if (recommendation.hasVaccineCode()) {
+				for (Coding coding: vaccineCode.getCoding()) {
+					recommendation.getVaccineCodeFirstRep().addCoding(coding);
+				}
+			} else {
+				recommendation.addVaccineCode(vaccineCode);
+			}
 		}
 	}
 	/*

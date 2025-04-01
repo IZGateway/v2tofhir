@@ -168,9 +168,9 @@ public class TestUtils {
 			log.warn("t is null for ", t.getMessage().encode());
 		}
 		boolean isDateTime = BaseDateTimeType.class.isAssignableFrom(expectedClass);
+		String value = null;
 		try {
-			String value = ParserUtils.toString(t);
-			
+			value = ParserUtils.toString(t);
 			if (isDateTime) {
 				Boolean cleanupNeeded = ParserUtils.needsIsoCleanup(t);
 				if (cleanupNeeded != null) {
@@ -179,9 +179,9 @@ public class TestUtils {
 			} else if (UriType.class.equals(expectedClass) || CodeType.class.equals(expectedClass)) {
 				value = StringUtils.trim(value);
 			} 
-			expectedFhirType = toFhirFromString.apply(normalizer.apply(value));
-			expectedFhirType.setValue(expectedFhirType.getValue());  // Force renormalization of String
+			expectedFhirType = StringUtils.isEmpty(value) ? null : toFhirFromString.apply(normalizer.apply(value));
 			if (expectedFhirType != null) {
+				expectedFhirType.setValue(expectedFhirType.getValue());  // Force renormalization of String
 				expectedFhirString = expectedFhirType.asStringValue();
 			}
 		} catch (Exception ex) {
@@ -197,7 +197,9 @@ public class TestUtils {
 			// See if we matched the input string value
 			return;
 		}
-		assertNotNull(expectedFhirType);
+		if (expectedFhirType == null && StringUtils.isEmpty(value)) {
+			return;
+		}
 
 		// TimeType has a bug in that it doesn't parse the actual value in use.
 		if (!"time".equals(expectedFhirType.fhirType())) {

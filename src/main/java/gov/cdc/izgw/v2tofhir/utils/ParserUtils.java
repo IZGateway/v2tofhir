@@ -674,7 +674,7 @@ public class ParserUtils {
 	 * @param resource	The resource the reference points to
 	 * @param ref	The reference to update.
 	 */
-	private static void updateReference(Resource resource, Reference ref) {
+	public static void updateReference(Resource resource, Reference ref) {
 		// Make very nice references by adding identifier and display
 		
 		// We take advantage of some polymorphic HAPI FHIR capabilities
