@@ -56,6 +56,8 @@ public class ContentUtils {
 	public static final IParser FHIR_YAML_PARSER = new YamlParser(ContentUtils.R4).setPrettyPrint(ContentUtils.PRETTY);
 	/** Supported FHIR Media Types */
 	protected static final List<MediaType> FHIR_MEDIA_TYPES = Arrays.asList(
+		new MediaType("application", "fhir"),
+		new MediaType("text", "fhir"),
 		FHIR_PLUS_JSON,
 		FHIR_PLUS_XML,
 		FHIR_PLUS_YAML,
@@ -65,6 +67,8 @@ public class ContentUtils {
 		MediaType.TEXT_XML
 	);
 	protected static final List<MediaType> HL7_MEDIA_TYPES = Arrays.asList(
+		new MediaType("application", "fhir"),
+		new MediaType("text", "fhir"),
 		FHIR_PLUS_JSON,
 		FHIR_PLUS_XML,
 		FHIR_PLUS_YAML,
@@ -72,8 +76,12 @@ public class ContentUtils {
 		MediaType.APPLICATION_JSON,
 		MediaType.APPLICATION_XML,
 		MediaType.TEXT_XML,
+		new MediaType("text", "hl7v2"),
 		MediaType.valueOf(HL7V2_TEXT_VALUE),
+		new MediaType("application", "hl7v2"),
 		MediaType.valueOf(HL7V2_XML_VALUE),
+		new MediaType("text", "cda"),
+		new MediaType("application", "cda"),
 		MediaType.valueOf(CDA_VALUE)
 	);
 
@@ -102,6 +110,7 @@ public class ContentUtils {
 		if (accept == null) {
 			accept = req.getHeader(HttpHeaders.ACCEPT);
 		}
+		accept = StringUtils.lowerCase(accept);
 		String contentType = null;
 		if (accept == null || "json".equals(accept)) {
 			contentType = MediaType.APPLICATION_JSON_VALUE;
@@ -178,6 +187,7 @@ public class ContentUtils {
 		h.add(HttpHeaders.CONTENT_TYPE, contentType);
 		return h;
 	}
+	
 	/**
 	 * Guess the media type of an input stream and return it.
 	 * @param inputStream	The input stream (must be a buffered input stream 

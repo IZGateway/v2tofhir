@@ -18,6 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.hl7.fhir.instance.model.api.IBase;
 import org.hl7.fhir.r4.model.Address;
+import org.hl7.fhir.r4.model.Annotation;
 import org.hl7.fhir.r4.model.BaseDateTimeType;
 import org.hl7.fhir.r4.model.BooleanType;
 import org.hl7.fhir.r4.model.CodeType;
@@ -36,6 +37,7 @@ import org.hl7.fhir.r4.model.InstantType;
 import org.hl7.fhir.r4.model.IntegerType;
 import org.hl7.fhir.r4.model.Location;
 import org.hl7.fhir.r4.model.Location.LocationMode;
+import org.hl7.fhir.r4.model.MarkdownType;
 import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.PositiveIntType;
 import org.hl7.fhir.r4.model.Practitioner;
@@ -43,6 +45,8 @@ import org.hl7.fhir.r4.model.PrimitiveType;
 import org.hl7.fhir.r4.model.Quantity;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.RelatedPerson;
+import org.hl7.fhir.r4.model.Specimen;
+import org.hl7.fhir.r4.model.Specimen.SpecimenCollectionComponent;
 import org.hl7.fhir.r4.model.StringType;
 import org.hl7.fhir.r4.model.TimeType;
 import org.hl7.fhir.r4.model.UnsignedIntType;
@@ -252,6 +256,8 @@ public class DatatypeConverter {
 			return clazz.cast(toPractitioner(t));
 		case "RelatedPerson":
 			return clazz.cast(toRelatedPerson(t));
+		case "Specimen":
+			return clazz.cast(toSpecimen(t));
 		case "Location":
 			return clazz.cast(toLocation(t));
 		default:
@@ -981,6 +987,51 @@ public class DatatypeConverter {
 		return person.isEmpty() ? null : person;
     }
     
+    /**
+     * Create Specimen resource from an SPS data type
+     * @param t	The SPS
+     * @return	The Specimen
+     */
+    public static Specimen toSpecimen(Type t) {
+    	t = adjustIfVaries(t);
+    	if ("SPS".equals(t.getName())) {
+        	Specimen specimen = new Specimen();
+        	specimen.setUserData(MessageParser.SOURCE, DatatypeConverter.class.getName());
+    		if (t instanceof Composite c) {
+				Type[] t2 = c.getComponents();
+				for (int i = 0; i < 6; i++) {
+					if (t2.length <= i) {
+						continue;
+					}
+					switch (i + 1) {
+					case 1:
+    					specimen.setType(toCodeableConcept(t2[i]));
+    					break;
+					case 2:
+						specimen.addContainer().setAdditive(toCodeableConcept(t2[i]));
+						break;
+					case 3:
+						specimen.addNote(new Annotation().setTextElement(toMarkdownType(t2[i])));
+						break;
+					case 4:
+						CodeableConcept bodySite = toCodeableConcept(t2[i]);
+						if (bodySite != null) {
+							specimen.setCollection(new SpecimenCollectionComponent().setBodySite(bodySite));
+						}
+						break;
+					case 6:
+						specimen.addCondition(toCodeableConcept(t2[i]));
+						break;
+					default:
+						break;
+					}
+				}
+    		}
+    		return specimen.isEmpty() ? null : specimen;
+    	}
+    	return null;
+    }
+    
 	private static void setSystemFromHD(Identifier id, Type[] types, int offset) {
 		List<String> s = DatatypeConverter.getSystemsFromHD(offset, types);
 		if (!s.isEmpty()) {
@@ -1330,6 +1381,21 @@ public class DatatypeConverter {
 			}
 		}
 		return null;
+	}
+	
+	/**
+     * Convert a HAPI V2 datatype to a FHIR MarkdownType
+     * @param t The HAPI V2 type to convert
+     * @return The MarkdownType converted from the V2 datatype
+     */
+	public static MarkdownType toMarkdownType(Type t) {
+		StringType st = toStringType(t);
+		if (st == null) {
+			return null;
+		}
+		MarkdownType md = new MarkdownType();
+		md.setValue(st.getValue());
+		return md;
 	}
 	/**
      * Convert a HAPI V2 datatype to a FHIR StringType
