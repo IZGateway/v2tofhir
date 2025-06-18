@@ -36,7 +36,8 @@
 		<project.java.package>${project.groupId}</project.java.package>
 		<!-- 17 needs a certified encryption module -->
 		<timestamp>${maven.build.timestamp}</timestamp>
-		<hapi.version>2.5.1</hapi.version>
+		<hapi.v2.version>2.5.1</hapi.v2.version>
+    <hapi.fhir.version>8.0.0</hapi.fhir.version>
 		<tomcat.version>10.1.42</tomcat.version>
 	</properties>
 	<distributionManagement>
@@ -55,85 +56,85 @@
 		<dependency>
 			<groupId>ca.uhn.hapi</groupId>
 			<artifactId>hapi-base</artifactId>
-			<version>${hapi.version}</version>
+			<version>${hapi.v2.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>ca.uhn.hapi</groupId>
 			<artifactId>hapi-structures-v21</artifactId>
-			<version>${hapi.version}</version>
+			<version>${hapi.v2.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>ca.uhn.hapi</groupId>
 			<artifactId>hapi-structures-v22</artifactId>
-			<version>${hapi.version}</version>
+			<version>${hapi.v2.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>ca.uhn.hapi</groupId>
 			<artifactId>hapi-structures-v23</artifactId>
-			<version>${hapi.version}</version>
+			<version>${hapi.v2.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>ca.uhn.hapi</groupId>
 			<artifactId>hapi-structures-v231</artifactId>
-			<version>${hapi.version}</version>
+			<version>${hapi.v2.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>ca.uhn.hapi</groupId>
 			<artifactId>hapi-structures-v24</artifactId>
-			<version>${hapi.version}</version>
+			<version>${hapi.v2.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>ca.uhn.hapi</groupId>
 			<artifactId>hapi-structures-v25</artifactId>
-			<version>${hapi.version}</version>
+			<version>${hapi.v2.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>ca.uhn.hapi</groupId>
 			<artifactId>hapi-structures-v251</artifactId>
-			<version>${hapi.version}</version>
+			<version>${hapi.v2.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>ca.uhn.hapi</groupId>
 			<artifactId>hapi-structures-v27</artifactId>
-			<version>${hapi.version}</version>
+			<version>${hapi.v2.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>ca.uhn.hapi</groupId>
 			<artifactId>hapi-structures-v28</artifactId>
-			<version>${hapi.version}</version>
+			<version>${hapi.v2.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>ca.uhn.hapi</groupId>
 			<artifactId>hapi-structures-v281</artifactId>
-			<version>${hapi.version}</version>
+			<version>${hapi.v2.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>ca.uhn.hapi.fhir</groupId>
 			<artifactId>hapi-fhir-base</artifactId>
-			<version>7.2.1</version>
+			<version>${hapi.fhir.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>ca.uhn.hapi.fhir</groupId>
 			<artifactId>hapi-fhir-structures-r4</artifactId>
-			<version>7.2.1</version>
+			<version>${hapi.fhir.version}</version>
 		</dependency>
 		<!-- Needed for FHIRPath -->
 		<dependency>
 			<groupId>ca.uhn.hapi.fhir</groupId>
 			<artifactId>hapi-fhir-validation</artifactId>
-			<version>7.2.1</version>
+			<version>${hapi.fhir.version}</version>
 		</dependency>
 		<!-- Needed for FHIRPath -->
 		<dependency>
 			<groupId>ca.uhn.hapi.fhir</groupId>
 			<artifactId>hapi-fhir-validation-resources-r4</artifactId>
-			<version>7.2.1</version>
+			<version>${hapi.fhir.version}</version>
 		</dependency>
 		<!-- Needed by FHIRPath -->
 		<dependency>
 			<groupId>ca.uhn.hapi.fhir</groupId>
 			<artifactId>hapi-fhir-caching-caffeine</artifactId>
-			<version>7.2.1</version>
+			<version>${hapi.fhir.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
@@ -179,11 +180,11 @@
 			<artifactId>commons-validator</artifactId>
 			<version>1.9.0</version>
 		</dependency>
-        <dependency>
-            <groupId>commons-beanutils</groupId>
-            <artifactId>commons-beanutils</artifactId>
-            <version>1.11.0</version>
-        </dependency>		
+    <dependency>
+      <groupId>commons-beanutils</groupId>
+      <artifactId>commons-beanutils</artifactId>
+      <version>1.11.0</version>
+    </dependency>		
 		<dependency>
 			<groupId>io.azam.ulidj</groupId>
 			<artifactId>ulidj</artifactId>
