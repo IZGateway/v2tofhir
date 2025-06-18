@@ -37,6 +37,7 @@
 		<!-- 17 needs a certified encryption module -->
 		<timestamp>${maven.build.timestamp}</timestamp>
 		<hapi.version>2.5.1</hapi.version>
+		<tomcat.version>10.1.42</tomcat.version>
 	</properties>
 	<distributionManagement>
 		<repository>
@@ -178,6 +179,11 @@
 			<artifactId>commons-validator</artifactId>
 			<version>1.9.0</version>
 		</dependency>
+        <dependency>
+            <groupId>commons-beanutils</groupId>
+            <artifactId>commons-beanutils</artifactId>
+            <version>1.11.0</version>
+        </dependency>		
 		<dependency>
 			<groupId>io.azam.ulidj</groupId>
 			<artifactId>ulidj</artifactId>
