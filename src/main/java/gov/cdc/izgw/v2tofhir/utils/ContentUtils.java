@@ -143,6 +143,8 @@ public class ContentUtils {
 		if (accept == null) {
 			accept = req.getHeader(HttpHeaders.ACCEPT);
 		}
+		accept = accept.toLowerCase();
+		h.remove(HttpHeaders.ACCEPT);
 		String contentType = null;
 		if (accept == null || accept.contains("json")) {
 			contentType = ContentUtils.FHIR_PLUS_JSON_VALUE;
@@ -175,7 +177,7 @@ public class ContentUtils {
 				contentType = ContentUtils.FHIR_PLUS_JSON_VALUE;
 			}
 		}
-		h.add(HttpHeaders.CONTENT_TYPE, contentType);
+		h.add(HttpHeaders.ACCEPT, contentType);
 		return h;
 	}
 	/**
