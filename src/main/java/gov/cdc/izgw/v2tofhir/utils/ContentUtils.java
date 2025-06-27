@@ -110,6 +110,9 @@ public class ContentUtils {
 		if (accept == null) {
 			accept = req.getHeader(HttpHeaders.ACCEPT);
 		}
+		if (accept != null) {
+			accept = accept.toLowerCase();
+		}
 		String contentType = null;
 		if (accept == null || accept.contains("json")) {
 			contentType = ContentUtils.FHIR_PLUS_JSON_VALUE;
