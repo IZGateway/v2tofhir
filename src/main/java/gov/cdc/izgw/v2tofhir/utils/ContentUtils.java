@@ -100,7 +100,7 @@ public class ContentUtils {
 	}
 
 	/**
-	 * This enables content negotiation for the FhirController
+	 * This enables content negotiation for the ModernizationController
 	 * @param req	The HttpServletRequest used to determine acceptable content types
 	 * @return	An HttpHeaders with the Content-Type header set appropriately.
 	 */
@@ -110,61 +110,21 @@ public class ContentUtils {
 		if (accept == null) {
 			accept = req.getHeader(HttpHeaders.ACCEPT);
 		}
-		accept = StringUtils.lowerCase(accept);
-		String contentType = null;
-		if (accept == null || "json".equals(accept)) {
-			contentType = MediaType.APPLICATION_JSON_VALUE;
-		} else if ("xml".equals(accept)) {	
-			contentType = MediaType.APPLICATION_XML_VALUE;
-		} else if ("yaml".equals(accept)) {	
-			contentType = ContentUtils.YAML_VALUE;
-		} else {
-			String[] types = accept.toLowerCase().split(",");
-			Arrays.sort(types, ContentUtils::compareByQvalue);
-			for (String type: types) {
-				String t = StringUtils.substringBefore(type, ";");
-				MediaType match = 
-						FHIR_MEDIA_TYPES
-							.stream()
-							.filter(m -> t.startsWith(m.toString()))
-							.findFirst().orElse(null);
-				if (match != null) {
-					contentType = match.toString();
-					break;
-				}
-			}
-			if (contentType == null) {
-				contentType = "application/json";
-			}
-		}
-		h.add(HttpHeaders.CONTENT_TYPE, contentType);
-		return h;
-	}
-
-	/**
-	 * This enables content negotiation for the ModernizationController
-	 * @param req	The HttpServletRequest used to determine acceptable content types
-	 * @return	An HttpHeaders with the Content-Type header set appropriately.
-	 */
-	public static HttpHeaders getHeaders2(HttpServletRequest req) {
-		HttpHeaders h = new HttpHeaders();
-		String accept = req.getParameter("_format");
-		if (accept == null) {
-			accept = req.getHeader(HttpHeaders.ACCEPT);
-		}
 		String contentType = null;
 		if (accept == null || accept.contains("json")) {
 			contentType = ContentUtils.FHIR_PLUS_JSON_VALUE;
-		} else if (accept.contains("hl7v2+xml") || accept.contains("hl7v2 xml")) {  // Second option addresses inadvertent use of + in URL parameter
-			contentType = ContentUtils.HL7V2_XML_VALUE;
+		} else if ((accept.contains("hl7") || accept.contains("v2"))) {  // Second option addresses inadvertent use of + in URL parameter
+			 if (accept.contains("xml")) {
+				 contentType = ContentUtils.HL7V2_XML_VALUE;
+			 } else {
+				 contentType = ContentUtils.HL7V2_TEXT_VALUE;
+			 }
+		} else if (accept.contains("cda")) {
+			contentType = ContentUtils.CDA_VALUE;
 		} else if (accept.contains("xml")) {	
 			contentType = ContentUtils.FHIR_PLUS_XML_VALUE;
 		} else if (accept.contains("yaml")) {	
 			contentType = ContentUtils.FHIR_PLUS_YAML_VALUE;
-		} else if (accept.contains("cda")) {
-			contentType = ContentUtils.CDA_VALUE;
-		} else if (accept.contains("hl7v2")) {
-			contentType = ContentUtils.HL7V2_TEXT_VALUE;
 		} else {
 			String[] types = accept.toLowerCase().split(",");
 			Arrays.sort(types, ContentUtils::compareByQvalue);
