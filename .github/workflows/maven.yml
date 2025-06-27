@@ -186,7 +186,7 @@ jobs:
       uses: dependency-check/Dependency-Check_Action@main
       with:
         project: DMI Converter
-        path: target/dmi-converter-${{env.IMAGE_BRANCH_TAG}}.jar
+        path: target/v2tofhir-${{env.IMAGE_BRANCH_TAG}}.jar
         format: 'HTML'
         args: >
           --failOnCVSS 7
