@@ -3,6 +3,7 @@ package gov.cdc.izgw.v2tofhir.converter;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -14,7 +15,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Supplier;
 
-import org.apache.commons.codec.binary.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.instance.model.api.IBaseMetaType;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Attachment;
@@ -80,6 +81,14 @@ public class MessageParser {
 	public static final String ORIGINAL_TEXT = "http://hl7.org/fhir/StructureDefinition/originalText";
 
 	private static final Context defaultContext = new Context(null);
+	private static List<String> packageSources = new ArrayList<>();
+	static {
+		packageSources.add(ERRParser.class.getPackageName());
+		String packages = System.getenv("V2TOFHIR_PARSER_PACKAGES");
+		if (StringUtils.isNotEmpty(packages)) {
+			Arrays.asList(packages.split("[,;\s]+")).forEach(p -> packageSources.add(p));
+		}
+	}
 	
 	/**
 	 * Enable or disable storing of Provenance information for created resources.
@@ -892,21 +901,34 @@ public class MessageParser {
 			return null;
 		}
 	}
+	
+	/** A cache of loaded parser classes */
+	private Map<String, Class<StructureParser>> parserClasses = new TreeMap<>();
 	/**
 	 * Load a parser for the specified segment or group
 	 * @param name	The name of the segment or group to find a parser for
 	 * @return	A StructureParser for the segment or group, or null if none found. 
 	 */
 	public Class<StructureParser> loadParser(String name) {
-		String packageName = ERRParser.class.getPackageName();
-		ClassLoader loader = MessageParser.class.getClassLoader();
-		try {
-			@SuppressWarnings("unchecked")
-			Class<StructureParser> clazz = (Class<StructureParser>) loader.loadClass(packageName + "." + name + "Parser");
+		Class<StructureParser> clazz = parserClasses.get(name);
+		if (clazz != null) {
 			return clazz;
-		} catch (ClassNotFoundException ex) {
-			return null;
-		} 
+		}
+		
+		ClassLoader loader = MessageParser.class.getClassLoader();
+		for (String packageName : packageSources) {
+			try {
+				@SuppressWarnings("unchecked") 
+				Class<StructureParser> clazz2 = (Class<StructureParser>) loader.loadClass(packageName + "." + name + "Parser");
+				parserClasses.put(name, clazz2);
+				return clazz2;
+			} catch (ClassNotFoundException ex) {
+				// Keep looking
+			} catch (Exception ex) {
+				log.error("{}.{} cannot be loaded: {}", packageName, name, ex.getMessage(), ex);
+			}
+		}
+		return null;
 	}
 	private static void warn(String msg, Object ...args) {
 		log.warn(msg, args);
