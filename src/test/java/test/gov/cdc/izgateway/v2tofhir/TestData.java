@@ -15,8 +15,8 @@ import java.util.ServiceConfigurationError;
 
 import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.instance.model.api.IBase;
+import org.hl7.fhir.r4.fhirpath.ExpressionNode;
 import org.hl7.fhir.r4.model.BooleanType;
-import org.hl7.fhir.r4.model.ExpressionNode;
 import org.hl7.fhir.r4.model.PrimitiveType;
 import org.hl7.fhir.r4.model.Type;
 
