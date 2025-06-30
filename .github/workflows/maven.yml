@@ -185,7 +185,7 @@ jobs:
         JAVA_HOME: /opt/jdk
       uses: dependency-check/Dependency-Check_Action@main
       with:
-        project: DMI Converter
+        project: V2 to FHIR
         path: target/v2tofhir-${{env.IMAGE_BRANCH_TAG}}.jar
         format: 'HTML'
         args: >
