@@ -182,7 +182,7 @@ jobs:
         ELASTIC_API_KEY: ${{ secrets.ELASTIC_API_KEY }}
 
       run: |
-        env && mvn dependency:get -Dartifact=org.jacoco:org.jacoco.agent:0.8.13 && mvn -B clean package install deploy site -Dbuildno=${{github.run_number}} \
+        env && mvn -B clean package install deploy site -Dbuildno=${{github.run_number}} \
             -DdoRevisionCheck=${{env.DO_REVISION_CHECK}} \
             -DskipDependencyCheck=true \
             -Dimage.tag=$IMAGE_BRANCH_TAG 

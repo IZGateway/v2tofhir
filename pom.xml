@@ -40,7 +40,7 @@
         <hapi.fhir.version>8.0.0</hapi.fhir.version>
 		<tomcat.version>10.1.42</tomcat.version>
 		<jacoco.version>0.8.13</jacoco.version>
-		<jacoco.jar>${user.home}/.m2/repository/org/jacoco/org.jacoco.agent/${jacoco.version}/org.jacoco.agent-${jacoco.version}-runtime.jar</jacoco.jar>
+		<jacoco.jar>${user.home}/.m2/repository/org/jacoco/org.jacoco.agent/${jacoco.version}/org.jacoco.agent-${jacoco.version}.jar</jacoco.jar>
 		<surefire.argLine>
 		  -Xmx2048m 
 		  --add-opens=java.base/java.lang.reflect=ALL-UNNAMED 
