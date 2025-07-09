@@ -153,7 +153,7 @@ jobs:
         # Disable revision check on push to main. 
         echo DO_REVISION_CHECK=false >> $GITHUB_ENV
 
-    - name: List m2
+    - name: List Environment variables
       shell: bash
       run: |
         # Display data for DX
@@ -167,7 +167,6 @@ jobs:
         echo IMAGE_TAG: $IMAGE_TAG 
         echo IMAGE_BRANCH_TAG: $IMAGE_BRANCH_TAG 
         cd ~/.m2
-        ls -l
           
     - name: Check that push to main is from release branch
       # Don't filter on testmain to test push to main route
@@ -213,6 +212,10 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./target/site
         destination_dir: current
+
+    - name: List M2
+      if: ${{ failure() }}
+      run: ls -lR ~/.m2 > ./m2-listing.txt
 
     - name: Upload build environment as artifact for failed build
       uses: actions/upload-artifact@v4
