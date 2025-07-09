@@ -1,6 +1,9 @@
 package gov.cdc.izgw.v2tofhir.segment;
 
+import java.util.List;
 import java.util.ServiceConfigurationError;
+
+import org.hl7.fhir.r4.model.Type;
 
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Segment;
@@ -21,7 +24,7 @@ public abstract class AbstractSegmentParser extends AbstractStructureParser {
 	 * @param p	The message parser
 	 * @param s	The segment type name
 	 */
-	AbstractSegmentParser(MessageParser p, String s) {
+	protected AbstractSegmentParser(MessageParser p, String s) {
 		super(p, s);
 	}
 	
@@ -67,5 +70,4 @@ public abstract class AbstractSegmentParser extends AbstractStructureParser {
 	void warnException(String msg, Object ...args) {
 		log.warn(msg, args);
 	}
-		
 }
