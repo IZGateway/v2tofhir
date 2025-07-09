@@ -137,19 +137,19 @@ jobs:
         echo IMAGE_TAG=$IMAGE_TAG >> $GITHUB_ENV
         IMAGE_BRANCH_TAG=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout | sed "s/-.*$/-v2tofhir-RELEASE/"`
         echo IMAGE_BRANCH_TAG=$IMAGE_BRANCH_TAG >> $GITHUB_ENV
-        mvn versions:set -DnewVersion=$IMAGE_BRANCH_TAG -f pom.xml
-        if [ ${{ github.event_name }} == 'push' ] 
-        then
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-          git add -A
-          # Only push if something was committed
-          if git commit -m "Update version to $IMAGE_BRANCH_TAG"
-          then
-            git pull
-            git push --force
-          fi
-        fi
+        #mvn versions:set -DnewVersion=$IMAGE_BRANCH_TAG -f pom.xml
+        #if [ ${{ github.event_name }} == 'push' ] 
+        #then
+        #  git config user.name github-actions
+        #  git config user.email github-actions@github.com
+        #  git add -A
+        #  # Only push if something was committed
+        #  if git commit -m "Update version to $IMAGE_BRANCH_TAG"
+        #  then
+        #    git pull
+        #    git push --force
+        #  fi
+        #fi
         # Disable revision check on push to main. 
         echo DO_REVISION_CHECK=false >> $GITHUB_ENV
 
