@@ -8,6 +8,11 @@ import ca.uhn.hl7v2.model.Segment;
 import ca.uhn.hl7v2.model.Type;
 import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
 
+/**
+ * Utilities for manipulating V2 messages for FHIR Conversion
+ * 
+ * @author Audacious Inquiry
+ */
 public class V2Utils {
 
 	/** 

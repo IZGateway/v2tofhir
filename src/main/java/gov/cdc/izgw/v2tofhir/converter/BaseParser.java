@@ -12,7 +12,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Supplier;
 
-import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.instance.model.api.IBaseMetaType;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Bundle;
@@ -30,7 +29,6 @@ import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Bundle.BundleType;
 import org.hl7.fhir.r4.model.Provenance.ProvenanceEntityRole;
 
-import gov.cdc.izgw.v2tofhir.segment.MSHParser;
 import gov.cdc.izgw.v2tofhir.segment.Processor;
 import gov.cdc.izgw.v2tofhir.utils.Codes;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;

@@ -66,6 +66,7 @@ public abstract class AbstractStructureParser {
 		}
 	}
 	
+	/** The current segment */
 	protected Segment segment;
 	/**
 	 * Returns the current segment being parsed.
@@ -115,7 +116,7 @@ public abstract class AbstractStructureParser {
 	}
 	
 	/**
-	 * Implement isEmpty for Parser<Structure>
+	 * Implement isEmpty for Parser&lt;Structure&gt;
 	 * @param s	The structure to check
 	 * @return true if empty or in error
 	 */
