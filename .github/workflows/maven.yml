@@ -147,7 +147,7 @@ jobs:
           if git commit -m "Update version to $IMAGE_BRANCH_TAG"
           then
             git pull
-            git push
+            git push --force
           fi
         fi
         # Disable revision check on push to main. 
