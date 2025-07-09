@@ -35,6 +35,7 @@ import gov.cdc.izgw.v2tofhir.annotation.ComesFrom;
 import gov.cdc.izgw.v2tofhir.annotation.Produces;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
 import gov.cdc.izgw.v2tofhir.utils.Codes;
+import gov.cdc.izgw.v2tofhir.utils.FhirUtils;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 import gov.cdc.izgw.v2tofhir.utils.Systems;
 import lombok.extern.slf4j.Slf4j;
@@ -133,7 +134,7 @@ public class PIDParser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path="Patient.patient-mothersMaidenName.valueString", field = 6, fhir = HumanName.class)
 	public void addMothersMaidenName(HumanName hn) {
-		if (isNotEmpty(hn) && hn.hasFamily()) {
+		if (!FhirUtils.isEmpty(hn) && hn.hasFamily()) {
 			patient.addExtension()
 				.setUrl(MOTHERS_MAIDEN_NAME)
 				.setValue(hn.getFamilyElement());
@@ -151,7 +152,7 @@ public class PIDParser extends AbstractSegmentParser {
 	@ComesFrom(path="Patient.birthDate", field = 7, fhir = DateTimeType.class,
 			   also="Patient.patient-birthTime")
 	public void addBirthDateTime(DateTimeType dt) {
-		if (isNotEmpty(dt)) {
+		if (!FhirUtils.isEmpty(dt)) {
 			patient.setBirthDate(dt.getValue());
 			if (dt.getPrecision().compareTo(TemporalPrecisionEnum.DAY) > 0) {
 				patient.getBirthDateElement().addExtension()
@@ -196,15 +197,15 @@ public class PIDParser extends AbstractSegmentParser {
 		case "A":	enumeration.setValue(AdministrativeGender.OTHER); break;
 		case "F":	enumeration.setValue(AdministrativeGender.FEMALE); break;
 		case "M":	enumeration.setValue(AdministrativeGender.MALE); break;
-		case "N":	StructureParser.setDataAbsentReason(enumeration, "not-applicable"); break;
+		case "N":	FhirUtils.setDataAbsentReason(enumeration, "not-applicable"); break;
 		case "O":	enumeration.setValue(AdministrativeGender.OTHER); break;
 		case "U", "UNK":
 					enumeration.setValue(AdministrativeGender.UNKNOWN); break;
 		case "ASKU":
-					StructureParser.setDataAbsentReason(enumeration, "asked-unknown"); break;
+					FhirUtils.setDataAbsentReason(enumeration, "asked-unknown"); break;
 		case "PHC1175":
-					StructureParser.setDataAbsentReason(enumeration, "asked-declined"); break;
-		default:	StructureParser.setDataAbsent(enumeration); break;
+					FhirUtils.setDataAbsentReason(enumeration, "asked-declined"); break;
+		default:	FhirUtils.setDataAbsent(enumeration); break;
 		}
 	}
 	
@@ -218,7 +219,7 @@ public class PIDParser extends AbstractSegmentParser {
 		case "unsupported": gender.setValue(AdministrativeGender.OTHER); break;
 		case "unknown": 	gender.setValue(AdministrativeGender.UNKNOWN); break;
 		case "temp-unknown":gender.setValue(AdministrativeGender.UNKNOWN); break;
-		default:			StructureParser.setDataAbsentReason(gender, code); break;
+		default:			FhirUtils.setDataAbsentReason(gender, code); break;
 		}
 	}
 
@@ -242,7 +243,7 @@ public class PIDParser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path="Patient.name", field = 9)
 	public void addAlias(HumanName alias) {
-		if (isNotEmpty(alias)) {
+		if (!FhirUtils.isEmpty(alias)) {
 			// Aliases are NOT official names.
 			if (!alias.hasUse()) { alias.setUse(NameUse.USUAL); }
 			patient.addName(alias);
@@ -260,7 +261,7 @@ public class PIDParser extends AbstractSegmentParser {
 				}
 	)
 	public void addRace(CodeableConcept race) {
-		if (isEmpty(race)) {
+		if (FhirUtils.isEmpty(race)) {
 			return;
 		}
 		
@@ -409,12 +410,12 @@ public class PIDParser extends AbstractSegmentParser {
 			}
 	)
 	public void addEthnicity(CodeableConcept ethnicity) {
-		if (isEmpty(ethnicity)) {
+		if (FhirUtils.isEmpty(ethnicity)) {
 			return;
 		}
 		
 		Extension ethnicityExtension = patient.addExtension().setUrl(US_CORE_ETHNICITY);
-		getContext().setProperty(ethnicityExtension.getUrl(), ethnicityExtension);
+		getMessageParser().getContext().setProperty(ethnicityExtension.getUrl(), ethnicityExtension);
 		Extension text = null;
 		if (ethnicity.hasText()) {
 			text = new Extension("text", new StringType(ethnicity.getText()));
@@ -637,12 +638,12 @@ public class PIDParser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path="Account.identifier", field = 18, comment = "Patient Account")
 	public void addAccount(Identifier accountId) {
-		if (isEmpty(accountId)) {
+		if (FhirUtils.isEmpty(accountId)) {
 			return;
 		}
 		Account account = createResource(Account.class);
 		account.addIdentifier(accountId);
-		if (isNotEmpty(patient)) {
+		if (!FhirUtils.isEmpty(patient)) {
 			account.setStatus(AccountStatus.ACTIVE);
 			account.addSubject(ParserUtils.toReference(patient, account, "patient", "subject"));
 		}
@@ -654,7 +655,7 @@ public class PIDParser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path="Patient.identifier", field = 19, comment = "Social Security Number")
 	public void addSSN(Identifier ssn) {
-		if (isEmpty(patient) || isEmpty(ssn)) {
+		if (FhirUtils.isEmpty(patient) || FhirUtils.isEmpty(ssn)) {
 			return;
 		}
 		if (!ssn.hasType()) {
@@ -672,7 +673,7 @@ public class PIDParser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path="RelatedPerson.identifier", field = 21, comment="Mother's identifier")
 	public void addMother(Identifier mother) {
-		if (isEmpty(patient) || isEmpty(mother)) {
+		if (FhirUtils.isEmpty(patient) || FhirUtils.isEmpty(mother)) {
 			return;
 		}
 		RelatedPerson rp = (RelatedPerson) patient.getUserData("mother");
@@ -691,7 +692,7 @@ public class PIDParser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path="Patient.patient-birthPlace", field = 23)
 	public void addBirthPlace(StringType birthPlace) {
-		if (isEmpty(patient) || isEmpty(birthPlace)) {
+		if (FhirUtils.isEmpty(patient) || FhirUtils.isEmpty(birthPlace)) {
 			return;
 		}
 		patient.addExtension(PATIENT_BIRTH_PLACE, birthPlace);

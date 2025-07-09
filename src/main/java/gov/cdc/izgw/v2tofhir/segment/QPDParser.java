@@ -39,6 +39,7 @@ import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
 import gov.cdc.izgw.v2tofhir.utils.IzQuery;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
+import gov.cdc.izgw.v2tofhir.utils.V2Utils;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -137,7 +138,7 @@ public class QPDParser extends AbstractSegmentParser {
 	
 	@Override
 	public void parse(Segment seg) {
-		Type query = getField(seg, 1);
+		Type query = V2Utils.getField(seg, 1);
 		CodeableConcept queryName = DatatypeConverter.toCodeableConcept(query);
 		if (queryName == null) {
 			try {
@@ -151,7 +152,7 @@ public class QPDParser extends AbstractSegmentParser {
 		
 		params.getMeta().addTag(queryName.getCodingFirstRep());
 		
-		String queryTag = ParserUtils.toString(getField(seg, 2));
+		String queryTag = ParserUtils.toString(V2Utils.getField(seg, 2));
 		String[] parameters = getQueryParameters(queryName);
 		params.getMeta().addTag("QueryTag", queryTag, null);
 
@@ -184,7 +185,7 @@ public class QPDParser extends AbstractSegmentParser {
 		request = new StringBuilder("/fhir/");
 		request.append(parameters[3]).append("?");
 		for (int i = 3, offset = 4; i <= seg.numFields() && offset < parameters.length; i++, offset += 4) {
-			Type[] types = getFields(seg, i); // Get the fields
+			Type[] types = V2Utils.getFields(seg, i); // Get the fields
 			for (Type t : types) {
 				String fhirType = parameters[offset + 3];
 				t = adjustIfVaries(t, parameters[offset + 1]);
