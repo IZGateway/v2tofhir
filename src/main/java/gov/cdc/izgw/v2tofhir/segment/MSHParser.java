@@ -15,6 +15,8 @@ import org.hl7.fhir.r4.model.OperationOutcome;
 import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.Provenance;
 import org.hl7.fhir.r4.model.Reference;
+
+import ca.uhn.hl7v2.model.Segment;
 import gov.cdc.izgw.v2tofhir.annotation.ComesFrom;
 import gov.cdc.izgw.v2tofhir.annotation.Produces;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
@@ -31,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Produces(segment="MSH", resource=MessageHeader.class, extra = { Organization.class, OperationOutcome.class, Bundle.class })
 @Slf4j
-public class MSHParser extends AbstractSegmentParser {
+public class MSHParser extends AbstractSegmentParser implements Processor<Segment> {
 	private static final String SENDER = "sender";
 
 	private static final String RECEIVER = "receiver";

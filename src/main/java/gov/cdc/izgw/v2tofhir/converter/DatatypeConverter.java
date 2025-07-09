@@ -774,7 +774,7 @@ public class DatatypeConverter {
 			return null;
 		}
 		Location location = new Location();
-    	location.setUserData(MessageParser.SOURCE, DatatypeConverter.class.getName());
+    	location.setUserData(BaseParser.SOURCE, DatatypeConverter.class.getName());
 
 		if (t instanceof Primitive) {
 			location.setName(ParserUtils.toString(t));
@@ -855,7 +855,7 @@ public class DatatypeConverter {
 
 			if (curl.hasName()) {
 				Location partOf = new Location();
-		    	partOf.setUserData(MessageParser.SOURCE, DatatypeConverter.class.getName());
+		    	partOf.setUserData(BaseParser.SOURCE, DatatypeConverter.class.getName());
 				curl.setPartOf(ParserUtils.toReference(partOf, curl, "partof"));
 				curl = partOf;
 			}
@@ -943,7 +943,7 @@ public class DatatypeConverter {
     public static Organization toOrganization(Type t) {
     	t = adjustIfVaries(t);
     	Organization org = new Organization();
-    	org.setUserData(MessageParser.SOURCE, DatatypeConverter.class.getName());
+    	org.setUserData(BaseParser.SOURCE, DatatypeConverter.class.getName());
 		org.setName(ParserUtils.toString(t));
 
     	if ("XON".equals(t.getName())) {
@@ -961,7 +961,7 @@ public class DatatypeConverter {
     public static Practitioner toPractitioner(Type t) {
     	t = adjustIfVaries(t);
     	Practitioner pract = new Practitioner();
-    	pract.setUserData(MessageParser.SOURCE, DatatypeConverter.class.getName());
+    	pract.setUserData(BaseParser.SOURCE, DatatypeConverter.class.getName());
 
 		pract.addName(toHumanName(t));
 		if (PEOPLE_TYPES.contains(t.getName())) {
@@ -978,7 +978,7 @@ public class DatatypeConverter {
     public static RelatedPerson toRelatedPerson(Type t) {
     	t = adjustIfVaries(t);
     	RelatedPerson person = new RelatedPerson();
-    	person.setUserData(MessageParser.SOURCE, DatatypeConverter.class.getName());
+    	person.setUserData(BaseParser.SOURCE, DatatypeConverter.class.getName());
 
     	person.addName(toHumanName(t));
 		if (PEOPLE_TYPES.contains(t.getName())) {
@@ -996,7 +996,7 @@ public class DatatypeConverter {
     	t = adjustIfVaries(t);
     	if ("SPS".equals(t.getName())) {
         	Specimen specimen = new Specimen();
-        	specimen.setUserData(MessageParser.SOURCE, DatatypeConverter.class.getName());
+        	specimen.setUserData(BaseParser.SOURCE, DatatypeConverter.class.getName());
     		if (t instanceof Composite c) {
 				Type[] t2 = c.getComponents();
 				for (int i = 0; i < 6; i++) {

@@ -11,6 +11,7 @@ import gov.cdc.izgw.v2tofhir.annotation.Produces;
 import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
+import gov.cdc.izgw.v2tofhir.utils.V2Utils;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -53,8 +54,8 @@ public class QIDParser extends AbstractSegmentParser {
 	@Override
 	public void parse(Segment qid) {
 		setup();
-		String queryTag = ParserUtils.toString(getField(qid, 1));
-		Coding queryName = DatatypeConverter.toCoding(getField(qid, 2));
+		String queryTag = ParserUtils.toString(V2Utils.getField(qid, 1));
+		Coding queryName = DatatypeConverter.toCoding(V2Utils.getField(qid, 2));
 		params.addParameter("QueryTag", queryTag);
 		params.addParameter("QueryName", queryName);
 	}
