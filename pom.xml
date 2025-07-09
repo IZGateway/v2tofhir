@@ -45,7 +45,7 @@
 		  -Xmx2048m 
 		  --add-opens=java.base/java.lang.reflect=ALL-UNNAMED 
 		  --add-opens=java.base/java.net=ALL-UNNAMED 
-		  -javaagent:${jacoco.jar}=destfile=target/jacoco.exec,append=true,output=file
+		  <!-- -javaagent:${jacoco.jar}=destfile=target/jacoco.exec,append=true,output=file -->
 		</surefire.argLine>
 	</properties>
 	<distributionManagement>
@@ -221,11 +221,6 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-        <dependency>
-            <groupId>org.jacoco</groupId>
-            <artifactId>org.jacoco.agent</artifactId>
-            <version>${jacoco.version}</version>
-        </dependency>
 	</dependencies>
 	<build>
 		<pluginManagement>
