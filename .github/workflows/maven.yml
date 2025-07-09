@@ -5,15 +5,13 @@ on:
     branches:
       - Release*
       - main
-      - testrelease
-      - testmain
+      - develop
 
   pull_request:
     branches:
       - Release*
       - main
-      - testrelease
-      - testmain
+      - develop
 
 # Ensure only one build changes dev environment at the same time    
 concurrency: v2tofhir
@@ -106,8 +104,6 @@ jobs:
         echo IMAGE_BRANCH_TAG=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout` >> $GITHUB_ENV
         # default to force a revision check unless releasing
         echo DO_REVISION_CHECK=true >> $GITHUB_ENV
-        # Skip dependency check
-        echo SKIP_DEPENDENCY_CHECK=false >> $GITHUB_ENV
 
     # If pulling to main branch (cutting a release), set branch tag appropriately  
     - name: Sets env vars for pull to main 
@@ -121,8 +117,6 @@ jobs:
 
         # Skip revision check on merge
         echo DO_REVISION_CHECK=false >> $GITHUB_ENV
-        # Skip dependency check
-        echo SKIP_DEPENDENCY_CHECK=false >> $GITHUB_ENV
 
     # If pushing to main branch (cutting a release), set branch tag appropriately  
     - name: Sets env vars for pull to main 
@@ -147,8 +141,6 @@ jobs:
         fi
         # Disable revision check on push to main. 
         echo DO_REVISION_CHECK=false >> $GITHUB_ENV
-        # But enable dependency check
-        echo SKIP_DEPENDENCY_CHECK=false >> $GITHUB_ENV
 
     - name: List m2
       shell: bash
@@ -161,7 +153,6 @@ jobs:
         echo EVENT_NAME ${{ github.event_name }}
         echo TAG: $BASE_TAG
         echo DO_REVISION_CHECK: $DO_REVISION_CHECK 
-        echo SKIP_DEPENDENCY_CHECK: $SKIP_DEPENDENCY_CHECK
         echo IMAGE_TAG: $IMAGE_TAG 
         echo IMAGE_BRANCH_TAG: $IMAGE_BRANCH_TAG 
         cd ~/.m2
@@ -183,11 +174,30 @@ jobs:
       run: |
         env && mvn -B clean package install deploy site -Dbuildno=${{github.run_number}} \
             -DdoRevisionCheck=${{env.DO_REVISION_CHECK}} \
-            -DskipDependencyCheck=${{env.SKIP_DEPENDENCY_CHECK}} \
+            -DskipDependencyCheck=true \
             -Dimage.tag=$IMAGE_BRANCH_TAG 
 
+# Use GitHub Action to speed up and improve dependency checking
+# NOTE: Disable automatic dependency checking in the build, this replaces it          
+    - name: Dependency Check
+      env:  
+        # Per https://github.com/marketplace/actions/dependency-check, fix JAVA_HOME location for action
+        JAVA_HOME: /opt/jdk
+      uses: dependency-check/Dependency-Check_Action@main
+      with:
+        project: V2 to FHIR
+        path: target/v2tofhir-${{env.IMAGE_BRANCH_TAG}}.jar
+        format: 'HTML'
+        args: >
+          --failOnCVSS 7
+          --suppression ./dependency-suppression.xml
+          --disableNuspec    
+          --disableNugetconf  
+          --disableAssembly            
+            
     - name: Publish Site
       uses: peaceiris/actions-gh-pages@v4
+      if: ${{ always() }}
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./target/site
@@ -202,10 +212,10 @@ jobs:
 
     - name: Upload dependency check log
       uses: actions/upload-artifact@v4
-      if: ${{ ! env.SKIP_DEPENDENCY_CHECK }}
+      if: ${{ always() }}
       with:
         name: DependencyCheck
-        path: ./target/dependency-check-report.*
+        path: ./reports
 
   release:
     needs: build

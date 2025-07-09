@@ -315,7 +315,7 @@ public class FieldHandler implements Comparable<FieldHandler> {
 	 * @param p	The structure parser to compute the field handlers for.
 	 * @param fieldHandlers	The list to update with all of the field handlers 
 	 */
-	protected static void initFieldHandlers(AbstractStructureParser p, List<FieldHandler> fieldHandlers) {
+	public static void initFieldHandlers(AbstractStructureParser p, List<FieldHandler> fieldHandlers) {
 		// Synchronize on the list in case two callers are trying to to initialize it at the 
 		// same time.  This avoids one thread from trying to use fieldHandlers while another 
 		// potentially overwrites it.
