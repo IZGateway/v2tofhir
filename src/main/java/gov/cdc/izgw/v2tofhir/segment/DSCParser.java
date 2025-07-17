@@ -3,6 +3,7 @@ package gov.cdc.izgw.v2tofhir.segment;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hl7.fhir.instance.model.api.IBase;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Parameters;
 
@@ -50,9 +51,9 @@ public class DSCParser extends AbstractSegmentParser {
 	}
 	
 	@Override
-	public void parse(Segment qid) {
-		setup();
+	public IBase parse(Segment qid) {
 		params.addParameter("Pointer", ParserUtils.toString(qid, 1));
 		params.addParameter("Style", ParserUtils.toString(qid, 2));
+		return params;
 	}
 }

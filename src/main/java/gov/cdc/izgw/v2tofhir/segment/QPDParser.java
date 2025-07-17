@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
+import org.hl7.fhir.instance.model.api.IBase;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.BaseDateTimeType;
@@ -137,18 +138,18 @@ public class QPDParser extends AbstractSegmentParser {
 	}
 	
 	@Override
-	public void parse(Segment seg) {
+	public IBase parse(Segment seg) {
 		Type query = V2Utils.getField(seg, 1);
 		CodeableConcept queryName = DatatypeConverter.toCodeableConcept(query);
 		if (queryName == null) {
 			try {
-				warn("Cannot parse unnamed query for: " + seg.encode());
+				getParser().warn("Cannot parse unnamed query for: " + seg.encode());
 			} catch (HL7Exception e) {
 				// Ignore it.
 			}
-			return;
+			return null;
 		}
-		setup();
+		IBase b = setup();
 		
 		params.getMeta().addTag(queryName.getCodingFirstRep());
 		
@@ -157,8 +158,8 @@ public class QPDParser extends AbstractSegmentParser {
 		params.getMeta().addTag("QueryTag", queryTag, null);
 
 		if (parameters.length == 0) {
-			log.warn("Cannot parse {} query", query);
-			return;
+			getParser().warn("Cannot parse {} query", query);
+			return b;
 		}
 		String request = getSearchRequest(seg, parameters);
 		
@@ -178,6 +179,7 @@ public class QPDParser extends AbstractSegmentParser {
 		}
 		// Always add the search translation to params.
 		params.addParameter("_search", request);
+		return b;
 	}
 
 	private String getSearchRequest(Segment seg, String[] parameters) {

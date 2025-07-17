@@ -117,7 +117,7 @@ class MessageParserTests extends TestBase {
 		}
 		for (String segment: testData.getTestData().split("\r")) {
 			String segmentName = StringUtils.left(segment, 3);
-			Class<Processor<Structure>> parser = MP.loadParser(segmentName);
+			Class<Processor<Message, Structure>> parser = MP.loadParser(segmentName);
 			if (parser == null) {
 				// Skip segments there is no parser for.
 				continue;

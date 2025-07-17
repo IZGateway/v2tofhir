@@ -37,7 +37,7 @@ import lombok.extern.slf4j.Slf4j;
  * @author Audacious Inquiry
  */
 @Slf4j
-public class MessageParser extends BaseParser<Message, Structure> {
+public class MessageParser extends BaseParser<Message,Structure> implements Parser<Message,Structure> {
 	static {
 		BaseParser.packageSources.add(ERRParser.class.getPackageName());
 		String packages = System.getenv("V2TOFHIR_PARSER_PACKAGES");
@@ -83,10 +83,10 @@ public class MessageParser extends BaseParser<Message, Structure> {
 			encoded = msg.encode();
 			data = encoded.getBytes(StandardCharsets.UTF_8);
 		} catch (HL7Exception e) {
-			warnException("Could not encode the message: {}", e.getMessage(), e);
+			warn("Could not encode the message: {}", e.getMessage(), e);
 		}
 		DocumentReference dr = createResource(DocumentReference.class);
-		dr.setUserData(BaseParser.SOURCE, MessageParser.class.getName()); // Mark infrastructure created resources
+		dr.setUserData(Parser.SOURCE, MessageParser.class.getName()); // Mark infrastructure created resources
 		dr.setStatus(DocumentReferenceStatus.CURRENT);
 		// See https://confluence.hl7.org/display/V2MG/HL7+locally+registered+V2+Media+Types
 		Attachment att = dr.addContent().getAttachment().setContentType("text/hl7v2; charset=utf-8");

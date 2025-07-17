@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.hl7.fhir.instance.model.api.IBaseResource;
+import org.hl7.fhir.r4.model.Base;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Parameters;
 import ca.uhn.hl7v2.model.Segment;
@@ -52,11 +53,12 @@ public class QIDParser extends AbstractSegmentParser {
 	}
 	
 	@Override
-	public void parse(Segment qid) {
+	public Base parse(Segment qid) {
 		setup();
 		String queryTag = ParserUtils.toString(V2Utils.getField(qid, 1));
 		Coding queryName = DatatypeConverter.toCoding(V2Utils.getField(qid, 2));
 		params.addParameter("QueryTag", queryTag);
 		params.addParameter("QueryName", queryName);
+		return params;
 	}
 }

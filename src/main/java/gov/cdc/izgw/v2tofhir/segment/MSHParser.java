@@ -16,7 +16,6 @@ import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.Provenance;
 import org.hl7.fhir.r4.model.Reference;
 
-import ca.uhn.hl7v2.model.Segment;
 import gov.cdc.izgw.v2tofhir.annotation.ComesFrom;
 import gov.cdc.izgw.v2tofhir.annotation.Produces;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
@@ -24,7 +23,7 @@ import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * The MSH Parser creates a MessageHeader Resource for MSH segements.
+ * The MSH Parser creates a MessageHeader Resource for MSH segments.
  * 
  * @see <a href="https://hl7.org/fhir/uv/v2mappings/2024Jan/ConceptMap-segment-msh-to-bundle.html">V2-to-FHIR: MSH to Bundle</a>
  * @see <a href="https://hl7.org/fhir/uv/v2mappings/2024Jan/ConceptMap-segment-msh-to-messageheader.html">V2-to-FHIR: MSH to MessageHeader</a>
@@ -33,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Produces(segment="MSH", resource=MessageHeader.class, extra = { Organization.class, OperationOutcome.class, Bundle.class })
 @Slf4j
-public class MSHParser extends AbstractSegmentParser implements Processor<Segment> {
+public class MSHParser extends AbstractSegmentParser {
 	private static final String SENDER = "sender";
 
 	private static final String RECEIVER = "receiver";

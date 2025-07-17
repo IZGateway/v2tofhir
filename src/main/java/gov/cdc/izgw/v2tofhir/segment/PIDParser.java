@@ -266,7 +266,7 @@ public class PIDParser extends AbstractSegmentParser {
 		}
 		
 		Extension raceExtension = patient.addExtension().setUrl(US_CORE_RACE);
-		getContext().setProperty(raceExtension.getUrl(), raceExtension);
+		getParser().getContext().setProperty(raceExtension.getUrl(), raceExtension);
 		Extension text = setRaceText(race, raceExtension);
 		
 		if (!setCDCREC(race, raceExtension) &&  	// Didn't find CDCREC
@@ -415,7 +415,7 @@ public class PIDParser extends AbstractSegmentParser {
 		}
 		
 		Extension ethnicityExtension = patient.addExtension().setUrl(US_CORE_ETHNICITY);
-		getMessageParser().getContext().setProperty(ethnicityExtension.getUrl(), ethnicityExtension);
+		getParser().getContext().setProperty(ethnicityExtension.getUrl(), ethnicityExtension);
 		Extension text = null;
 		if (ethnicity.hasText()) {
 			text = new Extension("text", new StringType(ethnicity.getText()));

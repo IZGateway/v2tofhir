@@ -2,14 +2,12 @@ package gov.cdc.izgw.v2tofhir.segment;
 
 import java.util.List;
 
+import org.hl7.fhir.instance.model.api.IBase;
+import org.hl7.fhir.r4.model.Base;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.OperationOutcome;
 import org.hl7.fhir.r4.model.OperationOutcome.OperationOutcomeIssueComponent;
-
-import ca.uhn.hl7v2.model.Message;
-import ca.uhn.hl7v2.model.Structure;
 import gov.cdc.izgw.v2tofhir.annotation.Produces;
-import gov.cdc.izgw.v2tofhir.converter.Context;
 import gov.cdc.izgw.v2tofhir.converter.Parser;
 
 /**
@@ -17,10 +15,10 @@ import gov.cdc.izgw.v2tofhir.converter.Parser;
  * A processor for a structure to convert to FHIR.
  * 
  * @author Audacious Inquiry
- *
+ * @param <U>	The unit the structure lives in. 
  * @param <S>	The structure to convert.
  */
-public interface Processor<S> {
+public interface Processor<U, S> {
 	/**
 	 * This is a do-nothing marker class to indicate Parsers that cannot be found
 	 * in the cache of processors.
@@ -28,10 +26,11 @@ public interface Processor<S> {
 	 * @author Audacious Inquiry
 	 *
 	 */
-	static class NullProcessor implements Processor<Object> {
+	static class NullProcessor implements Processor<Object, Object> {
 		@Override
-		public void parse(Object structure) {
+		public Base parse(Object structure) {
 			// Do Nothing
+			return null;
 		}
 
 		@Override
@@ -45,22 +44,24 @@ public interface Processor<S> {
 		}
 
 		@Override
-		public Context<Parser<Message, Structure>> getContext() {
+		public Parser<Object, Object> getParser() {
+			// TODO Auto-generated method stub
 			return null;
 		}
 	}
 
 	/** A do-nothing processor.  */
-	static final Processor<Object> NULL_PROCESSOR = new NullProcessor();
+	static final Processor<Object, Object> NULL_PROCESSOR = new NullProcessor();
 	/** The class of the do-nothing processor.  */
 	static final Class<NullProcessor> NULL_PROCESSOR_CLASS = NullProcessor.class;
 
 	/**
 	 * Parses an structure into FHIR Resources.
 	 * @param structure	The structure to parse
+	 * @return  the constructed FHIR Resource or data type
 	 * @throws Exception A structure to parse.
 	 */
-	void parse(S structure) throws Exception;
+	IBase parse(S structure) throws Exception;
 	
 	/**
 	 * Returns true if the structure is effectively empty (e.g., no conversion to be performed).
@@ -84,9 +85,9 @@ public interface Processor<S> {
 	String structure();
 
 	/**
-	 * @return the current parsing context
+	 * @return the current parser
 	 */
-	Context<Parser<Message, Structure>> getContext();
+	Parser<U, S> getParser();
 
 	/**
 	 * Get the bundle that is being prepared.
@@ -94,7 +95,7 @@ public interface Processor<S> {
 	 * @return The bundle that is being prepared during the parse.
 	 */
 	default public Bundle getBundle() {
-		return getContext().getBundle();
+		return getParser().getContext().getBundle();
 	}
 
 	/**
