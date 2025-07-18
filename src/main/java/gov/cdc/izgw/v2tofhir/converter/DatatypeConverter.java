@@ -62,6 +62,7 @@ import org.hl7.fhir.r4.model.UriType;
 import ca.uhn.fhir.model.api.TemporalPrecisionEnum;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Composite;
+import ca.uhn.hl7v2.model.DataTypeException;
 import ca.uhn.hl7v2.model.GenericComposite;
 import ca.uhn.hl7v2.model.GenericPrimitive;
 import ca.uhn.hl7v2.model.Primitive;
@@ -1310,8 +1311,8 @@ public class DatatypeConverter {
 	 * ranges, so this provides the highest level of compatibility.
 	 * 
 	 * @param original The value to convert
-	 * @return An InstantType set to the precision of the timestamp. NOTE: This is a
-	 *         small abuse of InstantType.
+	 * @return An InstantType set to the precision of the timestamp. 
+	 * NOTE: This is a small abuse of InstantType.
 	 */
 	public static InstantType toInstantType(String original) {
 		String value = original == null ? null : original.strip();
@@ -1319,61 +1320,63 @@ public class DatatypeConverter {
 			return null;
 		}
 		value = removeIsoPunct(value);
-		try {
-			InstantType instant = new InstantType(value);
-			String[] parts = value.split("\\.");
-			instant.setPrecision(DatatypeConverter.getPrecision(parts.length > 1 ? parts[1] : null, parts[0].length()));
-			return instant;
-		} catch (Exception e) {
-			warn("Unexpected {} Exception parsing Instant {}: {}", e.getClass().getSimpleName(), value, e.getMessage(), e);
-		}
 
 		if (value.isEmpty()) {
 			return null;
 		}
 
-		TSComponentOne ts1 = new MyTSComponentOne();
 		try {
-			String[] parts = value.split("[\\.\\-+]");
-			// parts is now number, decimal, zone
-			// or numeric, zone
-			// or numeric, decimal
-			// or numeric
-			String numeric = parts[0];
-			String decimal = "";
-			String zone = "";
-			if (value.contains(".")) {
-				decimal = "." + parts[1];
-			}
-			if (decimal.isEmpty()) {
-				zone = parts.length > 1 ? parts[1] : "";
-			} else {
-				zone = parts.length > 2 ? parts[2] : "";
-			}
-			if (!zone.isEmpty()) {
-				zone = StringUtils.right(value, zone.length() + 1);
-			}
-			int len = numeric.length();
-			TemporalPrecisionEnum prec;
-			prec = getPrecision(decimal, len);
-
-			// Set any missing values to the string to the right defaults.
-			value = numeric + StringUtils.right("0101000000", Math.max(14 - numeric.length(), 0));
-			value = value + decimal + zone;
-			ts1.setValue(value);
-			Calendar cal = ts1.getValueAsCalendar();
-			InstantType t = new InstantType(cal);
-			t.setPrecision(prec);
-			return t;
+			return toInstantType0(value);
 		} catch (Exception e) {
 			InstantType t = toInstantViaFHIR(original, e);
-			if (t != null) { // NOSONAR: It can be null
+			if (t != null) {
 				return t;
 			}
 			debugException("Unexpected V2 {} parsing {} as InstantType: {}", e.getClass().getSimpleName(), original,
 					e.getMessage());
 			return null;
 		}
+	}
+
+	/**
+	 * Converts ISO 8601 without punctuation to an InstantType
+	 * @param value	The value to convert
+	 * @return	The converted type as an Instant
+	 * @throws DataTypeException On a conversion error
+	 */
+	public static InstantType toInstantType0(String value) throws DataTypeException {
+		TSComponentOne ts1 = new MyTSComponentOne();
+		String[] parts = value.split("[\\.\\-+]");
+		// parts is now number, decimal, zone
+		// or numeric, zone
+		// or numeric, decimal
+		// or numeric
+		String numeric = parts[0];
+		String decimal = "";
+		String zone = "";
+		if (value.contains(".")) {
+			decimal = "." + parts[1];
+		}
+		if (decimal.isEmpty()) {
+			zone = parts.length > 1 ? parts[1] : "";
+		} else {
+			zone = parts.length > 2 ? parts[2] : "";
+		}
+		if (!zone.isEmpty()) {
+			zone = StringUtils.right(value, zone.length() + 1);
+		}
+		int len = numeric.length();
+		TemporalPrecisionEnum prec;
+		prec = getPrecision(decimal, len);
+
+		// Set any missing values to the string to the right defaults.
+		value = numeric + StringUtils.right("0101000000", Math.max(14 - numeric.length(), 0));
+		value = value + decimal + zone;
+		ts1.setValue(value);
+		Calendar cal = ts1.getValueAsCalendar();
+		InstantType t = new InstantType(cal);
+		t.setPrecision(prec);
+		return t;
 	}
 
 	private static InstantType toInstantViaFHIR(String original, Exception e) {
