@@ -1703,7 +1703,7 @@ public class DatatypeConverter {
 		value = value.replace(":", "").replace(" ", "");
 		if (!value.matches("^\\d{2}" + "(" + "\\d{2}" + "(" + "\\.\\d{1,4}" + ")?" + ")?" + "(" + "\\[\\-+]\\d{2}" + "("
 				+ "\\d{2}" + ")?" + ")?$")) {
-			warn("Value does not match date pattern for V2 HH[MM[SS[.S[S[S[S]]]]]][+/-ZZZZ]");
+			warn("Value {} does not match date pattern for V2 HH[MM[SS[.S[S[S[S]]]]]][+/-ZZZZ]", value);
 			return null;
 		}
 		// Parse according to V2 rule: HH[MM[SS[.S[S[S[S]]]]]][+/-ZZZZ]
