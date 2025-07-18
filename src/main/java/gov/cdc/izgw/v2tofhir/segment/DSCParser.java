@@ -52,6 +52,7 @@ public class DSCParser extends AbstractSegmentParser {
 	
 	@Override
 	public IBase parse(Segment qid) {
+		setup();
 		params.addParameter("Pointer", ParserUtils.toString(qid, 1));
 		params.addParameter("Style", ParserUtils.toString(qid, 2));
 		return params;
