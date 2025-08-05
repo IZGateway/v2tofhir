@@ -256,7 +256,7 @@ public class AddressParser implements DatatypeParser<Address> {
 		return addr;
 	}
 
-	private void removeEmptyLines(Address addr) {
+	private static void removeEmptyLines(Address addr) {
 		if (addr != null && addr.hasLine()) {
 			Iterator<StringType> it = addr.getLine().iterator();
 			while (it.hasNext()) {
@@ -310,7 +310,7 @@ public class AddressParser implements DatatypeParser<Address> {
 		}
 		return addr.isEmpty() ? null : addr;
 	}
-	private void getLineOrCsz(String[] originalParts, Address addr, String part) {
+	private static void getLineOrCsz(String[] originalParts, Address addr, String part) {
 		// First line is usually an address line, but
 		// sometimes it might just be a city, state and postal code
 		// in cases of partial representations.
@@ -327,7 +327,7 @@ public class AddressParser implements DatatypeParser<Address> {
 	 * @param part	The part to examine
 	 * @return	true if addr needs country and part is a country name
 	 */
-	private boolean isCountry(Address addr, String part) {
+	private static boolean isCountry(Address addr, String part) {
 		return !addr.hasCountry()
 				&& countryPattern.matcher(part).matches();
 	}
@@ -339,7 +339,7 @@ public class AddressParser implements DatatypeParser<Address> {
 	 * @param part	The string to match
 	 * @return true if it appears to be an address line, false if it doesn't match any known patterns.
 	 */
-	private boolean isAddressLine(String part) {
+	private static boolean isAddressLine(String part) {
 		return streetPattern.matcher(part).matches()
 				|| directionalPattern.matcher(part).matches()
 				|| unitPattern.matcher(part).matches();
@@ -352,7 +352,7 @@ public class AddressParser implements DatatypeParser<Address> {
 	 * Just State: Indiana
 	 * @return true if it's an odd case.
 	 */
-	private boolean isCszOnly(String[] parts) {
+	private static boolean isCszOnly(String[] parts) {
 		if (parts.length > 2) {
 			return false;
 		}
@@ -364,7 +364,7 @@ public class AddressParser implements DatatypeParser<Address> {
 		return isCszOnly(StringUtils.trim(parts[0]));
 	}
 	
-	private boolean isCszOnly(String line) {
+	private static boolean isCszOnly(String line) {
 		boolean hasCa1Part = false;
 		boolean hasPostalCode = false;
 		boolean hasState = false;

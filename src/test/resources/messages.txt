@@ -87,7 +87,7 @@ PID|1||234814^^^MYEHR^MR||\
 		$this.url = "http://hl7.org/fhir/StructureDefinition/patient-mothersMaidenName" and \
 		$this.value = 'DifferentAIRA') // Mother's maiden name is DifferentAIRA 
 	// 19631226|M||ASIAN|
-	@Patient.birthDate = "1963-12-26"
+	@Patient.birthDate.toString() = '1963-12-26'
 	@Patient.gender='male'
 	@Patient.extension('http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension \
 		.exists(url="ombCategory" and value.code="2028-9") \
@@ -107,14 +107,14 @@ PID|1||234814^^^MYEHR^MR||\
 	@Patient.address.use.empty()
 	@Patient.telecom.count() = 1
 	@Patient.telecom.value='8005551212' 	
-	@Patient.extension('http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity')
+	@Patient.extension('http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity') \
 			.extension.exists(url="ombCategory" and value.code="2186-5") \
 		// Translated from legacy code for not HISPANIC to CDCREC 2186-5 
-	@Patient.extension('http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity')
+	@Patient.extension('http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity') \
 			.extension.exists(url="text" and value="not HISPANIC") \
 		// The actual text was not HISPANIC
-	@Patient.extension('http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity')
-			.extension('detailed').not() // There is no detailed ethnicity.  
+	@Patient.extension('http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity') \
+			.extension('detailed').count() = 0 // There is no detailed ethnicity.  
 NK1|1|FagenAIRA^TheodoricAIRA^^^^^L|MTH^Mom^HL70063|1517 Huth Ave^^Wyndmere^ND^58081^^L
 ORC|RE||65930^DCS||||||20120113|^FagenAIRA^TheodoricAIRA||^FagenAIRA^TheodoricAIRA^^^^^^^ ^^^^^^^^^^^MD|||||||||Dabig Clinic System
 RXA|0|1|20210516||208^208^CVX|0.3|ml||01^historical^NIP001|||||||||||CP|A

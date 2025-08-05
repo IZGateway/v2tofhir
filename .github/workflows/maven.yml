@@ -1,19 +1,28 @@
 name: Java CI with Maven
 
 on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: 'Run Site Build?'
+        default: false
+        required: false
+        
+  #schedule:
+    # Mon-Fri at 6am
+  #  - cron: "00 6 * * 1,2,3,4,5" 
+
   push:
     branches:
       - Release*
       - main
-      - testrelease
-      - testmain
+      - develop
 
   pull_request:
     branches:
       - Release*
       - main
-      - testrelease
-      - testmain
+      - develop
 
 # Ensure only one build changes dev environment at the same time    
 concurrency: v2tofhir
@@ -106,8 +115,6 @@ jobs:
         echo IMAGE_BRANCH_TAG=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout` >> $GITHUB_ENV
         # default to force a revision check unless releasing
         echo DO_REVISION_CHECK=true >> $GITHUB_ENV
-        # Skip dependency check
-        echo SKIP_DEPENDENCY_CHECK=false >> $GITHUB_ENV
 
     # If pulling to main branch (cutting a release), set branch tag appropriately  
     - name: Sets env vars for pull to main 
@@ -121,8 +128,6 @@ jobs:
 
         # Skip revision check on merge
         echo DO_REVISION_CHECK=false >> $GITHUB_ENV
-        # Skip dependency check
-        echo SKIP_DEPENDENCY_CHECK=false >> $GITHUB_ENV
 
     # If pushing to main branch (cutting a release), set branch tag appropriately  
     - name: Sets env vars for pull to main 
@@ -132,25 +137,23 @@ jobs:
         echo IMAGE_TAG=$IMAGE_TAG >> $GITHUB_ENV
         IMAGE_BRANCH_TAG=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout | sed "s/-.*$/-v2tofhir-RELEASE/"`
         echo IMAGE_BRANCH_TAG=$IMAGE_BRANCH_TAG >> $GITHUB_ENV
-        mvn versions:set -DnewVersion=$IMAGE_BRANCH_TAG -f pom.xml
-        if [ ${{ github.event_name }} == 'push' ] 
-        then
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-          git add -A
-          # Only push if something was committed
-          if git commit -m "Update version to $IMAGE_BRANCH_TAG"
-          then
-            git pull
-            git push
-          fi
-        fi
+        #mvn versions:set -DnewVersion=$IMAGE_BRANCH_TAG -f pom.xml
+        #if [ ${{ github.event_name }} == 'push' ] 
+        #then
+        #  git config user.name github-actions
+        #  git config user.email github-actions@github.com
+        #  git add -A
+        #  # Only push if something was committed
+        #  if git commit -m "Update version to $IMAGE_BRANCH_TAG"
+        #  then
+        #    git pull
+        #    git push --force
+        #  fi
+        #fi
         # Disable revision check on push to main. 
         echo DO_REVISION_CHECK=false >> $GITHUB_ENV
-        # But enable dependency check
-        echo SKIP_DEPENDENCY_CHECK=false >> $GITHUB_ENV
 
-    - name: List m2
+    - name: List Environment variables
       shell: bash
       run: |
         # Display data for DX
@@ -161,11 +164,9 @@ jobs:
         echo EVENT_NAME ${{ github.event_name }}
         echo TAG: $BASE_TAG
         echo DO_REVISION_CHECK: $DO_REVISION_CHECK 
-        echo SKIP_DEPENDENCY_CHECK: $SKIP_DEPENDENCY_CHECK
         echo IMAGE_TAG: $IMAGE_TAG 
         echo IMAGE_BRANCH_TAG: $IMAGE_BRANCH_TAG 
         cd ~/.m2
-        ls -l
           
     - name: Check that push to main is from release branch
       # Don't filter on testmain to test push to main route
@@ -183,15 +184,38 @@ jobs:
       run: |
         env && mvn -B clean package install deploy site -Dbuildno=${{github.run_number}} \
             -DdoRevisionCheck=${{env.DO_REVISION_CHECK}} \
-            -DskipDependencyCheck=${{env.SKIP_DEPENDENCY_CHECK}} \
+            -DskipDependencyCheck=true \
             -Dimage.tag=$IMAGE_BRANCH_TAG 
 
+# Use GitHub Action to speed up and improve dependency checking
+# NOTE: Disable automatic dependency checking in the build, this replaces it          
+    - name: Dependency Check
+      env:  
+        # Per https://github.com/marketplace/actions/dependency-check, fix JAVA_HOME location for action
+        JAVA_HOME: /opt/jdk
+      uses: dependency-check/Dependency-Check_Action@main
+      with:
+        project: V2 to FHIR
+        path: target/v2tofhir-${{env.IMAGE_BRANCH_TAG}}.jar
+        format: 'HTML'
+        args: >
+          --failOnCVSS 7
+          --suppression ./dependency-suppression.xml
+          --disableNuspec    
+          --disableNugetconf  
+          --disableAssembly            
+            
     - name: Publish Site
       uses: peaceiris/actions-gh-pages@v4
+      if: ${{ always() }}
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./target/site
         destination_dir: current
+
+    - name: List M2
+      if: ${{ failure() }}
+      run: ls -lR ~/.m2 > ./m2-listing.txt
 
     - name: Upload build environment as artifact for failed build
       uses: actions/upload-artifact@v4
@@ -202,10 +226,10 @@ jobs:
 
     - name: Upload dependency check log
       uses: actions/upload-artifact@v4
-      if: ${{ ! env.SKIP_DEPENDENCY_CHECK }}
+      if: ${{ always() }}
       with:
         name: DependencyCheck
-        path: ./target/dependency-check-report.*
+        path: ./reports
 
   release:
     needs: build

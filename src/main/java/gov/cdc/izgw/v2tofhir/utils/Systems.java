@@ -28,6 +28,8 @@ public class Systems {
 	static {
 		log.debug("{} loaded", Systems.class.getName());
 	}
+	/** The Act Code System OID */
+	public static final String ACT_CODE_OID = "2.16.840.1.113883.5.4";
 	/** Code System URI for the code system used for Vaccine Information Statements */
 	public static final String CDCGS1VIS = "urn:oid:2.16.840.1.114222.4.5.307";
 	/** OID for the code system used for Vaccine Information Statements */

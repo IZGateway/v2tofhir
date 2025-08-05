@@ -25,13 +25,14 @@ import ca.uhn.fhir.parser.IParser;
 public class FhirConverter implements HttpMessageConverter<Resource> {
 	@Override
 	public boolean canRead(Class<?> clazz, MediaType mediaType) {
-		mediaType = mediaType == null ? null : new MediaType(mediaType.getType(), mediaType.getSubtype());
+		mediaType = mediaType == null ? null : new MediaType(StringUtils.lowerCase(mediaType.getType()), StringUtils.lowerCase(mediaType.getSubtype()));
 		return Resource.class.isAssignableFrom(clazz) && (mediaType == null || ContentUtils.FHIR_MEDIA_TYPES.contains(mediaType));
 	}
 
 	@Override
 	public boolean canWrite(Class<?> clazz, MediaType mediaType) {
-		if (Binary.class.isAssignableFrom(clazz) && mediaType != null && (mediaType.getSubtype().contains("cda") || mediaType.getSubtype().contains("hl7v2"))) {
+		String subtype = mediaType != null ? StringUtils.lowerCase(mediaType.getSubtype()) : "";
+		if (Binary.class.isAssignableFrom(clazz) && mediaType != null && (subtype.contains("cda") || subtype.contains("hl7v2"))) {
 			return true;
 		}
 		return canRead(clazz, mediaType);

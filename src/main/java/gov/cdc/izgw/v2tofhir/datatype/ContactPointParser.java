@@ -148,7 +148,7 @@ public class ContactPointParser implements DatatypeParser<ContactPoint> {
 	 * @param value	The email address.
 	 * @return	A ContactPoint object representing this e-mail address. 
 	 */
-	public ContactPoint fromEmail(String value) {
+	public static ContactPoint fromEmail(String value) {
 		if (StringUtils.isBlank(value)) {
 			return null;
 		}
@@ -198,7 +198,7 @@ public class ContactPointParser implements DatatypeParser<ContactPoint> {
 	 * @param values	A string providing the list of email addresses, separated by semi-colons, commas, or newlines.
 	 * @return	The list of contact points.
 	 */
-	public List<ContactPoint> fromEmails(String values) {
+	public static List<ContactPoint> fromEmails(String values) {
 		if (StringUtils.isBlank(values)) {
 			return Collections.emptyList();
 		}
@@ -221,7 +221,7 @@ public class ContactPointParser implements DatatypeParser<ContactPoint> {
 	 * @param value	The phone number.
 	 * @return	A ContactPoint object representing the phone number. 
 	 */
-	public ContactPoint fromPhone(String value) {
+	public static ContactPoint fromPhone(String value) {
 		if (StringUtils.isBlank(value)) {
 			return null;
 		}
@@ -267,7 +267,7 @@ public class ContactPointParser implements DatatypeParser<ContactPoint> {
 	 * @param url The URL to convert to a contact point
 	 * @return A ContactPoint object representing the URL.
 	 */
-	public ContactPoint fromUrl(String url) {
+	public static ContactPoint fromUrl(String url) {
 		url = StringUtils.strip(url);
 		if (StringUtils.isEmpty(url)) {
 			return null;
@@ -306,7 +306,7 @@ public class ContactPointParser implements DatatypeParser<ContactPoint> {
 		return ContactPoint.class;
 	}
 	
-	private void cleanupContactPoints(List<ContactPoint> cps, String comment, String use, String type,
+	private static void cleanupContactPoints(List<ContactPoint> cps, String comment, String use, String type,
 			IntegerType order, Period period) {
 		// Cleanup list after parsing.
 		Iterator<ContactPoint> it = cps.iterator();
@@ -355,7 +355,7 @@ public class ContactPointParser implements DatatypeParser<ContactPoint> {
 		return null;
 	}
 	
-	private void mapTypeCode(String type, ContactPoint cp) {
+	private static void mapTypeCode(String type, ContactPoint cp) {
 		switch (type) {
 		case "BP": cp.setSystem(ContactPointSystem.PAGER); break;
 		case "CP": 
@@ -373,7 +373,7 @@ public class ContactPointParser implements DatatypeParser<ContactPoint> {
 		}
 	}
 
-	private void mapUseCode(String use, ContactPoint cp) {
+	private static void mapUseCode(String use, ContactPoint cp) {
 		switch (use) {
 		case "PRS": // Personal Number
 			cp.setUse(ContactPointUse.MOBILE); break;

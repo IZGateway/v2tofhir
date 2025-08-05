@@ -23,6 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.hl7.fhir.instance.model.api.IBase;
 import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.InstantType;
@@ -41,6 +42,7 @@ import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.DataTypeException;
 import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.model.Segment;
+import ca.uhn.hl7v2.model.Structure;
 import ca.uhn.hl7v2.model.Type;
 import ca.uhn.hl7v2.model.v251.datatype.ST;
 import ca.uhn.hl7v2.model.v251.message.QBP_Q11;
@@ -55,7 +57,7 @@ import gov.cdc.izgw.v2tofhir.segment.AbstractSegmentParser;
 import gov.cdc.izgw.v2tofhir.segment.FieldHandler;
 import gov.cdc.izgw.v2tofhir.segment.IzDetail;
 import gov.cdc.izgw.v2tofhir.segment.PIDParser;
-import gov.cdc.izgw.v2tofhir.segment.StructureParser;
+import gov.cdc.izgw.v2tofhir.segment.Processor;
 import gov.cdc.izgw.v2tofhir.utils.Mapping;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 import gov.cdc.izgw.v2tofhir.utils.QBPUtils;
@@ -115,7 +117,7 @@ class MessageParserTests extends TestBase {
 		}
 		for (String segment: testData.getTestData().split("\r")) {
 			String segmentName = StringUtils.left(segment, 3);
-			Class<StructureParser> parser = MP.loadParser(segmentName);
+			Class<Processor<Message, Structure>> parser = MP.loadParser(segmentName);
 			if (parser == null) {
 				// Skip segments there is no parser for.
 				continue;
@@ -283,10 +285,17 @@ class MessageParserTests extends TestBase {
 				assertTrue(uri.getValueAsString().endsWith("&_count=" + value));
 			}
 		} else {
-			assertTrue(b1.getEntry().stream()
-					.anyMatch(e -> produces.resource().isInstance(e.getResource())), 
-				"The bundle should have entries of type " 
-					+ produces.getClass().getSimpleName());
+			boolean found = false;
+			for (BundleEntryComponent entry: b1.getEntry()) {
+				if (produces.resource().isInstance(entry.getResource())) {
+					found = true;
+					break;
+				}
+			}
+			if (!messageParser.getContext().isStoringProvenance() || !"Provenance".equals(produces.resource().getSimpleName())) {
+				// Don't error on lack of provenance if we aren't storing it!
+				assertTrue(found, "The bundle should have entries of type "  + produces.resource().getSimpleName());
+			}
 		}
 		log.debug(segment.segment().encode());
 		if (log.isDebugEnabled()) {
