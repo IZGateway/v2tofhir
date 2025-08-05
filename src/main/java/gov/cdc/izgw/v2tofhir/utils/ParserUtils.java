@@ -614,6 +614,10 @@ public class ParserUtils {
 		Reference fRef = (Reference) first.getUserData(REFERENCE_LINK);
 		Reference lRef = (Reference) later.getUserData(REFERENCE_LINK);
 		
+		if (fRef == null || lRef == null) {
+			return;
+		}
+		
 		lRef.setReferenceElement(fRef.getReferenceElement());
 		// If the first reference doesn't have an identifier, copy the identifier
 		// from lRef into it.

@@ -37,8 +37,16 @@
 		<!-- 17 needs a certified encryption module -->
 		<timestamp>${maven.build.timestamp}</timestamp>
 		<hapi.v2.version>2.5.1</hapi.v2.version>
-    <hapi.fhir.version>8.0.0</hapi.fhir.version>
+        <hapi.fhir.version>8.0.0</hapi.fhir.version>
 		<tomcat.version>10.1.42</tomcat.version>
+		<jacoco.version>0.8.13</jacoco.version>
+		<jacoco.jar>${user.home}/.m2/repository/org/jacoco/org.jacoco.agent/${jacoco.version}/org.jacoco.agent-${jacoco.version}.jar</jacoco.jar>
+		<surefire.argLine>
+		  -Xmx2048m 
+		  --add-opens=java.base/java.lang.reflect=ALL-UNNAMED 
+		  --add-opens=java.base/java.net=ALL-UNNAMED 
+		  <!-- -javaagent:${jacoco.jar}=destfile=target/jacoco.exec,append=true,output=file -->
+		</surefire.argLine>
 	</properties>
 	<distributionManagement>
 		<repository>
@@ -180,11 +188,11 @@
 			<artifactId>commons-validator</artifactId>
 			<version>1.9.0</version>
 		</dependency>
-    <dependency>
-      <groupId>commons-beanutils</groupId>
-      <artifactId>commons-beanutils</artifactId>
-      <version>1.11.0</version>
-    </dependency>		
+        <dependency>
+            <groupId>commons-beanutils</groupId>
+            <artifactId>commons-beanutils</artifactId>
+            <version>1.11.0</version>
+        </dependency>		
 		<dependency>
 			<groupId>io.azam.ulidj</groupId>
 			<artifactId>ulidj</artifactId>
@@ -268,21 +276,53 @@
 						</execution>
 					</executions>
 				</plugin>
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>${jacoco.version}</version>
+                    <executions>
+                        <execution>
+                            <id>prepare-agent</id>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>prepare-agent</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>report</id>
+                            <goals>
+                                <goal>report</goal>
+                            </goals>
+                       </execution>
+                    </executions>
+                </plugin>           
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-surefire-plugin</artifactId>
+					<version>3.5.3</version>
 					<configuration>
 						<useSystemClassLoader>true</useSystemClassLoader>
+                        <forkCount>1</forkCount>
 						<reuseForks>true</reuseForks>
 						<testFailureIgnore>false</testFailureIgnore>
 						<systemPropertyVariables>
 							<elastic.api.key>${env.ELASTIC_API_KEY}</elastic.api.key>
 						</systemPropertyVariables>
-						<argLine>--add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED</argLine>
-						<includes>
-							<include>**/*Tests.java</include>
-						</includes>
+                        <skip>${maven.test.skip}</skip>
+                        <includes>
+                            <include>**/*Tests.java</include>
+                        </includes>
+                        <argLine>${surefire.argLine}</argLine>
 					</configuration>
+					<executions>
+                        <execution>
+                            <id>unit-test</id>
+                            <phase>test</phase>
+                            <goals>
+                                <goal>test</goal>
+                            </goals>
+                        </execution>
+					</executions>
 				</plugin>
 				<plugin>
 					<!-- Since all libraries are deliverable, this should in fact be
@@ -345,22 +385,27 @@
 					</reportSet>
 				</reportSets>
 			</plugin>
-			<plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-report-plugin</artifactId>
+                <version>3.5.3</version>
+            </plugin>
+    		<plugin>
 				<groupId>org.owasp</groupId>
 				<artifactId>dependency-check-maven</artifactId>
 				<version>8.4.3</version>
 				<configuration>
-					<!--nvdApiKey>${env.NVDAPIKEY}</nvdApiKey-->
+                    <!--nvdApiKey>${env.NVDAPIKEY}</nvdApiKey-->
 					<formats>
 						<format>HTML</format>
 					</formats>
-					<!-- Disable .NET Analyzer -->
+                    <!-- Disable .NET Analyzer -->
 					<assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
 					<nugetconfAnalyzerEnabled>false</nugetconfAnalyzerEnabled>
 					<nuspecAnalyzerEnabled>false</nuspecAnalyzerEnabled>
-					<!-- Fail builds where this is used to 7 High to Critical -->
+                    <!-- Fail builds where this is used to 7 High to Critical -->
 					<failBuildOnCVSS>7</failBuildOnCVSS>
-					<!-- Don't fail on error (for cases where CVE REPO is bad) -->
+                    <!-- Don't fail on error (for cases where CVE REPO is bad) -->
 					<failOnError>false</failOnError>
 					<skip>${skipDependencyCheck}</skip>
 					<suppressionFile>${project.basedir}/dependency-suppression.xml</suppressionFile>
@@ -374,6 +419,18 @@
 					</reportSet>
 				</reportSets>
 			</plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.13</version>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <report>report</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>			
 		</plugins>
 	</reporting>
 </project>

@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 
 import org.apache.commons.lang3.StringUtils;
+import org.hl7.fhir.dstu2.model.Attachment;
 import org.hl7.fhir.instance.model.api.IBase;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Address;
@@ -29,11 +30,13 @@ import org.hl7.fhir.r4.model.PositiveIntType;
 import org.hl7.fhir.r4.model.Practitioner;
 import org.hl7.fhir.r4.model.PractitionerRole;
 import org.hl7.fhir.r4.model.Quantity;
+import org.hl7.fhir.r4.model.Range;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.RelatedPerson;
 import org.hl7.fhir.r4.model.StringType;
 import org.hl7.fhir.r4.model.TimeType;
 
+import ca.uhn.hl7v2.model.Composite;
 import ca.uhn.hl7v2.model.Type;
 import gov.cdc.izgw.v2tofhir.annotation.ComesFrom;
 import gov.cdc.izgw.v2tofhir.annotation.Produces;
@@ -200,26 +203,38 @@ public class OBXParser extends AbstractSegmentParser {
 	public void setValue(Type v2Type) {
 		v2Type = DatatypeConverter.adjustIfVaries(v2Type);
 		if (type == null) {
-			warn("Type is unknown for OBX-5");
+			getParser().warn("Type is unknown for OBX-5");
 			return;
 		}
 		Class<? extends IBase> target = null;
 		switch (type) {
 		case "AD":	target = Address.class; break;	//	Address	
 		case "CE", 
-			 "CF":  target = CodeableConcept.class; break;	//	Coded Element (With Formatted Values)	
+			 "CF",  		
+			 "CNE",		
+			 "CWE":	
+				 // Coded Element (With Formatted Values)
+				 //	Coded with No Exceptions
+				 // Coded Entry
+				 target = CodeableConcept.class; break;		
 		case "CK":	target = Identifier.class; break;	//	Composite ID With Check Digit	
 		case "CN":	target = Address.class; break;	//	Composite ID And Name	
-		case "CNE":	target = CodeableConcept.class; break;	//	Coded with No Exceptions	
-		case "CWE":	target = CodeableConcept.class; break;	//	Coded Entry	
 		case "CX":	target = Identifier.class; break;	//	Extended Composite ID With Check Digit	
 		case "DT":	target = DateTimeType.class; break;	//	Observation doesn't like DateType	
-		case "DTM":	target = DateTimeType.class; break;	//	Time Stamp (Date & Time)	
+		case "DTM":	target = DateTimeType.class; break;	//	Time Stamp (Date & Time)
+		case "ED":  target = Attachment.class; break;	//	Encapsulated Data	
 		case "FT":	target = StringType.class; break; //	Formatted Text (Display)	
 		case "ID":	target = CodeType.class; break; //	Coded Value for HL7 Defined Tables	
 		case "IS":	target = CodeType.class; break; //	Coded Value for User-Defined Tables	
 		case "NM":	target = Quantity.class; break; //	Numeric	(Observation only accepts Quantity)
 		case "PN":	target = HumanName.class; break; //	Person Name	
+		case "SN":	
+			if (v2Type instanceof Composite comp && comp.getComponents().length > 3) {
+				target = Range.class; 	
+			} else {
+				target = Quantity.class;
+			}
+			break;
 		case "ST":	target = StringType.class; break; //	String Data.	
 		case "TM":	target = TimeType.class; break; //	Time	
 		case "TN":	target = ContactPoint.class; break; //	Telephone Number	
@@ -232,18 +247,16 @@ public class OBXParser extends AbstractSegmentParser {
 		case "XTN":	target = ContactPoint.class; break; //	Extended Telecommunications Number
 		case "CP",	//	Composite Price	
 			 "DR",	//	Date/Time Range	
-			 "ED",	//	Encapsulated Data	
 			 "MA",	//	Multiplexed Array	
 			 "MO",	//	Money	
 			 "NA",	//	Numeric Array	
-			 "RP",	//	Reference Pointer	
-			 "SN":	//	Structured Numeric
+			 "RP":	//	Reference Pointer	
 		default:
 			break;
 		}
 		
 		if (target == null) {
-			warn("Cannot convert V2 {}", type);
+			getParser().warn("Cannot convert V2 {}", type);
 			return;
 		}
 		
