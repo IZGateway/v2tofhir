@@ -115,7 +115,6 @@ public class ContentUtils {
 			accept = accept.toLowerCase();
 		}
 		accept = accept.toLowerCase();
-		h.remove(HttpHeaders.ACCEPT);
 		String contentType = null;
 		if (accept == null || accept.contains("json")) {
 			contentType = ContentUtils.FHIR_PLUS_JSON_VALUE;
