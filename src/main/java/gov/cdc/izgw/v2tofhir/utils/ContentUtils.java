@@ -114,9 +114,8 @@ public class ContentUtils {
 		if (accept != null) {
 			accept = accept.toLowerCase();
 		}
-		accept = accept.toLowerCase();
 		String contentType = null;
-		if (accept == null || accept.contains("json")) {
+		if (accept == null || accept.isBlank() || accept.contains("json")) {
 			contentType = ContentUtils.FHIR_PLUS_JSON_VALUE;
 		} else if ((accept.contains("hl7") || accept.contains("v2"))) {  // Second option addresses inadvertent use of + in URL parameter
 			 if (accept.contains("xml")) {
@@ -149,7 +148,7 @@ public class ContentUtils {
 				contentType = ContentUtils.FHIR_PLUS_JSON_VALUE;
 			}
 		}
-		h.add(HttpHeaders.ACCEPT, contentType);
+		h.add(HttpHeaders.CONTENT_TYPE, contentType);
 		return h;
 	}
 	
