@@ -31,6 +31,7 @@ import ca.uhn.hl7v2.parser.ModelClassFactory;
 import ca.uhn.hl7v2.parser.Parser;
 import ca.uhn.hl7v2.parser.PipeParser;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
+import gov.cdc.izgw.v2tofhir.utils.TestData;
 import lombok.extern.slf4j.Slf4j;
 import test.gov.cdc.izgateway.TestUtils;
 
