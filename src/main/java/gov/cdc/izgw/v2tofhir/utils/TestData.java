@@ -49,7 +49,7 @@ public class TestData {
 	public static final IParsedExpression NO_EXPR = new IParsedExpression() {};
 
 	private static final IFhirPath engine = FhirContext.forR4().newFhirPath();
-	
+
 	/**
 	 * Load the resource with the given name into a list of TestData objects.
 	 * @param name	The name of the resource to load
@@ -58,6 +58,7 @@ public class TestData {
 	 */
 	public static List<TestData> load(String name, boolean isMessageFile) {
 		TestData data = new TestData();
+		data.setResourceName(name);
 		List<TestData> list = new ArrayList<>();
 		try (
 			ContinuationReader br = 
@@ -69,6 +70,9 @@ public class TestData {
 			int assertionNumber = 0;
 			while (true) {
 				line = br.readLine();
+				if (data.getLineNumber() == 0) {
+					data.setLineNumber(br.getLine());
+				}
 				if (line == null || line.isEmpty()) {
 					if (isMessageFile && !b.isEmpty()) { // There's a message waiting
 						String message = b.toString();
@@ -117,6 +121,8 @@ public class TestData {
 						data.setTestData(line + "\r");
 						list.add(data);
 						data = new TestData();
+						data.setResourceName(name);
+						data.setLineNumber(br.getLine());
 					} else {
 						data.setTestData(line);
 					}
@@ -160,6 +166,8 @@ public class TestData {
 	
 	/** The test message or segment */
 	private String testData = null;
+	private String resourceName = null;
+	private int lineNumber = 0;
 	
 	/** Assertions about the conversion performed on the test message or segment
 	 * written as a FhirPath expression.
@@ -376,6 +384,10 @@ public class TestData {
 	 */
 	public String toString() {
 		StringBuilder b = new StringBuilder();
+		if (resourceName != null) {
+			b.append(resourceName);
+		}
+		b.append("(").append(lineNumber).append("): ");
 		b.append(testData).append('\n').append("@[\n");
 		assertions.forEach(s -> b.append(' ').append(s).append("\n"));
 		b.append("]\n");
