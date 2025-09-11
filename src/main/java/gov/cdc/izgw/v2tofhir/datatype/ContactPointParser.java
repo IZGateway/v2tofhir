@@ -13,6 +13,7 @@ import org.hl7.fhir.r4.model.ContactPoint;
 import org.hl7.fhir.r4.model.ContactPoint.ContactPointSystem;
 import org.hl7.fhir.r4.model.ContactPoint.ContactPointUse;
 import org.hl7.fhir.r4.model.DateTimeType;
+import org.hl7.fhir.r4.model.DateType;
 import org.hl7.fhir.r4.model.IntegerType;
 import org.hl7.fhir.r4.model.Period;
 import org.hl7.fhir.r4.model.StringType;
@@ -110,7 +111,11 @@ public class ContactPointParser implements DatatypeParser<ContactPoint> {
 			return null;
 		}
 		
-		if (type instanceof Primitive) {
+		if (type instanceof Primitive pt) {
+			if (DatatypeConverter.isDeleted(pt)) {
+				return DatatypeConverter.markDeleted(new ContactPoint());
+			}
+
 			return fromString(ParserUtils.toString(type)); 
 		}
 		

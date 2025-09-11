@@ -8,6 +8,7 @@ import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.HumanName;
+import org.hl7.fhir.r4.model.PositiveIntType;
 import org.hl7.fhir.r4.model.HumanName.NameUse;
 import org.hl7.fhir.r4.model.StringType;
 
@@ -184,6 +185,10 @@ public class HumanNameParser implements DatatypeParser<HumanName> {
 	public HumanName convert(Type t) {
 		t = DatatypeConverter.adjustIfVaries(t);
 		if (t instanceof Primitive pt) {
+			if (t instanceof Primitive p && DatatypeConverter.isDeleted(p)) {
+				return DatatypeConverter.markDeleted(new HumanName());
+			}
+
 			return fromString(pt.getValue());
 		}
 

@@ -34,8 +34,10 @@ import org.hl7.fhir.r4.model.ContactPoint;
 import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.DateType;
 import org.hl7.fhir.r4.model.DecimalType;
+import org.hl7.fhir.r4.model.DomainResource;
 import org.hl7.fhir.r4.model.Enumerations.ResourceType;
 import org.hl7.fhir.r4.model.Expression;
+import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.HumanName;
 import org.hl7.fhir.r4.model.IdType;
 import org.hl7.fhir.r4.model.Identifier;
@@ -130,7 +132,16 @@ public class DatatypeConverter {
 	private static final AddressParser addressParser = new AddressParser();
 	private static final ContactPointParser contactPointParser = new ContactPointParser();
 	private static final HumanNameParser nameParser = new HumanNameParser();
-
+	/** FHIR Extension to mark fields which have been deleted in V2
+	 *  This extension will have a single boolean value which will be set to true.  
+	 */
+	public static final String DELETED_FIELD_EXT_URL = "https://github.com/IZGateway/v2tofhir/deleted-field";
+	private static final Extension DELETED_FIELD_EXT = new Extension(DELETED_FIELD_EXT_URL, new BooleanType(true));
+	/**
+	 * The V2 value that indicates a field has been deleted (set to the empty value).
+	 */
+	public static final String V2_DELETED = "\"\"";
+			
 	/**
 	 * A functional interface for FHIR datatype conversion from HAPI V2 datatypes
 	 * 
@@ -484,6 +495,9 @@ public class DatatypeConverter {
 		if ((codedElement = adjustIfVaries(codedElement)) == null) {
 			return null;
 		}
+		if (codedElement instanceof Primitive pt && isDeleted(pt)) {
+			return markDeleted(new CodeableConcept());
+		}
 
 		CodeableConcept cc = new CodeableConcept();
 		Primitive st = null;
@@ -667,6 +681,9 @@ public class DatatypeConverter {
 		if (StringUtils.isBlank(value)) {
 			return null;
 		}
+		if (V2_DELETED.equals(value)) {
+			return markDeleted(new BooleanType());
+		}
 		value = value.toUpperCase();
 		switch (value.charAt(0)) {
 		case 'Y':
@@ -700,6 +717,10 @@ public class DatatypeConverter {
 		if (codedElement == null) {
 			return null;
 		}
+		if (codedElement instanceof Primitive p && isDeleted(p)) {
+			return markDeleted(new CodeType());
+		}
+
 		if (table != null && table.isEmpty()) {
 			table = null;
 		}
@@ -740,7 +761,9 @@ public class DatatypeConverter {
 		if (table != null && table.isEmpty()) {
 			table = null;
 		}
-
+		if (type instanceof Primitive p && isDeleted(p)) {
+			return markDeleted(new Coding());
+		}
 		CodeableConcept cc = toCodeableConcept(type, table);
 		if (cc == null || cc.isEmpty()) {
 			return null;
@@ -847,6 +870,10 @@ public class DatatypeConverter {
 	 * @return The DateTimeType converted from the V2 datatype
 	 */
 	public static DateTimeType toDateTimeType(Type type) {
+		if (type instanceof Primitive p && isDeleted(p)) {
+			return markDeleted(new DateTimeType());
+		}
+
 		InstantType instant = toInstantType(type);
 		if (instant == null || instant.isEmpty()) {
 			return null;
@@ -910,6 +937,9 @@ public class DatatypeConverter {
 	 * @return The DateType converted from the V2 datatype
 	 */
 	public static DateType toDateType(Type type) {
+		if (type instanceof Primitive p && isDeleted(p)) {
+			return markDeleted(new DateType());
+		}
 		InstantType instant = toInstantType(type);
 		if (instant == null || instant.isEmpty()) {
 			return null;
@@ -924,6 +954,9 @@ public class DatatypeConverter {
 	 * @return The DecimalType converted from the V2 datatype
 	 */
 	public static DecimalType toDecimalType(Type pt) {
+		if (pt instanceof Primitive p && isDeleted(p)) {
+			return markDeleted(new DecimalType());
+		}
 		Quantity qt = toQuantity(pt);
 		if (qt == null || qt.isEmpty()) {
 			return null;
@@ -957,7 +990,10 @@ public class DatatypeConverter {
 		Location location = new Location();
 		location.setUserData(Parser.SOURCE, DatatypeConverter.class.getName());
 
-		if (t instanceof Primitive) {
+		if (t instanceof Primitive p) {
+			if (isDeleted(p)) {
+				return markDeleted(location);
+			}
 			location.setName(ParserUtils.toString(t));
 			return location;
 		}
@@ -1002,6 +1038,20 @@ public class DatatypeConverter {
 			return null;
 		}
 		return location;
+	}
+	
+	public static boolean isDeleted(Primitive p) {
+		return V2_DELETED.equals(p.getValue());
+	}
+
+	public static <T extends org.hl7.fhir.r4.model.Type> T markDeleted(T base) {
+		base.addExtension(DELETED_FIELD_EXT);
+		return base;
+	}
+	
+	public static <T extends org.hl7.fhir.r4.model.DomainResource> T markDeleted(T resource) {
+		resource.addExtension(DELETED_FIELD_EXT);
+		return resource;
 	}
 
 	/**
@@ -1060,6 +1110,9 @@ public class DatatypeConverter {
 		Identifier id = null;
 
 		if (t instanceof Primitive pt) {
+			if (t instanceof Primitive p && isDeleted(p)) {
+				return markDeleted(new Identifier());
+			}
 			id = new Identifier().setValue(pt.getValue());
 		} else if (t instanceof Composite comp) {
 			Type[] types = comp.getComponents();
@@ -1242,6 +1295,10 @@ public class DatatypeConverter {
 	 * @return The IdType converted from the V2 datatype
 	 */
 	public static IdType toIdType(Type type) {
+		if (type instanceof Primitive p && isDeleted(p)) {
+			return markDeleted(new IdType());
+		}
+
 		return new IdType(StringUtils.strip(ParserUtils.toString(type)));
 	}
 
@@ -1453,6 +1510,10 @@ public class DatatypeConverter {
 	 * @return The InstantType converted from the V2 datatype
 	 */
 	public static InstantType toInstantType(Type type) {
+		if (type instanceof Primitive p && isDeleted(p)) {
+			return markDeleted(new InstantType());
+		}
+
 		return toInstantType(ParserUtils.toString(type));
 	}
 
@@ -1466,6 +1527,9 @@ public class DatatypeConverter {
 		DecimalType dt = toDecimalType(pt);
 		if (dt == null || dt.isEmpty()) {
 			return null;
+		}
+		if (pt instanceof Primitive p && isDeleted(p)) {
+			return markDeleted(new IntegerType());
 		}
 		BigDecimal decimal = dt.getValue();
 		BigInteger bigInt = decimal.toBigInteger();
@@ -1487,6 +1551,9 @@ public class DatatypeConverter {
 	 * @return The PositiveIntType converted from the V2 datatype
 	 */
 	public static PositiveIntType toPositiveIntType(Type pt) {
+		if (pt instanceof Primitive p && isDeleted(p)) {
+			return markDeleted(new PositiveIntType());
+		}
 		IntegerType dt = toIntegerType(pt);
 		if (dt == null || dt.isEmpty()) {
 			return null;
@@ -1511,6 +1578,9 @@ public class DatatypeConverter {
 		}
 
 		if (type instanceof Primitive pt) {
+			if (type instanceof Primitive p && isDeleted(p)) {
+				return markDeleted(new Quantity());
+			}
 			qt = getQuantity(pt);
 		}
 		if (type instanceof Composite comp) {
@@ -1651,6 +1721,9 @@ public class DatatypeConverter {
 		}
 		type = adjustIfVaries(type);
 		if (type instanceof Primitive pt) {
+			if (isDeleted(pt)) {
+				return markDeleted(new StringType());
+			}
 			return new StringType(pt.getValue());
 		}
 		String s = null;
@@ -1788,6 +1861,9 @@ public class DatatypeConverter {
 	 */
 	public static TimeType toTimeType(Type type) {
 		// This will convert the first primitive component of anything to a time.
+		if (type instanceof Primitive p && isDeleted(p)) {
+			return markDeleted(new TimeType());
+		}
 		return toTimeType(ParserUtils.toString(type));
 	}
 
@@ -1825,6 +1901,9 @@ public class DatatypeConverter {
 		}
 		type = adjustIfVaries(type);
 		if (type instanceof Primitive pt) {
+			if (isDeleted(pt)) {
+				return markDeleted(new UriType());
+			}
 			return new UriType(StringUtils.strip(pt.getValue()));
 		}
 		Type[] types = ((Composite) type).getComponents();

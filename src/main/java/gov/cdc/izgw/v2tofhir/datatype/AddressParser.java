@@ -225,6 +225,9 @@ public class AddressParser implements DatatypeParser<Address> {
 		type = DatatypeConverter.adjustIfVaries(type);
 
 		if (type instanceof Primitive pt) {
+			if (DatatypeConverter.isDeleted(pt)) {
+				return DatatypeConverter.markDeleted(new Address());
+			}
 			addr = fromString(pt.getValue());
 		} else if (type instanceof Composite comp) {
 			switch (type.getName()) {
