@@ -185,6 +185,6 @@ public class MessageParser extends BaseParser<Message,Structure> implements Pars
 
 	@Override
 	public void warn(String message, Object... args) {
-		ErrorReporter.get().warn(message, args);
+		DefaultErrorReporter.INSTANCE.warn(message, args);
 	}
 }
