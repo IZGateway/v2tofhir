@@ -608,6 +608,9 @@ public class DatatypeConverter {
 	 * @return A V2 Primitive or Composite datatype
 	 */
 	public static Type adjustIfVaries(Type type) {
+		if (type == null) {
+			return null;
+		}
 		return adjustIfVaries(type, type.getName());
 	}
 
