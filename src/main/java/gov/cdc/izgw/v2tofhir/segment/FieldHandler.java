@@ -204,7 +204,7 @@ public class FieldHandler implements Comparable<FieldHandler> {
 			// This is checked during initialization, so failure happens early if it is going to
 			// happen at all, so it's OK to throw an error here.
 			log.error("Cannot invoke {}: {}", method, e.getMessage(), e);
-			throw new ServiceConfigurationError("Cannot invoke " + method, e);
+			throw new IllegalStateException("Cannot invoke " + method, e);
 		}
 		return object;
 	}
@@ -216,9 +216,15 @@ public class FieldHandler implements Comparable<FieldHandler> {
 			// This is checked during initialization, so failure happens early if it is going to
 			// happen at all, so it's OK to throw an error here.
 			log.error("Cannot invoke {}: {}", method, e.getMessage(), e);
-			throw new ServiceConfigurationError("Cannot invoke " + method, e);
+			throw new IllegalStateException("Cannot invoke " + method, e);
 		} catch (InvocationTargetException ex) {
-			throw new ServiceConfigurationError("Exception executing " + method, ex.getCause());
+			if (ex.getTargetException() instanceof RuntimeException rte) {
+				throw rte;
+			}
+			if (ex.getTargetException() instanceof Error err) {
+				throw new RuntimeException("Error executing" + method, err);
+			}
+			throw new IllegalStateException("Exception executing " + method, ex.getCause());
 		}
 		return object;
 	}

@@ -439,7 +439,8 @@ public class ParserUtils {
 			type = v.getData();
 		}
 		if (type instanceof Composite comp) {
-			return comp.getComponents()[number];
+			Type[] a = comp.getComponents();
+			return number < a.length ? a[number] : null;
 		}
 		if (number == 0) {
 			// This handles the case of requesting the first component of what used to

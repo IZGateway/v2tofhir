@@ -51,14 +51,29 @@ public class TestData {
 	private static final IFhirPath engine = FhirContext.forR4().newFhirPath();
 
 	/**
+	 * Construct an empty TestData object.
+	 */
+	public TestData() {
+		
+	}
+
+	/**
+	 * Construct an Empty TestData object for the given resource name and line number.
+	 * @param name	The name of the resource
+	 * @param line	The line number in the resource where this object starts
+	 */
+	public TestData(String name, int line) {
+		resourceName = name;
+		lineNumber = line;
+	}
+	/**
 	 * Load the resource with the given name into a list of TestData objects.
 	 * @param name	The name of the resource to load
 	 * @param isMessageFile	True if the file contains full messages, false if it contains segments.
 	 * @return A list of TestData objects
 	 */
 	public static List<TestData> load(String name, boolean isMessageFile) {
-		TestData data = new TestData();
-		data.setResourceName(name);
+		TestData data = new TestData(name, 1);
 		List<TestData> list = new ArrayList<>();
 		try (
 			ContinuationReader br = 
@@ -70,9 +85,6 @@ public class TestData {
 			int assertionNumber = 0;
 			while (true) {
 				line = br.readLine();
-				if (data.getLineNumber() == 0) {
-					data.setLineNumber(br.getLine());
-				}
 				if (line == null || line.isEmpty()) {
 					if (isMessageFile && !b.isEmpty()) { // There's a message waiting
 						String message = b.toString();
@@ -86,7 +98,7 @@ public class TestData {
 					if (!data.isEmpty()) {
 						// If there is test data waiting, add it to the list.
 						list.add(data);
-						data = new TestData();	// and create a new one to capture waiting data.
+						data = new TestData(name, br.getLine() + 1);	// and create a new one to capture waiting data.
 					}
 
 					// Reached the end of the data
@@ -120,9 +132,7 @@ public class TestData {
 						// It's a new segment, add any existing test data to the list
 						data.setTestData(line + "\r");
 						list.add(data);
-						data = new TestData();
-						data.setResourceName(name);
-						data.setLineNumber(br.getLine());
+						data = new TestData(name, br.getLine() + 1);
 					} else {
 						data.setTestData(line);
 					}
@@ -491,5 +501,4 @@ public class TestData {
 		log.info("{} = {}", inner, value);
 		return value;
 	}
-
 }

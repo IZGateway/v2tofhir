@@ -47,6 +47,7 @@ import org.hl7.fhir.r4.model.Location;
 import org.hl7.fhir.r4.model.Location.LocationMode;
 import org.hl7.fhir.r4.model.MarkdownType;
 import org.hl7.fhir.r4.model.Organization;
+import org.hl7.fhir.r4.model.Period;
 import org.hl7.fhir.r4.model.PositiveIntType;
 import org.hl7.fhir.r4.model.Practitioner;
 import org.hl7.fhir.r4.model.PrimitiveType;
@@ -74,6 +75,7 @@ import ca.uhn.hl7v2.model.primitive.TSComponentOne;
 import gov.cdc.izgw.v2tofhir.datatype.AddressParser;
 import gov.cdc.izgw.v2tofhir.datatype.ContactPointParser;
 import gov.cdc.izgw.v2tofhir.datatype.HumanNameParser;
+import gov.cdc.izgw.v2tofhir.utils.ErrorReporter;
 import gov.cdc.izgw.v2tofhir.utils.Mapping;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 import gov.cdc.izgw.v2tofhir.utils.PathUtils;
@@ -267,6 +269,8 @@ public class DatatypeConverter {
 			return clazz.cast(toInstantType(t));
 		case "IntegerType":
 			return clazz.cast(toIntegerType(t));
+		case "Period":
+			return clazz.cast(toPeriod(t));
 		case "PositiveIntType":
 			return clazz.cast(toPositiveIntType(t));
 		case "Quantity":
@@ -322,6 +326,15 @@ public class DatatypeConverter {
 			return null;
 		}
 		try {
+			if ("RP".equals(data.getName())) {
+				Attachment attachment = new Attachment();
+				String type = ParserUtils.toString(comp, 2);
+				String subType = ParserUtils.toString(comp, 3);
+				String mimeType = getMediaType(type, subType);
+				attachment.setContentType(mimeType);
+				attachment.setUrl(ParserUtils.toString(comp, 0));
+				return attachment.isEmpty() ? null : attachment;
+			}
 			if (!"ED".equals(data.getName()) || data.isEmpty()) {
 				return null;
 			}
@@ -333,26 +346,27 @@ public class DatatypeConverter {
 		Attachment attachment = new Attachment();
 		String type = ParserUtils.toString(types, 1);
 		String subType = ParserUtils.toString(types, 2);
-		String encoding = ParserUtils.toString(types, 3).toUpperCase();
+		String encoding = StringUtils.defaultString(ParserUtils.toString(types, 3)).toUpperCase();
 		String body = ParserUtils.toString(types, 4);
-		
 		String mimeType = getMediaType(type, subType);
 		byte[] byteData = null;
-		try {
-			switch (StringUtils.left(encoding, 1).toLowerCase()) {
-			case "b":	// Base64
-				byteData = Base64.getMimeDecoder().decode(body);
-				break;
-			case "h":	// Hexidecimal
-				byteData = HexFormat.of().parseHex(body);
-			case "a":	// ASCII
-			default:
-				byteData = body.getBytes(StandardCharsets.UTF_8);
-				break;
+		if (body != null) {
+			try {
+				switch (StringUtils.left(encoding, 1).toLowerCase()) {
+				case "b":	// Base64
+					byteData = Base64.getMimeDecoder().decode(body);
+					break;
+				case "h":	// Hexidecimal
+					byteData = HexFormat.of().parseHex(body);
+				case "a":	// ASCII
+				default:
+					byteData = body.getBytes(StandardCharsets.UTF_8);
+					break;
+				}
+			} catch (IllegalArgumentException illegalDataContentEx) {
+				byteData = null;
+				warn("Illegal characters in ED data using {} encoding", encoding, illegalDataContentEx);
 			}
-		} catch (IllegalArgumentException illegalDataContentEx) {
-			byteData = null;
-			warn("Illegal characters in ED data using {} encoding", encoding, illegalDataContentEx);
 		}
 		attachment.setContentType(mimeType);
 		attachment.setData(byteData);
@@ -417,6 +431,7 @@ public class DatatypeConverter {
 		TYPE_MAP.put("octet", "application/octet-stream");
 		TYPE_MAP.put("octetstream", "application/octet-stream");
 		TYPE_MAP.put("cda", "text/xml");
+		TYPE_MAP.put("pdf", "application/pdf");
 	}
 			
 	/** 
@@ -426,15 +441,16 @@ public class DatatypeConverter {
 	 * @return	The mimeType
 	 */
 	public static String getMediaType(String type, String subType) {
+		type = StringUtils.defaultString(type);
 		if (type.contains(";")) {
 			type = StringUtils.substringBefore(type, ";").trim();
 		}
-		String mimeType = type.toLowerCase() + "/" + subType.toLowerCase();
+		String mimeType = StringUtils.lowerCase(type) + "/" + StringUtils.lowerCase(subType);
 		if (MIME_TYPES.contains(mimeType)) {
 			return mimeType;
 		}
 		
-		if (!mimeType.contains("/")) {
+		if (StringUtils.isEmpty(subType)) {
 			String newType;
 			type = StringUtils.defaultIfEmpty(type, "").toLowerCase();
 			subType = StringUtils.defaultIfEmpty(subType, "").toLowerCase();
@@ -502,7 +518,7 @@ public class DatatypeConverter {
 		CodeableConcept cc = new CodeableConcept();
 		Primitive st = null;
 		Composite comp = null;
-		switch (codedElement.getName()) {
+		switch (getName(codedElement)) {
 		case "CE", "CF", "CNE", "CWE":
 			comp = (Composite) codedElement;
 			for (int i = 0; i <= 3; i += 3) {
@@ -544,6 +560,17 @@ public class DatatypeConverter {
 		return cc;
 	}
 
+	private static String getName(Type type) {
+		if (type == null) {
+			return null;
+		}
+		String name = type.getName();
+		if (name != null) {
+			return name;
+		}
+		return null;
+	}
+
 	/**
 	 * Convert a V2 Varies datatype to its actual datatype
 	 * 
@@ -581,7 +608,7 @@ public class DatatypeConverter {
 	 * @return A V2 Primitive or Composite datatype
 	 */
 	public static Type adjustIfVaries(Type type) {
-		return adjustIfVaries(type, null);
+		return adjustIfVaries(type, type.getName());
 	}
 
 	/**
@@ -613,7 +640,7 @@ public class DatatypeConverter {
 		for (int v : systemValues) {
 			if (types.length > v && !ParserUtils.isEmpty(types[v])) {
 				List<String> system = getSystemsOfIdentifier(types[v]);
-				if (system != null) {
+				if (system != null && !system.isEmpty()) {
 					id.setSystem(system.get(0));
 					Mapping.mapSystem(id);
 					if (system.size() > 1) {
@@ -880,6 +907,38 @@ public class DatatypeConverter {
 		}
 		return castInto(instant, new DateTimeType());
 	}
+	
+	public static Period toPeriod(Type type) {
+		type = adjustIfVaries(type);
+		if (type instanceof Primitive p && isDeleted(p)) {
+			return markDeleted(new Period());
+		}
+		
+		if (type == null) {
+			return null;
+		}
+		
+		if ("TQ".equals(type.getName())) {
+			Period period = new Period();
+			Composite comp = (Composite) type;
+			Type[] types = comp.getComponents();
+			if (types.length > 3) {
+				Type start = adjustIfVaries(types, 3);
+				if (start != null && !ParserUtils.isEmpty(start)) {
+					period.setStartElement(toDateTimeType(start));
+				}
+			}
+			if (types.length > 4) {
+				Type end = adjustIfVaries(types, 4);
+				if (end != null && !ParserUtils.isEmpty(end)) {
+					period.setEndElement(toDateTimeType(end));
+				}
+			}
+			return period.isEmpty() ? null : period;
+		}
+		log.warn("Cannot convert {} to Period", type.getName());
+		return null;
+	}
 
 	/**
 	 * Convert between date FHIR types, adjusting as necessary. Basically this works
@@ -1040,15 +1099,32 @@ public class DatatypeConverter {
 		return location;
 	}
 	
+	/**
+	 * Determine if the specified primitive has the V2 deleted value
+	 * @param p	The primitive to check
+	 * @return	True if the primitive has the V2 deleted value
+	 */
 	public static boolean isDeleted(Primitive p) {
 		return V2_DELETED.equals(p.getValue());
 	}
 
+	/**
+	 * Mark the specified FHIR type as deleted by adding an extension to it.
+	 * @param <T> The type of FHIR element to mark as deleted
+	 * @param base The FHIR element to mark as deleted
+	 * @return	The FHIR element marked as deleted
+	 */
 	public static <T extends org.hl7.fhir.r4.model.Type> T markDeleted(T base) {
 		base.addExtension(DELETED_FIELD_EXT);
 		return base;
 	}
 	
+	/**
+	 * Mark the specified FHIR Resource as deleted by adding an extension to it.
+	 * @param <T> The type of FHIR Resource to mark as deleted
+	 * @param resource The FHIR Resource to mark as deleted
+	 * @return	The FHIR Resource marked as deleted
+	 */
 	public static <T extends org.hl7.fhir.r4.model.DomainResource> T markDeleted(T resource) {
 		resource.addExtension(DELETED_FIELD_EXT);
 		return resource;
@@ -1103,6 +1179,9 @@ public class DatatypeConverter {
 	 * @return The Identifier converted from the V2 datatype
 	 */
 	public static Identifier toIdentifier(Type t) {
+		if (t == null) {
+			return null;
+		}
 		if ((t = adjustIfVaries(t)) == null) {
 			return null;
 		}
@@ -1389,7 +1468,7 @@ public class DatatypeConverter {
 			if (t != null) {
 				return t;
 			}
-			debugException("Unexpected V2 {} parsing {} as InstantType: {}", e.getClass().getSimpleName(), original,
+			warn("Unexpected V2 {} parsing {} as InstantType: {}", e.getClass().getSimpleName(), original,
 					e.getMessage());
 			return null;
 		}
@@ -1416,6 +1495,11 @@ public class DatatypeConverter {
 		}
 		if (decimal.isEmpty()) {
 			zone = parts.length > 1 ? parts[1] : "";
+			// Fix for missing decimal point in a timestamp.
+			if (numeric.length() > 14) {
+				decimal = "." + numeric.substring(14);
+				numeric = numeric.substring(0, 14);
+			}
 		} else {
 			zone = parts.length > 2 ? parts[2] : "";
 		}
@@ -1450,7 +1534,7 @@ public class DatatypeConverter {
 			instant.setTimeZone(tz);
 			return instant;
 		} catch (Exception ex) {
-			debugException("Unexpected FHIR {} parsing {} as InstantType: {}", e.getClass().getSimpleName(), original,
+			warn("Unexpected FHIR {} parsing {} as InstantType: {}", e.getClass().getSimpleName(), original,
 					ex.getMessage(), ex);
 			return null;
 		}
@@ -1510,10 +1594,12 @@ public class DatatypeConverter {
 	 * @return The InstantType converted from the V2 datatype
 	 */
 	public static InstantType toInstantType(Type type) {
+		if (type instanceof Varies v) {
+			type = v.getData();
+		}
 		if (type instanceof Primitive p && isDeleted(p)) {
 			return markDeleted(new InstantType());
-		}
-
+		} 
 		return toInstantType(ParserUtils.toString(type));
 	}
 
@@ -1965,7 +2051,7 @@ public class DatatypeConverter {
 			}
 			return coding;
 		} catch (Exception e) {
-			warnException("Unexpected {} converting {}[{}] to Coding: {}", e.getClass().getName(), composite.toString(),
+			warn("Unexpected {} converting {}[{}] to Coding: {}", e.getClass().getName(), composite.toString(),
 					index, e.getMessage(), e);
 			return null;
 		}
@@ -2076,16 +2162,8 @@ public class DatatypeConverter {
 		}
 		return b.toString();
 	}
-
-	private static void warn(String msg, Object... args) {
-		log.warn(msg, args);
-	}
-
-	private static void warnException(String msg, Object... args) {
-		log.error(msg, args);
-	}
-
-	private static void debugException(String msg, Object... args) {
-		log.debug(msg, args);
+	
+	private static void warn(String message, Object ... args) {
+		ErrorReporter.get().warn(message, args);
 	}
 }

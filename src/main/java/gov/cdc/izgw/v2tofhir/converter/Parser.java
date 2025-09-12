@@ -12,6 +12,7 @@ import org.hl7.fhir.r4.model.Provenance.ProvenanceEntityRole;
 import org.hl7.fhir.r4.model.Resource;
 
 import gov.cdc.izgw.v2tofhir.utils.Codes;
+import gov.cdc.izgw.v2tofhir.utils.ErrorReporter;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 
 import java.lang.reflect.InvocationTargetException;
@@ -28,7 +29,7 @@ import java.util.function.Supplier;
  * @param <U> The unit to parse
  * @param <S> The subunit to parse
  */
-public interface Parser<U,S> {
+public interface Parser<U,S> extends ErrorReporter {
 
 	/** The userData key for source of the resource */
 	String SOURCE = "source";

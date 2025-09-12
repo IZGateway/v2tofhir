@@ -14,6 +14,7 @@ import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Immunization;
 import org.hl7.fhir.r4.model.InstantType;
 import org.hl7.fhir.r4.model.Organization;
+import org.hl7.fhir.r4.model.Period;
 import org.hl7.fhir.r4.model.Practitioner;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ServiceRequest;
@@ -160,7 +161,7 @@ public class OBRParser extends AbstractSegmentParser {
 	 * @param requestedDateTime the time the order was placed
 	 */
 	@ComesFrom(path = "ServiceRequest.occurrenceDateTime", field = 6, comment = "Requested Date/Time")
-	public void setRequestedDateTime(InstantType requestedDateTime) {
+	public void setRequestedDateTime(DateTimeType requestedDateTime) {
 		order.setOccurrence(requestedDateTime);
 	}
 
@@ -200,7 +201,7 @@ public class OBRParser extends AbstractSegmentParser {
 	 * @param quantityTiming the quantity and timing 
 	 */
 	@ComesFrom(path = "ServiceRequest.occurence", field = 27, comment = "Quantity/Timing")
-	public void setQuantityTiming(DateTimeType quantityTiming) {
+	public void setQuantityTiming(Period quantityTiming) {
 		order.setOccurrence(quantityTiming);
 	}
 

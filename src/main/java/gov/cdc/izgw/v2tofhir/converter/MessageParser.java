@@ -12,12 +12,15 @@ import org.hl7.fhir.r4.model.Enumerations.DocumentReferenceStatus;
 import org.hl7.fhir.r4.model.StringType;
 
 import ca.uhn.hl7v2.HL7Exception;
+import ca.uhn.hl7v2.model.GenericSegment;
 import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.model.Segment;
 import ca.uhn.hl7v2.model.Structure;
 import ca.uhn.hl7v2.model.Type;
+import ca.uhn.hl7v2.parser.EncodingCharacters;
 import ca.uhn.hl7v2.parser.PipeParser;
 import gov.cdc.izgw.v2tofhir.segment.ERRParser;
+import gov.cdc.izgw.v2tofhir.utils.ErrorReporter;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -47,6 +50,22 @@ public class MessageParser extends BaseParser<Message,Structure> implements Pars
 	}
 	
 	/**
+	 * Default constructor which sets this instance as the ErrorReporter for any static methods
+	 */
+	public MessageParser() {
+		ErrorReporter.set(this);
+	}
+	
+	/**
+	 * Get a PipeParser for parsing HL7 V2 messages.
+	 * Override this method to provide a custom parser (e.g., with custom validation).
+	 * @return A PipeParser
+	 */
+	public PipeParser getParser() {
+		return new PipeParser();
+	}
+	
+	/**
 	 * Convert the hl7Message to a new Message using a PipeParser and then convert it.
 	 * @param hl7Message	The HL7 Message
 	 * @return The converted bundle
@@ -54,7 +73,7 @@ public class MessageParser extends BaseParser<Message,Structure> implements Pars
 	 */
 	@Override
 	public Bundle convert(String hl7Message) throws HL7Exception {
-    	return convert(new PipeParser().parse(hl7Message)); 
+    	return convert(getParser().parse(hl7Message)); 
 	}
 	
 	/**
@@ -143,7 +162,10 @@ public class MessageParser extends BaseParser<Message,Structure> implements Pars
 
 	@Override
 	public String encode(Structure subunit) {
-		if (subunit instanceof Segment segment) {
+		if (subunit instanceof GenericSegment generic) {
+			PipeParser parser = PipeParser.getInstanceWithNoValidation();
+			return parser.doEncode(generic, EncodingCharacters.defaultInstance());
+		} else if (subunit instanceof Segment segment) {
 			try {
 				return segment.encode();
 			} catch (HL7Exception e) {
@@ -155,9 +177,14 @@ public class MessageParser extends BaseParser<Message,Structure> implements Pars
 		// TODO: What do we do here?
 		return "";
 	}
-
+	
 	@Override
 	protected String getName(Structure structure) {
 		return structure.getName();
+	}
+
+	@Override
+	public void warn(String message, Object... args) {
+		ErrorReporter.get().warn(message, args);
 	}
 }

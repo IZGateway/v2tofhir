@@ -188,6 +188,7 @@ public abstract class BaseParser<U,S> implements Parser<U,S> {
 		} finally {
 			afterParsing(structure);
 			addProcessed(structure);
+			processor.finish();
 		}
 
 		if (getContext().isStoringProvenance()) {
@@ -360,9 +361,5 @@ public abstract class BaseParser<U,S> implements Parser<U,S> {
 	@Override
 	public void update(IBaseResource r) {
 		updated.add(r);	
-	}
-	
-	public void warn(String msg, Object ...args) {
-		log.warn(msg, args);
 	}
 }

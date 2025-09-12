@@ -5,10 +5,10 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 
 import org.apache.commons.lang3.StringUtils;
-import org.hl7.fhir.dstu2.model.Attachment;
 import org.hl7.fhir.instance.model.api.IBase;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Address;
+import org.hl7.fhir.r4.model.Attachment;
 import org.hl7.fhir.r4.model.BaseDateTimeType;
 import org.hl7.fhir.r4.model.CodeType;
 import org.hl7.fhir.r4.model.CodeableConcept;
@@ -16,6 +16,9 @@ import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.ContactPoint;
 import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.Device;
+import org.hl7.fhir.r4.model.DocumentReference;
+import org.hl7.fhir.r4.model.DocumentReference.ReferredDocumentStatus;
+import org.hl7.fhir.r4.model.Enumerations.DocumentReferenceStatus;
 import org.hl7.fhir.r4.model.HumanName;
 import org.hl7.fhir.r4.model.ImmunizationRecommendation;
 import org.hl7.fhir.r4.model.ImmunizationRecommendation.ImmunizationRecommendationRecommendationComponent;
@@ -23,9 +26,11 @@ import org.hl7.fhir.r4.model.ImmunizationRecommendation.ImmunizationRecommendati
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Immunization;
 import org.hl7.fhir.r4.model.Immunization.ImmunizationEducationComponent;
+import org.hl7.fhir.r4.model.Location;
 import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Observation.ObservationStatus;
 import org.hl7.fhir.r4.model.Organization;
+import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.PositiveIntType;
 import org.hl7.fhir.r4.model.Practitioner;
 import org.hl7.fhir.r4.model.PractitionerRole;
@@ -33,6 +38,7 @@ import org.hl7.fhir.r4.model.Quantity;
 import org.hl7.fhir.r4.model.Range;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.RelatedPerson;
+import org.hl7.fhir.r4.model.Resource;
 import org.hl7.fhir.r4.model.StringType;
 import org.hl7.fhir.r4.model.TimeType;
 
@@ -69,6 +75,8 @@ public class OBXParser extends AbstractSegmentParser {
 	private ImmunizationRecommendationRecommendationComponent recommendation;
 	private String type = null;
 	private Observation observation = null;
+	/** The media associated with the observation if any */
+	private DocumentReference docRef = null;
 	private PractitionerRole performer;
 	
 	/**
@@ -224,10 +232,13 @@ public class OBXParser extends AbstractSegmentParser {
 		case "DTM":	target = DateTimeType.class; break;	//	Time Stamp (Date & Time)
 		case "ED":  target = Attachment.class; break;	//	Encapsulated Data	
 		case "FT":	target = StringType.class; break; //	Formatted Text (Display)	
+		case "HD":	target = Identifier.class; break; //	Hierarchic Designator
 		case "ID":	target = CodeType.class; break; //	Coded Value for HL7 Defined Tables	
 		case "IS":	target = CodeType.class; break; //	Coded Value for User-Defined Tables	
 		case "NM":	target = Quantity.class; break; //	Numeric	(Observation only accepts Quantity)
-		case "PN":	target = HumanName.class; break; //	Person Name	
+		case "PL":	target = Location.class; break; //	Person Location
+		case "PN":	target = HumanName.class; break; //	Person Name
+		case "RP":	target = Attachment.class; break; //	Reference Pointer
 		case "SN":	
 			if (v2Type instanceof Composite comp && comp.getComponents().length > 3) {
 				target = Range.class; 	
@@ -249,8 +260,7 @@ public class OBXParser extends AbstractSegmentParser {
 			 "DR",	//	Date/Time Range	
 			 "MA",	//	Multiplexed Array	
 			 "MO",	//	Money	
-			 "NA",	//	Numeric Array	
-			 "RP":	//	Reference Pointer	
+			 "NA":	//	Reference Pointer	
 		default:
 			break;
 		}
@@ -267,6 +277,22 @@ public class OBXParser extends AbstractSegmentParser {
 			observation.setValue(new StringType(TextUtils.toString(rp.getNameFirstRep())));
 		} else if (converted instanceof Practitioner pr) {
 			observation.setValue(new StringType(TextUtils.toString(pr.getNameFirstRep())));
+		} else if (converted instanceof Location loc) {
+			observation.setValue(new StringType(TextUtils.toString(loc.getNameElement())));
+		} else if (converted instanceof Identifier identifier) {
+			// You cannot set an identifier value directly into Observation.value
+			if (identifier.hasSystem() && identifier.hasValue()) {
+				observation.setValue(new StringType(identifier.getSystem() + "#" + identifier.getValue()));
+			} else if (identifier.hasValue()) {
+				observation.setValue(identifier.getValueElement());
+			} else if (identifier.hasSystem()) {
+				observation.setValue(identifier.getSystemElement());
+			}
+			// Save the identifier as an external identifier for the observation
+			observation.addIdentifier(identifier);
+		} else if (converted instanceof Attachment attachment) {
+			docRef = createDocRef(attachment);
+			observation.getDerivedFrom().add(ParserUtils.toReference(docRef, observation, "derivedFrom"));
 		} else if (converted instanceof org.hl7.fhir.r4.model.Type t){
 			observation.setValue(t);
 		}
@@ -284,6 +310,101 @@ public class OBXParser extends AbstractSegmentParser {
 		} else if (izDetail.hasRecommendation()) {
 			handleRecommendationObservations(converted);
 		}
+	}
+
+	private DocumentReference createDocRef(Attachment attachment) {
+		// TODO Auto-generated method stub
+		docRef = createResource(DocumentReference.class);
+		docRef.setStatus(DocumentReferenceStatus.CURRENT);
+		docRef.addContent().setAttachment(attachment);
+		// Backlink the document reference to the observation
+		docRef.getContext().getRelated().add(ParserUtils.toReference(observation, docRef, "relatedContext"));
+		return null;
+	}
+	
+	@Override
+	/**
+	 * Finish populating the docRef resource if present from the observation 
+	 */
+	public void finish() {
+		if (docRef == null || docRef.isEmpty()) {
+			return;
+		}
+		docRef.setDate(observation.getEffectiveDateTimeType().getValue());
+		// The authors of the document reference are the performers of the observation.
+		for (Reference r: observation.getPerformer()) {
+			Resource res = (Resource) r.getResource();
+			if (res != null) {
+				docRef.getAuthor().add(ParserUtils.toReference(res, docRef, "author"));
+			}
+		}
+		
+		// Update status and docStatus based on observation status
+		ObservationStatus status = observation.getStatus();
+		if (status != null) {
+			switch (status) {
+			case AMENDED:
+				docRef.setStatus(DocumentReferenceStatus.CURRENT);
+				docRef.setDocStatus(ReferredDocumentStatus.AMENDED);
+				break;
+			case CANCELLED:
+				docRef.setStatus(DocumentReferenceStatus.SUPERSEDED);
+				docRef.setDocStatus(ReferredDocumentStatus.ENTEREDINERROR);
+				break;
+			case CORRECTED:
+				docRef.setStatus(DocumentReferenceStatus.CURRENT);
+				docRef.setDocStatus(ReferredDocumentStatus.AMENDED);
+				break;
+			case ENTEREDINERROR:
+				docRef.setStatus(DocumentReferenceStatus.ENTEREDINERROR);
+				docRef.setDocStatus(ReferredDocumentStatus.ENTEREDINERROR);
+				break;
+			case FINAL:
+				docRef.setStatus(DocumentReferenceStatus.CURRENT);
+				docRef.setDocStatus(ReferredDocumentStatus.FINAL);
+				break;
+			case NULL:
+				docRef.setStatus(DocumentReferenceStatus.NULL);
+				docRef.setDocStatus(ReferredDocumentStatus.NULL);
+				break;
+			case PRELIMINARY:
+				docRef.setStatus(DocumentReferenceStatus.CURRENT);
+				docRef.setDocStatus(ReferredDocumentStatus.PRELIMINARY);
+				break;
+			case REGISTERED:
+				docRef.setStatus(DocumentReferenceStatus.CURRENT);
+				docRef.setDocStatus(ReferredDocumentStatus.PRELIMINARY);
+				break;
+			case UNKNOWN:
+				docRef.setStatus(null);
+				docRef.setDocStatus(null);
+				break;
+			default:
+				break;
+			}
+		}
+		// The subject (and sourcePatientInfo) of the DocumentReference is the subject of the observation.
+		Resource subject = getResource(observation.getSubject());
+		if (subject != null) {
+			docRef.setSubject(ParserUtils.toReference(subject, docRef, "subject"));
+			if (subject instanceof Patient) {
+				docRef.getContext().setSourcePatientInfo(ParserUtils.toReference(subject, docRef, "sourcePatientInfo"));
+			}
+		}
+		
+		// The encounter of the DocumentReference is the encounter of the observation.
+		Resource encounter = getResource(observation.getEncounter());
+		if (encounter != null) {
+			docRef.getContext().getEncounter().add(ParserUtils.toReference(encounter, docRef, "encounter"));
+		}
+		
+	}
+
+	private Resource getResource(Reference ref) {
+		if (ref == null) {
+			return null;
+		}
+		return (Resource) ref.getResource();
 	}
 
 	/**

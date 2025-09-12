@@ -110,5 +110,13 @@ public interface Processor<U, S> {
 		}
 		return l.get(l.size() - 1);
 	}
+	
+	
+	/**
+	 * Finish up any processing after all units have been processed.
+	 */
+	default void finish() {
+		// do nothing by default
+	}
 }
 
