@@ -226,7 +226,6 @@ public class OBXParser extends AbstractSegmentParser {
 				 // Coded Entry
 				 target = CodeableConcept.class; break;		
 		case "CK":	target = Identifier.class; break;	//	Composite ID With Check Digit	
-		case "CN":	target = Address.class; break;	//	Composite ID And Name	
 		case "CX":	target = Identifier.class; break;	//	Extended Composite ID With Check Digit	
 		case "DT":	target = DateTimeType.class; break;	//	Observation doesn't like DateType	
 		case "DTM":	target = DateTimeType.class; break;	//	Time Stamp (Date & Time)
@@ -252,6 +251,7 @@ public class OBXParser extends AbstractSegmentParser {
 		case "TS":	target = DateTimeType.class; break; //	TimeStamp	 (OBX requires DateTimeType)
 		case "TX":	target = StringType.class; break; //	Text Data (Display)	
 		case "XAD":	target = Address.class; break; //	Extended Address	
+		case "CN":	target = RelatedPerson.class; break;	//	Composite ID And Name	
 		case "XCN":	target = RelatedPerson.class; break; //	Extended Composite Name And Number For Persons	
 		case "XON":	target = Organization.class; break; //	Extended Composite Name And Number For Organizations	
 		case "XPN":	target = HumanName.class; break; //	Extended Person Name	
@@ -279,6 +279,8 @@ public class OBXParser extends AbstractSegmentParser {
 			observation.setValue(new StringType(TextUtils.toString(pr.getNameFirstRep())));
 		} else if (converted instanceof Location loc) {
 			observation.setValue(new StringType(TextUtils.toString(loc.getNameElement())));
+		} else if (converted instanceof Address addr) {
+			observation.setValue(new StringType(TextUtils.toString(addr)));
 		} else if (converted instanceof Identifier identifier) {
 			// You cannot set an identifier value directly into Observation.value
 			if (identifier.hasSystem() && identifier.hasValue()) {
@@ -286,7 +288,7 @@ public class OBXParser extends AbstractSegmentParser {
 			} else if (identifier.hasValue()) {
 				observation.setValue(identifier.getValueElement());
 			} else if (identifier.hasSystem()) {
-				observation.setValue(identifier.getSystemElement());
+				observation.setValue(new StringType(identifier.getSystem()));
 			}
 			// Save the identifier as an external identifier for the observation
 			observation.addIdentifier(identifier);
@@ -319,7 +321,7 @@ public class OBXParser extends AbstractSegmentParser {
 		docRef.addContent().setAttachment(attachment);
 		// Backlink the document reference to the observation
 		docRef.getContext().getRelated().add(ParserUtils.toReference(observation, docRef, "relatedContext"));
-		return null;
+		return docRef;
 	}
 	
 	@Override
