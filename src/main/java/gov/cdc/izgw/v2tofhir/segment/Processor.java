@@ -118,5 +118,15 @@ public interface Processor<U, S> {
 	default void finish() {
 		// do nothing by default
 	}
+
+	/**
+	 * Handle any post-processing of the structure after it and all 
+	 * sub-structures have been processed.
+	 * 
+	 * @param structure	The structure that was processed.
+	 */
+	default void postProcess(S structure) {
+		// do nothing by default
+	}
 }
 

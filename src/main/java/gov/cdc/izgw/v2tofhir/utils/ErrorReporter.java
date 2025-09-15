@@ -1,6 +1,5 @@
 package gov.cdc.izgw.v2tofhir.utils;
 
-import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 
 import lombok.extern.slf4j.Slf4j;
