@@ -8,7 +8,6 @@ import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.HumanName;
-import org.hl7.fhir.r4.model.PositiveIntType;
 import org.hl7.fhir.r4.model.HumanName.NameUse;
 import org.hl7.fhir.r4.model.StringType;
 

@@ -2,9 +2,7 @@ package gov.cdc.izgw.v2tofhir.segment;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.UnaryOperator;
 
-import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Account;
 import org.hl7.fhir.r4.model.Account.AccountStatus;
@@ -37,6 +35,7 @@ import gov.cdc.izgw.v2tofhir.converter.MessageParser;
 import gov.cdc.izgw.v2tofhir.utils.Codes;
 import gov.cdc.izgw.v2tofhir.utils.FhirUtils;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
+import gov.cdc.izgw.v2tofhir.utils.RaceAndEthnicity;
 import gov.cdc.izgw.v2tofhir.utils.Systems;
 import lombok.extern.slf4j.Slf4j;
 
@@ -68,10 +67,6 @@ public class PIDParser extends AbstractSegmentParser {
 	public static final String PATIENT_BIRTH_PLACE = "http://hl7.org/fhir/StructureDefinition/patient-birthPlace";
 	/** Extension for Religion */
 	private static final String RELIGION = "http://hl7.org/fhir/StructureDefinition/patient-religion";
-	/** Extension for US Core Race */
-	public static final String US_CORE_RACE = "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race";
-	/** Extension for US Core Ethnicity */
-	public static final String US_CORE_ETHNICITY = "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity";
 	/** Extension for Citizenship */
 	public static final String PATIENT_CITIZENSHIP = "http://hl7.org/fhir/StructureDefinition/patient-citizenship";
 	/** Extension for Nationality */
@@ -265,73 +260,10 @@ public class PIDParser extends AbstractSegmentParser {
 			return;
 		}
 		
-		Extension raceExtension = patient.addExtension().setUrl(US_CORE_RACE);
+		Extension raceExtension = patient.addExtension().setUrl(RaceAndEthnicity.US_CORE_RACE);
 		getParser().getContext().setProperty(raceExtension.getUrl(), raceExtension);
-		Extension text = setRaceText(race, raceExtension);
+		RaceAndEthnicity.setRaceCode(race, raceExtension);
 		
-		if (!setCDCREC(race, raceExtension) &&  	// Didn't find CDCREC
-			!setLegacy(race, raceExtension, text)	// Didn't find a Legacy code
-		) {
-			setUnknown(raceExtension, "UNK");		// Then set value as unknown.
-		}
-		
-	}
-	
-	private Extension setRaceText(CodeableConcept race, Extension raceExtension) {
-		Extension text = null;
-		if (race.hasText()) {
-			text = new Extension("text", new StringType(race.getText()));
-			raceExtension.addExtension(text);
-		}
-		return text;
-	}
-	
-	private boolean setCDCREC(CodeableConcept race, Extension raceExtension) {
-		for (Coding coding: race.getCoding()) {
-			String code = coding.getCode();
-			if (StringUtils.isBlank(code)) {
-				continue;
-			}
-			
-			List<String> systemNames = Systems.getSystemNames(coding.getSystem());
-			
-			if ((!coding.hasSystem() || systemNames.contains(Systems.CDCREC)) &&
-				setCategoryAndDetail(raceExtension, coding, code, this::getRaceCategory)
-			) {
-				return true;
-			} 
-			if (setUnknown(raceExtension, code)) {
-				return true;
-			}
-		}
-		return false;
-	}
-	private boolean setLegacy(CodeableConcept race, Extension raceExtension, Extension text) {
-		for (Coding coding: race.getCoding()) {
-			String code = coding.getCode();
-			
-			if (StringUtils.isBlank(code)) {
-				continue;
-			}
-			
-			if (text == null) {
-				text = new Extension("text", new StringType(code));
-				raceExtension.addExtension(text);
-			}
-
-			// Deal with common legacy codes
-			Coding c = new Coding(Systems.CDCREC, getRaceCategory(code), null);
-			if (c.hasCode()) {
-				Extension category = raceExtension.getExtensionByUrl(OMB_CATEGORY);
-				if (category == null) {
-					raceExtension.addExtension(OMB_CATEGORY, c);
-				} else {
-					category.setValue(c);
-				}
-				return true;
-			} 
-		}
-		return false;
 	}
 
 	/**
@@ -363,42 +295,6 @@ public class PIDParser extends AbstractSegmentParser {
 		}
 	}
 	
-	private boolean setCategoryAndDetail(Extension extension, Coding coding, String code, UnaryOperator<String> categorize) {
-		Extension category = extension.getExtensionByUrl(OMB_CATEGORY);
- 
-		if ("ASKU".equals(code) || "UNK".equals(code)) {
-			// Set OMB category to code and quit
-			extension.setExtension(null);  // Clear prior extensions, only ombCategory can be present
-			if (category == null) {
-				extension.addExtension(OMB_CATEGORY, new Coding(Systems.NULL_FLAVOR, code, null));
-			} else {
-				category.setValue(new Coding(Systems.NULL_FLAVOR, code, null));
-			}
-			return true;
-		}
-		
-		// Figure out category and detail codes
-		Coding categoryCode = new Coding().setCode(categorize.apply(code)).setSystem(Systems.CDCREC);
-		if (categoryCode.hasCode()) {
-			// if category has a code, it was a legitimate race code
-			if (category == null) {
-				extension.addExtension(OMB_CATEGORY, categoryCode);
-			} else {
-				category.setValue(categoryCode);
-			}
-
-			// If if smells enough like a CDCREC code
-			if (coding.getCode().matches("^[1-2]\\d{3}-\\d$")) {
-				// Add to detailed.
-				extension.addExtension("detailed", coding);
-			}
-			if (coding.hasDisplay() && !extension.hasExtension("text")) {
-				extension.addExtension("text", coding.getDisplayElement());
-			}
-		}
-		return false;
-	}
-
 	/**
 	 * Add an ethnicity code to the patient using the US Core Ethnicity extension
 	 * @param ethnicity	The ethnicity to add.
@@ -414,153 +310,12 @@ public class PIDParser extends AbstractSegmentParser {
 			return;
 		}
 		
-		Extension ethnicityExtension = patient.addExtension().setUrl(US_CORE_ETHNICITY);
+		Extension ethnicityExtension = patient.addExtension().setUrl(RaceAndEthnicity.US_CORE_ETHNICITY);
 		getParser().getContext().setProperty(ethnicityExtension.getUrl(), ethnicityExtension);
-		Extension text = null;
-		if (ethnicity.hasText()) {
-			text = new Extension("text", new StringType(ethnicity.getText()));
-			ethnicityExtension.addExtension("text", text);
-		}
-		for (Coding coding: ethnicity.getCoding()) {
-			String code = StringUtils.defaultString(coding.getCode());
-			List<String> systemNames = Systems.getSystemNames(coding.getSystem());
-			
-			if (systemNames.contains(Systems.CDCREC) && 
-				setCategoryAndDetail(ethnicityExtension, coding, code, this::getEthnicityCategory)
-			) {
-				return;
-			}
-			
-			if (setUnknown(ethnicityExtension, code)) {
-				return;
-			}
-		}
-
-		// Didn't find CDCREC, or UNKNOWN look in other code sets.
-		for (Coding coding: ethnicity.getCoding()) {
-			String code = StringUtils.defaultString(coding.getCode());
-			
-			if (text == null) {
-				text = new Extension("text", new StringType(code));
-				ethnicityExtension.addExtension(text);
-			}
-
-			// Deal with common legacy codes
-			Coding c = new Coding(Systems.CDCREC, getEthnicityCategory(code), null);
-			if (c.hasCode()) {
-				Extension category = ethnicityExtension.getExtensionByUrl(OMB_CATEGORY);
-				if (category == null) {
-					ethnicityExtension.addExtension(OMB_CATEGORY, c);
-				} else {
-					category.setValue(c);
-				}
-				return;
-			}
-		}
-		// Nothing found, we bail
-		setUnknown(ethnicityExtension, "UNK");
+		RaceAndEthnicity.setEthnicityCode(ethnicity, ethnicityExtension);
 
 	}
 
-	private boolean setUnknown(Extension raceExtension, String code) {
-		// Don't both looking at systems, just codes.
-		
-		// Two switches are merged. This catches errors when DATA_ABSENT codes are used in
-		// the NULL_FLAVOR system and vice-versa.
-		switch (code) {
-		case "asked-unknown", // Set OMB category to ASKU and quit  
-			 "ASKU": 
-			raceExtension.setExtension(null);  // Clear prior extensions
-			raceExtension.addExtension(OMB_CATEGORY, new Coding(Systems.NULL_FLAVOR, "ASKU", null));
-			return true;
-		case "unknown", // Set OMB category to UNK and quit
-			 "UNK":  
-			raceExtension.setExtension(null);  // Clear prior extensions
-			raceExtension.addExtension(OMB_CATEGORY, new Coding(Systems.NULL_FLAVOR, "UNK", null));
-			return true;
-		default:
-			return false;
-		}
-	}
-	
-	/**
-	 * Computes the race category from the race code
-	 * 
-	 * This uses knowledge about the structure of the CDC Race code table to compute the values.
-	 * 
-	 * @param raceCode	The given race code
-	 * @return	The OMB Race category code
-	 */
-	public String getRaceCategory(String raceCode) {
-		raceCode = raceCode.toUpperCase();
-		// American Indian or Alaska Native
-		
-		if (isBetween(raceCode, "1002", "2027") ||
-			"INDIAN".equals(raceCode) || 
-			"I".equals(raceCode)
-		) {
-			return "1002-5";
-		}
-		// Asian
-		if (isBetween(raceCode, "2028", "2053") ||
-			"ASIAN".equals(raceCode) || 
-			"A".equals(raceCode)
-		) {
-			return "2028-9";
-		}
-		// Black or African American
-		if (isBetween(raceCode, "2054", "2076") ||
-			"BLACK".equals(raceCode) || 
-			"B".equals(raceCode)
-		) {
-			return "2054-5";
-		}
-		// Native Hawaiian or Other Pacific Islander
-		if (isBetween(raceCode, "2076", "2105") ||
-			"2500-7".equals(raceCode) ||
-			"HAWIIAN".equals(raceCode) || "H".equals(raceCode)
-		) { 
-			return "2076-8";
-		}
-		// White
-		if (isBetween(raceCode, "2106", "2130") ||
-			"WHITE".equals(raceCode) || 
-			"W".equals(raceCode)
-		) {
-			return "2106-3";
-		}
-		if ("2131-1".equals(raceCode) || "OTHER".equals(raceCode) || "O".equals(raceCode)) {
-			return "2131-1";
-		}
-		return null;
-	}
-	
-	private boolean isBetween(String string, String low, String high) {
-		return low.compareTo(string) <= 0 && high.compareTo(string) > 0;
-	}
-
-	/**
-	 * Computes the ethnic group category from the race code
-	 * 
-	 * This uses knowledge about the structure of the CDC Ethnicity code table to compute the values.
-	 * 
-	 * @param ethnicityCode	The given ethnicity code
-	 * @return	The OMB ethnicity category code
-	 */
-	public String getEthnicityCategory(String ethnicityCode) {
-		ethnicityCode = ethnicityCode.toUpperCase();
-		if (("2135".compareTo(ethnicityCode) >= 0 && "2186".compareTo(ethnicityCode) < 0) ||
-			ethnicityCode.charAt(0) == 'H'
-		) {
-			return "2135-2";
-		}
-		if ("2186-5".equals(ethnicityCode) || ethnicityCode.charAt(0) == 'N') {
-			return "2186-5";
-		}
-		return null;
-	}
-
-	
 	/**
 	 * Add a phone number to a patient
 	 * @param phone	The phone number (or other telecommuncations address)

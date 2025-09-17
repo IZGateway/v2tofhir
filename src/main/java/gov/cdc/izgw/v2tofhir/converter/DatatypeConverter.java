@@ -34,7 +34,6 @@ import org.hl7.fhir.r4.model.ContactPoint;
 import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.DateType;
 import org.hl7.fhir.r4.model.DecimalType;
-import org.hl7.fhir.r4.model.DomainResource;
 import org.hl7.fhir.r4.model.Enumerations.ResourceType;
 import org.hl7.fhir.r4.model.Expression;
 import org.hl7.fhir.r4.model.Extension;
@@ -911,6 +910,11 @@ public class DatatypeConverter {
 		return castInto(instant, new DateTimeType());
 	}
 	
+	/**
+	 * Convert a HAPI V2 datatype to a FHIR Period
+	 * @param type	The HAPI V2 type to convert
+	 * @return	The Period converted from the V2 datatype
+	 */
 	public static Period toPeriod(Type type) {
 		type = adjustIfVaries(type);
 		if (type instanceof Primitive p && isDeleted(p)) {
