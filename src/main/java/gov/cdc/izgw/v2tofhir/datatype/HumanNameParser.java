@@ -95,6 +95,9 @@ public class HumanNameParser implements DatatypeParser<HumanName> {
 	 * @return The parsed name in a HumanName object
 	 */
 	public static HumanName computeFromString(String name) {
+		if (name == null) {
+			return null;
+		}
 		HumanName hn = new HumanName();
 		hn.setText(name);
 		String[] parts = name.split("\\s");

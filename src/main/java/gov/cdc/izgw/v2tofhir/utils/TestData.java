@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceConfigurationError;
 
+import org.apache.commons.io.input.BOMInputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.instance.model.api.IBase;
 import org.hl7.fhir.r4.fhirpath.ExpressionNode;
@@ -76,8 +77,8 @@ public class TestData {
 		TestData data = new TestData(name, 1);
 		List<TestData> list = new ArrayList<>();
 		try (
-			ContinuationReader br = 
-				new ContinuationReader(new InputStreamReader(getResource(name), StandardCharsets.UTF_8));
+			BOMInputStream bis = BOMInputStream.builder().setInputStream(getResource(name)).get();
+			ContinuationReader br = new ContinuationReader(new InputStreamReader(bis, getCharset(bis)));
 		) {
 			StringBuilder b = new StringBuilder();
 			String line = null;
@@ -146,6 +147,14 @@ public class TestData {
 			throw new ServiceConfigurationError("Cannot load test file " + name);
 		}
 	}
+	private static String getCharset(BOMInputStream bis) throws IOException {
+		if (!bis.hasBOM()) {
+			return StandardCharsets.UTF_8.name();
+		}
+		
+		return bis.getBOMCharsetName();
+	}
+
 	private static InputStream getResource(String name) throws IOException {
 		InputStream s = TestData.class.getClassLoader().getResourceAsStream(name);
 		if (s == null) {

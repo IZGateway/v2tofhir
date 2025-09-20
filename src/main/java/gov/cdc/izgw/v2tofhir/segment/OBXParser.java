@@ -451,25 +451,37 @@ public class OBXParser extends AbstractSegmentParser {
 		}
 		switch (redirect) {
 		case VIS_DELIVERY_DATE_CODE:
-			education.setPresentationDateElement(
-					DatatypeConverter.castInto((BaseDateTimeType)converted, new DateTimeType()));
+			if (converted instanceof BaseDateTimeType bt) {
+				education.setPresentationDateElement(DatatypeConverter.castInto(bt, new DateTimeType()));
+			} else {
+				getParser().warn("Cannot convert {} to DateTimeType for VIS Delivery Date", converted.fhirType());
+			}
 			break;
 		case VIS_DOCUMENT_TYPE_CODE:
 			if (converted instanceof StringType sv) {
 				education.setDocumentTypeElement(sv);
 			} else if (converted instanceof CodeableConcept cc) {
 				education.setDocumentType(TextUtils.toString(cc));
+			} else {
+				getParser().warn("Cannot convert {} to StringType for VIS Document Type", converted.fhirType());
 			}
 			break;
 		case VIS_VACCINE_TYPE_CODE:
-			education.getDocumentTypeElement()
-				.addExtension()
-					.setUrl("http://hl7.org/fhir/StructureDefinition/iso21090-SC-coding")
-					.setValue(((CodeableConcept)converted).getCodingFirstRep());
+			if (converted instanceof CodeableConcept cc) {
+				education.getDocumentTypeElement()
+					.addExtension()
+						.setUrl("http://hl7.org/fhir/StructureDefinition/iso21090-SC-coding")
+						.setValue(cc.getCodingFirstRep());
+			} else {
+				getParser().warn("Cannot convert {} to CodeableConcept for VIS Vaccine Type", converted.fhirType());
+			}
 			break;
 		case VIS_VERSION_DATE_CODE:
-			education.setPublicationDateElement(
-					DatatypeConverter.castInto((BaseDateTimeType)converted, new DateTimeType()));
+			if (converted instanceof BaseDateTimeType bt) {
+				education.setPublicationDateElement(DatatypeConverter.castInto(bt, new DateTimeType()));
+			} else {
+				getParser().warn("Cannot convert {} to DateTimeType for VIS Version Date", converted.fhirType());
+			}
 			break;
 		default:
 			break;

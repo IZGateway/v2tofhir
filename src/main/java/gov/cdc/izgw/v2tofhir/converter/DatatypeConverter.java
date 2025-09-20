@@ -596,7 +596,12 @@ public class DatatypeConverter {
 		} else if (type instanceof GenericPrimitive prim) {
 			type = new MyGenericPrimitive(prim, name);
 		}
-
+		// If NULLDT is found, just return a GenericPrimitive
+		// with a null value.  The name will be "UNKNOWN", so it
+		// shouldn't match anything.
+		if ("NULLDT".equals(type.getName())) {
+			type = new GenericPrimitive(type.getMessage());
+		}
 		return type;
 	}
 
@@ -942,8 +947,12 @@ public class DatatypeConverter {
 				}
 			}
 			return period.isEmpty() ? null : period;
+		} else if (!"UNKNOWN".equals(type.getName()) ) {
+			// Warn for anything that isn't a TQ or UNKNOWN.  
+			// Ignore UNKNOWN, which is what appears for segments containing
+			// withdrawn datatypes like CE.
+			log.warn("Cannot convert {} to Period", type.getName());
 		}
-		log.warn("Cannot convert {} to Period", type.getName());
 		return null;
 	}
 
