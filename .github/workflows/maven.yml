@@ -199,6 +199,8 @@ jobs:
         path: target/v2tofhir-${{env.IMAGE_BRANCH_TAG}}.jar
         format: 'HTML'
         args: >
+          --ossIndexUsername ${{ secrets.OSS_INDEX_USERNAME }}
+          --ossIndexPassword ${{ secrets.OSS_INDEX_PASSWORD }}        
           --failOnCVSS 7
           --suppression ./dependency-suppression.xml
           --disableNuspec    
