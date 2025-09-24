@@ -246,7 +246,7 @@ public class Systems {
 	static Map<String, NamingSystem> namingSystems = new LinkedHashMap<>();
 	static {
 		for (String[] list: stringToUri) {
-			addNamingSystem(null, list);
+			addNamingSystem(list[1], list);
 		}
 	}
 	

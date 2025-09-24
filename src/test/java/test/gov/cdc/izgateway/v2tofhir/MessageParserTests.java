@@ -504,7 +504,7 @@ class MessageParserTests extends TestBase {
 				}
 			}
 		}
-		log.info("Produced {} <> value {}", l, value);
+		log.info("Produced {} <> value {}", produced, value);
 		return null;
 	}
 	
