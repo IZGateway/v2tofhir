@@ -659,6 +659,7 @@ public class ParserUtils {
 			resource.setUserData(REFERENCE_LINK, ref);
 			// And the reference to the resource
 			ref.setUserData("Resource", resource);
+			ref.setResource(resource);
 		}
 		
 		IdType id = resource.getIdElement();
