@@ -266,7 +266,10 @@ public class Systems {
 			namingSystems.put(uri, ns);
 		}
 		if (name != null) {
-			ns.setName(name);
+			if (!ns.hasName()) {
+				ns.setName(name);
+			}
+			namingSystems.put(name, ns);
 		}
 		for (String s: list) {
 			if (!uri.equals(s)) {
@@ -419,7 +422,7 @@ public class Systems {
 		return found;
 	}
 	
-	static NamingSystem getNamingSystem(String system) {
+	public static NamingSystem getNamingSystem(String system) {
 		if (StringUtils.isBlank(system)) {
 			return null;
 		}
