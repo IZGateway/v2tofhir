@@ -317,9 +317,9 @@ public class Mapping {
 	 * @param cs	The code System
 	 * @param lineNumber		The line number
 	 * @param indices Header indices (not used)
-	 * @param fields	The field data
+	 * @param fields	The field data, in the order code, display, definition, comment, comment as published, usage notes
 	 */
-	private static void addCodes(CodeSystem cs, String[] fields) {
+	public static void addCodes(CodeSystem cs, String[] fields) {
 		if (fields == null) {
 			return;
 		}
@@ -344,7 +344,12 @@ public class Mapping {
 		}
 	}
 
-	private static NamingSystem createNamingSystem(CodeSystem cs) {
+	/**
+	 * Create a NamingSystem for the given CodeSystem
+	 * @param cs	The CodeSystem to create a NamingSystem for
+	 * @return	The created NamingSystem
+	 */
+	public static NamingSystem createNamingSystem(CodeSystem cs) {
 		NamingSystem ns = new NamingSystem();
 		ns.setName(cs.getName());
 		ns.setUrl(cs.getUrl());
