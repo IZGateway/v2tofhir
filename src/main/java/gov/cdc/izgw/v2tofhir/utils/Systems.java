@@ -279,7 +279,7 @@ public class Systems {
 		}
 	}
 	
-	private static NamingSystem createNamingSystem(String uri, String name) {
+	public static NamingSystem createNamingSystem(String uri, String name) {
 		NamingSystem ns = new NamingSystem();
 		ns.setUrl(uri);
 		NamingSystemUniqueIdComponent uid = ns.addUniqueId();
@@ -295,7 +295,12 @@ public class Systems {
 		return ns;
 	}
 	
-	private static void updateNamingSystem(NamingSystem ns, String uid) {
+	/**
+	 * Add a unique id to a naming system if it doesn't already exist.
+	 * @param ns	The naming system to update
+	 * @param uid The unique id to add
+	 */
+	public static void updateNamingSystem(NamingSystem ns, String uid) {
 		for (NamingSystemUniqueIdComponent uniqueId : ns.getUniqueId()) {
 			if (uid.equals(uniqueId.getValue())) {
 				return;

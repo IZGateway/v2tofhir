@@ -323,13 +323,18 @@ public class Mapping {
 		if (fields == null) {
 			return;
 		}
+		Coding coding = new Coding();
+		coding.setSystem(cs.getUrl());
 		ConceptDefinitionComponent concept = cs.addConcept();
 		if (fields.length > 0 && StringUtils.isNotEmpty(fields[0])) {
 			concept.setCode(fields[0]);
+			coding.setCode(fields[0]);
 		}
 		if (fields.length > 1 && StringUtils.isNotEmpty(fields[1])) {
 			concept.setDisplay(fields[1]);
+			coding.setDisplay(fields[1]);
 		}
+		Mapping.updateCodeLookup(coding);
 		if (fields.length > 2 && StringUtils.isNotEmpty(fields[2])) {
 			concept.setDefinition(fields[2]);
 		}
