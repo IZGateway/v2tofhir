@@ -2,11 +2,8 @@ package gov.cdc.izgw.v2tofhir.utils;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.ServiceConfigurationError;
+import java.util.*;
+
 import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.CodeSystem;
 import org.hl7.fhir.r4.model.CodeSystem.CodeSystemContentMode;
@@ -62,6 +59,7 @@ public class Mapping {
 	private static final Map<String, Mapping> codeMaps = new LinkedHashMap<>();
 	private static final Map<String, ConceptMap> conceptMaps = new LinkedHashMap<>();
 	private static final Map<String, Map<String, Coding>> codingMaps = new LinkedHashMap<>();
+    private static final List<String> additionalResourcePatterns = new ArrayList<>();
 	static {
 		initConceptMaps();
 		initVocabulary();
@@ -243,6 +241,9 @@ public class Mapping {
 			fileno++;
 			loadCodeSystemFile(fileno, file);
 		}
+
+        // TODO - maybe move existing code in this function to its own
+        loadAdditionalResources();
 	}
 
 	private static Mapping loadConceptFile(int fileno, Resource file) {
@@ -315,8 +316,6 @@ public class Mapping {
 	 * Code,Display,Definition,V2 Concept Comment,V2 Concept Comment As Published,HL7 Concept Usage Notes
 	 * 
 	 * @param cs	The code System
-	 * @param lineNumber		The line number
-	 * @param indices Header indices (not used)
 	 * @param fields	The field data, in the order code, display, definition, comment, comment as published, usage notes
 	 */
 	public static void addCodes(CodeSystem cs, String[] fields) {
@@ -800,4 +799,81 @@ public class Mapping {
 		String key = StringUtils.right("000" + table, 4);
 		return v2TablesUsed.computeIfAbsent(key, k -> Mapping.V2_TABLE_PREFIX + key);
 	}
+
+    /**
+     * Reinitialize mappings with additional resource patterns
+     * @param resourcePatterns List of resource patterns to load CSV files from
+     */
+    public static synchronized void reinitializeWithResources(List<String> resourcePatterns) {
+        additionalResourcePatterns.clear();
+        additionalResourcePatterns.addAll(resourcePatterns);
+        clearMappings();
+        initConceptMaps();
+        initVocabulary();
+    }
+
+    private static void clearMappings() {
+        codeMaps.clear();
+        conceptMaps.clear();
+        codingMaps.clear();
+    }
+
+    /**
+     * Loads mappings from this project
+     */
+    private static void loadDefaultResources() {
+        Resource[] conceptFiles;
+        Resource[] codeSystemFiles;
+        try {
+            conceptFiles = resolver.getResources("coding/HL7 Concept*.csv");
+            codeSystemFiles = resolver.getResources("coding/HL7 CodeSystem*.csv");
+        } catch (IOException e) {
+            log.error("Cannot load default coding resources");
+            throw new ServiceConfigurationError("Cannot load coding resources", e);
+        }
+
+        int fileno = 0;
+        for (Resource file : conceptFiles) {
+            fileno++;
+            Mapping m = loadConceptFile(fileno, file);
+            m.lock();
+        }
+        for (Resource file : codeSystemFiles) {
+            fileno++;
+            loadCodeSystemFile(fileno, file);
+        }
+    }
+
+    private static void loadAdditionalResources() {
+
+        if (additionalResourcePatterns.isEmpty()) {
+            return; // Early exit if nothing to load
+        }
+
+        int fileno = codeMaps.size();
+
+        for (String resourcePattern : additionalResourcePatterns) {
+            try {
+                Resource[] resources = resolver.getResources(resourcePattern);
+
+                for (Resource resource : resources) {
+                    fileno++;
+
+                    if (resource.getFilename().contains("Concept")) {
+                        Mapping m = loadConceptFile(fileno, resource);
+                        m.lock();
+                        log.info("Loaded additional concept mapping: {}", resource.getFilename());
+                    } else if (resource.getFilename().contains("CodeSystem")) {
+                        loadCodeSystemFile(fileno, resource);
+                        log.info("Loaded additional code system: {}", resource.getFilename());
+                    }
+                }
+
+            } catch (IOException e) {
+                log.warn("Could not load additional resources from pattern: {} - {}",
+                        resourcePattern, e.getMessage());
+            }
+        }
+    }
+
 }
