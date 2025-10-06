@@ -279,6 +279,12 @@ public class Systems {
 		}
 	}
 	
+	/**
+	 * Create a naming system with the given URI and name.
+	 * @param uri	The URI for the naming system
+	 * @param name	A common name for the naming system
+	 * @return	The created naming system
+	 */
 	public static NamingSystem createNamingSystem(String uri, String name) {
 		NamingSystem ns = new NamingSystem();
 		ns.setUrl(uri);
@@ -427,6 +433,11 @@ public class Systems {
 		return found;
 	}
 	
+	/**
+	 * Get the NamingSystem for a given name, system uri, or other alias.
+	 * @param system	The search value
+	 * @return	The NamingSystem, or null if not found
+	 */
 	public static NamingSystem getNamingSystem(String system) {
 		if (StringUtils.isBlank(system)) {
 			return null;
