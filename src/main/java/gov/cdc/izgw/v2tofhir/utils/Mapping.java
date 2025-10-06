@@ -2,6 +2,7 @@ package gov.cdc.izgw.v2tofhir.utils;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.util.*;
 
 import org.apache.commons.lang3.StringUtils;
@@ -59,7 +60,6 @@ public class Mapping {
 	private static final Map<String, Mapping> codeMaps = new LinkedHashMap<>();
 	private static final Map<String, ConceptMap> conceptMaps = new LinkedHashMap<>();
 	private static final Map<String, Map<String, Coding>> codingMaps = new LinkedHashMap<>();
-    private static final List<String> additionalResourcePatterns = new ArrayList<>();
 	static {
 		initConceptMaps();
 		initVocabulary();
@@ -241,70 +241,43 @@ public class Mapping {
 			fileno++;
 			loadCodeSystemFile(fileno, file);
 		}
-
-        // TODO - maybe move existing code in this function to its own
-        loadAdditionalResources();
 	}
 
 	private static Mapping loadConceptFile(int fileno, Resource file) {
 		String name = file.getFilename().split("_ ")[1].split(" ")[0];
-		Mapping m = new Mapping(name);
-		codeMaps.put(name, m);
-		int line = 0;
-		try (InputStreamReader sr = new InputStreamReader(file.getInputStream());
-				CSVReader reader = new CSVReader(sr);) {
-			reader.readNext(); // Skip first line header
-			line++;
-			String[] headers = reader.readNext();
-			int[] indices = getHeaderIndices(headers);
-			line++;
-			String[] fields = null;
 
-			while ((fields = reader.readNext()) != null) {
-				addMapping(name, m, ++line, indices, fields);
+		try (InputStreamReader sr = new InputStreamReader(file.getInputStream())) {
+			StringBuilder sb = new StringBuilder();
+			char[] buffer = new char[8192];
+			int read;
+			while ((read = sr.read(buffer)) != -1) {
+				sb.append(buffer, 0, read);
 			}
-			log.debug("{}: Loaded {} lines from {}", fileno, line, name);
-
+			String csvContent = sb.toString();
+			Mapping m = parseConceptMapCsv(csvContent, name);
+			codeMaps.put(name, m);
+			log.debug("{}: Loaded from {}", fileno, name);
+			return m;
 		} catch (Exception e) {
-			warn(UNEXPECTED_ERROR_READING, e.getClass().getSimpleName(), file.getFilename(), line,
+			warn(UNEXPECTED_ERROR_READING, e.getClass().getSimpleName(), file.getFilename(), 0,
 					e.getMessage(), e);
+			return new Mapping(name); // Return empty mapping on error
 		}
-		return m;
 	}
 	
 	private static void loadCodeSystemFile(int fileno, Resource file) {
-		String name = file.getFilename().split("_ ")[1].split(" ")[0];
-		Mapping m = new Mapping(name);
-		codeMaps.put(name, m);
-		int line = 0;
-		try (InputStreamReader sr = new InputStreamReader(file.getInputStream());
-				CSVReader reader = new CSVReader(sr);) {
-			String[] metadata = reader.readNext(); // Skip first line header
-			
-			CodeSystem cs = new CodeSystem();
-			cs.setName(metadata.length > 2 ? metadata[2] : null);
-			cs.setUrl(metadata.length > 0 ? metadata[0] : null);
-			cs.setContent(CodeSystemContentMode.COMPLETE);
-			cs.setCaseSensitive(false);
-			cs.setLanguage("en-US");
-			cs.setStatus(PublicationStatus.ACTIVE);
-			
-			createNamingSystem(cs);
-			
-			String[] headers = reader.readNext();
-			getHeaderIndices(headers);
-			String[] fields = null;
-
-			line = 2;
-			while ((fields = reader.readNext()) != null) {
-				++line;
-				addCodes(cs, fields);
-				cs.setCount(cs.getCount()+1);
+		try (InputStreamReader sr = new InputStreamReader(file.getInputStream())) {
+			StringBuilder sb = new StringBuilder();
+			char[] buffer = new char[8192];
+			int read;
+			while ((read = sr.read(buffer)) != -1) {
+				sb.append(buffer, 0, read);
 			}
-			log.debug("{}: Loaded {} lines from {}", fileno, line, name);
-
+			String csvContent = sb.toString();
+			parseCodeSystemCsv(csvContent);
+			log.debug("{}: Loaded from {}", fileno, file.getFilename());
 		} catch (Exception e) {
-			warn(UNEXPECTED_ERROR_READING, e.getClass().getSimpleName(), file.getFilename(), line,
+			warn(UNEXPECTED_ERROR_READING, e.getClass().getSimpleName(), file.getFilename(), 0,
 					e.getMessage(), e);
 		}
 	}
@@ -539,6 +512,100 @@ public class Mapping {
 			return v2Table(string);
 		}
 		return string;
+	}
+
+	/**
+	 * Parse ConceptMap CSV content into a Mapping object
+	 * @param csvContent The CSV content
+	 * @param name The mapping name
+	 * @return The parsed Mapping
+	 * @throws IOException if parsing fails
+	 */
+	private static Mapping parseConceptMapCsv(String csvContent, String name) throws Exception {
+		Mapping m = new Mapping(name);
+		int line = 0;
+
+		try (StringReader sr = new StringReader(csvContent);
+			 CSVReader reader = new CSVReader(sr)) {
+
+			reader.readNext(); // Skip first line header
+			line++;
+
+			String[] headers = reader.readNext();
+			if (headers == null) {
+				throw new IOException("Missing headers in CSV");
+			}
+			int[] indices = getHeaderIndices(headers);
+			line++;
+
+			String[] fields = null;
+			while ((fields = reader.readNext()) != null) {
+				line++;
+				try {
+					addMapping(name, m, line, indices, fields);
+				} catch (Exception e) {
+					log.warn("Skipping invalid row in {}({}): {}", name, line, e.getMessage());
+				}
+			}
+
+			log.debug("Loaded {} lines from {}", line, name);
+		} catch (IOException e) {
+			throw new IOException("Error reading CSV at line " + line, e);
+		}
+
+		return m;
+	}
+
+	/**
+	 * Parse CodeSystem CSV content and add to coding maps
+	 * @param csvContent The CSV content
+	 * @throws Exception if parsing fails
+	 */
+	private static void parseCodeSystemCsv(String csvContent) throws Exception {
+		int line = 0;
+
+		try (StringReader sr = new StringReader(csvContent);
+			 CSVReader reader = new CSVReader(sr)) {
+
+			String[] metadata = reader.readNext();
+			if (metadata == null || metadata.length < 1) {
+				throw new IOException("Missing metadata row in CSV");
+			}
+			line++;
+
+			CodeSystem cs = new CodeSystem();
+			cs.setUrl(metadata.length > 0 ? metadata[0] : null);
+			cs.setName(metadata.length > 2 ? metadata[2] : null);
+			cs.setContent(CodeSystemContentMode.COMPLETE);
+			cs.setCaseSensitive(false);
+			cs.setLanguage("en-US");
+			cs.setStatus(PublicationStatus.ACTIVE);
+
+			createNamingSystem(cs);
+
+			String[] headers = reader.readNext();
+			if (headers == null) {
+				throw new IOException("Missing headers in CSV");
+			}
+			getHeaderIndices(headers);
+			line++;
+
+			String[] fields = null;
+			while ((fields = reader.readNext()) != null) {
+				line++;
+				try {
+					addCodes(cs, fields);
+					cs.setCount(cs.getCount() + 1);
+				} catch (Exception e) {
+					log.warn("Skipping invalid code at line {}: {}", line, e.getMessage());
+				}
+			}
+
+			log.debug("Loaded {} codes from CodeSystem '{}'", cs.getCount(), cs.getName());
+
+		} catch (IOException e) {
+			throw new IOException("Error reading CSV at line " + line, e);
+		}
 	}
 
 	/**
@@ -784,7 +851,7 @@ public class Mapping {
 		return value;
 	}
 
-	/** 
+	/**
 	 * Return the V2 system name for the given table
 	 * @param table	The table name.
 	 * @return	The normalized FHIR System Name for that table.
@@ -800,80 +867,64 @@ public class Mapping {
 		return v2TablesUsed.computeIfAbsent(key, k -> Mapping.V2_TABLE_PREFIX + key);
 	}
 
-    /**
-     * Reinitialize mappings with additional resource patterns
-     * @param resourcePatterns List of resource patterns to load CSV files from
-     */
-    public static synchronized void reinitializeWithResources(List<String> resourcePatterns) {
-        additionalResourcePatterns.clear();
-        additionalResourcePatterns.addAll(resourcePatterns);
-        clearMappings();
-        initConceptMaps();
-        initVocabulary();
-    }
+	/**
+	 * Load a ConceptMap from CSV content.
+	 * CSV format expected:
+	 *   Line 1: Header row (ignored)
+	 *   Line 2: Column headers
+	 *   All Other Lines: Mapping data rows
+	 * The ConceptMap is parsed and added to the mapping lookup tables.
+	 * If a mapping with the same name already exists, it will be overwritten.
+	 * Invalid rows are logged and skipped.
+	 *
+	 * @param csvContent The CSV content as a string
+	 * @param name The name for this mapping (used as the map identifier)
+	 * @throws IllegalArgumentException if csvContent or name is null/blank
+	 */
+	public static synchronized void loadConceptMapFromCsv(String csvContent, String name) {
+		if (StringUtils.isBlank(csvContent)) {
+			throw new IllegalArgumentException("CSV content cannot be null or blank");
+		}
+		if (StringUtils.isBlank(name)) {
+			throw new IllegalArgumentException("Mapping name cannot be null or blank");
+		}
 
-    private static void clearMappings() {
-        codeMaps.clear();
-        conceptMaps.clear();
-        codingMaps.clear();
-    }
+		try {
+			Mapping m = parseConceptMapCsv(csvContent, name);
+			m.lock();
+			codeMaps.put(name, m); // Overwrites if exists
+			log.info("Loaded concept map: {}", name);
+		} catch (Exception e) {
+			log.error("Failed to load concept map '{}': {}", name, e.getMessage(), e);
+			throw new IllegalArgumentException("Failed to parse concept map CSV", e);
+		}
+	}
 
-    /**
-     * Loads mappings from this project
-     */
-    private static void loadDefaultResources() {
-        Resource[] conceptFiles;
-        Resource[] codeSystemFiles;
-        try {
-            conceptFiles = resolver.getResources("coding/HL7 Concept*.csv");
-            codeSystemFiles = resolver.getResources("coding/HL7 CodeSystem*.csv");
-        } catch (IOException e) {
-            log.error("Cannot load default coding resources");
-            throw new ServiceConfigurationError("Cannot load coding resources", e);
-        }
+	/**
+	 * Load a CodeSystem from CSV content.
+	 * CSV format expected:
+	 *   Line 1: Metadata (url, oid, name)
+	 *   Line 2: Column headers (Code, Display, Definition, V2 Concept Comment, ...)
+	 *   All Other Lines: Code definition rows
+	 * The CodeSystem is parsed and added to the coding lookup tables.
+	 * If a CodeSystem with the same name already exists, it will be overwritten.
+	 * Invalid rows are logged and skipped.
+	 *
+	 * @param csvContent The CSV content as a string
+	 * @throws IllegalArgumentException if csvContent is null/blank or format is invalid
+	 */
+	public static synchronized void loadCodeSystemFromCsv(String csvContent) {
+		if (StringUtils.isBlank(csvContent)) {
+			throw new IllegalArgumentException("CSV content cannot be null or blank");
+		}
 
-        int fileno = 0;
-        for (Resource file : conceptFiles) {
-            fileno++;
-            Mapping m = loadConceptFile(fileno, file);
-            m.lock();
-        }
-        for (Resource file : codeSystemFiles) {
-            fileno++;
-            loadCodeSystemFile(fileno, file);
-        }
-    }
-
-    private static void loadAdditionalResources() {
-
-        if (additionalResourcePatterns.isEmpty()) {
-            return; // Early exit if nothing to load
-        }
-
-        int fileno = codeMaps.size();
-
-        for (String resourcePattern : additionalResourcePatterns) {
-            try {
-                Resource[] resources = resolver.getResources(resourcePattern);
-
-                for (Resource resource : resources) {
-                    fileno++;
-
-                    if (resource.getFilename().contains("Concept")) {
-                        Mapping m = loadConceptFile(fileno, resource);
-                        m.lock();
-                        log.info("Loaded additional concept mapping: {}", resource.getFilename());
-                    } else if (resource.getFilename().contains("CodeSystem")) {
-                        loadCodeSystemFile(fileno, resource);
-                        log.info("Loaded additional code system: {}", resource.getFilename());
-                    }
-                }
-
-            } catch (IOException e) {
-                log.warn("Could not load additional resources from pattern: {} - {}",
-                        resourcePattern, e.getMessage());
-            }
-        }
-    }
+		try {
+			parseCodeSystemCsv(csvContent);
+			log.info("Loaded code system from CSV");
+		} catch (Exception e) {
+			log.error("Failed to load code system: {}", e.getMessage(), e);
+			throw new IllegalArgumentException("Failed to parse code system CSV", e);
+		}
+	}
 
 }
