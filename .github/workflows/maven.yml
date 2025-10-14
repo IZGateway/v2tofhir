@@ -198,6 +198,7 @@ jobs:
         project: V2 to FHIR
         path: target/v2tofhir-${{env.IMAGE_BRANCH_TAG}}.jar
         format: 'HTML'
+        out: 'target/site'
         args: >
           --ossIndexUsername ${{ secrets.OSS_INDEX_USERNAME }}
           --ossIndexPassword ${{ secrets.OSS_INDEX_PASSWORD }}        
@@ -206,7 +207,6 @@ jobs:
           --disableNuspec    
           --disableNugetconf  
           --disableAssembly            
-          --out target/site
             
     - name: Publish Site
       uses: peaceiris/actions-gh-pages@v4
