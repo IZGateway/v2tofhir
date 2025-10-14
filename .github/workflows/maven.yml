@@ -206,6 +206,7 @@ jobs:
           --disableNuspec    
           --disableNugetconf  
           --disableAssembly            
+          --out target/site
             
     - name: Publish Site
       uses: peaceiris/actions-gh-pages@v4

@@ -315,8 +315,6 @@ public class Mapping {
 	 * Code,Display,Definition,V2 Concept Comment,V2 Concept Comment As Published,HL7 Concept Usage Notes
 	 * 
 	 * @param cs	The code System
-	 * @param lineNumber		The line number
-	 * @param indices Header indices (not used)
 	 * @param fields	The field data, in the order code, display, definition, comment, comment as published, usage notes
 	 */
 	public static void addCodes(CodeSystem cs, String[] fields) {
