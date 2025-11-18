@@ -1,0 +1,602 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TextUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">gov.cdc.izgw.v2tofhir.utils</a> &gt; <span class="el_source">TextUtils.java</span></div><h1>TextUtils.java</h1><pre class="source lang-java linenums">package gov.cdc.izgw.v2tofhir.utils;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+
+import org.apache.commons.lang3.StringUtils;
+import org.hl7.fhir.instance.model.api.IBase;
+import org.hl7.fhir.r4.model.Address;
+import org.hl7.fhir.r4.model.BaseDateTimeType;
+import org.hl7.fhir.r4.model.CodeableConcept;
+import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.ContactPoint;
+import org.hl7.fhir.r4.model.Extension;
+import org.hl7.fhir.r4.model.HumanName;
+import org.hl7.fhir.r4.model.Identifier;
+import org.hl7.fhir.r4.model.Location;
+import org.hl7.fhir.r4.model.Organization;
+import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.Practitioner;
+import org.hl7.fhir.r4.model.PrimitiveType;
+import org.hl7.fhir.r4.model.Quantity;
+import org.hl7.fhir.r4.model.Reference;
+import org.hl7.fhir.r4.model.RelatedPerson;
+
+import ca.uhn.hl7v2.HL7Exception;
+import ca.uhn.hl7v2.model.Composite;
+import ca.uhn.hl7v2.model.Varies;
+import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
+import gov.cdc.izgw.v2tofhir.datatype.ContactPointParser;
+
+/**
+ * Utility class to convert FHIR and V2 Objects to and from strings used in text.
+ * The toText() Methods in this class attempt to create human readable strings 
+ * that contain the information in the type in a standardized form as would be commonly used in 
+ * human readable text. 
+ * 
+ * The to{fhirType} and to{v2Type} methods convert strings created by these method (and possibly
+ * other sources) to the specified type.
+ * 
+ * If t = TextUtils.toType(TextUtils.toText(x)), then t is generally equivalent to x but may be missing
+ * some data.  
+ */
+<span class="fc" id="L45">public class TextUtils {</span>
+	private TextUtils() {}
+	
+	/**
+	 * Convert parts of an address into a text string. This method is the same one used to convert both FHIR and V2 address types
+	 * into a string so that there is a common string representation.
+	 * 
+	 * @param country	The country
+	 * @param city		The city
+	 * @param state		The state
+	 * @param postalCode	The postalCode
+	 * @param district	The district, county or other geographic designator for the address
+	 * @param lines	The address lines
+	 * @return A string representing the address
+	 */
+	public static String addressToText(String country, String city, String state, String postalCode, String district, Object ... lines) {
+<span class="fc" id="L61">		StringBuilder b = new StringBuilder();</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">		for (Object line : lines) {</span>
+<span class="fc" id="L63">			appendIfNonBlank(b, line, &quot;\n&quot;);</span>
+		}
+<span class="fc" id="L65">		appendIfNonBlank(b, district, &quot;\n&quot;);</span>
+		
+<span class="pc bpc" id="L67" title="1 of 2 branches missed.">		if (StringUtils.equalsAny(StringUtils.upperCase(country), &quot;MX&quot;, &quot;MEX&quot;, &quot;MEXICO&quot;)) {</span>
+<span class="nc" id="L68">			appendIfNonBlank(b, postalCode, &quot;  &quot;);</span>
+<span class="nc" id="L69">			appendIfNonBlank(b, city, &quot;, &quot;);</span>
+<span class="nc" id="L70">			appendIfNonBlank(b, state, null);</span>
+		} else {
+<span class="fc" id="L72">			appendIfNonBlank(b, city, &quot;, &quot;);</span>
+<span class="fc" id="L73">			appendIfNonBlank(b, state, &quot;  &quot;);</span>
+<span class="fc" id="L74">			appendIfNonBlank(b, postalCode, null);</span>
+		}
+<span class="fc bfc" id="L76" title="All 2 branches covered.">		if (StringUtils.endsWithAny(b, &quot;, &quot;, &quot;  &quot;)) {</span>
+<span class="fc" id="L77">			b.setLength(b.length() - 2);</span>
+<span class="pc bpc" id="L78" title="1 of 2 branches missed.">		} else if (StringUtils.endsWith(b, &quot; &quot;)) {</span>
+<span class="nc" id="L79">			b.setLength(b.length() - 1);</span>
+		}
+<span class="pc bpc" id="L81" title="1 of 2 branches missed.">		if (StringUtils.isNotBlank(b)) {</span>
+<span class="fc" id="L82">			b.append(&quot;\n&quot;);</span>
+		}
+		// Country goes on a line of its own.
+<span class="fc" id="L85">		appendIfNonBlank(b, country, &quot;\n&quot;);</span>
+<span class="fc" id="L86">		return b.toString();</span>
+		
+	}
+
+	/**
+	 * Convert parts of a coding (or multiple codings) into a text string. This method is the same one used to convert 
+	 * both FHIR and V2 address types into a string so that there is a common string representation.
+	 * 
+	 * The very first element in parts is the &quot;original text&quot; for the coding, and will be the first text that is output, then
+	 * the coded strings.
+	 * 
+	 * The next, and each subsequent group of parts is in the form code, display, system
+	 * 
+	 * @param text	The original text that was coded
+	 * @param parts	The parts of the coding(s). Each coding can have three strings, any of which can be null; the display name,
+	 * the code, and the system.  These are written in the form:
+	 * 
+	 * 	Original Text, Display Name (Coding-System Code) [, Display Name (Coding-System Code)] 
+	 * 
+	 * so that a concept describing a heart attack in ICD9CM and SNOMED-CT for Heart Attack would be converted to text as:
+	 * 
+	 * 	Heart Attack, Myocardial Infarction (ICD9CM 410.41), Myocardial infarction (SNOMEDCT 22298006)
+	 * 
+	 * If original text is missing, it would appear as 
+	 * 
+	 * 	Myocardial Infarction (ICD9CM 410.41), Myocardial infarction (SNOMEDCT 22298006)
+	 * 
+	 * If the Display name is missing is missing for any code only the text between () is written for each code found 
+	 * e.g., (ICD9CM 410.41), (SNOMEDCT 22298006)
+	 * If the coding system is missing for any value, and the code is present, this would be written as (410.41)
+	 * If the code is missing, this would be written as (ICD9CM ) (note the trailing space).
+	 * If both coding system and code are missing, nothing appears. 
+	 * 
+	 * @return	A string representation of the coding(s)
+	 */
+
+	public static String codingToText(String text, String ... parts) {
+<span class="fc" id="L123">		StringBuilder b = new StringBuilder();</span>
+	
+<span class="pc bpc" id="L125" title="1 of 2 branches missed.">		if (parts.length &gt; 0) {</span>
+<span class="fc" id="L126">			appendIfNonBlank(b, text, null);</span>
+		}
+		
+<span class="fc bfc" id="L129" title="All 2 branches covered.">		for (int i = 0; i &lt; parts.length; i += 3) {</span>
+<span class="fc" id="L130">			String code = parts[i];	// guaranteed by loop termination.</span>
+<span class="pc bpc" id="L131" title="1 of 2 branches missed.">			String display = parts.length &gt; (i+1) ? parts[i+1] : &quot;&quot;; </span>
+<span class="pc bpc" id="L132" title="1 of 2 branches missed.">			String system = parts.length &gt; (i+2) ? parts[i+2] : &quot;&quot;;</span>
+<span class="fc bfc" id="L133" title="All 2 branches covered.">			if (StringUtils.isAllEmpty(code, display, system)) {</span>
+<span class="fc" id="L134">				continue;</span>
+			}
+<span class="fc bfc" id="L136" title="All 2 branches covered.">			if (!b.isEmpty()) {</span>
+<span class="fc" id="L137">				b.append(&quot;, &quot;);</span>
+			}
+<span class="fc" id="L139">			appendIfNonBlank(b, display, null);</span>
+<span class="fc bfc" id="L140" title="All 4 branches covered.">			if (StringUtils.isNotBlank(code) &amp;&amp; StringUtils.isNotBlank(system)) {</span>
+				// For converting to Strings, if system is a URL, make it 
+				// a more human readable name like people would expect.
+<span class="fc bfc" id="L143" title="All 2 branches covered.">				if (StringUtils.contains(system, &quot;:&quot;)) {</span>
+<span class="fc" id="L144">					List&lt;String&gt; l = Systems.getSystemNames(system);</span>
+					// First name is always preferred name, second is the V2 common name
+<span class="pc bpc" id="L146" title="1 of 2 branches missed.">					if (!l.isEmpty()) {</span>
+<span class="fc" id="L147">						system = l.get(0);</span>
+<span class="fc bfc" id="L148" title="All 2 branches covered.">						if (l.size() &gt; 1) {</span>
+							// If there is a V2 name, use that.
+<span class="fc" id="L150">							system = l.get(1);</span>
+						}
+					}
+				}
+<span class="fc" id="L154">				b.append(&quot; (&quot;).append(system).append(&quot; &quot;).append(code).append(&quot;)&quot;);</span>
+<span class="fc bfc" id="L155" title="All 2 branches covered.">			} else if (StringUtils.isNotBlank(code)) {</span>
+				// The space after ( makes it easily parsed as a code with an empty system
+<span class="fc" id="L157">				b.append(&quot; ( &quot;).append(code).append(&quot;)&quot;); </span>
+			}
+		}
+<span class="fc" id="L160">		String value = b.toString();</span>
+<span class="pc bpc" id="L161" title="1 of 4 branches missed.">		if (value.endsWith(&quot;,&quot;) || value.endsWith(&quot;, &quot;)) {</span>
+<span class="fc" id="L162">			value = StringUtils.substringBeforeLast(value, &quot;,&quot;);</span>
+		}
+<span class="fc" id="L164">		return value;</span>
+	}
+	
+	/**
+	 * Convert a human name to text in the form {prefix} {givens} {family} suffix
+	 * 
+	 * @param prefix	The prefix or null if there is none
+	 * @param family	The family name or null if there is none
+	 * @param suffix	The suffix or null if there is none
+	 * @param givens	The given names or null or an empty array if there are none
+	 * @return a string in the form {prefix} {givens} {family} suffix
+	 */
+	public static String humanNameToText(String prefix, String family, String suffix, Object ... givens) {
+<span class="fc" id="L177">		StringBuilder b = new StringBuilder();</span>
+<span class="fc" id="L178">		appendIfNonBlank(b, prefix, &quot; &quot;);</span>
+<span class="pc bpc" id="L179" title="1 of 2 branches missed.">		if (givens != null) {</span>
+<span class="fc bfc" id="L180" title="All 2 branches covered.">			for (Object given: givens) {</span>
+<span class="fc" id="L181">				appendIfNonBlank(b, given, &quot; &quot;);</span>
+			}
+		}
+<span class="fc" id="L184">		appendIfNonBlank(b, family, &quot; &quot;);</span>
+<span class="fc" id="L185">		appendIfNonBlank(b, suffix, null);</span>
+<span class="fc" id="L186">		return rightTrim(b).toString();</span>
+	}
+	
+	/**
+	 * Convert an identifier to text in the general form: {type}# {identifier}-{checkDigit}
+	 * 
+	 * @param type	The type of identifier (e.g., DLN, SSN, MR) or null if not present
+	 * @param value	The identifier or null if not present
+	 * @param checkDigit	A check digit to append to the identifier if present
+	 * @return a string in the general form: {type}#{identifier}-{checkDigit}
+	 */
+	public static String identifierToText(String type, String value, String checkDigit) {
+<span class="fc" id="L198">		StringBuilder b = new StringBuilder();</span>
+<span class="fc" id="L199">		appendIfNonBlank(b, type, &quot;#&quot;);</span>
+<span class="fc" id="L200">		appendIfNonBlank(b, value, null);</span>
+<span class="pc bpc" id="L201" title="1 of 2 branches missed.">		if (StringUtils.isNotBlank(checkDigit)) {</span>
+<span class="nc" id="L202">			b.append(&quot;-&quot;).append(checkDigit);</span>
+		}
+<span class="fc" id="L204">		return b.toString();</span>
+	}
+	
+	/**
+	 * Convert a quantity to text in the general form {value} {unit}
+	 * 
+	 * @param value	The value
+	 * @param code	The code (presently not used)
+	 * @param unit The units
+	 * @return	text in the general form {value} {unit}
+	 */
+	public static String quantityToText(Number value, String code, String unit) {
+<span class="fc" id="L216">		return quantityToText(value.toString(), code, unit);</span>
+	}
+
+	/**
+	 * Convert a quantity to text in the general form {value} {unit}
+	 * 
+	 * @param value	The value
+	 * @param code The code (presently not used)
+	 * @param unit The units
+	 * @return	text in the general form {value} {unit}
+	 */
+	public static String quantityToText(String value, String code, String unit) {
+<span class="fc" id="L228">		StringBuilder b = new StringBuilder();</span>
+<span class="pc bpc" id="L229" title="1 of 2 branches missed.">		if (value != null) {</span>
+<span class="pc bpc" id="L230" title="1 of 2 branches missed.">			if (value.startsWith(&quot;-.&quot;)) {</span>
+<span class="nc" id="L231">				value = &quot;-0.&quot; + value.substring(2);</span>
+<span class="pc bpc" id="L232" title="1 of 2 branches missed.">			} else if (value.startsWith(&quot;+.&quot;)) {</span>
+<span class="nc" id="L233">				value = &quot;0.&quot; + value.substring(2);</span>
+<span class="fc bfc" id="L234" title="All 2 branches covered.">			} else if (value.startsWith(&quot;.&quot;)) {</span>
+<span class="fc" id="L235">				value = &quot;0.&quot; + value.substring(1);</span>
+			}
+		}
+<span class="fc" id="L238">		appendIfNonBlank(b, value, &quot; &quot;);</span>
+<span class="fc bfc" id="L239" title="All 2 branches covered.">		if (StringUtils.isBlank(unit)) {</span>
+<span class="fc" id="L240">			appendIfNonBlank(b, code, null);</span>
+		} else {
+<span class="fc" id="L242">			appendIfNonBlank(b, unit, null);</span>
+		}
+<span class="fc" id="L244">		return rightTrim(b).toString();</span>
+	}
+	
+	/**
+	 * Convert a V2 Composite Type to a standardize string output: case possible
+	 * with multiple lines of text representing the content of the type.
+	 * 
+	 * @param v2Type The type to convert
+	 * @return A string representation of that type
+	 */
+	public static String toString(ca.uhn.hl7v2.model.Type v2Type) {
+<span class="fc" id="L255">		Composite comp = null;</span>
+<span class="fc bfc" id="L256" title="All 2 branches covered.">		if (v2Type instanceof Varies v) {</span>
+<span class="fc" id="L257">			v2Type = v.getData();</span>
+		}
+		try {
+<span class="pc bpc" id="L260" title="1 of 4 branches missed.">			if (v2Type == null || v2Type.isEmpty()) {</span>
+<span class="fc" id="L261">				return &quot;&quot;;</span>
+			}
+<span class="nc" id="L263">		} catch (HL7Exception e1) {</span>
+<span class="nc" id="L264">			return &quot;&quot;;</span>
+<span class="fc" id="L265">		}</span>
+<span class="fc bfc" id="L266" title="All 2 branches covered.">		if (v2Type instanceof Composite c) {</span>
+<span class="fc" id="L267">			comp = c;</span>
+		}
+<span class="fc" id="L269">		int offset = 0;</span>
+<span class="pc bpc" id="L270" title="2 of 16 branches missed.">		switch (v2Type.getName()) {</span>
+		case &quot;AD&quot;:
+<span class="nc" id="L272">			return addressToText(</span>
+<span class="nc" id="L273">					ParserUtils.toString(comp, 5), </span>
+<span class="nc" id="L274">					ParserUtils.toString(comp, 2),</span>
+<span class="nc" id="L275">					ParserUtils.toString(comp, 3),</span>
+<span class="nc" id="L276">					ParserUtils.toString(comp, 4),</span>
+<span class="nc" id="L277">					ParserUtils.toString(comp, 7),</span>
+<span class="nc" id="L278">					ParserUtils.toString(comp, 1)</span>
+				);
+		case &quot;XAD&quot;:
+<span class="fc" id="L281">			return addressToText(</span>
+<span class="fc" id="L282">				ParserUtils.toString(comp, 5), </span>
+<span class="fc" id="L283">				ParserUtils.toString(comp, 2),</span>
+<span class="fc" id="L284">				ParserUtils.toString(comp, 3),</span>
+<span class="fc" id="L285">				ParserUtils.toString(comp, 4),</span>
+<span class="fc" id="L286">				ParserUtils.toString(comp, 8),</span>
+<span class="fc" id="L287">				ParserUtils.toString(comp, 0),</span>
+<span class="fc" id="L288">				ParserUtils.toString(comp, 1)</span>
+			);
+		case &quot;PL&quot;, &quot;LA1&quot;, &quot;LA2&quot;:
+<span class="fc" id="L291">			return StringUtils.normalizeSpace(</span>
+<span class="fc" id="L292">				StringUtils.joinWith(&quot; &quot;, </span>
+<span class="fc" id="L293">					ParserUtils.toString(comp, 2), </span>
+<span class="fc" id="L294">					ParserUtils.toString(comp, 1),</span>
+<span class="fc" id="L295">					ParserUtils.toString(comp, 0),</span>
+<span class="fc" id="L296">					ParserUtils.toString(comp, 7),</span>
+<span class="fc" id="L297">					ParserUtils.toString(comp, 6),</span>
+<span class="fc" id="L298">					ParserUtils.toString(comp, 3)</span>
+				)
+			);
+			
+		case &quot;SAD&quot;:
+<span class="fc" id="L303">			return ParserUtils.toString(comp);</span>
+		case &quot;TN&quot;:
+<span class="nc" id="L305">			return ParserUtils.toString(comp);</span>
+		case &quot;XTN&quot;:
+<span class="pc bpc" id="L307" title="1 of 2 branches missed.">			assert comp != null;</span>
+<span class="fc" id="L308">			return xtnToText(comp.getComponents());</span>
+		case &quot;CE&quot;, &quot;CF&quot;, &quot;CNE&quot;, &quot;CWE&quot;:
+<span class="fc" id="L310">			return codingToText(</span>
+<span class="fc" id="L311">				ParserUtils.toString(comp, 8),</span>
+<span class="fc" id="L312">				ParserUtils.toStrings(comp, 0, 1, 2, 3, 4, 5, 9, 10, 11)</span>
+			);
+		case &quot;CX&quot;:
+<span class="fc" id="L315">			String type = ParserUtils.toString(comp, 4);</span>
+<span class="fc bfc" id="L316" title="All 2 branches covered.">			if (StringUtils.isBlank(type)) {</span>
+<span class="fc" id="L317">				type = ParserUtils.toString(comp, 3);</span>
+			}
+<span class="fc" id="L319">			return identifierToText(type, ParserUtils.toString(comp, 0), ParserUtils.toString(comp, 1));</span>
+		case &quot;NM&quot;:
+<span class="fc" id="L321">			return quantityToText(ParserUtils.toString(v2Type), null, null);</span>
+		case &quot;CQ&quot;:
+<span class="fc" id="L323">			return quantityToText(ParserUtils.toString(comp, 0), ParserUtils.toString(comp, 1), ParserUtils.toString(comp, 1, 1));</span>
+		case &quot;HD&quot;:
+<span class="fc" id="L325">			return Objects.toString(ParserUtils.toString(comp), ParserUtils.toString(comp, 1));</span>
+		case &quot;EI&quot;:
+<span class="fc" id="L327">			return identifierToText(ParserUtils.toString(comp, 1), ParserUtils.toString(comp, 0), null);</span>
+		case &quot;ID&quot;, &quot;IS&quot;, &quot;ST&quot;, &quot;EIP&quot;, &quot;XON&quot;:
+<span class="fc" id="L329">			return ParserUtils.toString(v2Type);</span>
+		
+		case &quot;CNN&quot;, &quot;XCN&quot;:
+<span class="fc" id="L332">			offset = 1;</span>
+			// fall through, CNN and XCN are like XPN but start one component later
+		case &quot;XPN&quot;:
+<span class="fc bfc" id="L335" title="All 2 branches covered.">			int professional = &quot;XPN&quot;.equals(v2Type.getName()) ? 13 : 20;</span>
+<span class="fc" id="L336">			String[] sufixes = { ParserUtils.toString(comp, offset + 3), ParserUtils.toString(comp, offset + 5), ParserUtils.toString(comp, professional) };</span>
+<span class="fc" id="L337">			Object[] givens = { ParserUtils.toString(comp, offset + 1), ParserUtils.toString(comp, offset + 2) };</span>
+			
+<span class="fc" id="L339">			return TextUtils.humanNameToText(ParserUtils.toString(comp, offset + 4), ParserUtils.toString(comp, offset + 0), </span>
+<span class="fc" id="L340">					StringUtils.normalizeSpace(StringUtils.join(sufixes, &quot; &quot;)), givens);</span>
+		case &quot;ERL&quot;, &quot;MSG&quot;:
+		default:
+			try {
+<span class="fc" id="L344">				return v2Type.encode();</span>
+<span class="nc" id="L345">			} catch (HL7Exception e) {</span>
+<span class="nc" id="L346">				return null;</span>
+			}
+		}
+	}
+
+	private static String xtnToText(ca.uhn.hl7v2.model.Type[] types) {
+<span class="pc bpc" id="L352" title="1 of 2 branches missed.">		for (int i : Arrays.asList(1, 4, 5, 12)) {</span>
+<span class="fc bfc" id="L353" title="All 2 branches covered.">			String value = i == 5 ? ContactPointParser.fromXTNparts(types) : ParserUtils.toString(types, i-1);</span>
+<span class="fc bfc" id="L354" title="All 2 branches covered.">			if (StringUtils.isNotBlank(value)) {</span>
+<span class="fc" id="L355">				return value;</span>
+			}
+<span class="fc" id="L357">		}</span>
+<span class="nc" id="L358">		return &quot;&quot;;</span>
+	}
+
+	/**
+	 * Convert a FHIR Type to a standardized string output: case possible with
+	 * multiple lines of text representing the content of the type.
+	 * 
+	 * @param fhirType The type to convert
+	 * @return A string representation of the FHIR type.
+	 */
+	public static String toString(IBase fhirType) {
+<span class="fc bfc" id="L369" title="All 4 branches covered.">		if (fhirType == null || fhirType.isEmpty()) {</span>
+<span class="fc" id="L370">			return &quot;&quot;;</span>
+		}
+<span class="fc bfc" id="L372" title="All 2 branches covered.">		if (fhirType instanceof PrimitiveType&lt;?&gt; pt) {</span>
+<span class="fc bfc" id="L373" title="All 2 branches covered.">			if (pt instanceof BaseDateTimeType) {</span>
+<span class="fc" id="L374">				return DatatypeConverter.removeIsoPunct(pt.asStringValue());</span>
+			} 
+<span class="fc" id="L376">			return StringUtils.defaultIfBlank(pt.asStringValue(), &quot;&quot;);</span>
+		}
+<span class="pc bpc" id="L378" title="4 of 15 branches missed.">		switch (fhirType.fhirType()) {</span>
+		case &quot;Address&quot;:
+<span class="fc" id="L380">			return toText((Address) fhirType);</span>
+		case &quot;CodeableConcept&quot;:
+<span class="fc" id="L382">			return toText((CodeableConcept) fhirType);</span>
+		case &quot;ContactPoint&quot;:
+<span class="fc" id="L384">			return toText((ContactPoint) fhirType);</span>
+		case &quot;Coding&quot;:
+<span class="fc" id="L386">			return toText((Coding)fhirType);</span>
+		case &quot;HumanName&quot;:
+<span class="fc" id="L388">			return toText((HumanName)fhirType);</span>
+		case &quot;Identifier&quot;:
+<span class="fc" id="L390">			return toText((Identifier)fhirType);</span>
+		case &quot;Location&quot;:
+<span class="nc" id="L392">			return ((Location)fhirType).getName();</span>
+		case &quot;Organization&quot;:
+<span class="fc" id="L394">			return ((Organization)fhirType).getName();</span>
+		case &quot;Patient&quot;:
+<span class="nc" id="L396">			return toText(((Patient)fhirType).getNameFirstRep());</span>
+		case &quot;Practitioner&quot;:
+<span class="fc" id="L398">			return toText(((Practitioner)fhirType).getNameFirstRep());</span>
+		case &quot;Quantity&quot;:
+<span class="fc" id="L400">			Quantity quantity = (Quantity)fhirType;</span>
+<span class="fc" id="L401">			return toText(quantity);</span>
+		case &quot;Reference&quot;:
+<span class="fc" id="L403">			Reference ref = (Reference)fhirType;</span>
+<span class="fc" id="L404">			return toText(ref);</span>
+		case &quot;RelatedPerson&quot;:
+<span class="nc" id="L406">			return toText(((RelatedPerson)fhirType).getNameFirstRep());</span>
+		case &quot;Extension&quot;:
+<span class="fc" id="L408">			StringBuilder b = new StringBuilder();</span>
+<span class="fc" id="L409">			Extension ext = (Extension)fhirType;</span>
+<span class="fc" id="L410">			b.append(&quot;extension[&quot;)</span>
+<span class="fc" id="L411">			 .append(StringUtils.substringAfterLast(&quot;/&quot; + ext.getUrl(),&quot;/&quot;))</span>
+<span class="fc" id="L412">			 .append(&quot;]&quot;);</span>
+<span class="fc bfc" id="L413" title="All 2 branches covered.">			if (ext.hasValue()) {</span>
+<span class="fc" id="L414">				b.append(&quot;=&quot;).append(toString(ext.getValue())).append(&quot; &quot;);</span>
+<span class="pc bpc" id="L415" title="1 of 2 branches missed.">			} else if (ext.hasExtension()) {</span>
+				// Walk the tree
+<span class="fc bfc" id="L417" title="All 2 branches covered.">				for (Extension ext2: ext.getExtension()) {</span>
+<span class="fc" id="L418">					b.append(toString(ext2));</span>
+<span class="fc" id="L419">				}</span>
+			}
+<span class="fc" id="L421">			return b.toString();</span>
+		default:
+<span class="nc" id="L423">			return &quot;&quot;;</span>
+		}
+	}
+	
+	private static String toText(Reference ref) {
+<span class="fc" id="L428">		return StringUtils.joinWith(&quot; &quot;, ref.getDisplay(), toText(ref.getIdentifier()));</span>
+	}
+
+	/**
+	 * Convert an Address to text. 
+	 * @param addr	The address to convert
+	 * @return	A text representation of the address
+	 * @see #addressToText(String,String,String,String,String,Object...)
+	 */
+	public static String toText(Address addr) {
+<span class="pc bpc" id="L438" title="2 of 4 branches missed.">		if (addr == null || addr.isEmpty()) {</span>
+<span class="nc" id="L439">			return &quot;&quot;;</span>
+		}
+<span class="fc" id="L441">		return addressToText(addr.getCountry(), addr.getCity(), addr.getState(), addr.getPostalCode(), addr.getDistrict(), addr.getLine().toArray());</span>
+	}
+	
+	/**
+	 * Convert a CodeableConcept to text. 
+	 * @param codeableConcept The concept to convert
+	 * @return	A text representation of the concept
+	 * @see #codingToText
+	 */
+	public static String toText(CodeableConcept codeableConcept) {
+<span class="pc bpc" id="L451" title="2 of 4 branches missed.">		if (codeableConcept == null || codeableConcept.isEmpty()) {</span>
+<span class="nc" id="L452">			return &quot;&quot;;</span>
+		}
+<span class="fc" id="L454">		List&lt;String&gt; l = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L455" title="All 2 branches covered.">		for (Coding coding : codeableConcept.getCoding()) {</span>
+<span class="pc bpc" id="L456" title="1 of 2 branches missed.">			l.add(coding.hasCode() ? coding.getCode() : null);</span>
+<span class="fc bfc" id="L457" title="All 2 branches covered.">			l.add(coding.hasDisplay() ? coding.getDisplay() : null);</span>
+<span class="fc bfc" id="L458" title="All 2 branches covered.">			l.add(coding.hasSystem() ? coding.getSystem() : null);</span>
+<span class="fc" id="L459">		}</span>
+<span class="fc" id="L460">		return codingToText(codeableConcept.getText(), l.toArray( new String[0]));</span>
+	}
+
+	/**
+	 * Convert a Coding to text. 
+	 * @param coding The concept to convert.
+	 * @return	A text representation of the coding
+	 * @see #codingToText
+	 */
+	public static String toText(Coding coding) {
+<span class="fc" id="L470">		return codingToText(null, coding.getCode(), coding.getDisplay(), coding.getSystem());</span>
+	}
+
+	/**
+	 * Convert a contact point to a text string
+	 * @param cp	The contact point to convert
+	 * @return	The text string representing that contact point.
+	 */
+	public static String toText(ContactPoint cp) {
+<span class="fc" id="L479">		return cp.getValue();</span>
+	}
+	/**
+	 * Convert a HumanName to text. 
+	 * @param name The name to convert
+	 * @return	A text representation of the name
+	 * @see #humanNameToText
+	 */
+	public static String toText(HumanName name) {
+<span class="fc" id="L488">		return humanNameToText(name.getPrefixAsSingleString(), name.getFamily(), name.getSuffixAsSingleString(), name.getGiven().toArray());</span>
+	}
+
+	/**
+	 * Convert an Identifier to text. 
+	 * @param identifier The identifier to convert
+	 * @return	A text representation of the identifier
+	 * @see #identifierToText
+	 */
+	public static String toText(Identifier identifier) {
+<span class="pc bpc" id="L498" title="1 of 4 branches missed.">		if (identifier == null || identifier.isEmpty()) {</span>
+<span class="fc" id="L499">			return &quot;&quot;;</span>
+		}
+<span class="fc" id="L501">		String type = null;</span>
+<span class="fc bfc" id="L502" title="All 2 branches covered.">		if (identifier.hasType()) {</span>
+<span class="fc" id="L503">			CodeableConcept cc = identifier.getType();</span>
+<span class="fc" id="L504">			Coding coding = cc.getCodingFirstRep();</span>
+<span class="fc" id="L505">			type = Objects.toString(cc.getText(),  </span>
+<span class="fc" id="L506">							Objects.toString(coding.getCode(), </span>
+<span class="fc" id="L507">								Systems.toTextName(identifier.getSystem())));</span>
+<span class="fc" id="L508">		} else {</span>
+<span class="fc" id="L509">			List&lt;String&gt; types = Systems.getSystemNames(identifier.getSystem());</span>
+<span class="fc bfc" id="L510" title="All 2 branches covered.">			if (!types.isEmpty()) {</span>
+<span class="fc" id="L511">				type = types.get(0);</span>
+<span class="fc bfc" id="L512" title="All 2 branches covered.">				if (types.size() &gt; 1) {</span>
+<span class="fc" id="L513">					type = types.get(1);</span>
+				}
+			} else {
+<span class="fc" id="L516">				type = identifier.getSystem();</span>
+			}
+			
+<span class="fc bfc" id="L519" title="All 2 branches covered.">			if (type != null &amp;&amp;</span>
+				// If type is an OID
+<span class="fc bfc" id="L521" title="All 2 branches covered.">				type.matches(&quot;\\d+(\\.\\d+)*$&quot;) &amp;&amp;</span>
+				// and there's an assigner with a display name
+<span class="pc bpc" id="L523" title="2 of 4 branches missed.">				identifier.hasAssigner() &amp;&amp; identifier.getAssigner().hasDisplay()</span>
+			) {
+				// Use the display name for type in the text representation
+<span class="fc" id="L526">				type = identifier.getAssigner().getDisplay();</span>
+			}
+		}
+<span class="fc" id="L529">		return identifierToText(type, identifier.getValue(), null);</span>
+	}
+	
+	/**
+	 * Convert a Quantity to text. 
+	 * @param quantity The quantity to convert
+	 * @return	A text representation of the quantity
+	 * @see #quantityToText(String,String,String)
+	 */
+	public static String toText(Quantity quantity) {
+<span class="fc" id="L539">		return TextUtils.quantityToText(quantity.getValue(), quantity.getCode(), quantity.getUnit());</span>
+	}
+	
+	/** 
+	 * Append the first string and any extra strings to b if the first string is not blank
+	 * @param b	The StringBuilder to append to
+	 * @param first	The string to append if non-empty
+	 * @param extra	The extra text that will be appended if both first and extra are non-empty
+	 */
+	private static void appendIfNonBlank(StringBuilder b, Object first, String extra) {
+<span class="fc bfc" id="L549" title="All 4 branches covered.">		if (first != null &amp;&amp; StringUtils.isNotBlank(first.toString())) {</span>
+<span class="fc" id="L550">			b.append(first);</span>
+<span class="fc bfc" id="L551" title="All 2 branches covered.">			if (extra != null) {</span>
+<span class="fc" id="L552">				b.append(extra);</span>
+			}
+		}
+<span class="fc" id="L555">	}</span>
+
+	/**
+	 * Remove any trailing whitespace from a StringBuilder
+	 * @param b	The string builder
+	 * @return	The adjusted string builder
+	 */
+	private static StringBuilder rightTrim(StringBuilder b) {
+<span class="fc" id="L563">		int len = b.length();</span>
+<span class="fc bfc" id="L564" title="All 4 branches covered.">		while (len &gt; 0 &amp;&amp; Character.isWhitespace(b.charAt(len - 1))) {</span>
+<span class="fc" id="L565">			--len;</span>
+		}
+<span class="fc" id="L567">		b.setLength(len);</span>
+<span class="fc" id="L568">		return b;</span>
+	}
+
+	/** 
+	 * Convert a string generated from {@link #toText(CodeableConcept)} back to
+	 * a CodeableConcept
+	 *   
+	 * @param actualString	The string to convert
+	 * @return	A CodeableConcept created by parsing the string
+	 */
+	public static CodeableConcept toCodeableConcept(String actualString) {
+<span class="nc" id="L579">		String[] parts = actualString.split(&quot;, &quot;);</span>
+<span class="nc" id="L580">		CodeableConcept cc = new CodeableConcept();</span>
+		
+<span class="nc bnc" id="L582" title="All 2 branches missed.">		for (String part: parts) {</span>
+<span class="nc" id="L583">			String display = StringUtils.substringBefore(part, &quot;(&quot;);</span>
+<span class="nc" id="L584">			String codeAndSystem = StringUtils.substringBetween(part, &quot;(&quot;, &quot;)&quot;);</span>
+<span class="nc" id="L585">			String system = StringUtils.substringBefore(codeAndSystem, &quot; &quot;);</span>
+<span class="nc" id="L586">			String code = StringUtils.substringAfter(codeAndSystem, &quot; &quot;);</span>
+<span class="nc bnc" id="L587" title="All 2 branches missed.">			if (!cc.hasText() &amp;&amp; </span>
+<span class="nc bnc" id="L588" title="All 2 branches missed.">				StringUtils.isNotEmpty(display) &amp;&amp; </span>
+<span class="nc bnc" id="L589" title="All 2 branches missed.">				StringUtils.isAllEmpty(code, system)</span>
+			) {
+<span class="nc" id="L591">				cc.setText(display);</span>
+			} else {
+<span class="nc" id="L593">				Coding coding = new Coding(system, code, display);</span>
+<span class="nc bnc" id="L594" title="All 2 branches missed.">				if (!coding.isEmpty()) {</span>
+<span class="nc" id="L595">					cc.addCoding(coding);</span>
+				}
+			}
+		}
+<span class="nc" id="L599">		return cc;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
