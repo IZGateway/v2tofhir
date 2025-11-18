@@ -18,6 +18,7 @@ import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.IdType;
 import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Provenance;
+import org.hl7.fhir.r4.model.Provenance.ProvenanceEntityComponent;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.StringType;
 
@@ -71,6 +72,7 @@ public abstract class BaseParser<U,S> implements Parser<U,S> {
 	 */
 	private final Context<Parser<U,S>> context;
 	protected final Set<IBaseResource> updated = new LinkedHashSet<>();
+	protected final Set<IBaseResource> resourcesNeedingProvenance = new LinkedHashSet<>();
 	
 	@Getter
 	private Supplier<String> idGenerator = ULID::random;
@@ -198,10 +200,10 @@ public abstract class BaseParser<U,S> implements Parser<U,S> {
 		return b;
 	}
 	
-	private void beforeParsing(S structure) {
+	protected void beforeParsing(S structure) {
 		// Do Nothing
-		
 	}
+	
 	protected void afterParsing(S structure) {
 		// Do nothing
 	}
@@ -229,31 +231,33 @@ public abstract class BaseParser<U,S> implements Parser<U,S> {
 	 * @param segment The component whose provenance needs to be updated
 	 */
 	protected void updateProvenance(S segment) {
-		for (IBaseResource r: updated) {
+		for (IBaseResource r: resourcesNeedingProvenance) {
 			Provenance p = (Provenance) r.getUserData(Provenance.class.getName());
 			if (p == null) {
 				continue;
 			}
-			Reference what = p.getEntityFirstRep().getWhat();
+			ProvenanceEntityComponent entity = p.getEntityFirstRep();
 			try {
-				StringType whatText = new StringType(encode(segment)); // Was new StringType(context.getHl7DataId()+"#"+PathUtils.getTerserPath(segment))
-				what.addExtension().setUrl(BaseParser.ORIGINAL_TEXT).setValue(whatText);
+				String encodedSegment = encode(segment);
+				StringType originalText = new StringType(encode(segment)); // Was new StringType(context.getHl7DataId()+"#"+PathUtils.getTerserPath(segment))
+				if (entity.getExtension().stream()
+						.anyMatch(ext -> 
+							BaseParser.ORIGINAL_TEXT.equals(ext.getUrl()) && 
+							encodedSegment.equals(ext.getValue().toString())
+						)
+				) {
+					continue;
+				}
+				entity.addExtension().setUrl(BaseParser.ORIGINAL_TEXT).setValue(originalText);
 				IBaseMetaType meta = r.getMeta();
 				if (meta instanceof Meta m4) {
-					m4.getSourceElement().addExtension().setUrl(BaseParser.ORIGINAL_TEXT).setValue(whatText);
-				} else if (meta instanceof org.hl7.fhir.r4b.model.Meta m4b) {
-					m4b.getSourceElement().addExtension().setUrl(BaseParser.ORIGINAL_TEXT).setValue(whatText);
-				} else if (meta instanceof org.hl7.fhir.r5.model.Meta m5) {
-					m5.getSourceElement().addExtension().setUrl(BaseParser.ORIGINAL_TEXT).setValue(whatText);
-				} else if (meta instanceof org.hl7.fhir.dstu2.model.Meta m2) {
-					m2.addExtension().setUrl(BaseParser.ORIGINAL_TEXT).setValue(whatText);
-				} else if (meta instanceof org.hl7.fhir.dstu3.model.Meta m3) {
-					m3.addExtension().setUrl(BaseParser.ORIGINAL_TEXT).setValue(whatText);
-				}
+					m4.getSourceElement().addExtension().setUrl(BaseParser.ORIGINAL_TEXT).setValue(originalText);
+				} 
 			} catch (Exception e) {
 				warn("Unexpected {} updating provenance for {} segment: {}", e.getClass().getSimpleName(), getName(segment), e.getMessage());
 			}
 		}
+		resourcesNeedingProvenance.clear();
 	}
 	
 	/**
@@ -361,5 +365,6 @@ public abstract class BaseParser<U,S> implements Parser<U,S> {
 	@Override
 	public void update(IBaseResource r) {
 		updated.add(r);	
+		resourcesNeedingProvenance.add(r);
 	}
 }

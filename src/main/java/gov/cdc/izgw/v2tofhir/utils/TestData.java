@@ -105,9 +105,8 @@ public class TestData {
 					// Reached the end of the data
 					if (line == null) {
 						return list;
-					} else {
-						continue;
-					}
+					} 
+					continue;
 				}
 				
 				if (line.startsWith("//") || line.startsWith("#")) {
