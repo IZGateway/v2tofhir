@@ -278,6 +278,7 @@ public class Normalizer {
 				firstName.getPrefix().add(prefix);
 			}
 		}
+		laterName.setPrefix(firstName.getPrefix());
 		// Ensure both have same use, taken from first if present, otherwise later
 		if (firstName.hasUse()) {
 			laterName.setUse(firstName.getUse());

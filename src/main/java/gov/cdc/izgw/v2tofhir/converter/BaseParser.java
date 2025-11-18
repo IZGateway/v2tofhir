@@ -19,7 +19,6 @@ import org.hl7.fhir.r4.model.IdType;
 import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Provenance;
 import org.hl7.fhir.r4.model.Provenance.ProvenanceEntityComponent;
-import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.StringType;
 
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
