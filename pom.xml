@@ -283,7 +283,7 @@
                     <executions>
                         <execution>
                             <id>prepare-agent</id>
-                            <phase>verify</phase>
+                            <phase>initialize</phase>
                             <goals>
                                 <goal>prepare-agent</goal>
                             </goals>
@@ -312,7 +312,7 @@
                         <includes>
                             <include>**/*Tests.java</include>
                         </includes>
-                        <argLine>${surefire.argLine}</argLine>
+                        <argLine>@{argLine} ${surefire.argLine}</argLine>
 					</configuration>
 					<executions>
                         <execution>
@@ -358,6 +358,12 @@
 				</plugin>
 			</plugins>
 		</pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
 	</build>
 	<reporting>
 		<plugins>
