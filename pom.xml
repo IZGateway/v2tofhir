@@ -74,6 +74,17 @@
                 <enabled>true</enabled>
             </snapshots>
         </repository>
+        <repository>
+            <id>v2tofhir</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/IZGateway/v2tofhir</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
     </repositories>
     <dependencyManagement>
         <dependencies>
