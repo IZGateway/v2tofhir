@@ -42,11 +42,16 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MessageParser extends BaseParser<Message,Structure> implements Parser<Message,Structure> {
 	static {
-		BaseParser.packageSources.add(ERRParser.class.getPackageName());
+
+        // Add configured parser packages first
+        // Custom parsers will be found first, and so will be used.
+        // For example, if you have an OBXParser that will be used over the OBXParser here in v2tofhir
 		String packages = System.getenv("V2TOFHIR_PARSER_PACKAGES");
 		if (StringUtils.isNotEmpty(packages)) {
 			Arrays.asList(packages.split("[,;\s]+")).forEach(p -> BaseParser.packageSources.add(p));
 		}
+        // Load this project's parsers as package source
+        BaseParser.packageSources.add(ERRParser.class.getPackageName());
 	}
 	
 	/**

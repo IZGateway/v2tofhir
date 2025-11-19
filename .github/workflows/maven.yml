@@ -198,6 +198,7 @@ jobs:
         project: V2 to FHIR
         path: target/v2tofhir-${{env.IMAGE_BRANCH_TAG}}.jar
         format: 'HTML'
+        out: 'target/site'
         args: >
           --ossIndexUsername ${{ secrets.OSS_INDEX_USERNAME }}
           --ossIndexPassword ${{ secrets.OSS_INDEX_PASSWORD }}        
@@ -231,7 +232,7 @@ jobs:
       if: ${{ always() }}
       with:
         name: DependencyCheck
-        path: ./reports
+        path: ./target/site/dependency-check-report.html
 
   release:
     needs: build
