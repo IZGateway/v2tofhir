@@ -136,7 +136,7 @@ public class FieldHandler implements Comparable&lt;FieldHandler&gt; {
 	 * @param r	The resource to update
 	 */
 	public void handle(Processor&lt;Message, ? extends Structure&gt; p, Segment segment, IBaseResource r) {
-<span class="pc bpc" id="L139" title="1 of 2 branches missed.">		if (from.fixed().length() != 0) {</span>
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">		if (!from.fixed().isEmpty()) {</span>
 <span class="nc" id="L140">			setFixedValue(p);</span>
 <span class="pc bpc" id="L141" title="1 of 2 branches missed.">		} else if (from.field() != 0) {</span>
 <span class="fc" id="L142">			setFromFieldAndComponent(p, segment);</span>
@@ -223,7 +223,7 @@ public class FieldHandler implements Comparable&lt;FieldHandler&gt; {
 			}
 <span class="nc bnc" id="L224" title="All 2 branches missed.">			if (ex.getTargetException() instanceof Error err) {</span>
 <span class="nc" id="L225">				err.printStackTrace();</span>
-<span class="nc" id="L226">				throw new RuntimeException(&quot;Error executing &quot; + method, err.getCause());</span>
+<span class="nc" id="L226">				throw new IllegalStateException(&quot;Error executing &quot; + method, err.getCause());</span>
 			}
 <span class="nc" id="L228">			throw new IllegalStateException(&quot;Exception executing &quot; + method, ex.getCause());</span>
 <span class="fc" id="L229">		}</span>

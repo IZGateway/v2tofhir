@@ -17,17 +17,20 @@ public interface ErrorReporter {
 	 * @author Audacious Inquiry
 	 */
 <span class="fc" id="L19">	@Slf4j</span>
-<span class="nc" id="L20">	static class DefaultErrorReporter {</span>
+	static class DefaultErrorReporter {
 		/** Thread local to allow different threads to have different error reporters.
 		 *  If not set, the default instance is used, which just logs the warning.
 		 */
-<span class="fc" id="L24">		private static final ThreadLocal&lt;WeakReference&lt;ErrorReporter&gt;&gt; ERROR_REPORTER = new ThreadLocal&lt;&gt;();</span>
-<span class="fc" id="L25">		public static final ErrorReporter INSTANCE = new ErrorReporter() {</span>
+		private DefaultErrorReporter() {
+			// Private constructor to prevent instantiation
+		}
+<span class="fc" id="L27">		private static final ThreadLocal&lt;WeakReference&lt;ErrorReporter&gt;&gt; ERROR_REPORTER = new ThreadLocal&lt;&gt;();</span>
+<span class="fc" id="L28">		public static final ErrorReporter INSTANCE = new ErrorReporter() {</span>
 			@Override
 			public void warn(String message, Object... args) {
 				// Default is to log the warning.
-<span class="fc" id="L29">				log.warn(message, args);</span>
-<span class="fc" id="L30">			}</span>
+<span class="fc" id="L32">				log.warn(message, args);</span>
+<span class="fc" id="L33">			}</span>
 		};
 	}
 	
@@ -37,23 +40,27 @@ public interface ErrorReporter {
 	 */
 	public static void set(ErrorReporter reporter) {
 		// Use a weak reference to avoid memory leaks if the reporter is no longer needed.
-<span class="fc" id="L40">		WeakReference&lt;ErrorReporter&gt; ref = new WeakReference&lt;&gt;(reporter);</span>
-<span class="fc" id="L41">		DefaultErrorReporter.ERROR_REPORTER.set(ref);</span>
-<span class="fc" id="L42">	}</span>
+<span class="pc bpc" id="L43" title="1 of 2 branches missed.">		if (reporter == null) {</span>
+<span class="nc" id="L44">			DefaultErrorReporter.ERROR_REPORTER.remove();</span>
+<span class="nc" id="L45">			return;</span>
+		}
+<span class="fc" id="L47">		WeakReference&lt;ErrorReporter&gt; ref = new WeakReference&lt;&gt;(reporter);</span>
+<span class="fc" id="L48">		DefaultErrorReporter.ERROR_REPORTER.set(ref);</span>
+<span class="fc" id="L49">	}</span>
 	
 	/**
 	 * Get the error reporter for the current thread. If not set, the default reporter is used, which just logs the warning.
 	 * @return The error reporter for the current thread.
 	 */
 	public static ErrorReporter get() {
-<span class="fc" id="L49">		WeakReference&lt;ErrorReporter&gt; ref = DefaultErrorReporter.ERROR_REPORTER.get();</span>
-<span class="pc bpc" id="L50" title="1 of 2 branches missed.">		if (ref != null) {</span>
-<span class="fc" id="L51">			ErrorReporter r = ref.get();</span>
-<span class="fc bfc" id="L52" title="All 2 branches covered.">			if (r != null) {</span>
-<span class="fc" id="L53">				return r;</span>
+<span class="fc" id="L56">		WeakReference&lt;ErrorReporter&gt; ref = DefaultErrorReporter.ERROR_REPORTER.get();</span>
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">		if (ref != null) {</span>
+<span class="fc" id="L58">			ErrorReporter r = ref.get();</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">			if (r != null) {</span>
+<span class="fc" id="L60">				return r;</span>
 			}
 		}
-<span class="fc" id="L56">		return DefaultErrorReporter.INSTANCE;</span>
+<span class="fc" id="L63">		return DefaultErrorReporter.INSTANCE;</span>
 	}
 	
 	/**
@@ -64,12 +71,7 @@ public interface ErrorReporter {
 	 * @param args The arguments. If the last argument is a Throwable, it is treated as the cause.
 	 */
 	default void warn(String message, Object ... args) {
-<span class="nc" id="L67">		ErrorReporter r = get();</span>
-<span class="nc bnc" id="L68" title="All 2 branches missed.">		if (r != null) {</span>
-<span class="nc" id="L69">			r.warn(message, args);</span>
-<span class="nc" id="L70">			return;</span>
-		}
-<span class="nc" id="L72">		DefaultErrorReporter.INSTANCE.warn(message, args);</span>
-<span class="nc" id="L73">	}</span>
+<span class="nc" id="L74">		get().warn(message, args);</span>
+<span class="nc" id="L75">	}</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
