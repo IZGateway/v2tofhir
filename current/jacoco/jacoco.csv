@@ -41,7 +41,7 @@ HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.converter,Context,11,74,2
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.converter,DatatypeConverter.MyTSComponentOne,0,4,0,0,0,2,0,1,0,1
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.converter,Parser,87,236,13,21,19,42,12,15,3,7
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.utils,Codes,0,188,0,0,0,31,0,1,0,1
-HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.utils,ErrorReporter,8,27,2,4,4,10,3,3,1,2
+HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.utils,ErrorReporter,71,27,14,4,15,10,9,3,1,2
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.utils,ISO3166,4484,0,10,0,14,0,10,0,5,0
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.utils,PathUtils,300,0,44,0,60,0,28,0,4,0
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.utils,RaceAndEthnicity,192,350,65,52,47,78,49,20,0,10
