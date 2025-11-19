@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractSegmentParser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">gov.cdc.izgw.v2tofhir.segment</a> &gt; <span class="el_source">AbstractSegmentParser.java</span></div><h1>AbstractSegmentParser.java</h1><pre class="source lang-java linenums">package gov.cdc.izgw.v2tofhir.segment;
+
+import java.util.List;
+
+import org.hl7.fhir.instance.model.api.IBase;
+import org.hl7.fhir.instance.model.api.IBaseResource;
+import ca.uhn.hl7v2.model.Message;
+import ca.uhn.hl7v2.model.Segment;
+import ca.uhn.hl7v2.model.Structure;
+import gov.cdc.izgw.v2tofhir.converter.MessageParser;
+import gov.cdc.izgw.v2tofhir.converter.Parser;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+
+
+/**
+ * A SegmentParser parses segments of the specified type.
+ * 
+ * @author Audacious Inquiry
+ */
+<span class="fc" id="L21">@Slf4j</span>
+public abstract class AbstractSegmentParser extends AbstractStructureParser implements Processor&lt;Message, Segment&gt; {
+	private final Parser&lt;Message, Structure&gt; parser;
+	@Getter
+	private final MessageParser messageParser;
+	/**
+	 * Construct a segment parser for the specified message parser and segment type
+	 * @param p	The message parser
+	 * @param s	The segment type name
+	 */
+	protected AbstractSegmentParser(MessageParser p, String s) {
+<span class="fc" id="L32">		super(p, s);</span>
+<span class="fc" id="L33">		parser = messageParser = p;</span>
+<span class="fc" id="L34">	}</span>
+	
+	@Override
+	public boolean isEmpty(Segment s) {
+<span class="fc" id="L38">		return super.isEmpty(s);</span>
+	}
+	
+	/**
+	 * Annotation driven parsing.  Call this method to use parsing driven
+	 * by ComesFrom and Produces annotations in the parser.
+	 * 
+	 * This method will be called by MessageParser for each segment of the given type that
+	 * appears within the method.  It will create the primary resource produced by the
+	 * parser (by calling the setup() method) and then parses individual fields of the 
+	 * segment and passes them to parser methods to add them to the primary resource or 
+	 * to create any extra resources.
+	 * 
+	 * @param segment The segment to be parsed
+	 */
+	@Override
+	public IBase parse(Segment segment) {
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">		if (isEmpty(segment)) {</span>
+<span class="nc" id="L56">			return null;</span>
+		}
+
+<span class="fc" id="L59">		super.segment = segment;</span>
+<span class="fc" id="L60">		IBaseResource r = setup();</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">		if (r == null) {</span>
+			// setup() returned nothing, there must be nothing to do
+<span class="fc" id="L63">			return null;</span>
+		}
+<span class="fc" id="L65">		List&lt;FieldHandler&gt; handlers = getFieldHandlers();</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">		for (FieldHandler fieldHandler : handlers) {</span>
+<span class="fc" id="L67">			fieldHandler.handle(this, segment, r);</span>
+<span class="fc" id="L68">		}</span>
+<span class="fc" id="L69">		return r;</span>
+	}
+	
+
+	@SuppressWarnings(&quot;unchecked&quot;)
+	@Override
+	public Parser&lt;Message, Segment&gt; getParser() {
+		@SuppressWarnings(&quot;rawtypes&quot;)
+<span class="fc" id="L77">		Parser p = parser;</span>
+<span class="fc" id="L78">		return (Parser&lt;Message, Segment&gt;)p;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

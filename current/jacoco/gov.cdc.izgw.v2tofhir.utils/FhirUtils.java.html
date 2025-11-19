@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FhirUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">gov.cdc.izgw.v2tofhir.utils</a> &gt; <span class="el_source">FhirUtils.java</span></div><h1>FhirUtils.java</h1><pre class="source lang-java linenums">package gov.cdc.izgw.v2tofhir.utils;
+
+import java.util.function.Consumer;
+
+import org.hl7.fhir.r4.model.CodeType;
+import org.hl7.fhir.r4.model.PrimitiveType;
+import org.hl7.fhir.r4.model.Resource;
+
+import ca.uhn.hl7v2.HL7Exception;
+import ca.uhn.hl7v2.model.Structure;
+
+/**
+ * This static class implements a number of utility functions for working with FHIR Data types
+ * 
+ * @author Audacious Inquiry
+ */
+public class FhirUtils {
+	private FhirUtils() {}
+	
+	/**
+	 * Returns true if the given Resource is empty or null
+	 * @param resource	The FHIR Resource to check
+	 * @return	true if the given FHIR resource is empty or null, false otherwise
+	 */
+	public static boolean isEmpty(Resource resource) {
+<span class="nc bnc" id="L26" title="All 4 branches missed.">		return resource == null || resource.isEmpty();</span>
+	}
+	/**
+	 * Returns true if the given FHIR type is empty or null
+	 * @param fhirType	The FHIR datatype to check
+	 * @return	true if the given FHIR type is empty or null, false otherwise
+	 */
+	public static boolean isEmpty(org.hl7.fhir.r4.model.Type fhirType) {
+<span class="pc bpc" id="L34" title="2 of 4 branches missed.">		return fhirType == null || fhirType.isEmpty();</span>
+	}
+	
+	/**
+	 * This is a convenience method to enabling actions to be written more simply.
+	 * &lt;pre&gt;
+	 * 		// Instead of
+	 * 		if (isNotEmpty(identifier) {
+	 * 			patient.addIdentifier(identifier);
+	 * 		}
+	 * 		// Use
+	 * 		ifNotEmpty(identifier, patient::addIdentifier);
+	 * &lt;/pre&gt;
+	 * 
+	 * @param &lt;T&gt;	The FHIR type to check
+	 * @param type	The type object
+	 * @param action	The action to perform
+	 */
+	public static &lt;T extends org.hl7.fhir.r4.model.Type&gt; void ifNotEmpty(T type, Consumer&lt;T&gt; action) {
+<span class="nc bnc" id="L53" title="All 2 branches missed.">		if (!isEmpty(type)) {</span>
+<span class="nc" id="L54">			action.accept(type);</span>
+		}
+<span class="nc" id="L56">	}</span>
+	
+	/**
+	 * Add a DataAbsent reason to a FHIR primitive type
+	 * @param element	The FHIR type to set as absent
+	 * @param reason	The reason the data is absent
+	 */
+	public static void setDataAbsentReason(PrimitiveType&lt;?&gt; element, String reason) {
+<span class="nc" id="L64">		element.addExtension()</span>
+<span class="nc" id="L65">			.setUrl(&quot;http://hl7.org/fhir/StructureDefinition/data-absent-reason&quot;)</span>
+<span class="nc" id="L66">			.setValue(new CodeType(reason));</span>
+<span class="nc" id="L67">	}</span>
+		
+	/**
+	 * Add a DataAbsent reason of &quot;unknown&quot; to a FHIR primitive type
+	 * This is used when data is not provided within a V2 message.
+	 * 
+	 * @param reason	The reason the data is absent
+	 */
+	public static void setDataAbsent(PrimitiveType&lt;?&gt; reason) {
+<span class="nc" id="L76">		setDataAbsentReason(reason, &quot;unknown&quot;);</span>
+<span class="nc" id="L77">	}</span>
+	
+	/**
+	 * Set a Data Absent Reason extension on a primitive type based on coding from
+	 * the NullFlavor vocabulary.
+	 * @param type	The type to add the extension to
+	 * @param code	The Null Flavor code
+	 */
+	public static void setDataAbsentFromNullFlavor(PrimitiveType&lt;?&gt; type, String code) {
+<span class="nc bnc" id="L86" title="All 12 branches missed.">		switch (code) {</span>
+<span class="nc" id="L87">		case &quot;NI&quot;:	setDataAbsent(type); break;</span>
+<span class="nc" id="L88">		case &quot;INV&quot;:	setDataAbsentReason(type, &quot;not-applicable&quot;); break;</span>
+<span class="nc" id="L89">		case &quot;DER&quot;: setDataAbsent(type); break;</span>
+<span class="nc" id="L90">		case &quot;OTH&quot;: setDataAbsentReason(type, &quot;unsupported&quot;); break;</span>
+<span class="nc" id="L91">		case &quot;MSK&quot;: setDataAbsentReason(type, &quot;masked&quot;); break;</span>
+<span class="nc" id="L92">		case &quot;NA&quot;:  setDataAbsentReason(type, &quot;not-applicable&quot;); break;</span>
+<span class="nc" id="L93">		case &quot;UNK&quot;: setDataAbsentReason(type, &quot;unknown&quot;); break;</span>
+<span class="nc" id="L94">		case &quot;NASK&quot;:setDataAbsentReason(type, &quot;not-asked&quot;); break;</span>
+<span class="nc" id="L95">		case &quot;NAV&quot;: setDataAbsentReason(type, &quot;temp-unknown&quot;); break;</span>
+<span class="nc" id="L96">		case &quot;NAVU&quot;:setDataAbsentReason(type, &quot;unknown&quot;); break;</span>
+<span class="nc" id="L97">		case &quot;NP&quot;:  setDataAbsentReason(type, &quot;asked-unknown&quot;); break;</span>
+		default: 
+			break;
+		}
+<span class="nc" id="L101">	}</span>
+
+	/**
+	 * Returns true if the structure is empty or cannot be parsed
+	 * @param structure The structure to check.
+	 * @return true  if the structure is empty or cannot be parsed, false otherwise
+	 */
+	public static boolean isEmpty(Structure structure) {
+		try {
+<span class="nc bnc" id="L110" title="All 4 branches missed.">			return structure == null || structure.isEmpty();</span>
+<span class="nc" id="L111">		} catch (HL7Exception e) {</span>
+<span class="nc" id="L112">			return true;</span>
+		}
+	}
+	
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
