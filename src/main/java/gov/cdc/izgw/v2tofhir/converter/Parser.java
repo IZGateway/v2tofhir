@@ -53,7 +53,7 @@ public interface Parser<U,S> extends ErrorReporter {
 	 * @return	The converted bundle
 	 * @throws Exception If an error occurs.
 	 */
-	Bundle convert(String string) throws Exception;
+	Bundle convert(String string) throws Exception; // NOSONAR
 	
 	/**
 	 * Convert a unit to FHIR.
@@ -61,7 +61,7 @@ public interface Parser<U,S> extends ErrorReporter {
 	 * @return	The converted bundle
 	 * @throws Exception If an error occurs.
 	 */
-	Bundle convert(U unit) throws Exception;
+	Bundle convert(U unit) throws Exception; // NOSONAR
 	
 	/**
 	 * Encode a unit to a String for reporting in Provenance
@@ -267,5 +267,6 @@ public interface Parser<U,S> extends ErrorReporter {
 	 * @param message The warning message
 	 * @param args The arguments
 	 */
+	@Override
 	void warn(String message, Object ... args);
 }

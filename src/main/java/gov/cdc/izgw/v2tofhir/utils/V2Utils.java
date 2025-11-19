@@ -14,7 +14,9 @@ import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
  * @author Audacious Inquiry
  */
 public class V2Utils {
-
+	private V2Utils() {
+		// Static class
+	}
 	/** 
 	 * Convenience method to add a single field to a resource
 	 * 

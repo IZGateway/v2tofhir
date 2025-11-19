@@ -154,7 +154,6 @@ public class MessageParser extends BaseParser<Message,Structure> implements Pars
 		try {
 			return unit.encode();
 		} catch (HL7Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return "";
 		}
@@ -169,12 +168,10 @@ public class MessageParser extends BaseParser<Message,Structure> implements Pars
 			try {
 				return segment.encode();
 			} catch (HL7Exception e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 				return "";
 			}
 		}
-		// TODO: What do we do here?
 		return "";
 	}
 	

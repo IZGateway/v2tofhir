@@ -129,6 +129,9 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class DatatypeConverter {
+	private static final String IMAGE = "image";
+	private static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
+	private static final String UNEXPECTED_HL7_EXCEPTION = "Unexpected HL7 Exception: {}";
 	private static final BigDecimal MAX_UNSIGNED_VALUE = new BigDecimal(Integer.MAX_VALUE);
 	private static final AddressParser addressParser = new AddressParser();
 	private static final ContactPointParser contactPointParser = new ContactPointParser();
@@ -315,13 +318,10 @@ public class DatatypeConverter {
 	 * @return The Attachment converted from the V2 datatype
 	 */
 	public static Attachment toAttachment(Type data) {
-		if (ParserUtils.isEmpty(data)) {
-			return null;
-		}
-		if ((data = adjustIfVaries(data)) == null) {
-			return null;
-		}
-		if (!(data instanceof Composite comp)) {
+		if (ParserUtils.isEmpty(data) || 
+			(data = adjustIfVaries(data)) == null ||
+			!(data instanceof Composite comp)
+		) {
 			return null;
 		}
 		try {
@@ -338,7 +338,7 @@ public class DatatypeConverter {
 				return null;
 			}
 		} catch (HL7Exception e) {
-			warn("Unexpected HL7 Exception: {}", e.getMessage(), e);
+			warn(UNEXPECTED_HL7_EXCEPTION, e.getMessage(), e);
 			return null;
 		}
 		Type[] types = comp.getComponents();
@@ -357,6 +357,7 @@ public class DatatypeConverter {
 					break;
 				case "h":	// Hexidecimal
 					byteData = HexFormat.of().parseHex(body);
+					break;
 				case "a":	// ASCII
 				default:
 					byteData = body.getBytes(StandardCharsets.UTF_8);
@@ -377,7 +378,7 @@ public class DatatypeConverter {
 	}
 	
 	/** A set of well-known mime types */
-	public static List<String> MIME_TYPES = Arrays.asList(
+	public static final List<String> MIME_TYPES = List.of(
 		"audio/mpg", 
 		"audio/mpeg", 
 		"audio/pcm", 
@@ -385,7 +386,7 @@ public class DatatypeConverter {
 		"video/mp4", 
 		"multipart/mixed", 
 		"text/plain", 
-		"application/octet-stream", 
+		APPLICATION_OCTET_STREAM, 
 		"application/msword",
 		"application/vnd.openxmlformats-officedocument.wordprocessingml.document", 
 		"application/pdf", 
@@ -411,7 +412,7 @@ public class DatatypeConverter {
 	);
 	
 	/** A map from sub-type to type */
-	public static Map<String, String> TYPE_MAP = new LinkedHashMap<>();
+	protected static final Map<String, String> TYPE_MAP = new LinkedHashMap<>();
 	static {
 		for (String mimeType: MIME_TYPES) {
 			String subType = StringUtils.substringAfter(mimeType, "/");
@@ -421,14 +422,14 @@ public class DatatypeConverter {
 		}
 		TYPE_MAP.put("basic", "audio/pcm");
 		TYPE_MAP.put("mp3", "audio/mpeg");
-		TYPE_MAP.put("im", "image");
-		TYPE_MAP.put("ns", "image");
-		TYPE_MAP.put("sd", "image");
-		TYPE_MAP.put("si", "image");
+		TYPE_MAP.put("im", IMAGE);
+		TYPE_MAP.put("ns", IMAGE);
+		TYPE_MAP.put("sd", IMAGE);
+		TYPE_MAP.put("si", IMAGE);
 		TYPE_MAP.put("ft", "text/troff");
-		TYPE_MAP.put("binary", "application/octet-stream");
-		TYPE_MAP.put("octet", "application/octet-stream");
-		TYPE_MAP.put("octetstream", "application/octet-stream");
+		TYPE_MAP.put("binary", APPLICATION_OCTET_STREAM);
+		TYPE_MAP.put("octet", APPLICATION_OCTET_STREAM);
+		TYPE_MAP.put("octetstream", APPLICATION_OCTET_STREAM);
 		TYPE_MAP.put("cda", "text/xml");
 		TYPE_MAP.put("pdf", "application/pdf");
 	}
@@ -501,13 +502,9 @@ public class DatatypeConverter {
 	 * @return The CodeableConcept converted from the V2 datatype
 	 */
 	public static CodeableConcept toCodeableConcept(Type codedElement, String table) {
-		if (ParserUtils.isEmpty(codedElement)) {
-			return null;
-		}
-		if (table != null && table.isEmpty()) {
-			table = null;
-		}
-		if ((codedElement = adjustIfVaries(codedElement)) == null) {
+		if (ParserUtils.isEmpty(codedElement) ||
+			(codedElement = adjustIfVaries(codedElement)) == null
+		) {
 			return null;
 		}
 		if (codedElement instanceof Primitive pt && isDeleted(pt)) {
@@ -517,7 +514,7 @@ public class DatatypeConverter {
 		CodeableConcept cc = new CodeableConcept();
 		Primitive st = null;
 		Composite comp = null;
-		switch (getName(codedElement)) {
+		switch (StringUtils.defaultIfEmpty(getName(codedElement),"")) {
 		case "CE", "CF", "CNE", "CWE":
 			comp = (Composite) codedElement;
 			for (int i = 0; i <= 3; i += 3) {
@@ -553,10 +550,7 @@ public class DatatypeConverter {
 		default:
 			break;
 		}
-		if (cc.isEmpty()) {
-			return null;
-		}
-		return cc;
+		return cc.isEmpty() ? null : cc;
 	}
 
 	private static String getName(Type type) {
@@ -645,23 +639,8 @@ public class DatatypeConverter {
 		id.setValue(value);
 
 		for (int v : systemValues) {
-			if (types.length > v && !ParserUtils.isEmpty(types[v])) {
-				List<String> system = getSystemsOfIdentifier(types[v]);
-				if (system != null && !system.isEmpty()) {
-					id.setSystem(system.get(0));
-					Mapping.mapSystem(id);
-					if (system.size() > 1) {
-						// Save the system name as the display name of the assigner organization
-						// but don't create a real reference to an organization.
-						Reference ref = new Reference();
-						ref.setDisplay(system.get(1));
-						ref.setType(ResourceType.ORGANIZATION.toCode());
-						id.setAssigner(ref);
-					}
-					if (id.getUserData("originalSystem") != null) {
-						break;
-					}
-				}
+			if (types.length > v && !ParserUtils.isEmpty(types[v]) && !setIdSystemAndName(types[v], id)) {
+				break;
 			}
 		}
 		Type type = adjustIfVaries(types, idTypeLoc);
@@ -678,6 +657,32 @@ public class DatatypeConverter {
 		return id;
 	}
 
+	/**
+	 * Set the system and assigner name of an Identifier from a V2 type
+	 * @param type	The V2 type containing the system information
+	 * @param id	The FHIR Identifier to set the system and assigner on
+	 * @return	true if the system was set from user data, false if it was set from the type
+	 */
+	private static boolean setIdSystemAndName(Type type, Identifier id) {
+		List<String> system = getSystemsOfIdentifier(type);
+		if (system.isEmpty()) {
+			return true;
+		}
+
+		id.setSystem(system.get(0));
+		Mapping.mapSystem(id);
+		if (system.size() > 1) {
+			// Save the system name as the display name of the assigner organization
+			// but don't create a real reference to an organization.
+			Reference ref = new Reference();
+			ref.setDisplay(system.get(1));
+			ref.setType(ResourceType.ORGANIZATION.toCode());
+			id.setAssigner(ref);
+		}
+		
+		return id.getUserData("originalSystem") == null;
+	}
+
 	private static List<String> getSystemsOfIdentifier(Type type) {
 		type = adjustIfVaries(type);
 		if (type instanceof Primitive pt) {
@@ -686,7 +691,7 @@ public class DatatypeConverter {
 		) {
 			return DatatypeConverter.getSystemsFromHD(0, comp2.getComponents());
 		}
-		return null;
+		return Collections.emptyList();
 	}
 
 	private static String getValueOfIdentifier(int idLocation, int checkDigitLoc, Type[] types) {
@@ -934,24 +939,24 @@ public class DatatypeConverter {
 			Period period = new Period();
 			Composite comp = (Composite) type;
 			Type[] types = comp.getComponents();
-			if (types.length > 3) {
-				Type start = adjustIfVaries(types, 3);
-				if (start != null && !ParserUtils.isEmpty(start)) {
-					period.setStartElement(toDateTimeType(start));
-				}
-			}
-			if (types.length > 4) {
-				Type end = adjustIfVaries(types, 4);
-				if (end != null && !ParserUtils.isEmpty(end)) {
-					period.setEndElement(toDateTimeType(end));
-				}
-			}
+			period.setStartElement(toDateTimeType(types, 3));
+			period.setEndElement(toDateTimeType(types, 4));
 			return period.isEmpty() ? null : period;
 		} else if (!"UNKNOWN".equals(type.getName()) ) {
 			// Warn for anything that isn't a TQ or UNKNOWN.  
 			// Ignore UNKNOWN, which is what appears for segments containing
 			// withdrawn datatypes like CE.
 			log.warn("Cannot convert {} to Period", type.getName());
+		}
+		return null;
+	}
+
+	private static DateTimeType toDateTimeType(Type[] types, int i) {
+		if (types.length > i) {
+			Type date = adjustIfVaries(types, i);
+			if (date != null && !ParserUtils.isEmpty(date)) {
+				return toDateTimeType(date);
+			}
 		}
 		return null;
 	}
@@ -1198,9 +1203,7 @@ public class DatatypeConverter {
 		if (t == null) {
 			return null;
 		}
-		if ((t = adjustIfVaries(t)) == null) {
-			return null;
-		}
+		t = adjustIfVaries(t);
 
 		Identifier id = null;
 
@@ -1264,6 +1267,9 @@ public class DatatypeConverter {
 	 * @return The new organization
 	 */
 	public static Organization toOrganization(Type t) {
+		if (t == null) {
+			return null;
+		}
 		t = adjustIfVaries(t);
 		Organization org = new Organization();
 		org.setUserData(Parser.SOURCE, DatatypeConverter.class.getName());
@@ -1284,6 +1290,9 @@ public class DatatypeConverter {
 	 * @return The new organization
 	 */
 	public static Practitioner toPractitioner(Type t) {
+		if (t == null) {
+			return null;
+		}
 		t = adjustIfVaries(t);
 		Practitioner pract = new Practitioner();
 		pract.setUserData(Parser.SOURCE, DatatypeConverter.class.getName());
@@ -1302,6 +1311,9 @@ public class DatatypeConverter {
 	 * @return The new RelatedPerson
 	 */
 	public static RelatedPerson toRelatedPerson(Type t) {
+		if (t == null) {
+			return null;
+		}
 		t = adjustIfVaries(t);
 		RelatedPerson person = new RelatedPerson();
 		person.setUserData(Parser.SOURCE, DatatypeConverter.class.getName());
@@ -1320,43 +1332,45 @@ public class DatatypeConverter {
 	 * @return The Specimen
 	 */
 	public static Specimen toSpecimen(Type t) {
-		t = adjustIfVaries(t);
-		if ("SPS".equals(t.getName())) {
-			Specimen specimen = new Specimen();
-			specimen.setUserData(Parser.SOURCE, DatatypeConverter.class.getName());
-			if (t instanceof Composite c) {
-				Type[] t2 = c.getComponents();
-				for (int i = 0; i < 6; i++) {
-					if (t2.length <= i) {
-						continue;
-					}
-					switch (i + 1) {
-					case 1:
-						specimen.setType(toCodeableConcept(t2[i]));
-						break;
-					case 2:
-						specimen.addContainer().setAdditive(toCodeableConcept(t2[i]));
-						break;
-					case 3:
-						specimen.addNote(new Annotation().setTextElement(toMarkdownType(t2[i])));
-						break;
-					case 4:
-						CodeableConcept bodySite = toCodeableConcept(t2[i]);
-						if (bodySite != null) {
-							specimen.setCollection(new SpecimenCollectionComponent().setBodySite(bodySite));
-						}
-						break;
-					case 6:
-						specimen.addCondition(toCodeableConcept(t2[i]));
-						break;
-					default:
-						break;
-					}
-				}
-			}
-			return specimen.isEmpty() ? null : specimen;
+		if (t == null) {
+			return null;
 		}
-		return null;
+		t = adjustIfVaries(t);
+		Specimen specimen = null;
+		if (!"SPS".equals(t.getName()) || !(t instanceof Composite c)) {
+			return null;
+		}
+		Type[] t2 = c.getComponents();
+		if (t2.length <= 0) {
+			return null;
+		}
+		specimen = new Specimen();
+		specimen.setUserData(Parser.SOURCE, DatatypeConverter.class.getName());
+		specimen.setType(toCodeableConcept(t2[0]));
+		
+		if (t2.length <= 1) {
+			return specimen;
+		}
+		specimen.addContainer().setAdditive(toCodeableConcept(t2[1]));
+		
+		if (t2.length <= 2) {
+			return specimen;
+		}
+		specimen.addNote(new Annotation().setTextElement(toMarkdownType(t2[2])));
+		
+		if (t2.length <= 3) {
+			return specimen;
+		}
+		CodeableConcept bodySite = toCodeableConcept(t2[3]);
+		if (bodySite != null) {
+			specimen.setCollection(new SpecimenCollectionComponent().setBodySite(bodySite));
+		}
+		
+		if (t2.length > 5) {
+			specimen.addCondition(toCodeableConcept(t2[5]));
+		}
+
+		return specimen;
 	}
 
 	private static void setSystemFromHD(Identifier id, Type[] types, int offset) {
@@ -1674,47 +1688,56 @@ public class DatatypeConverter {
 	 * @return The Quantity converted from the V2 datatype
 	 */
 	public static Quantity toQuantity(Type type) {
-		Quantity qt = null;
-		if ((type = adjustIfVaries(type)) == null) {
+		if (type == null) {
 			return null;
 		}
+		type = adjustIfVaries(type);
 
 		if (type instanceof Primitive pt) {
 			if (type instanceof Primitive p && isDeleted(p)) {
 				return markDeleted(new Quantity());
 			}
-			qt = getQuantity(pt);
+			return getQuantity(pt);
+		} 
+		if (!(type instanceof Composite comp)) {
+			return null;
 		}
-		if (type instanceof Composite comp) {
-			Type[] types = comp.getComponents();
-			if ("CQ".equals(type.getName()) // NOSONAR name check is OK here
-					&& types.length > 0) { // NOSONAR name compare is correct
-				qt = getQuantity((Primitive) types[0]);
-				if (types.length > 1) {
-					if (qt == null) {
-						qt = new Quantity();
-					}
-					setUnits(qt, types[1]);
-				}
-			} else if ("SN".equals(type.getName()) && types.length < 4) {
-				String qualifier = ParserUtils.toString(types[0]);
-				qt = getQuantity((Primitive) types[1]);
-				if (StringUtils.isEmpty(qualifier)) {
-					return qt;
-				} else
-					switch (qualifier) {
-					case "<":
-					case ">":
-					case "<=":
-					case ">=":
-						qt.setComparator(QuantityComparator.fromCode(qualifier));
-						break;
-					}
-			}
+		
+		Type[] types = comp.getComponents();
+		if (types.length < 1) {
+			return null;
+		}
+		String typeName = type.getName();
+		if ("CQ".equals(typeName)) { 
+			return getCQasQuantity(types);
+		} 
+
+		if ("SN".equals(typeName) && types.length < 4) {
+			return getSNasQuantity(types);
 		}
 
-		if (qt == null || qt.isEmpty()) {
-			return null;
+		return null;
+	}
+
+	private static Quantity getCQasQuantity(Type[] types) {
+		Quantity qt = getQuantity((Primitive) types[0]);
+		if (types.length > 1) {
+			if (qt == null) {
+				qt = new Quantity();
+			}
+			setUnits(qt, types[1]);
+		}
+		return qt;
+	}
+
+	private static Quantity getSNasQuantity(Type[] types) {
+		String qualifier = ParserUtils.toString(types[0]);
+		Quantity qt = getQuantity((Primitive) types[1]);
+		if (qt == null || StringUtils.isEmpty(qualifier)) {
+			return qt;
+		} 
+		if (List.of("<", ">", "<=", ">=").contains(qualifier)) {
+			qt.setComparator(QuantityComparator.fromCode(qualifier));
 		}
 		return qt;
 	}
@@ -1726,34 +1749,34 @@ public class DatatypeConverter {
 	 * @return	A new Range
 	 */
 	public static Range toRange(Type type) {
-		if ((type = adjustIfVaries(type)) == null) {
+		if (type == null) {
+			return null;
+		}
+		type = adjustIfVaries(type);
+		if (!"SN".equals(type.getName()) || !(type instanceof Composite comp)) {
 			return null;
 		}
     	Range range = new Range();
-		if ("SN".equals(type.getName()) && type instanceof Composite comp) {
-			Type[] types = comp.getComponents();
-			String comparator = ParserUtils.toString(types[0]);
-			if (types.length > 1) {
-				Quantity q1 = toQuantity(types[1]);
-				if (types.length > 3) {
-					Quantity q2 = toQuantity(types[3]);
-					range.setHigh(q2);
-				} else if (StringUtils.isEmpty(comparator)) {
-					range.setLow(q1);
+		Type[] types = comp.getComponents();
+		String comparator = ParserUtils.toString(types[0]);
+		if (types.length > 1) {
+			Quantity q1 = toQuantity(types[1]);
+			if (types.length > 3) {
+				Quantity q2 = toQuantity(types[3]);
+				range.setHigh(q2);
+			} else if (StringUtils.isEmpty(comparator)) {
+				range.setLow(q1);
+				range.setHigh(q1);
+			} else if (COMPARATORS.contains(comparator)) {
+				if (comparator.charAt(0) == '<') {
 					range.setHigh(q1);
-				} else if (COMPARATORS.contains(comparator)) {
-					if (comparator.charAt(0) == '<') {
-						range.setHigh(q1);
-					} else {
-						range.setLow(q1);
-					}
+				} else {
+					range.setLow(q1);
 				}
 			}
 		}
-		if (range == null || range.isEmpty()) {
-			return null;
-		}
-		return range;
+
+		return range.isEmpty() ? null : range;
     }
 
 	/**
@@ -1789,7 +1812,7 @@ public class DatatypeConverter {
 				return new Expression().setLanguage("text/fhirpath")
 						.setExpression(PathUtils.v2ToFHIRPath(type.encode()));
 			} catch (HL7Exception e) {
-				warn("Unexpected HL7 Exception: {}", e.getMessage(), e);
+				warn(UNEXPECTED_HL7_EXCEPTION, e.getMessage(), e);
 			}
 		}
 		return null;
@@ -1838,7 +1861,7 @@ public class DatatypeConverter {
 			try {
 				s = type.encode();
 			} catch (HL7Exception e) {
-				warn("Unexpected HL7 Exception: {}", e.getMessage(), e);
+				warn(UNEXPECTED_HL7_EXCEPTION, e.getMessage(), e);
 				// ignore this error.
 			}
 			break;

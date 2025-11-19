@@ -15,6 +15,8 @@ import ca.uhn.hl7v2.model.Structure;
  * @author Audacious Inquiry
  */
 public class FhirUtils {
+	private static final String UNKNOWN = "unknown";
+
 	private FhirUtils() {}
 	
 	/**
@@ -73,7 +75,7 @@ public class FhirUtils {
 	 * @param reason	The reason the data is absent
 	 */
 	public static void setDataAbsent(PrimitiveType<?> reason) {
-		setDataAbsentReason(reason, "unknown");
+		setDataAbsentReason(reason, UNKNOWN);
 	}
 	
 	/**
@@ -90,10 +92,10 @@ public class FhirUtils {
 		case "OTH": setDataAbsentReason(type, "unsupported"); break;
 		case "MSK": setDataAbsentReason(type, "masked"); break;
 		case "NA":  setDataAbsentReason(type, "not-applicable"); break;
-		case "UNK": setDataAbsentReason(type, "unknown"); break;
+		case "UNK": setDataAbsentReason(type, UNKNOWN); break;
 		case "NASK":setDataAbsentReason(type, "not-asked"); break;
 		case "NAV": setDataAbsentReason(type, "temp-unknown"); break;
-		case "NAVU":setDataAbsentReason(type, "unknown"); break;
+		case "NAVU":setDataAbsentReason(type, UNKNOWN); break;
 		case "NP":  setDataAbsentReason(type, "asked-unknown"); break;
 		default: 
 			break;

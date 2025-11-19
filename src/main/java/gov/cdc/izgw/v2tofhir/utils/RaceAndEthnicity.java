@@ -66,10 +66,11 @@ public class RaceAndEthnicity {
 			if (c.hasCode()) {
 				Extension category = ethnicityExtension.getExtensionByUrl(PIDParser.OMB_CATEGORY);
 				if (category == null) {
-					ethnicityExtension.addExtension(PIDParser.OMB_CATEGORY, c);
-				} else {
-					category.setValue(c);
-				}
+					category = new Extension();
+					category.setUrl(PIDParser.OMB_CATEGORY);
+					ethnicityExtension.addExtension(category);
+				} 
+				category.setValue(c);
 				return;
 			}
 		}

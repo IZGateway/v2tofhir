@@ -82,8 +82,8 @@ public abstract class BaseParser<U,S> implements Parser<U,S> {
 	/**
 	 * Construct a new parser with a freshly initialized context.
 	 */
-	public BaseParser() {
-		context = new Context<Parser<U,S>>(this);
+	protected BaseParser() {
+		context = new Context<>(this);
 		// Copy default values to context on creation.
 		context.setStoringProvenance(BaseParser.defaultContext.isStoringProvenance());
 	}
@@ -240,18 +240,17 @@ public abstract class BaseParser<U,S> implements Parser<U,S> {
 				String encodedSegment = encode(segment);
 				StringType originalText = new StringType(encode(segment)); // Was new StringType(context.getHl7DataId()+"#"+PathUtils.getTerserPath(segment))
 				if (entity.getExtension().stream()
-						.anyMatch(ext -> 
+						.noneMatch(ext -> 
 							BaseParser.ORIGINAL_TEXT.equals(ext.getUrl()) && 
 							encodedSegment.equals(ext.getValue().toString())
 						)
 				) {
-					continue;
+					entity.addExtension().setUrl(BaseParser.ORIGINAL_TEXT).setValue(originalText);
+					IBaseMetaType meta = r.getMeta();
+					if (meta instanceof Meta m4) {
+						m4.getSourceElement().addExtension().setUrl(BaseParser.ORIGINAL_TEXT).setValue(originalText);
+					} 
 				}
-				entity.addExtension().setUrl(BaseParser.ORIGINAL_TEXT).setValue(originalText);
-				IBaseMetaType meta = r.getMeta();
-				if (meta instanceof Meta m4) {
-					m4.getSourceElement().addExtension().setUrl(BaseParser.ORIGINAL_TEXT).setValue(originalText);
-				} 
 			} catch (Exception e) {
 				warn("Unexpected {} updating provenance for {} segment: {}", e.getClass().getSimpleName(), getName(segment), e.getMessage());
 			}

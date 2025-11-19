@@ -21,6 +21,9 @@ public interface ErrorReporter {
 		/** Thread local to allow different threads to have different error reporters.
 		 *  If not set, the default instance is used, which just logs the warning.
 		 */
+		private DefaultErrorReporter() {
+			// Private constructor to prevent instantiation
+		}
 		private static final ThreadLocal<WeakReference<ErrorReporter>> ERROR_REPORTER = new ThreadLocal<>();
 		public static final ErrorReporter INSTANCE = new ErrorReporter() {
 			@Override
@@ -37,6 +40,10 @@ public interface ErrorReporter {
 	 */
 	public static void set(ErrorReporter reporter) {
 		// Use a weak reference to avoid memory leaks if the reporter is no longer needed.
+		if (reporter == null) {
+			DefaultErrorReporter.ERROR_REPORTER.remove();
+			return;
+		}
 		WeakReference<ErrorReporter> ref = new WeakReference<>(reporter);
 		DefaultErrorReporter.ERROR_REPORTER.set(ref);
 	}
@@ -64,11 +71,6 @@ public interface ErrorReporter {
 	 * @param args The arguments. If the last argument is a Throwable, it is treated as the cause.
 	 */
 	default void warn(String message, Object ... args) {
-		ErrorReporter r = get();
-		if (r != null) {
-			r.warn(message, args);
-			return;
-		}
-		DefaultErrorReporter.INSTANCE.warn(message, args);
+		get().warn(message, args);
 	}
 }
