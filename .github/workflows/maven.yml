@@ -56,7 +56,6 @@ jobs:
     - name: Set up Toolchain
       shell: bash
       run: |
-          echo BASE_TAG=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout` >> $GITHUB_ENV
           echo COMPUTERNAME=`hostname` >> $GITHUB_ENV
           mkdir -p ~/.m2 \
           && cat << EOF > ~/.m2/toolchains.xml
@@ -118,6 +117,7 @@ jobs:
             <activeProfiles />
           </settings>
           EOF
+          echo BASE_TAG=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout` >> $GITHUB_ENV
           
     - name: Sets env vars for push or pull request to release branch (default behavior)
       run: |
