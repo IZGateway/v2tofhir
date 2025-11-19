@@ -1,6 +1,7 @@
 package gov.cdc.izgw.v2tofhir.utils;
 
 import java.lang.ref.WeakReference;
+import java.util.Arrays;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -71,6 +72,21 @@ public interface ErrorReporter {
 	 * @param args The arguments. If the last argument is a Throwable, it is treated as the cause.
 	 */
 	default void warn(String message, Object ... args) {
+		Object x = args != null && args.length > 0 ? args[args.length - 1] : null;
+		if (x instanceof Throwable t) {
+			// Trim the stack trace to only include relevant frames.
+			StackTraceElement[] stackTrace = t.getStackTrace();
+			for (int i = 0; i < stackTrace.length; i++) {
+				StackTraceElement ste = stackTrace[i];
+				String className = ste.getClassName();
+				if (className.startsWith("com.ainq") || className.startsWith("gov.cdc")) {
+					int newLength = Math.min(i + 5, stackTrace.length);
+					StackTraceElement[] newStackTrace = Arrays.copyOfRange(stackTrace, 0, newLength);
+					t.setStackTrace(newStackTrace);
+					break;
+				}
+			}
+		}
 		get().warn(message, args);
 	}
 }
