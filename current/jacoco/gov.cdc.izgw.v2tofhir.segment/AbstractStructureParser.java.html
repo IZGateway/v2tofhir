@@ -24,7 +24,7 @@ public abstract class AbstractStructureParser {
 	 * 
 	 * @author Audacious Inquiry
 	 */
-	public static abstract class AbstractStructureProcessor extends AbstractStructureParser implements Processor&lt;Message, Structure&gt; { 
+	public abstract static class AbstractStructureProcessor extends AbstractStructureParser implements Processor&lt;Message, Structure&gt; { 
 		AbstractStructureProcessor(Parser&lt;Message, Structure&gt; messageParser, String structureName) {
 <span class="nc" id="L29">			super(messageParser, structureName);</span>
 <span class="nc" id="L30">		}</span>

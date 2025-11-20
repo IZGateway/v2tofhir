@@ -53,7 +53,7 @@ public interface Parser&lt;U,S&gt; extends ErrorReporter {
 	 * @return	The converted bundle
 	 * @throws Exception If an error occurs.
 	 */
-	Bundle convert(String string) throws Exception;
+	Bundle convert(String string) throws Exception; // NOSONAR
 	
 	/**
 	 * Convert a unit to FHIR.
@@ -61,7 +61,7 @@ public interface Parser&lt;U,S&gt; extends ErrorReporter {
 	 * @return	The converted bundle
 	 * @throws Exception If an error occurs.
 	 */
-	Bundle convert(U unit) throws Exception;
+	Bundle convert(U unit) throws Exception; // NOSONAR
 	
 	/**
 	 * Encode a unit to a String for reporting in Provenance
@@ -197,48 +197,50 @@ public interface Parser&lt;U,S&gt; extends ErrorReporter {
 	 */
 	default &lt;R extends IBaseResource&gt; R addResource(String id, R resource) {
 		// See if it already exists in the bundle
-<span class="fc" id="L200">		if (getContext().getBundle().getEntry().stream()</span>
-<span class="pc bpc" id="L201" title="2 of 4 branches missed.">				.anyMatch(e -&gt; e.getResource() == resource)) {</span>
+<span class="pc bpc" id="L200" title="2 of 4 branches missed.">		if (getContext().getBundle().getEntry().stream().anyMatch(e -&gt; e.getResource() == resource)) {</span>
 			// if it does, just return it. Nothing more is necessary.
-<span class="nc" id="L203">			return resource;</span>
+<span class="nc" id="L202">			return resource;</span>
 		}
-<span class="pc bpc" id="L205" title="1 of 2 branches missed.">		if (id == null) {</span>
-<span class="fc" id="L206">			id = getIdGenerator().get();</span>
+<span class="pc bpc" id="L204" title="1 of 2 branches missed.">		if (id == null) {</span>
+<span class="fc" id="L205">			id = getIdGenerator().get();</span>
 		}
-<span class="fc" id="L208">		IdType theId = new IdType(resource.fhirType(), id);</span>
-<span class="fc" id="L209">		resource.setId(theId);</span>
-<span class="fc" id="L210">		BundleEntryComponent entry = getContext().getBundle().addEntry().setResource((Resource) resource);</span>
-<span class="fc" id="L211">		resource.setUserData(BundleEntryComponent.class.getName(), entry);</span>
-<span class="fc bfc" id="L212" title="All 2 branches covered.">		if (resource instanceof Provenance) {</span>
-<span class="fc" id="L213">			return resource;</span>
+<span class="fc" id="L207">		IdType theId = new IdType(resource.fhirType(), id);</span>
+<span class="fc" id="L208">		resource.setId(theId);</span>
+<span class="fc" id="L209">		BundleEntryComponent entry = getContext().getBundle().addEntry().setResource((Resource) resource);</span>
+<span class="fc" id="L210">		resource.setUserData(BundleEntryComponent.class.getName(), entry);</span>
+<span class="fc bfc" id="L211" title="All 2 branches covered.">		if (resource instanceof Provenance) {</span>
+<span class="fc" id="L212">			return resource;</span>
 		}
-<span class="fc" id="L215">		update(resource);</span>
-<span class="pc bpc" id="L216" title="1 of 4 branches missed.">		if (getContext().isStoringProvenance() &amp;&amp; resource instanceof DomainResource dr) { </span>
-<span class="fc" id="L217">			Provenance p = createResource(Provenance.class);</span>
-<span class="fc" id="L218">			p.setUserData(SOURCE, MessageParser.class.getName());	// Mark infrastructure created resources</span>
-<span class="fc" id="L219">			resource.setUserData(Provenance.class.getName(), p);</span>
-<span class="fc" id="L220">			p.addTarget(ParserUtils.toReference(dr, p, &quot;target&quot;));</span>
-<span class="fc" id="L221">			p.setRecorded(new Date());</span>
+<span class="fc" id="L214">		update(resource);</span>
+<span class="pc bpc" id="L215" title="1 of 4 branches missed.">		if (getContext().isStoringProvenance() &amp;&amp; resource instanceof DomainResource dr) { </span>
+<span class="fc" id="L216">			Provenance p = new Provenance();</span>
+<span class="fc" id="L217">			p.setId(getIdGenerator().get());</span>
+<span class="fc" id="L218">			getContext().getBundle().addEntry().setResource(p);</span>
+			
+<span class="fc" id="L220">			p.setUserData(SOURCE, MessageParser.class.getName());	// Mark infrastructure created resources</span>
+<span class="fc" id="L221">			resource.setUserData(Provenance.class.getName(), p);</span>
+<span class="fc" id="L222">			p.addTarget(ParserUtils.toReference(dr, p, &quot;target&quot;));</span>
+<span class="fc" id="L223">			p.setRecorded(new Date());</span>
 			// Copy constants so that they are not modified.
-<span class="fc" id="L223">			p.setActivity(Codes.CREATE_ACTIVITY.copy());</span>
+<span class="fc" id="L225">			p.setActivity(Codes.CREATE_ACTIVITY.copy());</span>
 			// Copy constants so that they are not modified.
-<span class="fc" id="L225">			p.addAgent().setType(Codes.ASSEMBLER_AGENT.copy());</span>
-<span class="fc" id="L226">			DocumentReference doc = getFirstResource(DocumentReference.class);</span>
-<span class="fc bfc" id="L227" title="All 2 branches covered.">			if (doc != null) {</span>
-<span class="fc" id="L228">				p.addEntity().setRole(ProvenanceEntityRole.QUOTATION).setWhat(ParserUtils.toReference(doc, p, &quot;entity&quot;));</span>
+<span class="fc" id="L227">			p.addAgent().setType(Codes.ASSEMBLER_AGENT.copy());</span>
+<span class="fc" id="L228">			DocumentReference doc = getFirstResource(DocumentReference.class);</span>
+<span class="fc bfc" id="L229" title="All 2 branches covered.">			if (doc != null) {</span>
+<span class="fc" id="L230">				p.addEntity().setRole(ProvenanceEntityRole.QUOTATION).setWhat(ParserUtils.toReference(doc, p, &quot;entity&quot;));</span>
 			}
 		}
-<span class="pc bpc" id="L231" title="1 of 4 branches missed.">		if (resource instanceof Location location &amp;&amp; location.hasPartOf()) {</span>
+<span class="pc bpc" id="L233" title="1 of 4 branches missed.">		if (resource instanceof Location location &amp;&amp; location.hasPartOf()) {</span>
 			// Location resources can be created by the DatatypeConverter
 			// in hierarchical form.  Add any partOf resources as well.
-<span class="nc" id="L234">			addResource(</span>
+<span class="nc" id="L236">			addResource(</span>
 				null, 
-<span class="nc" id="L236">				ParserUtils.getResource(</span>
-<span class="nc" id="L237">					Location.class, location.getPartOf()</span>
+<span class="nc" id="L238">				ParserUtils.getResource(</span>
+<span class="nc" id="L239">					Location.class, location.getPartOf()</span>
 				)
 			);
 		}
-<span class="fc" id="L241">		return resource;</span>
+<span class="fc" id="L243">		return resource;</span>
 	}
 	
 	/**
@@ -250,14 +252,14 @@ public interface Parser&lt;U,S&gt; extends ErrorReporter {
 	 */
 	default &lt;R extends IBaseResource&gt; R findResource(Class&lt;R&gt; theClass, String id) {
 		R resource;
-<span class="nc bnc" id="L253" title="All 2 branches missed.">		if (id != null) {</span>
-<span class="nc" id="L254">			resource = getResource(theClass, id);</span>
-<span class="nc bnc" id="L255" title="All 2 branches missed.">			if (resource != null) {</span>
-<span class="nc" id="L256">				update(resource);</span>
-<span class="nc" id="L257">				return resource;</span>
+<span class="nc bnc" id="L255" title="All 2 branches missed.">		if (id != null) {</span>
+<span class="nc" id="L256">			resource = getResource(theClass, id);</span>
+<span class="nc bnc" id="L257" title="All 2 branches missed.">			if (resource != null) {</span>
+<span class="nc" id="L258">				update(resource);</span>
+<span class="nc" id="L259">				return resource;</span>
 			}
 		}
-<span class="nc" id="L260">		return createResource(theClass, id);</span>
+<span class="nc" id="L262">		return createResource(theClass, id);</span>
 	}
 	
 	/**
@@ -265,6 +267,7 @@ public interface Parser&lt;U,S&gt; extends ErrorReporter {
 	 * @param message The warning message
 	 * @param args The arguments
 	 */
+	@Override
 	void warn(String message, Object ... args);
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
