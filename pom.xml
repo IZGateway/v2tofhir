@@ -10,7 +10,7 @@
 	<name>HL7 Version 2 to FHIR Conversion</name>
 	<description>This is the v2tofhir Converter core code for the IZ Gateway Transformation Service</description>
 	<url>http://github.com/IZGateway/v2tofhir</url>
-	<inceptionYear>2024</inceptionYear>
+	<inceptionYear>2025</inceptionYear>
 	<licenses>
 		<license>
 			<name>MIT-LICENSE</name>
@@ -91,7 +91,7 @@
             <dependency> 
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-parent</artifactId>
-                <version>3.5.0</version>
+                <version>${spring-boot.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -373,6 +373,11 @@
 						</execution>
 					</executions>
 				</plugin>
+				    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-site-plugin</artifactId>
+                        <version>3.21.0</version>
+                    </plugin>
 			</plugins>
 		</pluginManagement>
 	</build>
