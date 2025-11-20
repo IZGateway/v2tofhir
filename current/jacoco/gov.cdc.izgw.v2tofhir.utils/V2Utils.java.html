@@ -13,10 +13,8 @@ import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
  * 
  * @author Audacious Inquiry
  */
-public class V2Utils {
-	private V2Utils() {
-		// Static class
-	}
+<span class="nc" id="L16">public class V2Utils {</span>
+
 	/** 
 	 * Convenience method to add a single field to a resource
 	 * 
@@ -41,8 +39,8 @@ public class V2Utils {
 	public static &lt;F extends org.hl7.fhir.r4.model.Type&gt; 
 		void addField(Segment pid, int fieldNo, Class&lt;F&gt; clazz, Consumer&lt;F&gt; adder
 	) {
-<span class="nc" id="L44">		FhirUtils.ifNotEmpty(DatatypeConverter.convert(clazz, getField(pid, fieldNo), null), adder);</span>
-<span class="nc" id="L45">	}</span>
+<span class="nc" id="L42">		FhirUtils.ifNotEmpty(DatatypeConverter.convert(clazz, getField(pid, fieldNo), null), adder);</span>
+<span class="nc" id="L43">	}</span>
 
 	/** 
 	 * Convenience method to add a single field to a resource
@@ -69,8 +67,8 @@ public class V2Utils {
 	 */
 	public static &lt;R extends org.hl7.fhir.r4.model.Resource, F extends org.hl7.fhir.r4.model.Type&gt; 
 	void addField(Segment pid, int fieldNo, Class&lt;F&gt; clazz, R resource, BiConsumer&lt;R, F&gt; adder) {
-<span class="nc" id="L72">		FhirUtils.ifNotEmpty(DatatypeConverter.convert(clazz, getField(pid, fieldNo), null),  t -&gt; adder.accept(resource, t));</span>
-<span class="nc" id="L73">	}</span>
+<span class="nc" id="L70">		FhirUtils.ifNotEmpty(DatatypeConverter.convert(clazz, getField(pid, fieldNo), null),  t -&gt; adder.accept(resource, t));</span>
+<span class="nc" id="L71">	}</span>
 
 	/** 
 	 * Convenience method to add a multiple fields to a resource
@@ -97,10 +95,10 @@ public class V2Utils {
 	 * @param adder	The adder function
 	 */
 	public static &lt;F extends org.hl7.fhir.r4.model.Type&gt; void addFields(Segment pid, int fieldNo, Class&lt;F&gt; clazz, Consumer&lt;F&gt; adder) {
-<span class="nc bnc" id="L100" title="All 2 branches missed.">		for (Type type: getFields(pid, fieldNo)) {</span>
-<span class="nc" id="L101">			FhirUtils.ifNotEmpty(DatatypeConverter.convert(clazz, type, null), adder);</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">		for (Type type: getFields(pid, fieldNo)) {</span>
+<span class="nc" id="L99">			FhirUtils.ifNotEmpty(DatatypeConverter.convert(clazz, type, null), adder);</span>
 		}
-<span class="nc" id="L103">	}</span>
+<span class="nc" id="L101">	}</span>
 
 	/** 
 	 * Convenience method to add a multiple fields to a resource
@@ -132,10 +130,10 @@ public class V2Utils {
 	public static &lt;R extends org.hl7.fhir.r4.model.Resource, F extends org.hl7.fhir.r4.model.Type&gt; 
 		void addFields(Segment pid, int fieldNo, Class&lt;F&gt; clazz, R patient, BiConsumer&lt;R, F&gt; adder
 	) {
-<span class="nc bnc" id="L135" title="All 2 branches missed.">		for (Type type: getFields(pid, fieldNo)) {</span>
-<span class="nc" id="L136">			FhirUtils.ifNotEmpty(DatatypeConverter.convert(clazz, type, null), t -&gt; adder.accept(patient, t));</span>
+<span class="nc bnc" id="L133" title="All 2 branches missed.">		for (Type type: getFields(pid, fieldNo)) {</span>
+<span class="nc" id="L134">			FhirUtils.ifNotEmpty(DatatypeConverter.convert(clazz, type, null), t -&gt; adder.accept(patient, t));</span>
 		}
-<span class="nc" id="L138">	}</span>
+<span class="nc" id="L136">	}</span>
 
 	/**
 	 * Get the first occurrence of the specified field from an HL7 V2 segment.
@@ -148,17 +146,17 @@ public class V2Utils {
 	 * @return	The specified field, or null of the field does not exist or is empty.
 	 */
 	public static Type getField(Segment segment, int field) {
-<span class="pc bpc" id="L151" title="1 of 2 branches missed.">		if (segment == null) {</span>
-<span class="nc" id="L152">			return null;</span>
+<span class="pc bpc" id="L149" title="1 of 2 branches missed.">		if (segment == null) {</span>
+<span class="nc" id="L150">			return null;</span>
 		}
 		try {
-<span class="fc" id="L155">			Type[] types = segment.getField(field); </span>
-<span class="fc bfc" id="L156" title="All 2 branches covered.">			if (types.length == 0) {</span>
-<span class="fc" id="L157">				return null;</span>
+<span class="fc" id="L153">			Type[] types = segment.getField(field); </span>
+<span class="fc bfc" id="L154" title="All 2 branches covered.">			if (types.length == 0) {</span>
+<span class="fc" id="L155">				return null;</span>
 			}
-<span class="pc bpc" id="L159" title="1 of 2 branches missed.">			return types[0].isEmpty() ? null : types[0];</span>
-<span class="nc" id="L160">		} catch (HL7Exception e) {</span>
-<span class="nc" id="L161">			return null;</span>
+<span class="pc bpc" id="L157" title="1 of 2 branches missed.">			return types[0].isEmpty() ? null : types[0];</span>
+<span class="nc" id="L158">		} catch (HL7Exception e) {</span>
+<span class="nc" id="L159">			return null;</span>
 		}
 	}
 
@@ -173,13 +171,13 @@ public class V2Utils {
 	 * @return	An array containing all occurrences of the specified field. 
 	 */
 	public static Type[] getFields(Segment segment, int field) {
-<span class="pc bpc" id="L176" title="1 of 2 branches missed.">		if (segment == null) {</span>
-<span class="nc" id="L177">			return new Type[0];</span>
+<span class="pc bpc" id="L174" title="1 of 2 branches missed.">		if (segment == null) {</span>
+<span class="nc" id="L175">			return new Type[0];</span>
 		}
 		try {
-<span class="fc" id="L180">			return segment.getField(field);</span>
-<span class="nc" id="L181">		} catch (HL7Exception e) {</span>
-<span class="nc" id="L182">			return new Type[0];</span>
+<span class="fc" id="L178">			return segment.getField(field);</span>
+<span class="nc" id="L179">		} catch (HL7Exception e) {</span>
+<span class="nc" id="L180">			return new Type[0];</span>
 		}
 	}
 

@@ -73,7 +73,7 @@ public class TestData {
 	 * @param isMessageFile	True if the file contains full messages, false if it contains segments.
 	 * @return A list of TestData objects
 	 */
-	public static List&lt;TestData&gt; load(String name, boolean isMessageFile) { // NOSONAR
+	public static List&lt;TestData&gt; load(String name, boolean isMessageFile) {
 <span class="fc" id="L77">		TestData data = new TestData(name, 1);</span>
 <span class="fc" id="L78">		List&lt;TestData&gt; list = new ArrayList&lt;&gt;();</span>
 		try (
@@ -84,7 +84,7 @@ public class TestData {
 <span class="fc" id="L84">			String line = null;</span>
 <span class="fc" id="L85">			String segmentName = null;</span>
 <span class="fc" id="L86">			int assertionNumber = 0;</span>
-			while (true) { // NOSONAR
+			while (true) {
 <span class="fc" id="L88">				line = br.readLine();</span>
 <span class="fc bfc" id="L89" title="All 4 branches covered.">				if (line == null || line.isEmpty()) {</span>
 <span class="fc bfc" id="L90" title="All 4 branches covered.">					if (isMessageFile &amp;&amp; !b.isEmpty()) { // There's a message waiting</span>
@@ -105,96 +105,97 @@ public class TestData {
 					// Reached the end of the data
 <span class="fc bfc" id="L106" title="All 2 branches covered.">					if (line == null) {</span>
 <span class="fc" id="L107">						return list;</span>
-					} 
-					continue;
+					} else {
+						continue;
+					}
 				}
 				
-<span class="fc bfc" id="L112" title="All 4 branches covered.">				if (line.startsWith(&quot;//&quot;) || line.startsWith(&quot;#&quot;)) {</span>
-<span class="fc" id="L113">					continue;	// Ignore comment lines</span>
+<span class="fc bfc" id="L113" title="All 4 branches covered.">				if (line.startsWith(&quot;//&quot;) || line.startsWith(&quot;#&quot;)) {</span>
+<span class="fc" id="L114">					continue;	// Ignore comment lines</span>
 				}
 				
-<span class="fc bfc" id="L116" title="All 2 branches covered.">				if (line.startsWith(&quot;@&quot;)) {</span>
+<span class="fc bfc" id="L117" title="All 2 branches covered.">				if (line.startsWith(&quot;@&quot;)) {</span>
 					// Found an assertion line
-<span class="fc" id="L118">					assertionNumber++;</span>
-<span class="fc" id="L119">					data.getAssertions().add(line.substring(1));</span>
-<span class="fc" id="L120">					data.getNames().add(segmentName + &quot;@&quot; + assertionNumber);</span>
-<span class="fc" id="L121">					continue;</span>
+<span class="fc" id="L119">					assertionNumber++;</span>
+<span class="fc" id="L120">					data.getAssertions().add(line.substring(1));</span>
+<span class="fc" id="L121">					data.getNames().add(segmentName + &quot;@&quot; + assertionNumber);</span>
+<span class="fc" id="L122">					continue;</span>
 				} 
 				
-<span class="pc bpc" id="L124" title="1 of 2 branches missed.">				if (line.matches(&quot;^[A-Z123]{3}\\|.*$&quot;)) {</span>
+<span class="pc bpc" id="L125" title="1 of 2 branches missed.">				if (line.matches(&quot;^[A-Z123]{3}\\|.*$&quot;)) {</span>
 					// It's a segment, it will be like ERR|1| ... if the segment is repeatable
 					// so we get everything before the second bar for the name.
-<span class="fc" id="L127">					segmentName = getSegmentName(line);</span>
-<span class="fc" id="L128">					assertionNumber = 0; // reset assertion numbering.</span>
-<span class="fc bfc" id="L129" title="All 2 branches covered.">					if (isMessageFile) {</span>
-<span class="fc" id="L130">						b.append(line).append(&quot;\r&quot;);</span>
-<span class="fc bfc" id="L131" title="All 2 branches covered.">					} else if (!data.isEmpty()) {</span>
+<span class="fc" id="L128">					segmentName = getSegmentName(line);</span>
+<span class="fc" id="L129">					assertionNumber = 0; // reset assertion numbering.</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">					if (isMessageFile) {</span>
+<span class="fc" id="L131">						b.append(line).append(&quot;\r&quot;);</span>
+<span class="fc bfc" id="L132" title="All 2 branches covered.">					} else if (!data.isEmpty()) {</span>
 						// It's a new segment, add any existing test data to the list
-<span class="fc" id="L133">						data.setTestData(line + &quot;\r&quot;);</span>
-<span class="fc" id="L134">						list.add(data);</span>
-<span class="fc" id="L135">						data = new TestData(name, br.getLine() + 1);</span>
+<span class="fc" id="L134">						data.setTestData(line + &quot;\r&quot;);</span>
+<span class="fc" id="L135">						list.add(data);</span>
+<span class="fc" id="L136">						data = new TestData(name, br.getLine() + 1);</span>
 					} else {
-<span class="fc" id="L137">						data.setTestData(line);</span>
+<span class="fc" id="L138">						data.setTestData(line);</span>
 					}
 				} else {
-<span class="nc" id="L140">					log.error(&quot;{}({}) is not a valid segment or assertion: {}&quot;, name, br.getLine(), line);</span>
+<span class="nc" id="L141">					log.error(&quot;{}({}) is not a valid segment or assertion: {}&quot;, name, br.getLine(), line);</span>
 				}
 			}
-<span class="nc" id="L143">		} catch (Exception ioex) {</span>
-<span class="nc" id="L144">			log.error(&quot;Error loading test file &quot; + name, ioex);</span>
-<span class="nc" id="L145">			ioex.printStackTrace();</span>
-<span class="nc" id="L146">			throw new ServiceConfigurationError(&quot;Cannot load test file &quot; + name);</span>
+<span class="nc" id="L144">		} catch (Exception ioex) {</span>
+<span class="nc" id="L145">			log.error(&quot;Error loading test file &quot; + name, ioex);</span>
+<span class="nc" id="L146">			ioex.printStackTrace();</span>
+<span class="nc" id="L147">			throw new ServiceConfigurationError(&quot;Cannot load test file &quot; + name);</span>
 		}
 	}
 	private static String getCharset(BOMInputStream bis) throws IOException {
-<span class="pc bpc" id="L150" title="1 of 2 branches missed.">		if (!bis.hasBOM()) {</span>
-<span class="fc" id="L151">			return StandardCharsets.UTF_8.name();</span>
+<span class="pc bpc" id="L151" title="1 of 2 branches missed.">		if (!bis.hasBOM()) {</span>
+<span class="fc" id="L152">			return StandardCharsets.UTF_8.name();</span>
 		}
 		
-<span class="nc" id="L154">		return bis.getBOMCharsetName();</span>
+<span class="nc" id="L155">		return bis.getBOMCharsetName();</span>
 	}
 
 	private static InputStream getResource(String name) throws IOException {
-<span class="fc" id="L158">		InputStream s = TestData.class.getClassLoader().getResourceAsStream(name);</span>
-<span class="pc bpc" id="L159" title="1 of 2 branches missed.">		if (s == null) {</span>
-<span class="nc" id="L160">			throw new IOException(&quot;Cannot find &quot; + name);</span>
+<span class="fc" id="L159">		InputStream s = TestData.class.getClassLoader().getResourceAsStream(name);</span>
+<span class="pc bpc" id="L160" title="1 of 2 branches missed.">		if (s == null) {</span>
+<span class="nc" id="L161">			throw new IOException(&quot;Cannot find &quot; + name);</span>
 		}
-<span class="fc" id="L162">		return s;</span>
+<span class="fc" id="L163">		return s;</span>
 	}
 	private static String getSegmentName(String line) {
-<span class="fc bfc" id="L165" title="All 2 branches covered.">		if (StringUtils.startsWithAny(line, &quot;MSH&quot;, &quot;QPD&quot;)) {</span>
-<span class="fc" id="L166">			return line.substring(0, 3);</span>
+<span class="fc bfc" id="L166" title="All 2 branches covered.">		if (StringUtils.startsWithAny(line, &quot;MSH&quot;, &quot;QPD&quot;)) {</span>
+<span class="fc" id="L167">			return line.substring(0, 3);</span>
 		}
-<span class="fc" id="L168">		int pos = line.indexOf('|', 4);</span>
-<span class="fc bfc" id="L169" title="All 2 branches covered.">		if (pos &lt; 0) {</span>
-<span class="fc" id="L170">			return line.substring(0, 3);</span>
+<span class="fc" id="L169">		int pos = line.indexOf('|', 4);</span>
+<span class="fc bfc" id="L170" title="All 2 branches covered.">		if (pos &lt; 0) {</span>
+<span class="fc" id="L171">			return line.substring(0, 3);</span>
 		}
-<span class="fc bfc" id="L172" title="All 2 branches covered.">		if (pos == 5) {</span>
-<span class="fc" id="L173">			--pos;</span>
+<span class="fc bfc" id="L173" title="All 2 branches covered.">		if (pos == 5) {</span>
+<span class="fc" id="L174">			--pos;</span>
 		}
-<span class="fc" id="L175">		String segmentName = line.substring(0, pos);</span>
-<span class="fc bfc" id="L176" title="All 2 branches covered.">		if (segmentName.endsWith(&quot;|&quot;)) {</span>
-<span class="fc" id="L177">			return line.substring(0, 3);</span>
+<span class="fc" id="L176">		String segmentName = line.substring(0, pos);</span>
+<span class="fc bfc" id="L177" title="All 2 branches covered.">		if (segmentName.endsWith(&quot;|&quot;)) {</span>
+<span class="fc" id="L178">			return line.substring(0, 3);</span>
 		}
-<span class="fc bfc" id="L179" title="All 2 branches covered.">		if (!StringUtils.isNumeric(segmentName.substring(4))) {</span>
-<span class="fc" id="L180">			return line.substring(0, 3);</span>
+<span class="fc bfc" id="L180" title="All 2 branches covered.">		if (!StringUtils.isNumeric(segmentName.substring(4))) {</span>
+<span class="fc" id="L181">			return line.substring(0, 3);</span>
 		}
-<span class="fc" id="L182">		return segmentName;</span>
+<span class="fc" id="L183">		return segmentName;</span>
 	}
 	
 	/** The test message or segment */
-<span class="pc" id="L186">	private String testData = null;</span>
-<span class="pc" id="L187">	private String resourceName = null;</span>
-<span class="pc" id="L188">	private int lineNumber = 0;</span>
+<span class="pc" id="L187">	private String testData = null;</span>
+<span class="pc" id="L188">	private String resourceName = null;</span>
+<span class="pc" id="L189">	private int lineNumber = 0;</span>
 	
 	/** Assertions about the conversion performed on the test message or segment
 	 * written as a FhirPath expression.
 	 */
-<span class="pc" id="L193">	private final List&lt;String&gt; assertions = new ArrayList&lt;&gt;();</span>
+<span class="pc" id="L194">	private final List&lt;String&gt; assertions = new ArrayList&lt;&gt;();</span>
 	/** Compiled expressions for the assertions */
-<span class="pc" id="L195">	private final List&lt;IParsedExpression&gt; expressions = new ArrayList&lt;&gt;();</span>
+<span class="pc" id="L196">	private final List&lt;IParsedExpression&gt; expressions = new ArrayList&lt;&gt;();</span>
 	/** Names for the assertions */
-<span class="pc" id="L197">	private final List&lt;String&gt; names = new ArrayList&lt;&gt;();</span>
+<span class="pc" id="L198">	private final List&lt;String&gt; names = new ArrayList&lt;&gt;();</span>
 	
 	/**
 	 * Evaluate an assertion against a particular context
@@ -203,34 +204,34 @@ public class TestData {
 	 * @throws Exception	If an exception occurs during parsing or evaluation
 	 */
 	public void evaluate(IBase b, int position) throws Exception {
-<span class="fc" id="L206">		String comment = getComment(position);</span>
-<span class="fc" id="L207">		IParsedExpression expr = getExpression(position);</span>
-<span class="pc bpc" id="L208" title="1 of 2 branches missed.">		if (expr == NO_EXPR) {</span>
-<span class="nc" id="L209">			return;</span>
+<span class="fc" id="L207">		String comment = getComment(position);</span>
+<span class="fc" id="L208">		IParsedExpression expr = getExpression(position);</span>
+<span class="pc bpc" id="L209" title="1 of 2 branches missed.">		if (expr == NO_EXPR) {</span>
+<span class="nc" id="L210">			return;</span>
 		}
-<span class="fc" id="L211">		List&lt;IBase&gt; result = engine.evaluate(b, expr, IBase.class);</span>
+<span class="fc" id="L212">		List&lt;IBase&gt; result = engine.evaluate(b, expr, IBase.class);</span>
 		// log.info(&quot;Value: {} = {}&quot;, this.getInnerAsString(expr), result)
-<span class="fc" id="L213">		String testValue = &quot; (&quot; + getTestValue(b, position) + &quot;)&quot;;</span>
-<span class="fc" id="L214">		assertNotNull(result, comment + testValue);</span>
-<span class="fc" id="L215">		assertFalse(result.isEmpty(), comment + testValue);</span>
-<span class="pc bpc" id="L216" title="1 of 2 branches missed.">		if (result.size() == 1) {</span>
-<span class="fc" id="L217">			IBase base = result.get(0);</span>
-<span class="fc" id="L218">			assertFalse(base.isEmpty(), &quot;Type is empty&quot;);</span>
-<span class="fc bfc" id="L219" title="All 2 branches covered.">			if (base instanceof BooleanType bool) {</span>
-<span class="pc bpc" id="L220" title="1 of 2 branches missed.">				if (!Boolean.TRUE.equals(bool.getValue())) {</span>
-<span class="nc" id="L221">					testValue = getTestValue(b, position);</span>
+<span class="fc" id="L214">		String testValue = &quot; (&quot; + getTestValue(b, position) + &quot;)&quot;;</span>
+<span class="fc" id="L215">		assertNotNull(result, comment + testValue);</span>
+<span class="fc" id="L216">		assertFalse(result.isEmpty(), comment + testValue);</span>
+<span class="pc bpc" id="L217" title="1 of 2 branches missed.">		if (result.size() == 1) {</span>
+<span class="fc" id="L218">			IBase base = result.get(0);</span>
+<span class="fc" id="L219">			assertFalse(base.isEmpty(), &quot;Type is empty&quot;);</span>
+<span class="fc bfc" id="L220" title="All 2 branches covered.">			if (base instanceof BooleanType bool) {</span>
+<span class="pc bpc" id="L221" title="1 of 2 branches missed.">				if (!bool.getValue()) {</span>
+<span class="nc" id="L222">					testValue = getTestValue(b, position);</span>
 				}
-<span class="fc" id="L223">				assertTrue(bool.getValue(), comment + testValue);</span>
-<span class="pc bpc" id="L224" title="1 of 2 branches missed.">			} else if (base instanceof PrimitiveType&lt;?&gt; primitive) {</span>
-<span class="nc" id="L225">				String str = primitive.asStringValue();</span>
-<span class="nc" id="L226">				assertNotNull(str, comment);</span>
-<span class="nc bnc" id="L227" title="All 2 branches missed.">				assertTrue(!str.isEmpty(), comment);</span>
+<span class="fc" id="L224">				assertTrue(bool.getValue(), comment + testValue);</span>
+<span class="pc bpc" id="L225" title="1 of 2 branches missed.">			} else if (base instanceof PrimitiveType&lt;?&gt; primitive) {</span>
+<span class="nc" id="L226">				String str = primitive.asStringValue();</span>
+<span class="nc" id="L227">				assertNotNull(str, comment);</span>
+<span class="nc bnc" id="L228" title="All 2 branches missed.">				assertTrue(!str.isEmpty(), comment);</span>
 			}
-<span class="fc" id="L229">		} else {</span>
+<span class="fc" id="L230">		} else {</span>
 			// Should certainly be true.
-<span class="nc bnc" id="L231" title="All 2 branches missed.">			assertTrue(result.size() &gt; 1, &quot;Expected multiple results&quot;);</span>
+<span class="nc bnc" id="L232" title="All 2 branches missed.">			assertTrue(result.size() &gt; 1, &quot;Expected multiple results&quot;);</span>
 		}
-<span class="fc" id="L233">	}</span>
+<span class="fc" id="L234">	}</span>
 	
 	/**
 	 * Evaluate all assertions against a FHIR resource or datatype
@@ -242,16 +243,16 @@ public class TestData {
 	 * @throws AssertionError if any evaluation fails.
 	 */
 	public void evaluateAgainst(IBase b) {
-<span class="nc" id="L245">		int len = getAssertions().size();</span>
-<span class="nc bnc" id="L246" title="All 2 branches missed.">		for (int i = 0; i &lt; len; i++) {</span>
+<span class="nc" id="L246">		int len = getAssertions().size();</span>
+<span class="nc bnc" id="L247" title="All 2 branches missed.">		for (int i = 0; i &lt; len; i++) {</span>
 			try {
-<span class="nc" id="L248">				evaluate(b, i);</span>
-<span class="nc" id="L249">			} catch (AssertionError | Exception e) {</span>
-<span class="nc" id="L250">				String message = String.format(&quot; Assertion %s (%s) failed: %s&quot;, getName(i), getFhirPath(i), e.getMessage());</span>
-<span class="nc" id="L251">				throw new AssertionError(message, e);</span>
-<span class="nc" id="L252">			}</span>
+<span class="nc" id="L249">				evaluate(b, i);</span>
+<span class="nc" id="L250">			} catch (AssertionError | Exception e) {</span>
+<span class="nc" id="L251">				String message = String.format(&quot; Assertion %s (%s) failed: %s&quot;, getName(i), getFhirPath(i), e.getMessage());</span>
+<span class="nc" id="L252">				throw new AssertionError(message, e);</span>
+<span class="nc" id="L253">			}</span>
 		}
-<span class="nc" id="L254">	}</span>
+<span class="nc" id="L255">	}</span>
 	
 	/**
 	 * Evaluate all assertions against a FHIR resource or datatype
@@ -262,27 +263,27 @@ public class TestData {
 	 * @throws AssertionError if any evaluation fails.
 	 */
 	public void evaluateAllAgainst(IBase b) {
-<span class="fc" id="L265">		int len = getAssertions().size();</span>
-<span class="fc" id="L266">		Throwable cause = null;</span>
-<span class="fc" id="L267">		StringBuilder message = new StringBuilder();</span>
-<span class="fc" id="L268">		String name = null; </span>
-<span class="fc bfc" id="L269" title="All 2 branches covered.">		for (int i = 0; i &lt; len; i++) {</span>
+<span class="fc" id="L266">		int len = getAssertions().size();</span>
+<span class="fc" id="L267">		Throwable cause = null;</span>
+<span class="fc" id="L268">		StringBuilder message = new StringBuilder();</span>
+<span class="fc" id="L269">		String name = null; </span>
+<span class="fc bfc" id="L270" title="All 2 branches covered.">		for (int i = 0; i &lt; len; i++) {</span>
 			try {
-<span class="fc" id="L271">				name = getName(i);</span>
-<span class="fc" id="L272">				evaluate(b, i);</span>
-<span class="nc" id="L273">			} catch (AssertionError | Exception e) {</span>
-<span class="nc" id="L274">				message.append(String.format(&quot;Assertion %s failed: %s%n&quot;, name, e.getMessage()));</span>
-<span class="nc bnc" id="L275" title="All 2 branches missed.">				if (cause == null) {</span>
-<span class="nc" id="L276">					cause = e;</span>
+<span class="fc" id="L272">				name = getName(i);</span>
+<span class="fc" id="L273">				evaluate(b, i);</span>
+<span class="nc" id="L274">			} catch (AssertionError | Exception e) {</span>
+<span class="nc" id="L275">				message.append(String.format(&quot;Assertion %s failed: %s%n&quot;, name, e.getMessage()));</span>
+<span class="nc bnc" id="L276" title="All 2 branches missed.">				if (cause == null) {</span>
+<span class="nc" id="L277">					cause = e;</span>
 				}
-<span class="fc" id="L278">			}</span>
+<span class="fc" id="L279">			}</span>
 		}
-<span class="pc bpc" id="L280" title="1 of 2 branches missed.">		if (cause != null) {</span>
-<span class="nc" id="L281">			String msg = message.toString();</span>
-<span class="nc" id="L282">			log.error(&quot;\n&quot; + msg);</span>
-<span class="nc" id="L283">			throw new AssertionError(&quot;\n&quot; + msg, cause);</span>
+<span class="pc bpc" id="L281" title="1 of 2 branches missed.">		if (cause != null) {</span>
+<span class="nc" id="L282">			String msg = message.toString();</span>
+<span class="nc" id="L283">			log.error(&quot;\n&quot; + msg);</span>
+<span class="nc" id="L284">			throw new AssertionError(&quot;\n&quot; + msg, cause);</span>
 		}
-<span class="fc" id="L285">	}</span>
+<span class="fc" id="L286">	}</span>
 	/**
 	 * Rewrites FhirPath assertions to exact expression to evaluation from shortened forms.
 	 * 
@@ -296,29 +297,29 @@ public class TestData {
 	 * @return	The adjusted FHIRPath
 	 */
 	public String getAdjustedFhirPath(int position) {
-<span class="fc" id="L299">		String fhirPath = getFhirPath(position);</span>
+<span class="fc" id="L300">		String fhirPath = getFhirPath(position);</span>
 
 		// No shortcut needed.
-<span class="pc bpc" id="L302" title="1 of 2 branches missed.">		if (fhirPath.startsWith(&quot;%&quot;)) {</span>
-<span class="nc" id="L303">			return fhirPath;</span>
+<span class="pc bpc" id="L303" title="1 of 2 branches missed.">		if (fhirPath.startsWith(&quot;%&quot;)) {</span>
+<span class="nc" id="L304">			return fhirPath;</span>
 		}
 		
 		// Simplify expressions by creating shortcuts for
 		// commonly used expressions.
 		
-<span class="fc" id="L309">		String resName = StringUtils.substringBefore(fhirPath, &quot;.&quot;);</span>
-<span class="fc" id="L310">		String rest = null;</span>
-<span class="fc bfc" id="L311" title="All 2 branches covered.">		if (resName.contains(&quot;[&quot;)) {</span>
+<span class="fc" id="L310">		String resourceName = StringUtils.substringBefore(fhirPath, &quot;.&quot;);</span>
+<span class="fc" id="L311">		String rest = null;</span>
+<span class="fc bfc" id="L312" title="All 2 branches covered.">		if (resourceName.contains(&quot;[&quot;)) {</span>
 			// Handle cases of OperationOutcome[1], etc.
-<span class="fc" id="L313">			resName = StringUtils.substringBefore(resName, &quot;[&quot;);</span>
-<span class="fc" id="L314">			rest = &quot;[&quot; + StringUtils.substringAfter(fhirPath, &quot;[&quot;);</span>
+<span class="fc" id="L314">			resourceName = StringUtils.substringBefore(resourceName, &quot;[&quot;);</span>
+<span class="fc" id="L315">			rest = &quot;[&quot; + StringUtils.substringAfter(fhirPath, &quot;[&quot;);</span>
 		} else {
-<span class="fc" id="L316">			rest = &quot;.&quot; + StringUtils.substringAfter(fhirPath, &quot;.&quot;);</span>
+<span class="fc" id="L317">			rest = &quot;.&quot; + StringUtils.substringAfter(fhirPath, &quot;.&quot;);</span>
 		}
-<span class="fc bfc" id="L318" title="All 2 branches covered.">		if (&quot;Bundle&quot;.equals(resName)) {</span>
-<span class="fc" id="L319">			return &quot;%context&quot; + rest; </span>
+<span class="fc bfc" id="L319" title="All 2 branches covered.">		if (&quot;Bundle&quot;.equals(resourceName)) {</span>
+<span class="fc" id="L320">			return &quot;%context&quot; + rest; </span>
 		}
-<span class="fc" id="L321">		return &quot;%context.entry.resource.ofType(&quot; + resName + &quot;)&quot; + rest;</span>
+<span class="fc" id="L322">		return &quot;%context.entry.resource.ofType(&quot; + resourceName + &quot;)&quot; + rest;</span>
 	}
 	
 	/**
@@ -327,9 +328,9 @@ public class TestData {
 	 * @return	The comment associated with the assertion
 	 */
 	public String getComment(int position) {
-<span class="fc" id="L330">		String assertion = getAssertions().get(position);</span>
-<span class="fc" id="L331">		String comment = StringUtils.substringAfterLast(assertion, &quot;// &quot;).trim();</span>
-<span class="fc bfc" id="L332" title="All 2 branches covered.">		return StringUtils.isEmpty(comment) ? assertion : comment;</span>
+<span class="fc" id="L331">		String assertion = getAssertions().get(position);</span>
+<span class="fc" id="L332">		String comment = StringUtils.substringAfterLast(assertion, &quot;// &quot;).trim();</span>
+<span class="fc bfc" id="L333" title="All 2 branches covered.">		return StringUtils.isEmpty(comment) ? assertion : comment;</span>
 	}
 
 	/**
@@ -342,18 +343,21 @@ public class TestData {
 	 * @throws Exception If an exception occurs during the parse.
 	 */
 	public IParsedExpression getExpression(int position) throws Exception {
-<span class="fc" id="L345">		String path = getAdjustedFhirPath(position);</span>
-<span class="fc" id="L346">		List&lt;IParsedExpression&gt; exprs = getExpressions();</span>
-<span class="fc bfc" id="L347" title="All 2 branches covered.">		IParsedExpression expr = exprs.size() &lt;= position ? null : exprs.get(position);</span>
-<span class="fc bfc" id="L348" title="All 2 branches covered.">		if (expr == null) {</span>
-			// Skip empty assertions.
-<span class="pc bpc" id="L350" title="1 of 2 branches missed.">			expr = StringUtils.isEmpty(path) ? NO_EXPR : engine.parse(path);  // can throw any exception</span>
-<span class="fc bfc" id="L351" title="All 2 branches covered.">			while (exprs.size() &lt;= position) {</span>
-<span class="fc" id="L352">				exprs.add(null);</span>
+<span class="fc" id="L346">		String path = getAdjustedFhirPath(position);</span>
+<span class="fc" id="L347">		List&lt;IParsedExpression&gt; expressions = getExpressions();</span>
+<span class="fc bfc" id="L348" title="All 2 branches covered.">		IParsedExpression expr = expressions.size() &lt;= position ? null : expressions.get(position);</span>
+<span class="fc bfc" id="L349" title="All 2 branches covered.">		if (expr == null) {</span>
+<span class="pc bpc" id="L350" title="1 of 2 branches missed.">			if (StringUtils.isEmpty(path)) {</span>
+				// Skip empty assertions.
+<span class="nc" id="L352">				expr = NO_EXPR;</span>
 			}
-<span class="fc" id="L354">			getExpressions().set(position, expr);</span>
+<span class="fc" id="L354">			expr = engine.parse(path);  // can throw any exception</span>
+<span class="fc bfc" id="L355" title="All 2 branches covered.">			while (expressions.size() &lt;= position) {</span>
+<span class="fc" id="L356">				expressions.add(null);</span>
+			}
+<span class="fc" id="L358">			getExpressions().set(position, expr);</span>
 		}
-<span class="fc" id="L356">		return expr;</span>
+<span class="fc" id="L360">		return expr;</span>
 	}
 	/**
 	 * Get the FHIRPath expression for an assertion.
@@ -361,7 +365,7 @@ public class TestData {
 	 * @return	The FHIRPath associated with the assertion
 	 */
 	public String getFhirPath(int position) {
-<span class="fc" id="L364">		return StringUtils.substringBeforeLast(getAssertions().get(position), &quot;// &quot;).trim();</span>
+<span class="fc" id="L368">		return StringUtils.substringBeforeLast(getAssertions().get(position), &quot;// &quot;).trim();</span>
 	}
 	/**
 	 * Get the name for the assertion at the given position
@@ -374,7 +378,7 @@ public class TestData {
 	 * @return	The name of the assertion
 	 */
 	public String getName(int position) {
-<span class="fc" id="L377">		return getNames().get(position);</span>
+<span class="fc" id="L381">		return getNames().get(position);</span>
 	}
 
 	/**
@@ -383,7 +387,7 @@ public class TestData {
 	 * @return true if this object has no data or assertions.
 	 */
 	public boolean isEmpty() {
-<span class="fc bfc" id="L386" title="All 4 branches covered.">		return StringUtils.isEmpty(testData) &amp;&amp; assertions.isEmpty();</span>
+<span class="pc bpc" id="L390" title="1 of 6 branches missed.">		return (testData == null || testData.length() == 0) &amp;&amp; assertions.isEmpty();</span>
 	}
 
 	/** 
@@ -398,15 +402,15 @@ public class TestData {
 	 * @return this as a string. 
 	 */
 	public String toString() {
-<span class="fc" id="L401">		StringBuilder b = new StringBuilder();</span>
-<span class="pc bpc" id="L402" title="1 of 2 branches missed.">		if (resourceName != null) {</span>
-<span class="fc" id="L403">			b.append(resourceName);</span>
+<span class="fc" id="L405">		StringBuilder b = new StringBuilder();</span>
+<span class="pc bpc" id="L406" title="1 of 2 branches missed.">		if (resourceName != null) {</span>
+<span class="fc" id="L407">			b.append(resourceName);</span>
 		}
-<span class="fc" id="L405">		b.append(&quot;(&quot;).append(lineNumber).append(&quot;): &quot;);</span>
-<span class="fc" id="L406">		b.append(testData).append('\n').append(&quot;@[\n&quot;);</span>
-<span class="fc" id="L407">		assertions.forEach(s -&gt; b.append(' ').append(s).append(&quot;\n&quot;));</span>
-<span class="fc" id="L408">		b.append(&quot;]\n&quot;);</span>
-<span class="fc" id="L409">		return b.toString();</span>
+<span class="fc" id="L409">		b.append(&quot;(&quot;).append(lineNumber).append(&quot;): &quot;);</span>
+<span class="fc" id="L410">		b.append(testData).append('\n').append(&quot;@[\n&quot;);</span>
+<span class="fc" id="L411">		assertions.forEach(s -&gt; b.append(' ').append(s).append(&quot;\n&quot;));</span>
+<span class="fc" id="L412">		b.append(&quot;]\n&quot;);</span>
+<span class="fc" id="L413">		return b.toString();</span>
 	}
 
 	/**
@@ -415,10 +419,10 @@ public class TestData {
 	 * @param message	A message to include if the assertion fails
 	 */
 	private void assertFalse(boolean result, String message) {
-<span class="pc bpc" id="L418" title="1 of 2 branches missed.">		if (result) {</span>
-<span class="nc" id="L419">			throw new AssertionError(&quot;Result is true: &quot; + message);</span>
+<span class="pc bpc" id="L422" title="1 of 2 branches missed.">		if (result) {</span>
+<span class="nc" id="L423">			throw new AssertionError(&quot;Result is true: &quot; + message);</span>
 		}
-<span class="fc" id="L421">	}</span>
+<span class="fc" id="L425">	}</span>
 	
 	/**
 	 * Simple assertion method to avoid dependency on a test framework.
@@ -426,10 +430,10 @@ public class TestData {
 	 * @param message	A message to include if the assertion fails
 	 */
 	private void assertNotNull(Object result, String message) {
-<span class="pc bpc" id="L429" title="1 of 2 branches missed.">		if (result == null) {</span>
-<span class="nc" id="L430">			throw new AssertionError(&quot;Result is null: &quot; + message);</span>
+<span class="pc bpc" id="L433" title="1 of 2 branches missed.">		if (result == null) {</span>
+<span class="nc" id="L434">			throw new AssertionError(&quot;Result is null: &quot; + message);</span>
 		}
-<span class="fc" id="L432">	}</span>
+<span class="fc" id="L436">	}</span>
 	
 	/**
 	 * Simple assertion method to avoid dependency on a test framework.
@@ -437,24 +441,25 @@ public class TestData {
 	 * @param message	A message to include if the assertion fails
 	 */
 	private void assertTrue(boolean result, String message) {
-<span class="pc bpc" id="L440" title="1 of 2 branches missed.">		if (!result) {</span>
-<span class="nc" id="L441">			throw new AssertionError(&quot;Result is true: &quot; + message);</span>
+<span class="pc bpc" id="L444" title="1 of 2 branches missed.">		if (!result) {</span>
+<span class="nc" id="L445">			throw new AssertionError(&quot;Result is true: &quot; + message);</span>
 		}
-<span class="fc" id="L443">	}</span>
+<span class="fc" id="L447">	}</span>
 
 	private String getInnerAsString(IParsedExpression exp) {
 		// Using knowledge about FHIRPath internals to construct an expression
 		// containing the inner node.
 		try {
-<span class="fc" id="L449">			Field f = exp.getClass().getDeclaredField(&quot;myParsedExpression&quot;);</span>
-<span class="fc" id="L450">			f.setAccessible(true); // NOSONAR</span>
-<span class="fc" id="L451">			ExpressionNode node = (ExpressionNode) f.get(exp);</span>
+<span class="fc" id="L453">			Field f = exp.getClass().getDeclaredField(&quot;myParsedExpression&quot;);</span>
+<span class="fc" id="L454">			f.setAccessible(true);</span>
+<span class="fc" id="L455">			ExpressionNode node = (ExpressionNode) f.get(exp);</span>
 			
-<span class="fc" id="L453">			return node.getInner().toString();</span>
-<span class="nc" id="L454">		} catch (IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e) {</span>
-<span class="nc" id="L455">			e.printStackTrace();</span>
+<span class="fc" id="L457">			return node.getInner().toString();</span>
+<span class="nc" id="L458">		} catch (IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e) {</span>
+			// TODO Auto-generated catch block
+<span class="nc" id="L460">			e.printStackTrace();</span>
 		}
-<span class="nc" id="L457">		return &quot;'Cannot determine tested value'&quot;;</span>
+<span class="nc" id="L462">		return &quot;'Cannot determine tested value'&quot;;</span>
 	}
 
 	/**
@@ -467,47 +472,43 @@ public class TestData {
 	 * @throws Exception 
 	 */
 	private String getTestValue(IBase base, int position) throws Exception {
-<span class="fc" id="L470">		String fhirPath = getAdjustedFhirPath(position);</span>
-<span class="fc" id="L471">		String inner = null;</span>
-<span class="fc bfc" id="L472" title="All 2 branches covered.">		inner = fhirPath.contains(&quot;.exists(&quot;) ? </span>
-<span class="fc" id="L473">				StringUtils.substringBeforeLast(fhirPath, &quot;.exists(&quot;) :</span>
-<span class="fc" id="L474">				getInnerAsString(getExpression(position));</span>
-
-<span class="fc bfc" id="L476" title="All 2 branches covered.">		if (inner.endsWith(&quot;.count()&quot;)) {</span>
-<span class="fc" id="L477">			inner = StringUtils.left(inner, inner.length()-8);</span>
-		}
-<span class="fc" id="L479">		List&lt;IBase&gt; l = engine.evaluate(base, inner, IBase.class);</span>
-<span class="fc" id="L480">		String value = null;</span>
-<span class="pc bpc" id="L481" title="1 of 2 branches missed.">		if (l == null) {</span>
-<span class="nc" id="L482">			value = &quot;null&quot;;</span>
-<span class="fc bfc" id="L483" title="All 2 branches covered.">		} else if (l.isEmpty()) {</span>
-<span class="fc" id="L484">			value = &quot;&lt;empty&gt;&quot;;</span>
+<span class="fc" id="L475">		String fhirPath = getAdjustedFhirPath(position);</span>
+<span class="fc" id="L476">		String inner = null;</span>
+<span class="fc bfc" id="L477" title="All 2 branches covered.">		if (fhirPath.contains(&quot;.exists(&quot;)) {</span>
+<span class="fc" id="L478">			inner = StringUtils.substringBeforeLast(fhirPath, &quot;.exists(&quot;);</span>
 		} else {
-<span class="fc" id="L486">			value = toString(l);</span>
+<span class="fc" id="L480">			inner = getInnerAsString(getExpression(position));</span>
 		}
-<span class="fc" id="L488">		log.info(&quot;{} = {}&quot;, inner, value);</span>
-<span class="fc" id="L489">		return value;</span>
-	}
-
-	private String toString(List&lt;IBase&gt; l) {
-<span class="fc" id="L493">		StringBuilder b = new StringBuilder();</span>
-<span class="fc bfc" id="L494" title="All 2 branches covered.">		if (l.size() &gt; 1) {</span>
-<span class="fc" id="L495">			b.append(&quot;[&quot;);</span>
+<span class="fc bfc" id="L482" title="All 2 branches covered.">		if (inner.endsWith(&quot;.count()&quot;)) {</span>
+<span class="fc" id="L483">			inner = StringUtils.left(inner, inner.length()-8);</span>
 		}
-<span class="fc bfc" id="L497" title="All 2 branches covered.">		for (IBase item: l) {</span>
-<span class="fc bfc" id="L498" title="All 2 branches covered.">			if (item instanceof PrimitiveType&lt;?&gt; pt) {</span>
-<span class="fc" id="L499">				b.append(pt.asStringValue()).append(&quot;, &quot;);</span>
-<span class="fc bfc" id="L500" title="All 2 branches covered.">			} else if (item instanceof Type t) {</span>
-<span class="fc" id="L501">				b.append(TextUtils.toString(t)).append(&quot;, &quot;);</span>
-			} else {
-<span class="fc" id="L503">				b.append(item.fhirType()).append(&quot;[&quot;).append(item).append(&quot;], &quot;);</span>
+<span class="fc" id="L485">		List&lt;IBase&gt; l = engine.evaluate(base, inner, IBase.class);</span>
+<span class="fc" id="L486">		StringBuilder b = new StringBuilder();</span>
+<span class="pc bpc" id="L487" title="1 of 2 branches missed.">		if (l == null) {</span>
+<span class="nc" id="L488">			b.append(&quot;null&quot;);</span>
+<span class="fc bfc" id="L489" title="All 2 branches covered.">		} else if (l.isEmpty()) {</span>
+<span class="fc" id="L490">			b.append(&quot;&lt;empty&gt;&quot;);</span>
+<span class="pc bpc" id="L491" title="1 of 2 branches missed.">		} else if (l.size() &gt; 0) {</span>
+<span class="fc bfc" id="L492" title="All 2 branches covered.">		    if (l.size() &gt; 1) {</span>
+<span class="fc" id="L493">		    	b.append(&quot;[&quot;);</span>
+		    }
+<span class="fc bfc" id="L495" title="All 2 branches covered.">			for (IBase item: l) {</span>
+<span class="fc bfc" id="L496" title="All 2 branches covered.">				if (item instanceof PrimitiveType&lt;?&gt; pt) {</span>
+<span class="fc" id="L497">					b.append(pt.asStringValue()).append(&quot;, &quot;);</span>
+<span class="fc bfc" id="L498" title="All 2 branches covered.">				} else if (item instanceof Type t) {</span>
+<span class="fc" id="L499">					b.append(TextUtils.toString(t)).append(&quot;, &quot;);</span>
+				} else {
+<span class="fc" id="L501">					b.append(item.fhirType()).append(&quot;[&quot;).append(item).append(&quot;], &quot;);</span>
+				}
+<span class="fc" id="L503">			}</span>
+<span class="fc" id="L504">			b.setLength(b.length()-2);</span>
+<span class="fc bfc" id="L505" title="All 2 branches covered.">			if (l.size() &gt; 1) {</span>
+<span class="fc" id="L506">				b.append(&quot;]&quot;);</span>
 			}
-<span class="fc" id="L505">		}</span>
-<span class="fc" id="L506">		b.setLength(b.length()-2);</span>
-<span class="fc bfc" id="L507" title="All 2 branches covered.">		if (l.size() &gt; 1) {</span>
-<span class="fc" id="L508">			b.append(&quot;]&quot;);</span>
 		}
-<span class="fc" id="L510">		return b.toString();</span>
+<span class="fc" id="L509">		String value = b.toString();</span>
+<span class="fc" id="L510">		log.info(&quot;{} = {}&quot;, inner, value);</span>
+<span class="fc" id="L511">		return value;</span>
 	}
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

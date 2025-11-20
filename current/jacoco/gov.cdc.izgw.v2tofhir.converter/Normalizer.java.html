@@ -32,7 +32,7 @@ import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
  * @author Audacious Inquiry
  *
  */
-public class Normalizer {
+<span class="fc" id="L35">public class Normalizer {</span>
 	private Normalizer() {}
 	/**
 	 * Merge duplicated resources in the bundle.  This is the main entry point for normalization processing.
@@ -55,30 +55,32 @@ public class Normalizer {
 <span class="fc" id="L55">			resourcesByType.computeIfAbsent(r.fhirType(), k -&gt; new ArrayList&lt;&gt;()).add(r)</span>
 		);
 <span class="fc" id="L57">		List&lt;Resource&gt; resourcesToRemove = new ArrayList&lt;&gt;(); </span>
-<span class="fc" id="L58">		resourcesByType.values().forEach(l -&gt; mergeResources(l, resourcesToRemove));</span>
-		
-<span class="fc" id="L60">		Iterator&lt;BundleEntryComponent&gt; it = bundle.getEntry().iterator();</span>
-<span class="fc bfc" id="L61" title="All 2 branches covered.">		while (it.hasNext()) {</span>
-<span class="fc" id="L62">			Resource r = it.next().getResource();</span>
-<span class="pc bpc" id="L63" title="1 of 4 branches missed.">			if (r != null &amp;&amp; resourcesToRemove.remove(r)) {</span>
-<span class="fc" id="L64">				it.remove();</span>
-			}
-<span class="fc" id="L66">		}</span>
-<span class="fc" id="L67">	}</span>
-
-	private static void mergeResources(List&lt;Resource&gt; l, List&lt;Resource&gt; resourcesToRemove) {
-<span class="fc bfc" id="L70" title="All 2 branches covered.">		for (int i = 0; i &lt; l.size() - 1; i++) {</span>
-<span class="fc" id="L71">			Resource first = l.get(i);</span>
-<span class="fc bfc" id="L72" title="All 2 branches covered.">			for (int j = i + 1; j &lt; l.size(); j++) {</span>
-<span class="fc" id="L73">				Resource later = l.get(j);</span>
-<span class="fc" id="L74">				Resource toRemove = mergeResources(first, later);</span>
-<span class="fc bfc" id="L75" title="All 2 branches covered.">				if (toRemove != null) {</span>
-<span class="fc" id="L76">					resourcesToRemove.add(toRemove);</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">		for (List&lt;Resource&gt; l : resourcesByType.values()) {</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">			for (int i = 0; i &lt; l.size() - 1; i++) {</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">				for (int j = i + 1; j &lt; l.size(); j++) {</span>
+<span class="fc" id="L61">					Resource first = l.get(i);</span>
+<span class="fc" id="L62">					Resource later = l.get(j);</span>
+<span class="pc bpc" id="L63" title="1 of 2 branches missed.">					if (!first.fhirType().equals(later.fhirType())) {</span>
+						// Skip cases where resources aren't of the same type.
+<span class="nc" id="L65">						continue;</span>
+					}
+<span class="fc" id="L67">					Resource toRemove = mergeResources(first, later);</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">					if (toRemove != null) {</span>
+<span class="fc" id="L69">						resourcesToRemove.add(toRemove);</span>
+					}
 				}
 			}
-		}
-<span class="fc" id="L80">	}</span>
-	
+<span class="fc" id="L73">		}</span>
+		
+<span class="fc" id="L75">		Iterator&lt;BundleEntryComponent&gt; it = bundle.getEntry().iterator();</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">		while (it.hasNext()) {</span>
+<span class="fc" id="L77">			Resource r = it.next().getResource();</span>
+<span class="pc bpc" id="L78" title="1 of 4 branches missed.">			if (r != null &amp;&amp; resourcesToRemove.remove(r)) {</span>
+<span class="fc" id="L79">				it.remove();</span>
+			}
+<span class="fc" id="L81">		}</span>
+<span class="fc" id="L82">	}</span>
+
 	/**
 	 * Compare two codes for compatibility.  If one or the other is null
 	 * but not both, they are NOT compatible (unlike identifier).
@@ -88,12 +90,12 @@ public class Normalizer {
 	 * @return true if the two values are compatible
 	 */
 	public static boolean codesEqual(CodeableConcept first, CodeableConcept later) {
-<span class="pc bpc" id="L91" title="3 of 4 branches missed.">		if (first == null &amp;&amp; later == null) {</span>
-<span class="nc" id="L92">			return true;</span>
-<span class="pc bpc" id="L93" title="2 of 4 branches missed.">		} else if (first == null || later == null) {</span>
-<span class="nc" id="L94">			return false;</span>
+<span class="pc bpc" id="L93" title="3 of 4 branches missed.">		if (first == null &amp;&amp; later == null) {</span>
+<span class="nc" id="L94">			return true;</span>
+<span class="pc bpc" id="L95" title="2 of 4 branches missed.">		} else if (first == null || later == null) {</span>
+<span class="nc" id="L96">			return false;</span>
 		}
-<span class="fc" id="L96">		return first.equalsDeep(later);</span>
+<span class="fc" id="L98">		return first.equalsDeep(later);</span>
 	}
 
 	/**
@@ -105,11 +107,11 @@ public class Normalizer {
 	 * @return true if the two values are compatible
 	 */
 	public static boolean identifiersEqual(Identifier first, Identifier later) {
-<span class="pc bpc" id="L108" title="2 of 4 branches missed.">		if (first == null || later == null) {</span>
+<span class="pc bpc" id="L110" title="2 of 4 branches missed.">		if (first == null || later == null) {</span>
 			// If one asserts an identifier, and the other does not, treat as equal
-<span class="nc" id="L110">			return true;</span>
+<span class="nc" id="L112">			return true;</span>
 		}
-<span class="fc" id="L112">		return first.equalsDeep(later);</span>
+<span class="fc" id="L114">		return first.equalsDeep(later);</span>
 	}
 
 	/**
@@ -120,13 +122,13 @@ public class Normalizer {
 	 * @return	The endpoint to remove, or null if the two endpoints are different.
 	 */
 	public static Endpoint merge(Endpoint first, Endpoint later) {
-<span class="pc bpc" id="L123" title="1 of 2 branches missed.">		if (StringUtils.equals(first.getName(), later.getName()) &amp;&amp;</span>
-<span class="nc bnc" id="L124" title="All 2 branches missed.">			identifiersEqual(first.getIdentifierFirstRep(), later.getIdentifierFirstRep())</span>
+<span class="pc bpc" id="L125" title="1 of 2 branches missed.">		if (StringUtils.equals(first.getName(), later.getName()) &amp;&amp;</span>
+<span class="nc bnc" id="L126" title="All 2 branches missed.">			identifiersEqual(first.getIdentifierFirstRep(), later.getIdentifierFirstRep())</span>
 		) {
-<span class="nc" id="L126">			ParserUtils.mergeReferences(first, later);</span>
-<span class="nc" id="L127">			return later;</span>
+<span class="nc" id="L128">			ParserUtils.mergeReferences(first, later);</span>
+<span class="nc" id="L129">			return later;</span>
 		}
-<span class="fc" id="L129">		return null;</span>
+<span class="fc" id="L131">		return null;</span>
 	}
 
 	/**
@@ -136,27 +138,27 @@ public class Normalizer {
 	 * @return	The location to remove
 	 */
 	public static Location merge(Location first, Location later) {
-<span class="pc bpc" id="L139" title="1 of 4 branches missed.">		if (first == null || later == null) {</span>
-<span class="fc" id="L140">			return null;</span>
+<span class="pc bpc" id="L141" title="1 of 4 branches missed.">		if (first == null || later == null) {</span>
+<span class="fc" id="L142">			return null;</span>
 		}
 		// Two locations are equal if a) their name, mode and physical types are equal
 	
-<span class="pc bpc" id="L144" title="1 of 2 branches missed.">		if (!Objects.equals(first.getName(), later.getName()) ||</span>
-<span class="pc bpc" id="L145" title="1 of 2 branches missed.">			!Objects.equals(first.getMode(), later.getMode()) ||</span>
-<span class="pc bpc" id="L146" title="1 of 2 branches missed.">			!codesEqual(first.getPhysicalType(), later.getPhysicalType())</span>
+<span class="pc bpc" id="L146" title="1 of 2 branches missed.">		if (!Objects.equals(first.getName(), later.getName()) ||</span>
+<span class="pc bpc" id="L147" title="1 of 2 branches missed.">			!Objects.equals(first.getMode(), later.getMode()) ||</span>
+<span class="pc bpc" id="L148" title="1 of 2 branches missed.">			!codesEqual(first.getPhysicalType(), later.getPhysicalType())</span>
 		) {
-<span class="nc" id="L148">			return null;</span>
+<span class="nc" id="L150">			return null;</span>
 		}
 		// and b) their partOf values are equal
-<span class="pc bpc" id="L151" title="1 of 2 branches missed.">		if (merge(</span>
-<span class="fc" id="L152">				ParserUtils.getResource(Location.class, first.getPartOf()),</span>
-<span class="fc" id="L153">				ParserUtils.getResource(Location.class, first.getPartOf())</span>
+<span class="pc bpc" id="L153" title="1 of 2 branches missed.">		if (merge(</span>
+<span class="fc" id="L154">				ParserUtils.getResource(Location.class, first.getPartOf()),</span>
+<span class="fc" id="L155">				ParserUtils.getResource(Location.class, first.getPartOf())</span>
 			) == null
 		) {
-<span class="fc" id="L156">			return null;</span>
+<span class="fc" id="L158">			return null;</span>
 		}
-<span class="nc" id="L158">		ParserUtils.mergeReferences(first, later);</span>
-<span class="nc" id="L159">		return later;</span>
+<span class="nc" id="L160">		ParserUtils.mergeReferences(first, later);</span>
+<span class="nc" id="L161">		return later;</span>
 	}
 
 	/**
@@ -166,33 +168,33 @@ public class Normalizer {
 	 * @return	The organization to remove
 	 */
 	public static Organization merge(Organization first, Organization later) {
-<span class="pc bpc" id="L169" title="1 of 4 branches missed.">		if (first == null || later == null) {</span>
-<span class="fc" id="L170">			return null;</span>
+<span class="pc bpc" id="L171" title="1 of 4 branches missed.">		if (first == null || later == null) {</span>
+<span class="fc" id="L172">			return null;</span>
 		}
 		// If both have an endpoint, verify the endpoints are the same
-<span class="fc bfc" id="L173" title="All 4 branches covered.">		if (first.hasEndpoint() &amp;&amp; later.hasEndpoint()) {</span>
-<span class="fc" id="L174">			Endpoint f = ParserUtils.getResource(Endpoint.class, first.getEndpointFirstRep());</span>
-<span class="fc" id="L175">			Endpoint l = ParserUtils.getResource(Endpoint.class, later.getEndpointFirstRep());</span>
-<span class="pc bpc" id="L176" title="1 of 2 branches missed.">			if (merge(f, l) == null) {</span>
+<span class="fc bfc" id="L175" title="All 4 branches covered.">		if (first.hasEndpoint() &amp;&amp; later.hasEndpoint()) {</span>
+<span class="fc" id="L176">			Endpoint f = ParserUtils.getResource(Endpoint.class, first.getEndpointFirstRep());</span>
+<span class="fc" id="L177">			Endpoint l = ParserUtils.getResource(Endpoint.class, later.getEndpointFirstRep());</span>
+<span class="pc bpc" id="L178" title="1 of 2 branches missed.">			if (merge(f, l) == null) {</span>
 				// When endpoints are not the same the organizations need to be dealt with separately.
-<span class="fc" id="L178">				return null;</span>
+<span class="fc" id="L180">				return null;</span>
 			}
 		}
 		
-<span class="fc bfc" id="L182" title="All 2 branches covered.">		if (StringUtils.equals(first.getName(), later.getName()) &amp;&amp;</span>
-<span class="pc bpc" id="L183" title="1 of 2 branches missed.">			identifiersEqual(first.getIdentifierFirstRep(), later.getIdentifierFirstRep())</span>
+<span class="fc bfc" id="L184" title="All 2 branches covered.">		if (StringUtils.equals(first.getName(), later.getName()) &amp;&amp;</span>
+<span class="pc bpc" id="L185" title="1 of 2 branches missed.">			identifiersEqual(first.getIdentifierFirstRep(), later.getIdentifierFirstRep())</span>
 		) {
 			// Ensure both resources reference the same endpoint
-<span class="pc bpc" id="L186" title="1 of 4 branches missed.">			if (later.hasEndpoint() &amp;&amp; !first.hasEndpoint()) {</span>
-<span class="fc" id="L187">				first.setEndpoint(later.getEndpoint());</span>
+<span class="pc bpc" id="L188" title="1 of 4 branches missed.">			if (later.hasEndpoint() &amp;&amp; !first.hasEndpoint()) {</span>
+<span class="fc" id="L189">				first.setEndpoint(later.getEndpoint());</span>
 			}
-<span class="pc bpc" id="L189" title="1 of 4 branches missed.">			if (first.hasEndpoint() &amp;&amp; !later.hasEndpoint()) {</span>
-<span class="nc" id="L190">				later.setEndpoint(first.getEndpoint());</span>
+<span class="pc bpc" id="L191" title="1 of 4 branches missed.">			if (first.hasEndpoint() &amp;&amp; !later.hasEndpoint()) {</span>
+<span class="nc" id="L192">				later.setEndpoint(first.getEndpoint());</span>
 			}
-<span class="fc" id="L192">			ParserUtils.mergeReferences(first, later);</span>
-<span class="fc" id="L193">			return later;</span>
+<span class="fc" id="L194">			ParserUtils.mergeReferences(first, later);</span>
+<span class="fc" id="L195">			return later;</span>
 		}
-<span class="fc" id="L195">		return null;</span>
+<span class="fc" id="L197">		return null;</span>
 	}
 
 	/**
@@ -202,17 +204,17 @@ public class Normalizer {
 	 * @return	The Practitioner to remove
 	 */
 	public static Practitioner merge(Practitioner first, Practitioner later) {
-<span class="pc bpc" id="L205" title="2 of 4 branches missed.">		if (first == null || later == null) {</span>
-<span class="nc" id="L206">			return null;</span>
+<span class="pc bpc" id="L207" title="2 of 4 branches missed.">		if (first == null || later == null) {</span>
+<span class="nc" id="L208">			return null;</span>
 		}
-<span class="fc bfc" id="L208" title="All 2 branches covered.">		if (namesEqual(first.getNameFirstRep(), later.getNameFirstRep()) &amp;&amp;</span>
-<span class="pc bpc" id="L209" title="1 of 2 branches missed.">			identifiersEqual(first.getIdentifierFirstRep(), later.getIdentifierFirstRep())</span>
+<span class="fc bfc" id="L210" title="All 2 branches covered.">		if (namesEqual(first.getNameFirstRep(), later.getNameFirstRep()) &amp;&amp;</span>
+<span class="pc bpc" id="L211" title="1 of 2 branches missed.">			identifiersEqual(first.getIdentifierFirstRep(), later.getIdentifierFirstRep())</span>
 		) {
-<span class="fc" id="L211">			mergeNames(first.getNameFirstRep(), later.getNameFirstRep());</span>
-<span class="fc" id="L212">			ParserUtils.mergeReferences(first, later);</span>
-<span class="fc" id="L213">			return later;</span>
+<span class="fc" id="L213">			mergeNames(first.getNameFirstRep(), later.getNameFirstRep());</span>
+<span class="fc" id="L214">			ParserUtils.mergeReferences(first, later);</span>
+<span class="fc" id="L215">			return later;</span>
 		}
-<span class="fc" id="L215">		return null;</span>
+<span class="fc" id="L217">		return null;</span>
 	}
 
 	/**
@@ -222,23 +224,23 @@ public class Normalizer {
 	 * @return	The PractitionerRole to remove
 	 */
 	public static PractitionerRole merge(PractitionerRole first, PractitionerRole later) {
-<span class="pc bpc" id="L225" title="1 of 2 branches missed.">		if (merge(</span>
-<span class="fc" id="L226">				ParserUtils.getResource(Practitioner.class, first.getPractitioner()),</span>
-<span class="fc" id="L227">				ParserUtils.getResource(Practitioner.class, later.getPractitioner())</span>
+<span class="pc bpc" id="L227" title="1 of 2 branches missed.">		if (merge(</span>
+<span class="fc" id="L228">				ParserUtils.getResource(Practitioner.class, first.getPractitioner()),</span>
+<span class="fc" id="L229">				ParserUtils.getResource(Practitioner.class, later.getPractitioner())</span>
 				) == null
 		) {
-<span class="nc" id="L230">			return null;</span>
+<span class="nc" id="L232">			return null;</span>
 		}
-<span class="fc bfc" id="L232" title="All 2 branches covered.">		if (merge(</span>
-<span class="fc" id="L233">			ParserUtils.getResource(Organization.class, first.getOrganization()),</span>
-<span class="fc" id="L234">			ParserUtils.getResource(Organization.class, later.getOrganization())</span>
+<span class="fc bfc" id="L234" title="All 2 branches covered.">		if (merge(</span>
+<span class="fc" id="L235">			ParserUtils.getResource(Organization.class, first.getOrganization()),</span>
+<span class="fc" id="L236">			ParserUtils.getResource(Organization.class, later.getOrganization())</span>
 			) == null
 		) {
-<span class="fc" id="L237">			return null;</span>
+<span class="fc" id="L239">			return null;</span>
 		}
 		
-<span class="fc" id="L240">		ParserUtils.mergeReferences(first, later);</span>
-<span class="fc" id="L241">		return later;</span>
+<span class="fc" id="L242">		ParserUtils.mergeReferences(first, later);</span>
+<span class="fc" id="L243">		return later;</span>
 	}
 
 	/**
@@ -248,13 +250,13 @@ public class Normalizer {
 	 * @return	The RelatedPerson to remove
 	 */
 	public static RelatedPerson merge(RelatedPerson first, RelatedPerson later) {
-<span class="nc bnc" id="L251" title="All 2 branches missed.">		if (namesEqual(first.getNameFirstRep(), later.getNameFirstRep()) &amp;&amp;</span>
-<span class="nc bnc" id="L252" title="All 2 branches missed.">			identifiersEqual(first.getIdentifierFirstRep(), later.getIdentifierFirstRep())</span>
+<span class="nc bnc" id="L253" title="All 2 branches missed.">		if (namesEqual(first.getNameFirstRep(), later.getNameFirstRep()) &amp;&amp;</span>
+<span class="nc bnc" id="L254" title="All 2 branches missed.">			identifiersEqual(first.getIdentifierFirstRep(), later.getIdentifierFirstRep())</span>
 		) {
-<span class="nc" id="L254">			ParserUtils.mergeReferences(first, later);</span>
-<span class="nc" id="L255">			return later;</span>
+<span class="nc" id="L256">			ParserUtils.mergeReferences(first, later);</span>
+<span class="nc" id="L257">			return later;</span>
 		}
-<span class="nc" id="L257">		return null;</span>
+<span class="nc" id="L259">		return null;</span>
 	}
 
 	/**
@@ -264,33 +266,32 @@ public class Normalizer {
 	 */
 	public static void mergeNames(HumanName firstName, HumanName laterName) {
 		// Merge suffixes
-<span class="fc bfc" id="L267" title="All 2 branches covered.">		for (StringType suffix: laterName.getSuffix()) {</span>
-<span class="fc bfc" id="L268" title="All 2 branches covered.">			if (!firstName.getSuffix().contains(suffix)) {</span>
-<span class="fc" id="L269">				firstName.getSuffix().add(suffix);</span>
+<span class="fc bfc" id="L269" title="All 2 branches covered.">		for (StringType suffix: laterName.getSuffix()) {</span>
+<span class="fc bfc" id="L270" title="All 2 branches covered.">			if (!firstName.getSuffix().contains(suffix)) {</span>
+<span class="fc" id="L271">				firstName.getSuffix().add(suffix);</span>
 			}
-<span class="fc" id="L271">		}</span>
-<span class="fc" id="L272">		laterName.setSuffix(firstName.getSuffix());</span>
+<span class="fc" id="L273">		}</span>
+<span class="fc" id="L274">		laterName.setSuffix(firstName.getSuffix());</span>
 		// Merge prefixes
-<span class="pc bpc" id="L274" title="1 of 2 branches missed.">		for (StringType prefix: laterName.getPrefix()) {</span>
-<span class="nc bnc" id="L275" title="All 2 branches missed.">			if (!firstName.getPrefix().contains(prefix)) {</span>
-<span class="nc" id="L276">				firstName.getPrefix().add(prefix);</span>
+<span class="pc bpc" id="L276" title="1 of 2 branches missed.">		for (StringType prefix: laterName.getPrefix()) {</span>
+<span class="nc bnc" id="L277" title="All 2 branches missed.">			if (!firstName.getPrefix().contains(prefix)) {</span>
+<span class="nc" id="L278">				firstName.getPrefix().add(prefix);</span>
 			}
-<span class="nc" id="L278">		}</span>
-<span class="fc" id="L279">		laterName.setPrefix(firstName.getPrefix());</span>
+<span class="nc" id="L280">		}</span>
 		// Ensure both have same use, taken from first if present, otherwise later
-<span class="fc bfc" id="L281" title="All 2 branches covered.">		if (firstName.hasUse()) {</span>
-<span class="fc" id="L282">			laterName.setUse(firstName.getUse());</span>
-<span class="pc bpc" id="L283" title="1 of 2 branches missed.">		} else if (laterName.hasUse()) {</span>
-<span class="nc" id="L284">			firstName.setUse(laterName.getUse());</span>
+<span class="fc bfc" id="L282" title="All 2 branches covered.">		if (firstName.hasUse()) {</span>
+<span class="fc" id="L283">			laterName.setUse(firstName.getUse());</span>
+<span class="pc bpc" id="L284" title="1 of 2 branches missed.">		} else if (laterName.hasUse()) {</span>
+<span class="nc" id="L285">			firstName.setUse(laterName.getUse());</span>
 		}
 		
 		// Ensure both have same text, taken from first if present, otherwise later
-<span class="pc bpc" id="L288" title="1 of 2 branches missed.">		if (firstName.hasText()) {</span>
-<span class="nc" id="L289">			laterName.setText(firstName.getText());</span>
-<span class="pc bpc" id="L290" title="1 of 2 branches missed.">		} else if (laterName.hasText()) {</span>
-<span class="nc" id="L291">			firstName.setText(laterName.getText());</span>
+<span class="pc bpc" id="L289" title="1 of 2 branches missed.">		if (firstName.hasText()) {</span>
+<span class="nc" id="L290">			laterName.setText(firstName.getText());</span>
+<span class="pc bpc" id="L291" title="1 of 2 branches missed.">		} else if (laterName.hasText()) {</span>
+<span class="nc" id="L292">			firstName.setText(laterName.getText());</span>
 		}
-<span class="fc" id="L293">	}</span>
+<span class="fc" id="L294">	}</span>
 
 	/**
 	 * Merge two resources.
@@ -299,34 +300,31 @@ public class Normalizer {
 	 * @return	The resource to remove
 	 */
 	public static Resource mergeResources(Resource first, Resource later) {
-<span class="pc bpc" id="L302" title="1 of 2 branches missed.">		if (first.getClass() != later.getClass()) {</span>
-<span class="nc" id="L303">			throw new IllegalArgumentException(&quot;Cannot merge resources of different types&quot;);</span>
-		}
-
-<span class="fc" id="L306">		Resource toRemove = null;</span>
-<span class="pc bpc" id="L307" title="1 of 7 branches missed.">		switch (first.fhirType()) {</span>
+<span class="pc bpc" id="L303" title="1 of 2 branches missed.">		assert(first.getClass() == later.getClass());</span>
+<span class="fc" id="L304">		Resource toRemove = null;</span>
+<span class="pc bpc" id="L305" title="1 of 7 branches missed.">		switch (first.fhirType()) {</span>
 		case &quot;Endpoint&quot;:
-<span class="fc" id="L309">			toRemove = merge((Endpoint)first, (Endpoint)later);</span>
-<span class="fc" id="L310">			break;</span>
+<span class="fc" id="L307">			toRemove = merge((Endpoint)first, (Endpoint)later);</span>
+<span class="fc" id="L308">			break;</span>
 		case &quot;Location&quot;:
-<span class="fc" id="L312">			toRemove = merge((Location)first, (Location)later);</span>
-<span class="fc" id="L313">			break;</span>
+<span class="fc" id="L310">			toRemove = merge((Location)first, (Location)later);</span>
+<span class="fc" id="L311">			break;</span>
 		case &quot;Organization&quot;:
-<span class="fc" id="L315">			toRemove = merge((Organization)first, (Organization)later);</span>
-<span class="fc" id="L316">			break;</span>
+<span class="fc" id="L313">			toRemove = merge((Organization)first, (Organization)later);</span>
+<span class="fc" id="L314">			break;</span>
 		case &quot;Practitioner&quot;:
-<span class="fc" id="L318">			toRemove = merge((Practitioner)first, (Practitioner)later);</span>
-<span class="fc" id="L319">			break;</span>
+<span class="fc" id="L316">			toRemove = merge((Practitioner)first, (Practitioner)later);</span>
+<span class="fc" id="L317">			break;</span>
 		case &quot;PractitionerRole&quot;:
-<span class="fc" id="L321">			toRemove = merge((PractitionerRole)first, (PractitionerRole)later);</span>
-<span class="fc" id="L322">			break;</span>
+<span class="fc" id="L319">			toRemove = merge((PractitionerRole)first, (PractitionerRole)later);</span>
+<span class="fc" id="L320">			break;</span>
 		case &quot;RelatedPerson&quot;:
-<span class="nc" id="L324">			toRemove = merge((RelatedPerson)first, (RelatedPerson)later);</span>
-<span class="nc" id="L325">			break;</span>
+<span class="nc" id="L322">			toRemove = merge((RelatedPerson)first, (RelatedPerson)later);</span>
+<span class="nc" id="L323">			break;</span>
 		default:
 			break;
 		}
-<span class="fc" id="L329">		return toRemove;</span>
+<span class="fc" id="L327">		return toRemove;</span>
 	}
 
 	/**
@@ -338,47 +336,47 @@ public class Normalizer {
 	 * @return true if the two values are compatible
 	 */
 	public static boolean namesEqual(HumanName first, HumanName later) {
-<span class="pc bpc" id="L341" title="3 of 4 branches missed.">		if (first == null &amp;&amp; later == null) {</span>
-<span class="nc" id="L342">			return true;</span>
-<span class="pc bpc" id="L343" title="2 of 4 branches missed.">		} else if (first == null || later == null) {</span>
-<span class="nc" id="L344">			return false;</span>
-<span class="pc bpc" id="L345" title="3 of 4 branches missed.">		} else if (first.isEmpty() &amp;&amp; later.isEmpty()) {</span>
+<span class="pc bpc" id="L339" title="3 of 4 branches missed.">		if (first == null &amp;&amp; later == null) {</span>
+<span class="nc" id="L340">			return true;</span>
+<span class="pc bpc" id="L341" title="2 of 4 branches missed.">		} else if (first == null || later == null) {</span>
+<span class="nc" id="L342">			return false;</span>
+<span class="pc bpc" id="L343" title="3 of 4 branches missed.">		} else if (first.isEmpty() &amp;&amp; later.isEmpty()) {</span>
 			// Both names are empty, a pretty degenerate case
-<span class="nc" id="L347">			return true;</span>
-<span class="pc bpc" id="L348" title="2 of 4 branches missed.">		} else if (first.isEmpty() || later.isEmpty()) {</span>
-<span class="nc" id="L349">			return false;</span>
+<span class="nc" id="L345">			return true;</span>
+<span class="pc bpc" id="L346" title="2 of 4 branches missed.">		} else if (first.isEmpty() || later.isEmpty()) {</span>
+<span class="nc" id="L347">			return false;</span>
 		}
 		
 		// Make a copy since we are going to &quot;normalize&quot; the names for comparison
-<span class="fc" id="L353">		HumanName f = first.copy();</span>
-<span class="fc" id="L354">		HumanName l = later.copy();</span>
+<span class="fc" id="L351">		HumanName f = first.copy();</span>
+<span class="fc" id="L352">		HumanName l = later.copy();</span>
 		
 		// We remove prefixes since they don't make a different.
 		// Omitting a prefix won't change the identity. They can change over time.
-<span class="fc" id="L358">		f.setPrefix(null);</span>
-<span class="fc" id="L359">		l.setPrefix(null);</span>
+<span class="fc" id="L356">		f.setPrefix(null);</span>
+<span class="fc" id="L357">		l.setPrefix(null);</span>
 	
 		// We don't care about professional suffixes either. Sadly, FHIR doesn't distinguish these,
 		// so we must use some NLP to find them.
-<span class="fc" id="L363">		removeProfessionalSuffix(f);</span>
-<span class="fc" id="L364">		removeProfessionalSuffix(l);</span>
+<span class="fc" id="L361">		removeProfessionalSuffix(f);</span>
+<span class="fc" id="L362">		removeProfessionalSuffix(l);</span>
 		
 		// Suffixes do make a difference.  Jr ~= Sr ~= III, et cetera.
 		// But if one doesn't have suffixes and the other does, that's OK, so make them both empty.
-<span class="pc bpc" id="L368" title="7 of 8 branches missed.">		if (!f.hasSuffix() || f.getSuffix().isEmpty() || !l.hasSuffix() || l.getSuffix().isEmpty()) {</span>
-<span class="fc" id="L369">			f.setSuffix(null);</span>
-<span class="fc" id="L370">			l.setSuffix(null);</span>
+<span class="pc bpc" id="L366" title="7 of 8 branches missed.">		if (!f.hasSuffix() || f.getSuffix().isEmpty() || !l.hasSuffix() || l.getSuffix().isEmpty()) {</span>
+<span class="fc" id="L367">			f.setSuffix(null);</span>
+<span class="fc" id="L368">			l.setSuffix(null);</span>
 		}
 		
 		// We don't care about use.
-<span class="fc" id="L374">		f.setUse(null);</span>
-<span class="fc" id="L375">		l.setUse(null);</span>
+<span class="fc" id="L372">		f.setUse(null);</span>
+<span class="fc" id="L373">		l.setUse(null);</span>
 		
 		// We don't care about the text representation, just the parts.
-<span class="fc" id="L378">		f.setText(null);</span>
-<span class="fc" id="L379">		l.setText(null);</span>
+<span class="fc" id="L376">		f.setText(null);</span>
+<span class="fc" id="L377">		l.setText(null);</span>
 		
-<span class="fc" id="L381">		return f.equalsShallow(l);</span>
+<span class="fc" id="L379">		return f.equalsShallow(l);</span>
 	}
 
 	/**
@@ -387,16 +385,16 @@ public class Normalizer {
 	 * @return  The suffixes removed
 	 */
 	public static List&lt;StringType&gt; removeProfessionalSuffix(HumanName f) {
-<span class="fc" id="L390">		List&lt;StringType&gt; toRemove = new ArrayList&lt;&gt;();</span>
-<span class="fc bfc" id="L391" title="All 2 branches covered.">		for (StringType suffix : f.getSuffix()) {</span>
-<span class="pc bpc" id="L392" title="1 of 2 branches missed.">			if (HumanNameParser.isDegree(suffix.asStringValue())) {</span>
-<span class="fc" id="L393">				toRemove.add(suffix);</span>
+<span class="fc" id="L388">		List&lt;StringType&gt; toRemove = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L389" title="All 2 branches covered.">		for (StringType suffix : f.getSuffix()) {</span>
+<span class="pc bpc" id="L390" title="1 of 2 branches missed.">			if (HumanNameParser.isDegree(suffix.asStringValue())) {</span>
+<span class="fc" id="L391">				toRemove.add(suffix);</span>
 			}
-<span class="fc" id="L395">		}</span>
-<span class="fc bfc" id="L396" title="All 2 branches covered.">		for (StringType suffix : toRemove) {</span>
-<span class="fc" id="L397">			f.getSuffix().remove(suffix);</span>
-<span class="fc" id="L398">		}</span>
-<span class="fc" id="L399">		return toRemove;</span>
+<span class="fc" id="L393">		}</span>
+<span class="fc bfc" id="L394" title="All 2 branches covered.">		for (StringType suffix : toRemove) {</span>
+<span class="fc" id="L395">			f.getSuffix().remove(suffix);</span>
+<span class="fc" id="L396">		}</span>
+<span class="fc" id="L397">		return toRemove;</span>
 	}
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

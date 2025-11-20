@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ErrorReporter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">gov.cdc.izgw.v2tofhir.utils</a> &gt; <span class="el_source">ErrorReporter.java</span></div><h1>ErrorReporter.java</h1><pre class="source lang-java linenums">package gov.cdc.izgw.v2tofhir.utils;
 
 import java.lang.ref.WeakReference;
-import java.util.Arrays;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -17,21 +16,18 @@ public interface ErrorReporter {
 	 * The default error reporter just logs the warning message using SLF4J.
 	 * @author Audacious Inquiry
 	 */
-<span class="fc" id="L20">	@Slf4j</span>
-	static class DefaultErrorReporter {
+<span class="fc" id="L19">	@Slf4j</span>
+<span class="nc" id="L20">	static class DefaultErrorReporter {</span>
 		/** Thread local to allow different threads to have different error reporters.
 		 *  If not set, the default instance is used, which just logs the warning.
 		 */
-		private DefaultErrorReporter() {
-			// Private constructor to prevent instantiation
-		}
-<span class="fc" id="L28">		private static final ThreadLocal&lt;WeakReference&lt;ErrorReporter&gt;&gt; ERROR_REPORTER = new ThreadLocal&lt;&gt;();</span>
-<span class="fc" id="L29">		public static final ErrorReporter INSTANCE = new ErrorReporter() {</span>
+<span class="fc" id="L24">		private static final ThreadLocal&lt;WeakReference&lt;ErrorReporter&gt;&gt; ERROR_REPORTER = new ThreadLocal&lt;&gt;();</span>
+<span class="fc" id="L25">		public static final ErrorReporter INSTANCE = new ErrorReporter() {</span>
 			@Override
 			public void warn(String message, Object... args) {
 				// Default is to log the warning.
-<span class="fc" id="L33">				log.warn(message, args);</span>
-<span class="fc" id="L34">			}</span>
+<span class="fc" id="L29">				log.warn(message, args);</span>
+<span class="fc" id="L30">			}</span>
 		};
 	}
 	
@@ -41,27 +37,23 @@ public interface ErrorReporter {
 	 */
 	public static void set(ErrorReporter reporter) {
 		// Use a weak reference to avoid memory leaks if the reporter is no longer needed.
-<span class="pc bpc" id="L44" title="1 of 2 branches missed.">		if (reporter == null) {</span>
-<span class="nc" id="L45">			DefaultErrorReporter.ERROR_REPORTER.remove();</span>
-<span class="nc" id="L46">			return;</span>
-		}
-<span class="fc" id="L48">		WeakReference&lt;ErrorReporter&gt; ref = new WeakReference&lt;&gt;(reporter);</span>
-<span class="fc" id="L49">		DefaultErrorReporter.ERROR_REPORTER.set(ref);</span>
-<span class="fc" id="L50">	}</span>
+<span class="fc" id="L40">		WeakReference&lt;ErrorReporter&gt; ref = new WeakReference&lt;&gt;(reporter);</span>
+<span class="fc" id="L41">		DefaultErrorReporter.ERROR_REPORTER.set(ref);</span>
+<span class="fc" id="L42">	}</span>
 	
 	/**
 	 * Get the error reporter for the current thread. If not set, the default reporter is used, which just logs the warning.
 	 * @return The error reporter for the current thread.
 	 */
 	public static ErrorReporter get() {
-<span class="fc" id="L57">		WeakReference&lt;ErrorReporter&gt; ref = DefaultErrorReporter.ERROR_REPORTER.get();</span>
-<span class="pc bpc" id="L58" title="1 of 2 branches missed.">		if (ref != null) {</span>
-<span class="fc" id="L59">			ErrorReporter r = ref.get();</span>
-<span class="fc bfc" id="L60" title="All 2 branches covered.">			if (r != null) {</span>
-<span class="fc" id="L61">				return r;</span>
+<span class="fc" id="L49">		WeakReference&lt;ErrorReporter&gt; ref = DefaultErrorReporter.ERROR_REPORTER.get();</span>
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">		if (ref != null) {</span>
+<span class="fc" id="L51">			ErrorReporter r = ref.get();</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">			if (r != null) {</span>
+<span class="fc" id="L53">				return r;</span>
 			}
 		}
-<span class="fc" id="L64">		return DefaultErrorReporter.INSTANCE;</span>
+<span class="fc" id="L56">		return DefaultErrorReporter.INSTANCE;</span>
 	}
 	
 	/**
@@ -72,22 +64,12 @@ public interface ErrorReporter {
 	 * @param args The arguments. If the last argument is a Throwable, it is treated as the cause.
 	 */
 	default void warn(String message, Object ... args) {
-<span class="nc bnc" id="L75" title="All 4 branches missed.">		Object x = args != null &amp;&amp; args.length &gt; 0 ? args[args.length - 1] : null;</span>
-<span class="nc bnc" id="L76" title="All 2 branches missed.">		if (x instanceof Throwable t) {</span>
-			// Trim the stack trace to only include relevant frames.
-<span class="nc" id="L78">			StackTraceElement[] stackTrace = t.getStackTrace();</span>
-<span class="nc bnc" id="L79" title="All 2 branches missed.">			for (int i = 0; i &lt; stackTrace.length; i++) {</span>
-<span class="nc" id="L80">				StackTraceElement ste = stackTrace[i];</span>
-<span class="nc" id="L81">				String className = ste.getClassName();</span>
-<span class="nc bnc" id="L82" title="All 4 branches missed.">				if (className.startsWith(&quot;com.ainq&quot;) || className.startsWith(&quot;gov.cdc&quot;)) {</span>
-<span class="nc" id="L83">					int newLength = Math.min(i + 5, stackTrace.length);</span>
-<span class="nc" id="L84">					StackTraceElement[] newStackTrace = Arrays.copyOfRange(stackTrace, 0, newLength);</span>
-<span class="nc" id="L85">					t.setStackTrace(newStackTrace);</span>
-<span class="nc" id="L86">					break;</span>
-				}
-			}
+<span class="nc" id="L67">		ErrorReporter r = get();</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">		if (r != null) {</span>
+<span class="nc" id="L69">			r.warn(message, args);</span>
+<span class="nc" id="L70">			return;</span>
 		}
-<span class="nc" id="L90">		get().warn(message, args);</span>
-<span class="nc" id="L91">	}</span>
+<span class="nc" id="L72">		DefaultErrorReporter.INSTANCE.warn(message, args);</span>
+<span class="nc" id="L73">	}</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -18,7 +18,7 @@ import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.IdType;
 import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Provenance;
-import org.hl7.fhir.r4.model.Provenance.ProvenanceEntityComponent;
+import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.StringType;
 
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
@@ -71,32 +71,31 @@ public abstract class BaseParser&lt;U,S&gt; implements Parser&lt;U,S&gt; {
 	 */
 	private final Context&lt;Parser&lt;U,S&gt;&gt; context;
 <span class="fc" id="L73">	protected final Set&lt;IBaseResource&gt; updated = new LinkedHashSet&lt;&gt;();</span>
-<span class="fc" id="L74">	protected final Set&lt;IBaseResource&gt; resourcesNeedingProvenance = new LinkedHashSet&lt;&gt;();</span>
 	
-<span class="fc" id="L76">	@Getter</span>
+<span class="fc" id="L75">	@Getter</span>
 	private Supplier&lt;String&gt; idGenerator = ULID::random;
-<span class="fc" id="L78">	protected final Map&lt;String, Class&lt;Processor&lt;U, S&gt;&gt;&gt; parsers = new LinkedHashMap&lt;&gt;();</span>
-<span class="fc" id="L79">	protected final Map&lt;S, String&gt; processed = new LinkedHashMap&lt;&gt;();</span>
-<span class="fc" id="L80">	protected Processor&lt;U, S&gt; processor = null;</span>
+<span class="fc" id="L77">	protected final Map&lt;String, Class&lt;Processor&lt;U, S&gt;&gt;&gt; parsers = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L78">	protected final Map&lt;S, String&gt; processed = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L79">	protected Processor&lt;U, S&gt; processor = null;</span>
 	
 	/**
 	 * Construct a new parser with a freshly initialized context.
 	 */
-<span class="fc" id="L85">	protected BaseParser() {</span>
-<span class="fc" id="L86">		context = new Context&lt;&gt;(this);</span>
+<span class="fc" id="L84">	public BaseParser() {</span>
+<span class="fc" id="L85">		context = new Context&lt;Parser&lt;U,S&gt;&gt;(this);</span>
 		// Copy default values to context on creation.
-<span class="fc" id="L88">		context.setStoringProvenance(BaseParser.defaultContext.isStoringProvenance());</span>
-<span class="fc" id="L89">	}</span>
+<span class="fc" id="L87">		context.setStoringProvenance(BaseParser.defaultContext.isStoringProvenance());</span>
+<span class="fc" id="L88">	}</span>
 	
 	/**
 	 * Reset this message parser for a new parsing session.
 	 */
 	public void reset() {
-<span class="fc" id="L95">		getContext().clear();</span>
-<span class="fc" id="L96">		updated.clear();</span>
-<span class="fc" id="L97">		processed.clear();</span>
-<span class="fc" id="L98">		processor = null;</span>
-<span class="fc" id="L99">	}</span>
+<span class="fc" id="L94">		getContext().clear();</span>
+<span class="fc" id="L95">		updated.clear();</span>
+<span class="fc" id="L96">		processed.clear();</span>
+<span class="fc" id="L97">		processor = null;</span>
+<span class="fc" id="L98">	}</span>
 	
 	/**
 	 * Set the ID Generator for this MessageParser.
@@ -109,26 +108,26 @@ public abstract class BaseParser&lt;U,S&gt; implements Parser&lt;U,S&gt; {
 	 * @param idGenerator	The idGenerator to use, or null to use the standard one.
 	 */
 	public void setIdGenerator(Supplier&lt;String&gt; idGenerator) {
-<span class="pc bpc" id="L112" title="1 of 2 branches missed.">		if (idGenerator == null) {</span>
-<span class="nc" id="L113">			this.idGenerator = ULID::random;</span>
+<span class="pc bpc" id="L111" title="1 of 2 branches missed.">		if (idGenerator == null) {</span>
+<span class="nc" id="L112">			this.idGenerator = ULID::random;</span>
 		} else {
-<span class="fc" id="L115">			this.idGenerator = idGenerator;</span>
+<span class="fc" id="L114">			this.idGenerator = idGenerator;</span>
 		}
-<span class="fc" id="L117">	}</span>
+<span class="fc" id="L116">	}</span>
 	
 	/**
 	 * Get the bundle being constructed.
 	 * @return The bundle being constructed, or a new bundle if none exists
 	 */
 	public Bundle getBundle() {
-<span class="fc" id="L124">		Bundle b = getContext().getBundle();</span>
-<span class="fc bfc" id="L125" title="All 2 branches covered.">		if (b == null) {</span>
-<span class="fc" id="L126">			b = new Bundle();</span>
-<span class="fc" id="L127">			b.setId(new IdType(b.fhirType() + &quot;/&quot; + idGenerator.get()));</span>
-<span class="fc" id="L128">			b.setType(BundleType.MESSAGE);</span>
-<span class="fc" id="L129">			getContext().setBundle(b);</span>
+<span class="fc" id="L123">		Bundle b = getContext().getBundle();</span>
+<span class="fc bfc" id="L124" title="All 2 branches covered.">		if (b == null) {</span>
+<span class="fc" id="L125">			b = new Bundle();</span>
+<span class="fc" id="L126">			b.setId(new IdType(b.fhirType() + &quot;/&quot; + idGenerator.get()));</span>
+<span class="fc" id="L127">			b.setType(BundleType.MESSAGE);</span>
+<span class="fc" id="L128">			getContext().setBundle(b);</span>
 		}
-<span class="fc" id="L131">		return b;</span>
+<span class="fc" id="L130">		return b;</span>
 	}
 
 	/**
@@ -137,7 +136,7 @@ public abstract class BaseParser&lt;U,S&gt; implements Parser&lt;U,S&gt; {
 	 * @return	The generated Bundle resource
 	 */
 	protected Bundle createBundle(U unit) {
-<span class="fc" id="L140">		return createBundle(getParts(unit));</span>
+<span class="fc" id="L139">		return createBundle(getParts(unit));</span>
 	}
 	
 	/**
@@ -153,14 +152,14 @@ public abstract class BaseParser&lt;U,S&gt; implements Parser&lt;U,S&gt; {
 	 * @return	The generated Bundle
 	 */
 	public Bundle createBundle(Iterable&lt;S&gt; structures) {
-<span class="fc" id="L156">		Bundle b = getBundle();</span>
-<span class="fc" id="L157">		processed.clear();</span>
-<span class="fc bfc" id="L158" title="All 2 branches covered.">		for (S structure: structures) {</span>
-<span class="fc" id="L159">			updated.clear();</span>
-<span class="fc" id="L160">			processUnit(structure);</span>
-<span class="fc" id="L161">		}</span>
-<span class="fc" id="L162">		Normalizer.normalizeResources(b);</span>
-<span class="fc" id="L163">		return sortProvenance(b);</span>
+<span class="fc" id="L155">		Bundle b = getBundle();</span>
+<span class="fc" id="L156">		processed.clear();</span>
+<span class="fc bfc" id="L157" title="All 2 branches covered.">		for (S structure: structures) {</span>
+<span class="fc" id="L158">			updated.clear();</span>
+<span class="fc" id="L159">			processUnit(structure);</span>
+<span class="fc" id="L160">		}</span>
+<span class="fc" id="L161">		Normalizer.normalizeResources(b);</span>
+<span class="fc" id="L162">		return sortProvenance(b);</span>
 	}
 	
 	/**
@@ -169,43 +168,43 @@ public abstract class BaseParser&lt;U,S&gt; implements Parser&lt;U,S&gt; {
 	 * @return the constructed FHIR Resource or type
 	 */
 	public IBase processUnit(S structure) {
-<span class="pc bpc" id="L172" title="1 of 2 branches missed.">		if (processed.containsKey(structure)) {</span>
+<span class="pc bpc" id="L171" title="1 of 2 branches missed.">		if (processed.containsKey(structure)) {</span>
 			// This structure was already processed
-<span class="nc" id="L174">			log.info(&quot;{} processed by {}&quot;, getName(structure), processed.get(structure));</span>
-<span class="nc" id="L175">			return null;</span>
+<span class="nc" id="L173">			log.info(&quot;{} processed by {}&quot;, getName(structure), processed.get(structure));</span>
+<span class="nc" id="L174">			return null;</span>
 		}
 		
-<span class="fc" id="L178">		processor = getParser(getName(structure));</span>
-<span class="fc bfc" id="L179" title="All 2 branches covered.">		if (processor == null) {</span>
-<span class="fc" id="L180">			return null;</span>
+<span class="fc" id="L177">		processor = getParser(getName(structure));</span>
+<span class="fc bfc" id="L178" title="All 2 branches covered.">		if (processor == null) {</span>
+<span class="fc" id="L179">			return null;</span>
 		} 
 		
-<span class="fc" id="L183">		IBase b = null;</span>
+<span class="fc" id="L182">		IBase b = null;</span>
 		try {
-<span class="fc" id="L185">			beforeParsing(structure);</span>
-<span class="fc" id="L186">			b = processor.parse(structure);</span>
-<span class="nc" id="L187">		} catch (Exception e) {</span>
-<span class="nc" id="L188">			warn(&quot;Unexpected {} parsing {}: {}&quot;, e.getClass().getSimpleName(), getName(structure), e.getMessage(), e);</span>
+<span class="fc" id="L184">			beforeParsing(structure);</span>
+<span class="fc" id="L185">			b = processor.parse(structure);</span>
+<span class="nc" id="L186">		} catch (Exception e) {</span>
+<span class="nc" id="L187">			warn(&quot;Unexpected {} parsing {}: {}&quot;, e.getClass().getSimpleName(), getName(structure), e.getMessage(), e);</span>
 		} finally {
-<span class="fc" id="L190">			afterParsing(structure);</span>
-<span class="fc" id="L191">			addProcessed(structure);</span>
-<span class="fc" id="L192">			processor.finish();</span>
+<span class="fc" id="L189">			afterParsing(structure);</span>
+<span class="fc" id="L190">			addProcessed(structure);</span>
+<span class="fc" id="L191">			processor.finish();</span>
 		}
 
-<span class="pc bpc" id="L195" title="1 of 2 branches missed.">		if (getContext().isStoringProvenance()) {</span>
+<span class="pc bpc" id="L194" title="1 of 2 branches missed.">		if (getContext().isStoringProvenance()) {</span>
 			// Provenance is updated by segments when we did work and are storing provenance
-<span class="fc" id="L197">			updateProvenance(structure);</span>
+<span class="fc" id="L196">			updateProvenance(structure);</span>
 		}
-<span class="fc" id="L199">		return b;</span>
+<span class="fc" id="L198">		return b;</span>
 	}
 	
-	protected void beforeParsing(S structure) {
+	private void beforeParsing(S structure) {
 		// Do Nothing
+		
 <span class="fc" id="L204">	}</span>
-	
 	protected void afterParsing(S structure) {
 		// Do nothing
-<span class="fc" id="L208">	}</span>
+<span class="fc" id="L207">	}</span>
 	/**
 	 * Get the name of a structure
 	 * @param structure	The structure
@@ -220,43 +219,42 @@ public abstract class BaseParser&lt;U,S&gt; implements Parser&lt;U,S&gt; {
 	 * @param structure	The structure that was processed.
 	 */
 	public void addProcessed(S structure) {
-<span class="pc bpc" id="L223" title="1 of 2 branches missed.">		if (structure != null) {</span>
-<span class="fc" id="L224">			processed.put(structure, processor.getClass().getSimpleName());</span>
+<span class="pc bpc" id="L222" title="1 of 2 branches missed.">		if (structure != null) {</span>
+<span class="fc" id="L223">			processed.put(structure, processor.getClass().getSimpleName());</span>
 		}
-<span class="fc" id="L226">	}	</span>
+<span class="fc" id="L225">	}	</span>
 	
 	/**
 	 * Update the provenance of a component 
 	 * @param segment The component whose provenance needs to be updated
 	 */
 	protected void updateProvenance(S segment) {
-<span class="fc bfc" id="L233" title="All 2 branches covered.">		for (IBaseResource r: resourcesNeedingProvenance) {</span>
-<span class="fc" id="L234">			Provenance p = (Provenance) r.getUserData(Provenance.class.getName());</span>
-<span class="fc bfc" id="L235" title="All 2 branches covered.">			if (p == null) {</span>
-<span class="fc" id="L236">				continue;</span>
+<span class="fc bfc" id="L232" title="All 2 branches covered.">		for (IBaseResource r: updated) {</span>
+<span class="fc" id="L233">			Provenance p = (Provenance) r.getUserData(Provenance.class.getName());</span>
+<span class="fc bfc" id="L234" title="All 2 branches covered.">			if (p == null) {</span>
+<span class="fc" id="L235">				continue;</span>
 			}
-<span class="fc" id="L238">			ProvenanceEntityComponent entity = p.getEntityFirstRep();</span>
+<span class="fc" id="L237">			Reference what = p.getEntityFirstRep().getWhat();</span>
 			try {
-<span class="fc" id="L240">				String encodedSegment = encode(segment);</span>
-<span class="fc" id="L241">				StringType originalText = new StringType(encode(segment)); // Was new StringType(context.getHl7DataId()+&quot;#&quot;+PathUtils.getTerserPath(segment))</span>
-<span class="fc" id="L242">				if (entity.getExtension().stream()</span>
-<span class="pc bpc" id="L243" title="1 of 2 branches missed.">						.noneMatch(ext -&gt; </span>
-<span class="nc bnc" id="L244" title="All 2 branches missed.">							BaseParser.ORIGINAL_TEXT.equals(ext.getUrl()) &amp;&amp; </span>
-<span class="nc bnc" id="L245" title="All 2 branches missed.">							encodedSegment.equals(ext.getValue().toString())</span>
-						)
-				) {
-<span class="fc" id="L248">					entity.addExtension().setUrl(BaseParser.ORIGINAL_TEXT).setValue(originalText);</span>
-<span class="fc" id="L249">					IBaseMetaType meta = r.getMeta();</span>
-<span class="pc bpc" id="L250" title="1 of 2 branches missed.">					if (meta instanceof Meta m4) {</span>
-<span class="fc" id="L251">						m4.getSourceElement().addExtension().setUrl(BaseParser.ORIGINAL_TEXT).setValue(originalText);</span>
-					} 
+<span class="fc" id="L239">				StringType whatText = new StringType(encode(segment)); // Was new StringType(context.getHl7DataId()+&quot;#&quot;+PathUtils.getTerserPath(segment))</span>
+<span class="fc" id="L240">				what.addExtension().setUrl(BaseParser.ORIGINAL_TEXT).setValue(whatText);</span>
+<span class="fc" id="L241">				IBaseMetaType meta = r.getMeta();</span>
+<span class="pc bpc" id="L242" title="1 of 2 branches missed.">				if (meta instanceof Meta m4) {</span>
+<span class="fc" id="L243">					m4.getSourceElement().addExtension().setUrl(BaseParser.ORIGINAL_TEXT).setValue(whatText);</span>
+<span class="nc bnc" id="L244" title="All 2 branches missed.">				} else if (meta instanceof org.hl7.fhir.r4b.model.Meta m4b) {</span>
+<span class="nc" id="L245">					m4b.getSourceElement().addExtension().setUrl(BaseParser.ORIGINAL_TEXT).setValue(whatText);</span>
+<span class="nc bnc" id="L246" title="All 2 branches missed.">				} else if (meta instanceof org.hl7.fhir.r5.model.Meta m5) {</span>
+<span class="nc" id="L247">					m5.getSourceElement().addExtension().setUrl(BaseParser.ORIGINAL_TEXT).setValue(whatText);</span>
+<span class="nc bnc" id="L248" title="All 2 branches missed.">				} else if (meta instanceof org.hl7.fhir.dstu2.model.Meta m2) {</span>
+<span class="nc" id="L249">					m2.addExtension().setUrl(BaseParser.ORIGINAL_TEXT).setValue(whatText);</span>
+<span class="nc bnc" id="L250" title="All 2 branches missed.">				} else if (meta instanceof org.hl7.fhir.dstu3.model.Meta m3) {</span>
+<span class="nc" id="L251">					m3.addExtension().setUrl(BaseParser.ORIGINAL_TEXT).setValue(whatText);</span>
 				}
-<span class="nc" id="L254">			} catch (Exception e) {</span>
-<span class="nc" id="L255">				warn(&quot;Unexpected {} updating provenance for {} segment: {}&quot;, e.getClass().getSimpleName(), getName(segment), e.getMessage());</span>
-<span class="fc" id="L256">			}</span>
-<span class="fc" id="L257">		}</span>
-<span class="fc" id="L258">		resourcesNeedingProvenance.clear();</span>
-<span class="fc" id="L259">	}</span>
+<span class="nc" id="L253">			} catch (Exception e) {</span>
+<span class="nc" id="L254">				warn(&quot;Unexpected {} updating provenance for {} segment: {}&quot;, e.getClass().getSimpleName(), getName(segment), e.getMessage());</span>
+<span class="fc" id="L255">			}</span>
+<span class="fc" id="L256">		}</span>
+<span class="fc" id="L257">	}</span>
 	
 	/**
 	 * This method sorts Provenance resources to the end.
@@ -264,23 +262,23 @@ public abstract class BaseParser&lt;U,S&gt; implements Parser&lt;U,S&gt; {
 	 * @return	The sorted bundle
 	 */
 	public Bundle sortProvenance(Bundle b) {
-<span class="pc bpc" id="L267" title="1 of 2 branches missed.">		if (getContext().isStoringProvenance()) {</span>
-<span class="fc" id="L268">			List&lt;BundleEntryComponent&gt; list = b.getEntry();</span>
-<span class="fc" id="L269">			int len = list.size();</span>
-<span class="fc bfc" id="L270" title="All 2 branches covered.">			for (int i = 0; i &lt; len; ++i) {</span>
-<span class="fc" id="L271">				BundleEntryComponent c = list.get(i);</span>
-<span class="pc bpc" id="L272" title="2 of 4 branches missed.">				if (c == null || !c.hasResource()) {</span>
-<span class="nc" id="L273">					continue;</span>
+<span class="pc bpc" id="L265" title="1 of 2 branches missed.">		if (getContext().isStoringProvenance()) {</span>
+<span class="fc" id="L266">			List&lt;BundleEntryComponent&gt; list = b.getEntry();</span>
+<span class="fc" id="L267">			int len = list.size();</span>
+<span class="fc bfc" id="L268" title="All 2 branches covered.">			for (int i = 0; i &lt; len; ++i) {</span>
+<span class="fc" id="L269">				BundleEntryComponent c = list.get(i);</span>
+<span class="pc bpc" id="L270" title="2 of 4 branches missed.">				if (c == null || !c.hasResource()) {</span>
+<span class="nc" id="L271">					continue;</span>
 				}
-<span class="fc bfc" id="L275" title="All 2 branches covered.">				if (&quot;Provenance&quot;.equals(c.getResource().fhirType())) {</span>
-<span class="fc" id="L276">					list.add(c);	// Add this provenance to the end</span>
-<span class="fc" id="L277">					list.remove(i);	// And remove it from the current position</span>
-<span class="fc" id="L278">					--i;			// NOSONAR: Backup a step to reprocess the new resource in this position.</span>
-<span class="fc" id="L279">					--len;			// We don't need to look at entries we just shuffled around to the end</span>
+<span class="fc bfc" id="L273" title="All 2 branches covered.">				if (&quot;Provenance&quot;.equals(c.getResource().fhirType())) {</span>
+<span class="fc" id="L274">					list.add(c);	// Add this provenance to the end</span>
+<span class="fc" id="L275">					list.remove(i);	// And remove it from the current position</span>
+<span class="fc" id="L276">					--i;			// NOSONAR: Backup a step to reprocess the new resource in this position.</span>
+<span class="fc" id="L277">					--len;			// We don't need to look at entries we just shuffled around to the end</span>
 				}
 			}
 		}
-<span class="fc" id="L283">		return b;</span>
+<span class="fc" id="L281">		return b;</span>
 	}
 	/**
 	 * Load a parser for a specified segment type.
@@ -288,48 +286,48 @@ public abstract class BaseParser&lt;U,S&gt; implements Parser&lt;U,S&gt; {
 	 * @return The parser for that segment.
 	 */
 	public Processor&lt;U, S&gt; getParser(String segment) {
-<span class="fc" id="L291">		Class&lt;Processor&lt;U, S&gt;&gt; p = parsers.get(segment);</span>
+<span class="fc" id="L289">		Class&lt;Processor&lt;U, S&gt;&gt; p = parsers.get(segment);</span>
 		@SuppressWarnings(&quot;unchecked&quot;)
-<span class="fc" id="L293">		Class&lt;Processor&lt;U, S&gt;&gt; safeNull = (Class&lt;Processor&lt;U,S&gt;&gt;) Processor.NULL_PROCESSOR.getClass();</span>
-<span class="fc bfc" id="L294" title="All 2 branches covered.">		if (p == null) {</span>
-<span class="fc" id="L295">			p = loadParser(segment);</span>
-<span class="fc bfc" id="L296" title="All 2 branches covered.">			if (p == null) {</span>
+<span class="fc" id="L291">		Class&lt;Processor&lt;U, S&gt;&gt; safeNull = (Class&lt;Processor&lt;U,S&gt;&gt;) Processor.NULL_PROCESSOR.getClass();</span>
+<span class="fc bfc" id="L292" title="All 2 branches covered.">		if (p == null) {</span>
+<span class="fc" id="L293">			p = loadParser(segment);</span>
+<span class="fc bfc" id="L294" title="All 2 branches covered.">			if (p == null) {</span>
 				// Report inability to load ONCE if context says to.
-<span class="pc bpc" id="L298" title="1 of 2 branches missed.">				if (getContext().isWarnOnFailedLoad()) {</span>
-<span class="nc" id="L299">					log.warn(&quot;Cannot load parser for {}&quot;, segment);</span>
+<span class="pc bpc" id="L296" title="1 of 2 branches missed.">				if (getContext().isWarnOnFailedLoad()) {</span>
+<span class="nc" id="L297">					log.warn(&quot;Cannot load parser for {}&quot;, segment);</span>
 				}
 				// Save the fact that there is no parser for this segment, have to do this dynamically
 				// to store a do-nothing marker class.
-<span class="fc" id="L303">				parsers.put(segment, safeNull);</span>
-<span class="fc" id="L304">				return null;</span>
+<span class="fc" id="L301">				parsers.put(segment, safeNull);</span>
+<span class="fc" id="L302">				return null;</span>
 			}
-<span class="fc" id="L306">			parsers.put(segment, p);</span>
-<span class="fc bfc" id="L307" title="All 2 branches covered.">		} else if (Processor.NULL_PROCESSOR_CLASS.equals(p)) {</span>
-<span class="fc" id="L308">			return null;</span>
+<span class="fc" id="L304">			parsers.put(segment, p);</span>
+<span class="fc bfc" id="L305" title="All 2 branches covered.">		} else if (Processor.NULL_PROCESSOR_CLASS.equals(p)) {</span>
+<span class="fc" id="L306">			return null;</span>
 		}
 		
 		try {
-<span class="fc" id="L312">			Constructor&lt;?&gt;[] ctors = p.getDeclaredConstructors();</span>
-<span class="pc bpc" id="L313" title="1 of 2 branches missed.">			for (Constructor&lt;?&gt; ctor : ctors) {</span>
-<span class="pc bpc" id="L314" title="2 of 4 branches missed.">				if (ctor.getParameterCount() == 1 &amp;&amp; ctor.getParameterTypes()[0].isInstance(this)) {</span>
-<span class="fc" id="L315">					Object x = ctor.newInstance(this);</span>
+<span class="fc" id="L310">			Constructor&lt;?&gt;[] ctors = p.getDeclaredConstructors();</span>
+<span class="pc bpc" id="L311" title="1 of 2 branches missed.">			for (Constructor&lt;?&gt; ctor : ctors) {</span>
+<span class="pc bpc" id="L312" title="2 of 4 branches missed.">				if (ctor.getParameterCount() == 1 &amp;&amp; ctor.getParameterTypes()[0].isInstance(this)) {</span>
+<span class="fc" id="L313">					Object x = ctor.newInstance(this);</span>
 					@SuppressWarnings(&quot;unchecked&quot;)
-<span class="fc" id="L317">					Processor&lt;U,S&gt; instance = (Processor&lt;U,S&gt;)x;</span>
-<span class="fc" id="L318">					return instance;</span>
+<span class="fc" id="L315">					Processor&lt;U,S&gt; instance = (Processor&lt;U,S&gt;)x;</span>
+<span class="fc" id="L316">					return instance;</span>
 				}
 			}
-<span class="nc" id="L321">			log.error(&quot;No constructor found using {} while creating {} for {}&quot;, this.getClass().getSimpleName(), p.getName(), segment);</span>
-<span class="nc" id="L322">			parsers.put(segment, safeNull);</span>
-<span class="nc" id="L323">			return null;</span>
-<span class="nc" id="L324">		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException</span>
+<span class="nc" id="L319">			log.error(&quot;No constructor found using {} while creating {} for {}&quot;, this.getClass().getSimpleName(), p.getName(), segment);</span>
+<span class="nc" id="L320">			parsers.put(segment, safeNull);</span>
+<span class="nc" id="L321">			return null;</span>
+<span class="nc" id="L322">		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException</span>
 				| InvocationTargetException | SecurityException | ClassCastException e) {
-<span class="nc" id="L326">			log.error(&quot;Unexpected {} while creating {} for {}&quot;, e.getClass().getSimpleName(), p.getName(), segment, e);</span>
-<span class="nc" id="L327">			return null;</span>
+<span class="nc" id="L324">			log.error(&quot;Unexpected {} while creating {} for {}&quot;, e.getClass().getSimpleName(), p.getName(), segment, e);</span>
+<span class="nc" id="L325">			return null;</span>
 		}
 	}
 	
 	/** A cache of loaded parser classes */
-<span class="fc" id="L332">	private Map&lt;String, Class&lt;Processor&lt;U,S&gt;&gt;&gt; parserClasses = new TreeMap&lt;&gt;();</span>
+<span class="fc" id="L330">	private Map&lt;String, Class&lt;Processor&lt;U,S&gt;&gt;&gt; parserClasses = new TreeMap&lt;&gt;();</span>
 
 	/**
 	 * Load a parser for the specified segment or group
@@ -337,33 +335,32 @@ public abstract class BaseParser&lt;U,S&gt; implements Parser&lt;U,S&gt; {
 	 * @return	A StructureParser for the segment or group, or null if none found. 
 	 */
 	public Class&lt;Processor&lt;U,S&gt;&gt; loadParser(String name) {
-<span class="fc" id="L340">		name = WordUtils.capitalize(name);</span>
-<span class="fc" id="L341">		Class&lt;Processor&lt;U,S&gt;&gt; clazz = parserClasses.get(name);</span>
-<span class="fc bfc" id="L342" title="All 2 branches covered.">		if (clazz != null) {</span>
-<span class="fc" id="L343">			return clazz;</span>
+<span class="fc" id="L338">		name = WordUtils.capitalize(name);</span>
+<span class="fc" id="L339">		Class&lt;Processor&lt;U,S&gt;&gt; clazz = parserClasses.get(name);</span>
+<span class="fc bfc" id="L340" title="All 2 branches covered.">		if (clazz != null) {</span>
+<span class="fc" id="L341">			return clazz;</span>
 		}
 		
-<span class="fc" id="L346">		ClassLoader loader = MessageParser.class.getClassLoader();</span>
-<span class="fc bfc" id="L347" title="All 2 branches covered.">		for (String packageName : BaseParser.packageSources) {</span>
+<span class="fc" id="L344">		ClassLoader loader = MessageParser.class.getClassLoader();</span>
+<span class="fc bfc" id="L345" title="All 2 branches covered.">		for (String packageName : BaseParser.packageSources) {</span>
 			try {
 				@SuppressWarnings(&quot;unchecked&quot;) 
-<span class="fc" id="L350">				Class&lt;Processor&lt;U,S&gt;&gt; clazz2 = (Class&lt;Processor&lt;U,S&gt;&gt;) loader.loadClass(packageName + &quot;.&quot; + name + &quot;Parser&quot;);</span>
-<span class="fc" id="L351">				parserClasses.put(name, clazz2);</span>
-<span class="fc" id="L352">				return clazz2;</span>
-<span class="fc" id="L353">			} catch (ClassNotFoundException ex) {</span>
+<span class="fc" id="L348">				Class&lt;Processor&lt;U,S&gt;&gt; clazz2 = (Class&lt;Processor&lt;U,S&gt;&gt;) loader.loadClass(packageName + &quot;.&quot; + name + &quot;Parser&quot;);</span>
+<span class="fc" id="L349">				parserClasses.put(name, clazz2);</span>
+<span class="fc" id="L350">				return clazz2;</span>
+<span class="fc" id="L351">			} catch (ClassNotFoundException ex) {</span>
 				// Keep looking
-<span class="nc" id="L355">			} catch (Exception ex) {</span>
-<span class="nc" id="L356">				log.error(&quot;{}.{} cannot be loaded: {}&quot;, packageName, name, ex.getMessage(), ex);</span>
-<span class="fc" id="L357">			}</span>
-<span class="fc" id="L358">		}</span>
-<span class="fc" id="L359">		return null;</span>
+<span class="nc" id="L353">			} catch (Exception ex) {</span>
+<span class="nc" id="L354">				log.error(&quot;{}.{} cannot be loaded: {}&quot;, packageName, name, ex.getMessage(), ex);</span>
+<span class="fc" id="L355">			}</span>
+<span class="fc" id="L356">		}</span>
+<span class="fc" id="L357">		return null;</span>
 	}
 	
 
 	@Override
 	public void update(IBaseResource r) {
-<span class="fc" id="L365">		updated.add(r);	</span>
-<span class="fc" id="L366">		resourcesNeedingProvenance.add(r);</span>
-<span class="fc" id="L367">	}</span>
+<span class="fc" id="L363">		updated.add(r);	</span>
+<span class="fc" id="L364">	}</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -45,14 +45,15 @@ public interface Processor&lt;U, S&gt; {
 
 		@Override
 		public Parser&lt;Object, Object&gt; getParser() {
-<span class="nc" id="L48">			return null;</span>
+			// TODO Auto-generated method stub
+<span class="nc" id="L49">			return null;</span>
 		}
 	}
 
 	/** A do-nothing processor.  */
-<span class="fc" id="L53">	static final Processor&lt;Object, Object&gt; NULL_PROCESSOR = new NullProcessor();</span>
+<span class="fc" id="L54">	static final Processor&lt;Object, Object&gt; NULL_PROCESSOR = new NullProcessor();</span>
 	/** The class of the do-nothing processor.  */
-<span class="fc" id="L55">	static final Class&lt;NullProcessor&gt; NULL_PROCESSOR_CLASS = NullProcessor.class;</span>
+<span class="fc" id="L56">	static final Class&lt;NullProcessor&gt; NULL_PROCESSOR_CLASS = NullProcessor.class;</span>
 
 	/**
 	 * Parses an structure into FHIR Resources.
@@ -60,7 +61,7 @@ public interface Processor&lt;U, S&gt; {
 	 * @return  the constructed FHIR Resource or data type
 	 * @throws Exception A structure to parse.
 	 */
-	IBase parse(S structure) throws Exception;  // NOSONAR
+	IBase parse(S structure) throws Exception;
 	
 	/**
 	 * Returns true if the structure is effectively empty (e.g., no conversion to be performed).
@@ -74,7 +75,7 @@ public interface Processor&lt;U, S&gt; {
 	 * @return what this parser produces
 	 */
 	default Produces getProduces() {
-<span class="fc" id="L77">		return this.getClass().getAnnotation(Produces.class);</span>
+<span class="fc" id="L78">		return this.getClass().getAnnotation(Produces.class);</span>
 	}
 
 	/**
@@ -93,8 +94,8 @@ public interface Processor&lt;U, S&gt; {
 	 * This method can be used by parsers to get additional information from the Bundle
 	 * @return The bundle that is being prepared during the parse.
 	 */
-	default Bundle getBundle() {
-<span class="fc" id="L97">		return getParser().getContext().getBundle();</span>
+	default public Bundle getBundle() {
+<span class="fc" id="L98">		return getParser().getContext().getBundle();</span>
 	}
 
 	/**
@@ -103,11 +104,11 @@ public interface Processor&lt;U, S&gt; {
 	 * @return	The issue
 	 */
 	public static OperationOutcomeIssueComponent getLastIssue(OperationOutcome oo) {
-<span class="nc" id="L106">		List&lt;OperationOutcomeIssueComponent&gt; l = oo.getIssue();</span>
-<span class="nc bnc" id="L107" title="All 2 branches missed.">		if (l.isEmpty()) {</span>
-<span class="nc" id="L108">			return oo.getIssueFirstRep();</span>
+<span class="nc" id="L107">		List&lt;OperationOutcomeIssueComponent&gt; l = oo.getIssue();</span>
+<span class="nc bnc" id="L108" title="All 2 branches missed.">		if (l.isEmpty()) {</span>
+<span class="nc" id="L109">			return oo.getIssueFirstRep();</span>
 		}
-<span class="nc" id="L110">		return l.get(l.size() - 1);</span>
+<span class="nc" id="L111">		return l.get(l.size() - 1);</span>
 	}
 	
 	
@@ -116,7 +117,7 @@ public interface Processor&lt;U, S&gt; {
 	 */
 	default void finish() {
 		// do nothing by default
-<span class="fc" id="L119">	}</span>
+<span class="fc" id="L120">	}</span>
 
 	/**
 	 * Handle any post-processing of the structure after it and all 
@@ -126,7 +127,7 @@ public interface Processor&lt;U, S&gt; {
 	 */
 	default void postProcess(S structure) {
 		// do nothing by default
-<span class="nc" id="L129">	}</span>
+<span class="nc" id="L130">	}</span>
 }
 
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
