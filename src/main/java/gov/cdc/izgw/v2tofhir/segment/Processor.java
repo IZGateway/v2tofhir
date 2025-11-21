@@ -45,7 +45,6 @@ public interface Processor<U, S> {
 
 		@Override
 		public Parser<Object, Object> getParser() {
-			// TODO Auto-generated method stub
 			return null;
 		}
 	}
@@ -61,7 +60,7 @@ public interface Processor<U, S> {
 	 * @return  the constructed FHIR Resource or data type
 	 * @throws Exception A structure to parse.
 	 */
-	IBase parse(S structure) throws Exception;
+	IBase parse(S structure) throws Exception;  // NOSONAR
 	
 	/**
 	 * Returns true if the structure is effectively empty (e.g., no conversion to be performed).
@@ -94,7 +93,7 @@ public interface Processor<U, S> {
 	 * This method can be used by parsers to get additional information from the Bundle
 	 * @return The bundle that is being prepared during the parse.
 	 */
-	default public Bundle getBundle() {
+	default Bundle getBundle() {
 		return getParser().getContext().getBundle();
 	}
 

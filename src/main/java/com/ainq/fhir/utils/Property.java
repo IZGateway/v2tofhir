@@ -7,12 +7,12 @@ import java.util.List;
 import java.util.ServiceConfigurationError;
 
 import org.apache.commons.lang3.StringUtils;
-import org.hl7.fhir.dstu2.model.Patient;
 import org.hl7.fhir.exceptions.FHIRException;
 import org.hl7.fhir.instance.model.api.IBase;
 import org.hl7.fhir.instance.model.api.IBaseExtension;
 import org.hl7.fhir.instance.model.api.IBaseReference;
 import org.hl7.fhir.instance.model.api.IBaseResource;
+import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.Element;
 import org.hl7.fhir.r4.model.MessageHeader;
 import org.hl7.fhir.r4.model.Parameters;

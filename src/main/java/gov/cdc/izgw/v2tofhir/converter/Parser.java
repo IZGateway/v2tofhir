@@ -53,7 +53,7 @@ public interface Parser<U,S> extends ErrorReporter {
 	 * @return	The converted bundle
 	 * @throws Exception If an error occurs.
 	 */
-	Bundle convert(String string) throws Exception;
+	Bundle convert(String string) throws Exception; // NOSONAR
 	
 	/**
 	 * Convert a unit to FHIR.
@@ -61,7 +61,7 @@ public interface Parser<U,S> extends ErrorReporter {
 	 * @return	The converted bundle
 	 * @throws Exception If an error occurs.
 	 */
-	Bundle convert(U unit) throws Exception;
+	Bundle convert(U unit) throws Exception; // NOSONAR
 	
 	/**
 	 * Encode a unit to a String for reporting in Provenance
@@ -197,8 +197,7 @@ public interface Parser<U,S> extends ErrorReporter {
 	 */
 	default <R extends IBaseResource> R addResource(String id, R resource) {
 		// See if it already exists in the bundle
-		if (getContext().getBundle().getEntry().stream()
-				.anyMatch(e -> e.getResource() == resource)) {
+		if (getContext().getBundle().getEntry().stream().anyMatch(e -> e.getResource() == resource)) {
 			// if it does, just return it. Nothing more is necessary.
 			return resource;
 		}
@@ -214,7 +213,10 @@ public interface Parser<U,S> extends ErrorReporter {
 		}
 		update(resource);
 		if (getContext().isStoringProvenance() && resource instanceof DomainResource dr) { 
-			Provenance p = createResource(Provenance.class);
+			Provenance p = new Provenance();
+			p.setId(getIdGenerator().get());
+			getContext().getBundle().addEntry().setResource(p);
+			
 			p.setUserData(SOURCE, MessageParser.class.getName());	// Mark infrastructure created resources
 			resource.setUserData(Provenance.class.getName(), p);
 			p.addTarget(ParserUtils.toReference(dr, p, "target"));
@@ -265,5 +267,6 @@ public interface Parser<U,S> extends ErrorReporter {
 	 * @param message The warning message
 	 * @param args The arguments
 	 */
+	@Override
 	void warn(String message, Object ... args);
 }

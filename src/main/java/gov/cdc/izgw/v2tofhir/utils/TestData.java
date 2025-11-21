@@ -73,7 +73,7 @@ public class TestData {
 	 * @param isMessageFile	True if the file contains full messages, false if it contains segments.
 	 * @return A list of TestData objects
 	 */
-	public static List<TestData> load(String name, boolean isMessageFile) {
+	public static List<TestData> load(String name, boolean isMessageFile) { // NOSONAR
 		TestData data = new TestData(name, 1);
 		List<TestData> list = new ArrayList<>();
 		try (
@@ -84,7 +84,7 @@ public class TestData {
 			String line = null;
 			String segmentName = null;
 			int assertionNumber = 0;
-			while (true) {
+			while (true) { // NOSONAR
 				line = br.readLine();
 				if (line == null || line.isEmpty()) {
 					if (isMessageFile && !b.isEmpty()) { // There's a message waiting
@@ -105,9 +105,8 @@ public class TestData {
 					// Reached the end of the data
 					if (line == null) {
 						return list;
-					} else {
-						continue;
-					}
+					} 
+					continue;
 				}
 				
 				if (line.startsWith("//") || line.startsWith("#")) {
@@ -218,7 +217,7 @@ public class TestData {
 			IBase base = result.get(0);
 			assertFalse(base.isEmpty(), "Type is empty");
 			if (base instanceof BooleanType bool) {
-				if (!bool.getValue()) {
+				if (!Boolean.TRUE.equals(bool.getValue())) {
 					testValue = getTestValue(b, position);
 				}
 				assertTrue(bool.getValue(), comment + testValue);
@@ -307,19 +306,19 @@ public class TestData {
 		// Simplify expressions by creating shortcuts for
 		// commonly used expressions.
 		
-		String resourceName = StringUtils.substringBefore(fhirPath, ".");
+		String resName = StringUtils.substringBefore(fhirPath, ".");
 		String rest = null;
-		if (resourceName.contains("[")) {
+		if (resName.contains("[")) {
 			// Handle cases of OperationOutcome[1], etc.
-			resourceName = StringUtils.substringBefore(resourceName, "[");
+			resName = StringUtils.substringBefore(resName, "[");
 			rest = "[" + StringUtils.substringAfter(fhirPath, "[");
 		} else {
 			rest = "." + StringUtils.substringAfter(fhirPath, ".");
 		}
-		if ("Bundle".equals(resourceName)) {
+		if ("Bundle".equals(resName)) {
 			return "%context" + rest; 
 		}
-		return "%context.entry.resource.ofType(" + resourceName + ")" + rest;
+		return "%context.entry.resource.ofType(" + resName + ")" + rest;
 	}
 	
 	/**
@@ -344,16 +343,13 @@ public class TestData {
 	 */
 	public IParsedExpression getExpression(int position) throws Exception {
 		String path = getAdjustedFhirPath(position);
-		List<IParsedExpression> expressions = getExpressions();
-		IParsedExpression expr = expressions.size() <= position ? null : expressions.get(position);
+		List<IParsedExpression> exprs = getExpressions();
+		IParsedExpression expr = exprs.size() <= position ? null : exprs.get(position);
 		if (expr == null) {
-			if (StringUtils.isEmpty(path)) {
-				// Skip empty assertions.
-				expr = NO_EXPR;
-			}
-			expr = engine.parse(path);  // can throw any exception
-			while (expressions.size() <= position) {
-				expressions.add(null);
+			// Skip empty assertions.
+			expr = StringUtils.isEmpty(path) ? NO_EXPR : engine.parse(path);  // can throw any exception
+			while (exprs.size() <= position) {
+				exprs.add(null);
 			}
 			getExpressions().set(position, expr);
 		}
@@ -387,7 +383,7 @@ public class TestData {
 	 * @return true if this object has no data or assertions.
 	 */
 	public boolean isEmpty() {
-		return (testData == null || testData.length() == 0) && assertions.isEmpty();
+		return StringUtils.isEmpty(testData) && assertions.isEmpty();
 	}
 
 	/** 
@@ -451,12 +447,11 @@ public class TestData {
 		// containing the inner node.
 		try {
 			Field f = exp.getClass().getDeclaredField("myParsedExpression");
-			f.setAccessible(true);
+			f.setAccessible(true); // NOSONAR
 			ExpressionNode node = (ExpressionNode) f.get(exp);
 			
 			return node.getInner().toString();
 		} catch (IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return "'Cannot determine tested value'";
@@ -474,40 +469,44 @@ public class TestData {
 	private String getTestValue(IBase base, int position) throws Exception {
 		String fhirPath = getAdjustedFhirPath(position);
 		String inner = null;
-		if (fhirPath.contains(".exists(")) {
-			inner = StringUtils.substringBeforeLast(fhirPath, ".exists(");
-		} else {
-			inner = getInnerAsString(getExpression(position));
-		}
+		inner = fhirPath.contains(".exists(") ? 
+				StringUtils.substringBeforeLast(fhirPath, ".exists(") :
+				getInnerAsString(getExpression(position));
+
 		if (inner.endsWith(".count()")) {
 			inner = StringUtils.left(inner, inner.length()-8);
 		}
 		List<IBase> l = engine.evaluate(base, inner, IBase.class);
-		StringBuilder b = new StringBuilder();
+		String value = null;
 		if (l == null) {
-			b.append("null");
+			value = "null";
 		} else if (l.isEmpty()) {
-			b.append("<empty>");
-		} else if (l.size() > 0) {
-		    if (l.size() > 1) {
-		    	b.append("[");
-		    }
-			for (IBase item: l) {
-				if (item instanceof PrimitiveType<?> pt) {
-					b.append(pt.asStringValue()).append(", ");
-				} else if (item instanceof Type t) {
-					b.append(TextUtils.toString(t)).append(", ");
-				} else {
-					b.append(item.fhirType()).append("[").append(item).append("], ");
-				}
-			}
-			b.setLength(b.length()-2);
-			if (l.size() > 1) {
-				b.append("]");
-			}
+			value = "<empty>";
+		} else {
+			value = toString(l);
 		}
-		String value = b.toString();
 		log.info("{} = {}", inner, value);
 		return value;
+	}
+
+	private String toString(List<IBase> l) {
+		StringBuilder b = new StringBuilder();
+		if (l.size() > 1) {
+			b.append("[");
+		}
+		for (IBase item: l) {
+			if (item instanceof PrimitiveType<?> pt) {
+				b.append(pt.asStringValue()).append(", ");
+			} else if (item instanceof Type t) {
+				b.append(TextUtils.toString(t)).append(", ");
+			} else {
+				b.append(item.fhirType()).append("[").append(item).append("], ");
+			}
+		}
+		b.setLength(b.length()-2);
+		if (l.size() > 1) {
+			b.append("]");
+		}
+		return b.toString();
 	}
 }

@@ -24,7 +24,7 @@ public abstract class AbstractStructureParser {
 	 * 
 	 * @author Audacious Inquiry
 	 */
-	public static abstract class AbstractStructureProcessor extends AbstractStructureParser implements Processor<Message, Structure> { 
+	public abstract static class AbstractStructureProcessor extends AbstractStructureParser implements Processor<Message, Structure> { 
 		AbstractStructureProcessor(Parser<Message, Structure> messageParser, String structureName) {
 			super(messageParser, structureName);
 		}

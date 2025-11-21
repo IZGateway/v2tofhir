@@ -77,7 +77,7 @@ public class OBXParser extends AbstractSegmentParser {
 	private Observation observation = null;
 	/** The media associated with the observation if any */
 	private DocumentReference docRef = null;
-	private PractitionerRole performer;
+	private PractitionerRole performer;  // NOSONAR performer and PERFORMER are fine
 	
 	/**
 	 * Create an RXA Parser for the specified MessageParser
@@ -208,7 +208,7 @@ public class OBXParser extends AbstractSegmentParser {
 	 * @param v2Type	The v2 data type to convert.
 	 */
 	@ComesFrom(path = "Observation.value[x]", field = 5, comment = "Observation Value")
-	public void setValue(Type v2Type) {
+	public void setValue(Type v2Type) {  // NOSONAR -- Yes, it's a big switch statement
 		v2Type = DatatypeConverter.adjustIfVaries(v2Type);
 		if (type == null) {
 			getParser().warn("Type is unknown for OBX-5");
@@ -315,7 +315,6 @@ public class OBXParser extends AbstractSegmentParser {
 	}
 
 	private DocumentReference createDocRef(Attachment attachment) {
-		// TODO Auto-generated method stub
 		docRef = createResource(DocumentReference.class);
 		docRef.setStatus(DocumentReferenceStatus.CURRENT);
 		docRef.addContent().setAttachment(attachment);
@@ -345,17 +344,13 @@ public class OBXParser extends AbstractSegmentParser {
 		ObservationStatus status = observation.getStatus();
 		if (status != null) {
 			switch (status) {
-			case AMENDED:
+			case AMENDED, CORRECTED:
 				docRef.setStatus(DocumentReferenceStatus.CURRENT);
 				docRef.setDocStatus(ReferredDocumentStatus.AMENDED);
 				break;
 			case CANCELLED:
 				docRef.setStatus(DocumentReferenceStatus.SUPERSEDED);
 				docRef.setDocStatus(ReferredDocumentStatus.ENTEREDINERROR);
-				break;
-			case CORRECTED:
-				docRef.setStatus(DocumentReferenceStatus.CURRENT);
-				docRef.setDocStatus(ReferredDocumentStatus.AMENDED);
 				break;
 			case ENTEREDINERROR:
 				docRef.setStatus(DocumentReferenceStatus.ENTEREDINERROR);
@@ -369,11 +364,7 @@ public class OBXParser extends AbstractSegmentParser {
 				docRef.setStatus(DocumentReferenceStatus.NULL);
 				docRef.setDocStatus(ReferredDocumentStatus.NULL);
 				break;
-			case PRELIMINARY:
-				docRef.setStatus(DocumentReferenceStatus.CURRENT);
-				docRef.setDocStatus(ReferredDocumentStatus.PRELIMINARY);
-				break;
-			case REGISTERED:
+			case PRELIMINARY, REGISTERED:
 				docRef.setStatus(DocumentReferenceStatus.CURRENT);
 				docRef.setDocStatus(ReferredDocumentStatus.PRELIMINARY);
 				break;
@@ -453,38 +444,40 @@ public class OBXParser extends AbstractSegmentParser {
 		case VIS_DELIVERY_DATE_CODE:
 			if (converted instanceof BaseDateTimeType bt) {
 				education.setPresentationDateElement(DatatypeConverter.castInto(bt, new DateTimeType()));
-			} else {
-				getParser().warn("Cannot convert {} to DateTimeType for VIS Delivery Date", converted.fhirType());
-			}
-			break;
+				return;
+			} 
+			getParser().warn("Cannot convert {} to DateTimeType for VIS Delivery Date", converted.fhirType());
+			return;
 		case VIS_DOCUMENT_TYPE_CODE:
 			if (converted instanceof StringType sv) {
 				education.setDocumentTypeElement(sv);
-			} else if (converted instanceof CodeableConcept cc) {
+				return;
+			} 
+			if (converted instanceof CodeableConcept cc) {
 				education.setDocumentType(TextUtils.toString(cc));
-			} else {
-				getParser().warn("Cannot convert {} to StringType for VIS Document Type", converted.fhirType());
-			}
-			break;
+				return;
+			} 
+			getParser().warn("Cannot convert {} to StringType for VIS Document Type", converted.fhirType());
+			return;
 		case VIS_VACCINE_TYPE_CODE:
 			if (converted instanceof CodeableConcept cc) {
 				education.getDocumentTypeElement()
 					.addExtension()
 						.setUrl("http://hl7.org/fhir/StructureDefinition/iso21090-SC-coding")
 						.setValue(cc.getCodingFirstRep());
-			} else {
-				getParser().warn("Cannot convert {} to CodeableConcept for VIS Vaccine Type", converted.fhirType());
-			}
-			break;
+				return;
+			} 
+			getParser().warn("Cannot convert {} to CodeableConcept for VIS Vaccine Type", converted.fhirType());
+			return;
 		case VIS_VERSION_DATE_CODE:
 			if (converted instanceof BaseDateTimeType bt) {
 				education.setPublicationDateElement(DatatypeConverter.castInto(bt, new DateTimeType()));
-			} else {
-				getParser().warn("Cannot convert {} to DateTimeType for VIS Version Date", converted.fhirType());
-			}
-			break;
+				return;
+			} 
+			getParser().warn("Cannot convert {} to DateTimeType for VIS Version Date", converted.fhirType());
+			return;
 		default:
-			break;
+			return;
 		}
 	}
 
@@ -666,7 +659,7 @@ public class OBXParser extends AbstractSegmentParser {
 					.setSystem("http://terminology.hl7.org/CodeSystem/practitioner-role")
 					.setCode("responsibleObserver")
 					.setDisplay("Responsible Observer");
-			observation.addPerformer(ParserUtils.toReference(performer, observation, "performer"));
+			observation.addPerformer(ParserUtils.toReference(performer, observation, PERFORMER));
 		}
 		return performer;
 	}

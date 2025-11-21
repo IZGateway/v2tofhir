@@ -1,17 +1,16 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
-		<groupId>org.springframework.boot</groupId>
-		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.5.0</version>
+		<groupId>gov.cdc.izgw</groupId>
+        <artifactId>izgw-bom</artifactId>
+        <version>1.0.3-SNAPSHOT</version>
 	</parent>
-	<groupId>gov.cdc.izgw</groupId>
 	<artifactId>v2tofhir</artifactId>
 	<version>1.0.0-v2tofhir-SNAPSHOT</version>
 	<name>HL7 Version 2 to FHIR Conversion</name>
 	<description>This is the v2tofhir Converter core code for the IZ Gateway Transformation Service</description>
 	<url>http://github.com/IZGateway/v2tofhir</url>
-	<inceptionYear>2024</inceptionYear>
+	<inceptionYear>2025</inceptionYear>
 	<licenses>
 		<license>
 			<name>MIT-LICENSE</name>
@@ -54,13 +53,53 @@
 	</distributionManagement>
 	<repositories>
         <repository>
-            <id>github</id>
+            <id>central</id>
+            <name>Maven Central Repository</name>
+            <url>https://repo.maven.apache.org/maven2</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>github-bom</id>
             <name>GitHub Packages</name>
             <url>https://maven.pkg.github.com/IZGateway/izgw-bom</url>
-            <releases><enabled>true</enabled></releases>
-            <snapshots><enabled>true</enabled></snapshots>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>v2tofhir</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/IZGateway/v2tofhir</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
         </repository>
     </repositories>
+    <dependencyManagement>
+        <dependencies>
+            <dependency> 
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-parent</artifactId>
+                <version>${spring-boot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+                <version>${spring-boot.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 	<scm>
 		<connection>scm:git:https://github.com/IZGateway/v2tofhir</connection>
 		<developerConnection>scm:git:https://github.com/IZGateway/v2tofhir</developerConnection>
@@ -205,17 +244,6 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-	<dependencyManagement>
-	    <dependencies>
-            <dependency> 
-                <groupId>gov.cdc.izgw</groupId>
-                <artifactId>izgw-bom</artifactId>
-                <version>1.0.0-RELEASE</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-	</dependencyManagement>
 	<build>
 		<pluginManagement>
 			<plugins>
@@ -350,6 +378,11 @@
 						</execution>
 					</executions>
 				</plugin>
+				    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-site-plugin</artifactId>
+                        <version>3.21.0</version>
+                    </plugin>
 			</plugins>
 		</pluginManagement>
         <plugins>

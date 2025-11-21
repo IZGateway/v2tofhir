@@ -30,6 +30,7 @@ import org.hl7.fhir.r4.model.InstantType;
 import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.Parameters;
 import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.Provenance;
 import org.hl7.fhir.r4.model.Resource;
 import org.hl7.fhir.r4.model.StringType;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -97,12 +98,12 @@ class MessageParserTests extends TestBase {
 		
 		id = 0;
 		Bundle b = p.convert(msg);
-		
+		System.out.println(yamlParser.encodeResourceToString(b));
 		testData.evaluateAllAgainst(b);
 		writeTheTests(testData, msg);
 	}
 	
-	private static MessageParser MP = new MessageParser();
+	private static final MessageParser MP = new MessageParser();
 	private static BufferedWriter bw = null;
 	
 	void writeTheTests(TestData testData, Message msg) {
@@ -126,7 +127,7 @@ class MessageParserTests extends TestBase {
 			LinkedHashMap<String, String> assertions = getExistingAssertions(testData, segmentName);
 			
 			for (ComesFrom ann: parser.getAnnotationsByType(ComesFrom.class)) {
-				String annotation = getAssertion(segmentName, ann, msg);
+				String annotation = getAssertion(ann, msg);
 				String key = StringUtils.substringBetween(annotation, "@", ".exists(");
 				String exists = assertions.get(key);
 				if (exists != null) {
@@ -162,7 +163,7 @@ class MessageParserTests extends TestBase {
 		}
 		return assertions;
 	}
-	private static String getAssertion(String segmentName, ComesFrom ann, Message msg) {
+	private static String getAssertion(ComesFrom ann, Message msg) {
 		StringBuilder b = new StringBuilder();
 		addComesFrom(ann, b);
 		Terser t = new Terser(msg);
@@ -210,6 +211,7 @@ class MessageParserTests extends TestBase {
 			try {
 				bw.close();
 			} catch (IOException e) {
+				// Do nothing
 			}
 		}
 	}
@@ -293,7 +295,7 @@ class MessageParserTests extends TestBase {
 					break;
 				}
 			}
-			if (!messageParser.getContext().isStoringProvenance() || !"Provenance".equals(produces.resource().getSimpleName())) {
+			if (!messageParser.getContext().isStoringProvenance() || !(produces.resource().isInstance(Provenance.class))) {
 				// Don't error on lack of provenance if we aren't storing it!
 				assertTrue(found, "The bundle should have entries of type "  + produces.resource().getSimpleName());
 			}

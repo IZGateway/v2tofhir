@@ -136,7 +136,7 @@ public class FieldHandler implements Comparable<FieldHandler> {
 	 * @param r	The resource to update
 	 */
 	public void handle(Processor<Message, ? extends Structure> p, Segment segment, IBaseResource r) {
-		if (from.fixed().length() != 0) {
+		if (!from.fixed().isEmpty()) {
 			setFixedValue(p);
 		} else if (from.field() != 0) {
 			setFromFieldAndComponent(p, segment);
@@ -223,7 +223,7 @@ public class FieldHandler implements Comparable<FieldHandler> {
 			}
 			if (ex.getTargetException() instanceof Error err) {
 				err.printStackTrace();
-				throw new RuntimeException("Error executing " + method, err.getCause());
+				throw new IllegalStateException("Error executing " + method, err.getCause());
 			}
 			throw new IllegalStateException("Exception executing " + method, ex.getCause());
 		}

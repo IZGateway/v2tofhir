@@ -55,22 +55,7 @@ public class Normalizer {
 			resourcesByType.computeIfAbsent(r.fhirType(), k -> new ArrayList<>()).add(r)
 		);
 		List<Resource> resourcesToRemove = new ArrayList<>(); 
-		for (List<Resource> l : resourcesByType.values()) {
-			for (int i = 0; i < l.size() - 1; i++) {
-				for (int j = i + 1; j < l.size(); j++) {
-					Resource first = l.get(i);
-					Resource later = l.get(j);
-					if (!first.fhirType().equals(later.fhirType())) {
-						// Skip cases where resources aren't of the same type.
-						continue;
-					}
-					Resource toRemove = mergeResources(first, later);
-					if (toRemove != null) {
-						resourcesToRemove.add(toRemove);
-					}
-				}
-			}
-		}
+		resourcesByType.values().forEach(l -> mergeResources(l, resourcesToRemove));
 		
 		Iterator<BundleEntryComponent> it = bundle.getEntry().iterator();
 		while (it.hasNext()) {
@@ -81,6 +66,19 @@ public class Normalizer {
 		}
 	}
 
+	private static void mergeResources(List<Resource> l, List<Resource> resourcesToRemove) {
+		for (int i = 0; i < l.size() - 1; i++) {
+			Resource first = l.get(i);
+			for (int j = i + 1; j < l.size(); j++) {
+				Resource later = l.get(j);
+				Resource toRemove = mergeResources(first, later);
+				if (toRemove != null) {
+					resourcesToRemove.add(toRemove);
+				}
+			}
+		}
+	}
+	
 	/**
 	 * Compare two codes for compatibility.  If one or the other is null
 	 * but not both, they are NOT compatible (unlike identifier).
@@ -278,6 +276,7 @@ public class Normalizer {
 				firstName.getPrefix().add(prefix);
 			}
 		}
+		laterName.setPrefix(firstName.getPrefix());
 		// Ensure both have same use, taken from first if present, otherwise later
 		if (firstName.hasUse()) {
 			laterName.setUse(firstName.getUse());
@@ -300,7 +299,10 @@ public class Normalizer {
 	 * @return	The resource to remove
 	 */
 	public static Resource mergeResources(Resource first, Resource later) {
-		assert(first.getClass() == later.getClass());
+		if (first.getClass() != later.getClass()) {
+			throw new IllegalArgumentException("Cannot merge resources of different types");
+		}
+
 		Resource toRemove = null;
 		switch (first.fhirType()) {
 		case "Endpoint":
