@@ -29,12 +29,39 @@ public interface ErrorReporter {
 		public static final ErrorReporter INSTANCE = new ErrorReporter() {
 			@Override
 			public void warn(String message, Object... args) {
+				// Truncate the stack trace to only include relevant frames.
+				if (args != null && args.length > 0 && args[args.length - 1] instanceof Throwable t) {
+					truncateStackTrace(t, 5, "com.ainq.", "gov.cdc.", "test.", "org.junit.");
+				}
 				// Default is to log the warning.
 				log.warn(message, args);
 			}
 		};
 	}
 	
+	/**
+	 * Truncate the stack trace of the given throwable to only include frames up to and including
+	 * the first frame that matches one of the given prefixes, plus a specified number of frames after that.
+	 * 
+	 * @param t The throwable whose stack trace is to be truncated.
+	 * @param framesAfterMatch The number of frames to include after the matching frame.
+	 * @param prefixes The class name prefixes to match.
+	 */
+	default void truncateStackTrace(Throwable t, int framesAfterMatch, String... prefixes) {
+		StackTraceElement[] trace = t.getStackTrace();
+		// Default to just the first 10 frames if no match is found.
+		int newLength = Math.min(trace.length, 10); 
+		for (int i = 0; i < trace.length; i++) {
+			StackTraceElement ste = trace[i];
+			String className = ste.getClassName();
+			if (Arrays.asList(prefixes).stream().anyMatch(className::startsWith)) {
+				newLength = Math.min(i + framesAfterMatch, trace.length);
+				break;
+			}
+		}
+		StackTraceElement[] newTrace = Arrays.copyOfRange(trace, 0, newLength);
+		t.setStackTrace(newTrace);
+	}	
 	/**
 	 * Set the error reporter for the current thread. If not set, the default reporter is used, which just logs the warning.
 	 * @param reporter	The error reporter to use. If null, the default reporter is used.
