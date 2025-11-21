@@ -3,7 +3,7 @@
 	<parent>
 		<groupId>gov.cdc.izgw</groupId>
         <artifactId>izgw-bom</artifactId>
-        <version>1.0.2-RELEASE</version>
+        <version>1.0.3-SNAPSHOT</version>
 	</parent>
 	<artifactId>v2tofhir</artifactId>
 	<version>1.0.0-v2tofhir-SNAPSHOT</version>
