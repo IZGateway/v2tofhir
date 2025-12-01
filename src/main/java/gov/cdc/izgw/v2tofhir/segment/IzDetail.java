@@ -2,6 +2,7 @@ package gov.cdc.izgw.v2tofhir.segment;
 
 import java.util.List;
 
+import lombok.Getter;
 import org.hl7.fhir.r4.model.CanonicalType;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.DomainResource;
@@ -28,9 +29,11 @@ public class IzDetail {
 	private final MessageParser mp;
 	
 	private Boolean hasImmunization = null;
+    @Getter
 	Immunization immunization;
 	
 	private Boolean hasImmunizationRecommendation = null;
+    @Getter
 	ImmunizationRecommendation immunizationRecommendation;
 	
 	Organization requestingOrganization;
@@ -39,7 +42,7 @@ public class IzDetail {
 	private IzDetail(MessageParser mp) {
 		this.mp = mp;
 	}
-	static IzDetail get(MessageParser mp) {
+	public static IzDetail get(MessageParser mp) {
 		IzDetail detail = mp.getContext().getProperty(IzDetail.class);
 		if (detail == null) {
 			detail = new IzDetail(mp);
@@ -71,7 +74,7 @@ public class IzDetail {
 		}
 	}
 
-	boolean hasRecommendation() {
+	public boolean hasRecommendation() {
 		if (hasImmunizationRecommendation != null) {
 			return hasImmunizationRecommendation;
 		}
@@ -79,7 +82,7 @@ public class IzDetail {
 		return hasImmunizationRecommendation;
 	}
 	
-	boolean hasImmunization() {
+	public boolean hasImmunization() {
 		if (hasImmunization != null) {
 			return hasImmunization;
 		}
