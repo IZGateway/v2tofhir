@@ -8,6 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.ServiceConfigurationError;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.hl7.fhir.r4.model.CodeSystem;
 import org.hl7.fhir.r4.model.CodeSystem.CodeSystemContentMode;
 import org.hl7.fhir.r4.model.CodeSystem.ConceptDefinitionComponent;
@@ -176,7 +177,7 @@ public class Mapping {
 			}
 			if (mapped != null) {
 				String mappedSystem = mapped.getUserString(MAPPED_SYSTEM);
-				if (!("*".equals(mappedSystem) || !coding.hasSystem() || StringUtils.equals(mappedSystem, coding.getSystem()))) {
+				if (!("*".equals(mappedSystem) || !coding.hasSystem() || Strings.CS.equals(mappedSystem, coding.getSystem()))) {
 					mapped = null;
 				}
 			} else if (useAny) {

@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.hl7.fhir.instance.model.api.IBase;
 import org.hl7.fhir.r4.model.Bundle;
@@ -387,7 +388,7 @@ class MessageParserTests extends TestBase {
 		Type queryTag = segment.segment().getField(2, 0);
 		QPD qpd = qbp.getQPD();
 		qpd.getQueryTag().setValue(ParserUtils.toString(queryTag));
-		if (!StringUtils.equals(segment.segment().encode(), qpd.encode())) {
+		if (!Strings.CS.equals(segment.segment().encode(), qpd.encode())) {
 			log.info("=============== FAILURE ===============");
 			log.info("Search: \n{}", parameters.getParameter("_search").getValue());
 			log.info("Comparing: \nORIGINAL: {}\n REBUILT: {}", segment.segment().encode(), qpd.encode());
@@ -432,7 +433,7 @@ class MessageParserTests extends TestBase {
 	private String checkDatetime(String value) {
 		String[] parts = value.split("[\\.\\-+]");
 		if (!StringUtils.isNumeric(				// All Digits must be numeric
-				StringUtils.replace(value, ".+-", "")) ||
+				Strings.CS.replace(value, ".+-", "")) ||
 			(parts[0].length() % 2) == 1 ||		// First part Must have YYYY[MM[DD[HH[MM[SS]]]]] and even length
 			parts[0].length() < 4 || 			// at least 4, 
 			parts[0].length() > 14 ||			// and at most 14
@@ -476,15 +477,14 @@ class MessageParserTests extends TestBase {
 			produced = TextUtils.toString(base).replace("#", " ");
 			// produced can be CodeableConcept or Coding, and value 
 			// can be from a simpler entity, such as an ST or ID.
-			if (StringUtils.containsIgnoreCase(produced, value) ||
-				StringUtils.containsIgnoreCase(value, produced)) {
+			if (Strings.CI.contains(produced, value) || Strings.CI.contains(value, produced)) {
 				return produced;
 			} else if (base instanceof CodeableConcept cc) {
 				for (Coding coding: cc.getCoding()) {
 					// Substring.between doesn't work because display can have ().
 					produced = "(" +
 						StringUtils.substringAfterLast(TextUtils.toString(coding), "(");
-					if (StringUtils.containsIgnoreCase(value, produced)) {
+					if (Strings.CI.contains(value, produced)) {
 						return produced;
 					}
 				}
@@ -501,7 +501,7 @@ class MessageParserTests extends TestBase {
 			} else if (base instanceof Organization org && "CE".equals(v2Type)) {
 				// Deal with special case of CE -> Organization for MVX Codes
 				produced = TextUtils.toString(org.getIdentifierFirstRep()).replace("#", " ");
-				if (StringUtils.containsIgnoreCase(value, produced)) {
+				if (Strings.CI.contains(value, produced)) {
 					return produced;
 				}
 			}

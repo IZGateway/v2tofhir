@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Objects;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.hl7.fhir.instance.model.api.IBase;
 import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.BaseDateTimeType;
@@ -64,7 +65,7 @@ public class TextUtils {
 		}
 		appendIfNonBlank(b, district, "\n");
 		
-		if (StringUtils.equalsAny(StringUtils.upperCase(country), "MX", "MEX", "MEXICO")) {
+		if (Strings.CS.equalsAny(StringUtils.upperCase(country), "MX", "MEX", "MEXICO")) {
 			appendIfNonBlank(b, postalCode, "  ");
 			appendIfNonBlank(b, city, ", ");
 			appendIfNonBlank(b, state, null);
@@ -73,9 +74,9 @@ public class TextUtils {
 			appendIfNonBlank(b, state, "  ");
 			appendIfNonBlank(b, postalCode, null);
 		}
-		if (StringUtils.endsWithAny(b, ", ", "  ")) {
+		if (Strings.CS.endsWithAny(b, ", ", "  ")) {
 			b.setLength(b.length() - 2);
-		} else if (StringUtils.endsWith(b, " ")) {
+		} else if (Strings.CS.endsWith(b, " ")) {
 			b.setLength(b.length() - 1);
 		}
 		if (StringUtils.isNotBlank(b)) {
@@ -156,7 +157,7 @@ public class TextUtils {
 	}
 
 	private static String getHumanReadableSystemName(String system) {
-		if (!StringUtils.contains(system, ":")) {
+		if (!Strings.CS.contains(system, ":")) {
 			return system;
 		}
 		List<String> l = Systems.getSystemNames(system);

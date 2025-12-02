@@ -3,7 +3,7 @@ package gov.cdc.izgw.v2tofhir.segment;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.CodeType;
 import org.hl7.fhir.r4.model.CodeableConcept;
@@ -109,8 +109,8 @@ public class OBRParser extends AbstractSegmentParser {
 	
 	private boolean equals(Identifier id1, Identifier id2) {
 		return
-			StringUtils.equals(id1.getSystem(), id2.getSystem()) &&
-			StringUtils.equals(id1.getValue(), id2.getValue());
+			Strings.CS.equals(id1.getSystem(), id2.getSystem()) &&
+			Strings.CS.equals(id1.getValue(), id2.getValue());
 	}
 
 	/**
