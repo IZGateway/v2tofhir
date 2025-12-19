@@ -28,13 +28,13 @@
 	<properties>
 		<buildno>${timestamp}</buildno>
 		<image.tag>${project.build.finalName}</image.tag>
-		<java.version>17</java.version>
+		<java.version>21</java.version>
 		<maven.build.timestamp.format>yyyyMMddHHmm</maven.build.timestamp.format>
 		<project.build.finalName>${project.artifactId}-${project.version}-${timestamp}</project.build.finalName>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.java.package>${project.groupId}</project.java.package>
-		<!-- 17 needs a certified encryption module -->
 		<timestamp>${maven.build.timestamp}</timestamp>
+<<<<<<< Updated upstream
 		<jacoco.version>0.8.13</jacoco.version>
 		<jacoco.jar>${user.home}/.m2/repository/org/jacoco/org.jacoco.agent/${jacoco.version}/org.jacoco.agent-${jacoco.version}.jar</jacoco.jar>
 		<surefire.argLine>
@@ -43,6 +43,18 @@
 		  --add-opens=java.base/java.net=ALL-UNNAMED 
 		  <!-- -javaagent:${jacoco.jar}=destfile=target/jacoco.exec,append=true,output=file -->
 		</surefire.argLine>
+=======
+		<hapi.v2.version>2.5.1</hapi.v2.version>
+    <hapi.fhir.version>8.0.0</hapi.fhir.version>
+		<tomcat.version>10.1.42</tomcat.version>
+		
+		<!-- SonarCloud Configuration -->
+		<sonar.organization>izgateway</sonar.organization>
+		<sonar.host.url>https://sonarcloud.io</sonar.host.url>
+		<sonar.projectKey>IZGateway_v2tofhir</sonar.projectKey>
+		<sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+		<jacoco.version>0.8.12</jacoco.version>
+>>>>>>> Stashed changes
 	</properties>
 	<distributionManagement>
         <repository>
@@ -105,6 +117,18 @@
 		<developerConnection>scm:git:https://github.com/IZGateway/v2tofhir</developerConnection>
 		<url>https://github.com/IZGateway/v2tofhir</url>
 	</scm>
+	<dependencyManagement>
+		<dependencies>
+			<!-- Import the dependency management POM to enforce consistent dependency versions -->
+			<dependency>
+				<groupId>gov.cdc.izgw</groupId>
+				<artifactId>izgw-dependency-management</artifactId>
+				<version>1.0.0-SNAPSHOT</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 	<dependencies>
 		<dependency>
 			<groupId>ca.uhn.hapi</groupId>
@@ -250,8 +274,8 @@
 				<plugin>
 					<artifactId>maven-compiler-plugin</artifactId>
 					<configuration>
-						<source>17</source>
-						<target>17</target>
+						<source>21</source>
+						<target>21</target>
 						<annotationProcessorPaths>
 							<path>
 								<groupId>org.projectlombok</groupId>
@@ -378,11 +402,39 @@
 						</execution>
 					</executions>
 				</plugin>
+<<<<<<< Updated upstream
 				    <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-site-plugin</artifactId>
                         <version>3.21.0</version>
                     </plugin>
+=======
+				<plugin>
+					<groupId>org.jacoco</groupId>
+					<artifactId>jacoco-maven-plugin</artifactId>
+					<version>${jacoco.version}</version>
+					<executions>
+						<execution>
+							<id>prepare-agent</id>
+							<goals>
+								<goal>prepare-agent</goal>
+							</goals>
+						</execution>
+						<execution>
+							<id>report</id>
+							<phase>verify</phase>
+							<goals>
+								<goal>report</goal>
+							</goals>
+						</execution>
+					</executions>
+				</plugin>
+				<plugin>
+					<groupId>org.sonarsource.scanner.maven</groupId>
+					<artifactId>sonar-maven-plugin</artifactId>
+					<version>4.0.0.4121</version>
+				</plugin>
+>>>>>>> Stashed changes
 			</plugins>
 		</pluginManagement>
         <plugins>
