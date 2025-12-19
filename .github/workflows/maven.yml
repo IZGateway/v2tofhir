@@ -24,6 +24,19 @@ on:
       - main
       - develop
 
+  # Scheduled build: Monday-Friday at 6:00 AM UTC from develop branch
+  schedule:
+    - cron: '0 6 * * 1-5'
+  
+  # Manual trigger for on-demand builds
+  workflow_dispatch:
+    inputs:
+      runSonar:
+        description: 'Run SonarCloud analysis'
+        required: false
+        default: 'true'
+        type: boolean
+
 # Ensure only one build changes dev environment at the same time    
 concurrency: v2tofhir
 # GITHUB_REF=refs/heads/testmain
@@ -40,12 +53,13 @@ jobs:
       # Necessary to enable push to protected branch
       with:
         ssh-key: ${{secrets.ACTIONS_KEY}}
+        fetch-depth: 0  # Shallow clones should be disabled for better SonarCloud analysis
         
-    - name: Set up JDK 17
+    - name: Set up JDK 21
       uses: actions/setup-java@v4
       with:
-        java-version: '17'
-        distribution: 'adopt'
+        java-version: '21'
+        distribution: 'temurin'
         cache: maven
         
     - name: Set up Maven
@@ -79,6 +93,16 @@ jobs:
                 </provides>
                 <configuration>
                   <jdkHome>$JAVA_HOME_17_X64</jdkHome>
+                </configuration>
+            </toolchain>
+            <toolchain>
+              <type>jdk</type>
+                <provides>
+                  <version>21</version>
+                  <vendor>sun</vendor>
+                </provides>
+                <configuration>
+                  <jdkHome>$JAVA_HOME_21_X64</jdkHome>
                 </configuration>
             </toolchain>            
           </toolchains>
@@ -196,6 +220,22 @@ jobs:
             -DdoRevisionCheck=${{env.DO_REVISION_CHECK}} \
             -DskipDependencyCheck=true \
             -Dimage.tag=$IMAGE_BRANCH_TAG 
+
+    - name: SonarCloud Scan
+      # Run on scheduled builds, workflow_dispatch with runSonar=true, or when explicitly requested
+      if: |
+        github.event_name == 'schedule' || 
+        (github.event_name == 'workflow_dispatch' && github.event.inputs.runSonar == 'true') ||
+        github.event_name == 'pull_request'
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        mvn -B verify sonar:sonar \
+          -Dsonar.organization=izgateway \
+          -Dsonar.projectKey=IZGateway_v2tofhir \
+          -Dsonar.host.url=https://sonarcloud.io \
+          -Dsonar.token=${{ secrets.SONAR_TOKEN }}
 
 # Use GitHub Action to speed up and improve dependency checking
 # NOTE: Disable automatic dependency checking in the build, this replaces it          
