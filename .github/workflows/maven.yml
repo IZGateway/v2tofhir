@@ -216,7 +216,7 @@ jobs:
             -Dimage.tag=$IMAGE_BRANCH_TAG 
 
     - name: SonarCloud Scan
-      # Run on scheduled builds, workflow_dispatch with runSonar=true, or when explicitly requested
+      # Run on scheduled builds, workflow_dispatch with runSonar=true, or pull requests
       if: |
         github.event_name == 'schedule' || 
         (github.event_name == 'workflow_dispatch' && github.event.inputs.runSonar == 'true') ||
@@ -225,7 +225,8 @@ jobs:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        mvn -B verify sonar:sonar \
+        mvn -B sonar:sonar \
+          -Dmaven.test.skip=true \
           -Dsonar.organization=izgateway \
           -Dsonar.projectKey=IZGateway_v2tofhir \
           -Dsonar.host.url=https://sonarcloud.io \
