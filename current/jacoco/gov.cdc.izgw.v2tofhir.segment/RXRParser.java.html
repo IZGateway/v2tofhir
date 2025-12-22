@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RXRParser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">gov.cdc.izgw.v2tofhir.segment</a> &gt; <span class="el_source">RXRParser.java</span></div><h1>RXRParser.java</h1><pre class="source lang-java linenums">package gov.cdc.izgw.v2tofhir.segment;
+
+import java.util.List;
+
+import org.hl7.fhir.instance.model.api.IBaseResource;
+
+import java.util.ArrayList;
+import org.hl7.fhir.r4.model.CodeableConcept;
+import org.hl7.fhir.r4.model.Immunization;
+import gov.cdc.izgw.v2tofhir.annotation.ComesFrom;
+import gov.cdc.izgw.v2tofhir.annotation.Produces;
+import gov.cdc.izgw.v2tofhir.converter.MessageParser;
+
+/**
+ * RXRParser parses any RXR segments in a message to an Immunization if the message is a VXU or an 
+ * response to an immunization query.
+ * 
+ * @author Audacious Inquiry
+ *
+ * @see &lt;a href=&quot;https://hl7.org/fhir/uv/v2mappings/2024Jan/ConceptMap-segment-rxr-to-immunization.html&quot;&gt;V2 to FHIR: RXR to Immunization&lt;/a&gt;
+ */
+@Produces(segment = &quot;RXR&quot;, resource=Immunization.class)
+public class RXRParser extends AbstractSegmentParser {
+<span class="fc" id="L24">	private static List&lt;FieldHandler&gt; fieldHandlers = new ArrayList&lt;&gt;();</span>
+	private IzDetail izDetail;
+	
+	/**
+	 * Create an RXA Parser for the specified MessageParser
+	 * @param p	The message parser.
+	 */
+	public RXRParser(MessageParser p) {
+<span class="fc" id="L32">		super(p, &quot;RXR&quot;);</span>
+<span class="fc bfc" id="L33" title="All 2 branches covered.">		if (fieldHandlers.isEmpty()) {</span>
+<span class="fc" id="L34">			FieldHandler.initFieldHandlers(this, fieldHandlers);</span>
+		}
+<span class="fc" id="L36">	}</span>
+
+	@Override
+	protected List&lt;FieldHandler&gt; getFieldHandlers() {
+<span class="fc" id="L40">		return fieldHandlers;</span>
+	}
+
+	@Override
+	public IBaseResource setup() {
+<span class="fc" id="L45">		izDetail = IzDetail.get(getMessageParser());</span>
+<span class="fc" id="L46">		return izDetail.immunization;</span>
+	}
+	
+	/*
+	 * 1	RXR-1	Route	CWE	1	1				Immunization.route		Immunization.CodeableConcept	0	1	CWE[CodeableConcept]	RouteOfAdministration
+	 */
+	/**
+	 * Set the route of administration
+	 * @param route the route of administration
+	 */
+	@ComesFrom(path = &quot;Immunization.route&quot;, field = 1, table = &quot;0162&quot;, comment = &quot;Route&quot;)
+	public void setRoute(CodeableConcept route) {
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">		if (izDetail.hasImmunization()) {</span>
+<span class="fc" id="L59">			izDetail.immunization.setRoute(route);</span>
+		}
+<span class="fc" id="L61">	}</span>
+	/*
+	 * 2	RXR-2	Administration Site	CWE	0	1				Immunization.site		Immunization.CodeableConcept	0	1	CWE[CodeableConcept]	AdministrationSite		
+	 */
+	/**
+	 * Set the site of administration
+	 * @param administrationSite the route of administration
+	 */
+	@ComesFrom(path = &quot;Immunization.site&quot;, field = 2, table = &quot;0163&quot;, comment = &quot;Administration Site&quot;)
+	public void setAdministrationSite(CodeableConcept administrationSite) {
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">		if (izDetail.hasImmunization()) {</span>
+<span class="fc" id="L72">			izDetail.immunization.setSite(administrationSite);</span>
+		}
+<span class="fc" id="L74">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

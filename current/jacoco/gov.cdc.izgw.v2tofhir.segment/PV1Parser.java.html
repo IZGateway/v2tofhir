@@ -1,0 +1,458 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PV1Parser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">gov.cdc.izgw.v2tofhir.segment</a> &gt; <span class="el_source">PV1Parser.java</span></div><h1>PV1Parser.java</h1><pre class="source lang-java linenums">package gov.cdc.izgw.v2tofhir.segment;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.hl7.fhir.instance.model.api.IBaseResource;
+import org.hl7.fhir.r4.model.Account;
+import org.hl7.fhir.r4.model.CodeType;
+import org.hl7.fhir.r4.model.CodeableConcept;
+import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.DateTimeType;
+import org.hl7.fhir.r4.model.Encounter;
+import org.hl7.fhir.r4.model.Encounter.EncounterLocationComponent;
+import org.hl7.fhir.r4.model.Encounter.EncounterLocationStatus;
+import org.hl7.fhir.r4.model.Encounter.EncounterParticipantComponent;
+import org.hl7.fhir.r4.model.Encounter.EncounterStatus;
+import org.hl7.fhir.r4.model.EpisodeOfCare;
+import org.hl7.fhir.r4.model.Identifier;
+import org.hl7.fhir.r4.model.Location;
+import org.hl7.fhir.r4.model.Location.LocationStatus;
+import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.Practitioner;
+
+import com.ainq.fhir.utils.PathUtils;
+
+import gov.cdc.izgw.v2tofhir.annotation.ComesFrom;
+import gov.cdc.izgw.v2tofhir.annotation.Produces;
+import gov.cdc.izgw.v2tofhir.converter.MessageParser;
+import gov.cdc.izgw.v2tofhir.utils.Codes;
+import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
+import gov.cdc.izgw.v2tofhir.utils.Systems;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * Parser for PV1 Segments
+ * 
+ * The PV1 segment populates an encounter resource
+ * @see &lt;a href=&quot;https://build.fhir.org/ig/HL7/v2-to-fhir/ConceptMap-segment-pv1-to-encounter.html&quot;&gt;V2 to FHIR: PV1 to Encounter Map&lt;/a&gt;
+ * @see &lt;a href=&quot;https://build.fhir.org/ig/HL7/v2-to-fhir/ConceptMap-segment-pv1-to-patient.html&quot;&gt;V2 to FHIR: PV1 to Patient Map&lt;/a&gt;
+ * @author Audacious Inquiry
+ */
+@Produces(segment = &quot;PV1&quot;, resource = Encounter.class, 
+	extra = { Patient.class, Practitioner.class, Location.class, EpisodeOfCare.class }
+)
+<span class="fc" id="L45">@Slf4j</span>
+public class PV1Parser extends AbstractSegmentParser {
+	private static final String PARTICIPANT = &quot;participant&quot;;
+	private static final String PRACTITIONER = &quot;practitioner&quot;;
+	private Encounter encounter;
+	@SuppressWarnings(&quot;unused&quot;)
+	private Account account;
+	private Patient patient;
+	private Location location;
+
+<span class="fc" id="L55">	private static List&lt;FieldHandler&gt; fieldHandlers = new ArrayList&lt;&gt;();</span>
+
+	static {
+<span class="fc" id="L58">		log.debug(&quot;{} loaded&quot;, MRGParser.class.getName());</span>
+<span class="fc" id="L59">	}</span>
+
+	/**
+	 * Construct a new PV1Parser
+	 * 
+	 * @param messageParser The messageParser to construct this parser for.
+	 */
+	public PV1Parser(MessageParser messageParser) {
+<span class="fc" id="L67">		super(messageParser, &quot;PV1&quot;);</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">		if (fieldHandlers.isEmpty()) {</span>
+<span class="fc" id="L69">			FieldHandler.initFieldHandlers(this, fieldHandlers);</span>
+		}
+<span class="fc" id="L71">	}</span>
+
+	@Override
+	public List&lt;FieldHandler&gt; getFieldHandlers() {
+<span class="fc" id="L75">		return fieldHandlers;</span>
+	}
+
+	@Override
+	public IBaseResource setup() {
+<span class="fc" id="L80">		encounter = createResource(Encounter.class);</span>
+<span class="fc" id="L81">		patient = getLastResource(Patient.class);</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">		if (patient == null) {</span>
+			// No patient was found, create one.
+<span class="fc" id="L84">			patient = createResource(Patient.class);</span>
+		}
+<span class="fc" id="L86">		encounter.setSubject(ParserUtils.toReference(patient, encounter, &quot;subject&quot;, &quot;patient&quot;));</span>
+<span class="fc" id="L87">		account = null;</span>
+<span class="fc" id="L88">		location = null;</span>
+<span class="fc" id="L89">		return encounter;</span>
+	}
+
+	/**
+	 * Set the patient class.
+	 * Maps the class to the preferred terminology from patientClass if a value is found
+	 * that maps, otherwise sets to the first coding in patientClass.
+	 * Also adds the class to the Encounter.type. 
+	 * @param patientClass	The patient class
+	 */
+	@ComesFrom(path = &quot;Encounter.class&quot;, field = 2, table = &quot;0004&quot;, map = &quot;EncounterClass&quot;, comment = &quot;Patient Class&quot;,
+			   also = &quot;Encounter.type&quot;)
+	public void setPatientClass(CodeableConcept patientClass) {
+<span class="fc" id="L102">		boolean notMapped = false;</span>
+		// Set to mapped value when present.
+		// Encounter.class is of coding type with a preferred coding system, so it gets mapped
+<span class="fc" id="L105">		encounter.setClass_(mapPatientClass(patientClass));</span>
+		
+		// Otherwise set to first coding value.  It's typical that there's only one,
+		// so we won't worry about the rest of them, unlike the mapping case above.
+<span class="pc bpc" id="L109" title="1 of 4 branches missed.">		if (!encounter.hasClass_() &amp;&amp; patientClass.hasCoding()) {</span>
+<span class="fc" id="L110">			notMapped = true;</span>
+<span class="fc" id="L111">			encounter.setClass_(patientClass.getCodingFirstRep());</span>
+		}
+		
+<span class="pc bpc" id="L114" title="1 of 2 branches missed.">		if (encounter.hasClass_()) {</span>
+			// We don't want to lose the original values, so we store them as the codings
+			// that apply to coding.code
+<span class="fc" id="L117">			CodeType code = encounter.getClass_().getCodeElement();</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">			for (Coding coding: patientClass.getCoding()) {</span>
+<span class="fc bfc" id="L119" title="All 2 branches covered.">				if (notMapped) {</span>
+					// If it wasn't mapped, we stored the first one, so we skip it.
+<span class="fc" id="L121">					notMapped = false;</span>
+<span class="fc" id="L122">					continue;</span>
+				}
+<span class="fc" id="L124">				code.addExtension(PathUtils.FHIR_EXT_PREFIX + &quot;/iso21090-SC-coding&quot;, coding);</span>
+<span class="fc" id="L125">			}</span>
+		}
+<span class="fc" id="L127">		encounter.addType(patientClass);</span>
+<span class="fc" id="L128">	}</span>
+
+	private Coding mapPatientClass(CodeableConcept patientClass) {
+<span class="fc bfc" id="L131" title="All 2 branches covered.">		for (Coding coding: patientClass.getCoding()) {</span>
+<span class="pc bpc" id="L132" title="1 of 2 branches missed.">			if (!coding.hasCode()) {</span>
+<span class="nc" id="L133">				continue;</span>
+			}
+			
+<span class="pc bpc" id="L136" title="2 of 4 branches missed.">			if (coding.hasSystem() &amp;&amp; !coding.getSystem().endsWith(&quot;0004&quot;)) {</span>
+<span class="nc" id="L137">				continue;</span>
+			}
+
+<span class="pc bpc" id="L140" title="1 of 4 branches missed.">			switch (coding.getCode()) {</span>
+			case &quot;E&quot;:	//	Emergency
+<span class="nc" id="L142">				return new Coding(Systems.V3_ACT_ENCOUNTER_CODE, &quot;EMER&quot;, &quot;Emergency&quot;);</span>
+			case &quot;I&quot;:	//	Inpatient	
+<span class="fc" id="L144">				return new Coding(Systems.V3_ACT_ENCOUNTER_CODE, &quot;IMP&quot;, &quot;inpatient&quot;);</span>
+			case &quot;O&quot;:	//	Outpatient	
+<span class="fc" id="L146">				return new Coding(Systems.V3_ACT_ENCOUNTER_CODE, &quot;AMB&quot;, &quot;ambulatory&quot;);</span>
+			default:
+				break;
+			}
+<span class="fc" id="L150">		}</span>
+<span class="fc" id="L151">		return null;</span>
+	}
+
+	/**
+	 * Sets the assigned location
+	 * @param assignedPatientLocation the assigned location
+	 */
+	@ComesFrom(path = &quot;Encounter.location&quot;, field = 3, comment = &quot;Assigned Patient Location&quot;)
+	public void setAssignedPatientLocation(Location assignedPatientLocation) {
+<span class="nc" id="L160">		location = addResource(assignedPatientLocation);</span>
+<span class="nc" id="L161">		EncounterLocationComponent loc = encounter.addLocation()</span>
+<span class="nc" id="L162">				.setLocation(ParserUtils.toReference(assignedPatientLocation, encounter, &quot;location&quot;));</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">		if (encounter.hasStatus()) {</span>
+<span class="nc bnc" id="L164" title="All 2 branches missed.">			if (EncounterStatus.PLANNED.equals(encounter.getStatus())) {</span>
+<span class="nc" id="L165">				loc.setStatus(EncounterLocationStatus.PLANNED);</span>
+			} else {
+<span class="nc" id="L167">				loc.setStatus(EncounterLocationStatus.ACTIVE);</span>
+			}
+		}
+<span class="nc" id="L170">	}</span>
+
+	/**
+	 * Set the admission type.
+	 * @param admissionType the admission type
+	 */
+	@ComesFrom(path = &quot;Encounter.type&quot;, field = 4, table = &quot;0007&quot;, comment = &quot;Admission Type&quot;)
+	public void setAdmissionType(CodeableConcept admissionType) {
+<span class="nc" id="L178">		encounter.addType(admissionType);</span>
+<span class="nc" id="L179">	}</span>
+
+	/**
+	 * Set the preadmit Number.
+	 * @param preadmitNumber the preadmit Number
+	 */
+	@ComesFrom(path = &quot;Encounter.hospitalization.preAdmissionIdentifier&quot;, field = 5, comment = &quot;Preadmit Number&quot;)
+	public void setPreadmitNumber(Identifier preadmitNumber) {
+<span class="nc" id="L187">		encounter.getHospitalization().setPreAdmissionIdentifier(preadmitNumber);</span>
+<span class="nc" id="L188">	}</span>
+
+	/**
+	 * Set the prior location
+	 * @param priorPatientLocation the prior location
+	 */
+	@ComesFrom(path = &quot;Encounter.location&quot;, field = 6, comment = &quot;Prior Patient Location&quot;)
+	public void setPriorPatientLocation(Location priorPatientLocation) {
+<span class="nc" id="L196">		addResource(priorPatientLocation);</span>
+<span class="nc" id="L197">		EncounterLocationComponent loc = encounter.addLocation()</span>
+<span class="nc" id="L198">				.setLocation(ParserUtils.toReference(priorPatientLocation, encounter, &quot;location&quot;));</span>
+<span class="nc" id="L199">		loc.setStatus(EncounterLocationStatus.COMPLETED);</span>
+<span class="nc" id="L200">	}</span>
+
+	/**
+	 * Set the attending physician
+	 * @param attendingDoctor the attending physician
+	 */
+	@ComesFrom(path = &quot;Encounter.participant.individual.Practitioner&quot;, field = 7, comment = &quot;Attending Doctor&quot;)
+	public void setAttendingDoctor(Practitioner attendingDoctor) {
+<span class="nc" id="L208">		addResource(attendingDoctor);</span>
+<span class="nc" id="L209">		EncounterParticipantComponent participant = encounter.addParticipant()</span>
+<span class="nc" id="L210">				.setIndividual(ParserUtils.toReference(attendingDoctor, encounter, PARTICIPANT, PRACTITIONER, </span>
+<span class="nc" id="L211">						Codes.ATTENDING_PARTICIPANT.getCodingFirstRep().getDisplay()));</span>
+<span class="nc" id="L212">		participant.addType(Codes.ATTENDING_PARTICIPANT);</span>
+<span class="nc" id="L213">	}</span>
+
+	/**
+	 * Set the referring physician
+	 * @param referringDoctor the referring physician
+	 */
+	@ComesFrom(path = &quot;Encounter.participant.individual.Practitioner&quot;, field = 8, comment = &quot;Referring Doctor&quot;)
+	public void setReferringDoctor(Practitioner referringDoctor) {
+<span class="nc" id="L221">		addResource(referringDoctor);</span>
+<span class="nc" id="L222">		EncounterParticipantComponent participant = encounter.addParticipant()</span>
+<span class="nc" id="L223">				.setIndividual(ParserUtils.toReference(referringDoctor, encounter, PARTICIPANT, PRACTITIONER, </span>
+<span class="nc" id="L224">						Codes.REFERRING_PARTICIPANT.getCodingFirstRep().getDisplay()));</span>
+<span class="nc" id="L225">		participant.addType(Codes.REFERRING_PARTICIPANT);</span>
+<span class="nc" id="L226">	}</span>
+
+	/**
+	 * Set the consulting physician
+	 * @param consultingDoctor the consulting physician
+	 */
+	@ComesFrom(path = &quot;Encounter.participant.individual.Practitioner&quot;, field = 9, comment = &quot;Consulting Doctor&quot;)
+	public void setConsultingDoctor(Practitioner consultingDoctor) {
+<span class="nc" id="L234">		addResource(consultingDoctor);</span>
+<span class="nc" id="L235">		EncounterParticipantComponent participant = encounter.addParticipant()</span>
+<span class="nc" id="L236">				.setIndividual(ParserUtils.toReference(consultingDoctor, encounter, PARTICIPANT, PRACTITIONER,</span>
+<span class="nc" id="L237">						Codes.CONSULTING_PARTICIPANT.getCodingFirstRep().getDisplay()));</span>
+<span class="nc" id="L238">		participant.addType(Codes.CONSULTING_PARTICIPANT);</span>
+<span class="nc" id="L239">	}</span>
+
+	/**
+	 * Set the hospital service
+	 * @param hospitalService The hospital service
+	 */
+	@ComesFrom(path = &quot;Encounter.serviceType&quot;, field = 10, table = &quot;0069&quot;, comment = &quot;Hospital Service&quot;)
+	public void setHospitalService(CodeableConcept hospitalService) {
+<span class="nc" id="L247">		encounter.setServiceType(hospitalService);</span>
+<span class="nc" id="L248">	}</span>
+
+	/**
+	 * Set the temporary location
+	 * @param temporaryLocation the temporary location
+	 */
+	@ComesFrom(path = &quot;Encounter.location&quot;, field = 11, comment = &quot;Temporary Location&quot;)
+	public void setTemporaryLocation(Location temporaryLocation) {
+<span class="nc" id="L256">		addResource(temporaryLocation);</span>
+<span class="nc" id="L257">		EncounterLocationComponent loc = encounter.addLocation()</span>
+<span class="nc" id="L258">				.setLocation(ParserUtils.toReference(temporaryLocation, encounter, &quot;location&quot;));</span>
+<span class="nc" id="L259">		loc.setStatus(EncounterLocationStatus.ACTIVE);</span>
+		// TODO: Add a temporary indicator to location
+<span class="nc" id="L261">	}</span>
+
+	/**
+	 * Set the readmission indicator
+	 * @param readmissionIndicator the readmission indicator
+	 */
+	@ComesFrom(path = &quot;Encounter.hospitalization.reAdmission&quot;, field = 13, table = &quot;0092&quot;, comment = &quot;Re-admission Indicator&quot;)
+	public void setReadmissionIndicator(CodeableConcept readmissionIndicator) {
+<span class="nc" id="L269">		encounter.getHospitalization().setReAdmission(readmissionIndicator);</span>
+<span class="nc" id="L270">	}</span>
+
+	/**
+	 * Set the admit source
+	 * @param admitSource the admit source
+	 */
+	@ComesFrom(path = &quot;Encounter.hospitalization.admitSource&quot;, field = 14, table = &quot;0023&quot;, comment = &quot;Admit Source&quot;)
+	public void setAdmitSource(CodeableConcept admitSource) {
+<span class="nc" id="L278">		encounter.getHospitalization().setAdmitSource(admitSource);</span>
+<span class="nc" id="L279">	}</span>
+
+	/**
+	 * Set the ambulatory status
+	 * Sets the ambulatory status, a code reflecting needs for special arrangements, such
+	 * as wheelchair, disability or other patient status requiring additional care or support.
+	 * @param ambulatoryStatus the ambulatory status
+	 */
+	@ComesFrom(path = &quot;Encounter.hospitalization.specialArrangement&quot;, field = 15, comment = &quot;Ambulatory Status&quot;)
+	public void setAmbulatoryStatus(CodeableConcept ambulatoryStatus) {
+<span class="nc" id="L289">		encounter.getHospitalization().addSpecialArrangement(ambulatoryStatus);</span>
+<span class="nc" id="L290">	}</span>
+	
+	/**
+	 * Add the vipIndicator
+	 * @param vipIndicator the vipIndicator
+	 */
+	@ComesFrom(path = &quot;Encounter.hospitalization.specialCourtesy&quot;, field = 16, comment = &quot;VIP Indicator&quot;)
+	public void setVIPIndicator(CodeableConcept vipIndicator) {
+<span class="nc" id="L298">		encounter.getHospitalization().addSpecialCourtesy(vipIndicator);</span>
+<span class="nc" id="L299">	}</span>
+
+	/**
+	 * Set the admitting physician
+	 * @param admittingDoctor the admitting physician
+	 */
+	@ComesFrom(path = &quot;Encounter.participant.individual.Practitioner&quot;, field = 17, comment = &quot;Admitting Doctor&quot;)
+	public void setAdmittingDoctor(Practitioner admittingDoctor) {
+<span class="nc" id="L307">		addResource(admittingDoctor);</span>
+<span class="nc" id="L308">		EncounterParticipantComponent participant = encounter.addParticipant()</span>
+<span class="nc" id="L309">				.setIndividual(ParserUtils.toReference(admittingDoctor, encounter, PARTICIPANT, PRACTITIONER, &quot;admitting&quot;));</span>
+<span class="nc" id="L310">		participant.addType(Codes.ADMITTING_PARTICIPANT);</span>
+<span class="nc" id="L311">	}</span>
+
+	/**
+	 * Set the visit number
+	 * @param visitNumber the visit number
+	 */
+	@ComesFrom(path = &quot;Encounter.identifier&quot;, field = 19, comment = &quot;Visit Number&quot;)
+	public void setVisitNumber(Identifier visitNumber) {
+<span class="nc" id="L319">		visitNumber.setType(Codes.VISIT_NUMBER);</span>
+<span class="nc" id="L320">		encounter.addIdentifier(visitNumber);</span>
+<span class="nc" id="L321">	}</span>
+
+	/**
+	 * Set the discharge disposition
+	 * @param dischargeDisposition the discharge disposition
+	 */
+	@ComesFrom(path = &quot;Encounter.hospitalization.dischargeDisposition&quot;, field = 36, table=&quot;0112&quot;, comment = &quot;Discharge Disposition&quot;)
+	public void setDischargeDisposition(CodeableConcept dischargeDisposition) {
+<span class="nc" id="L329">		encounter.getHospitalization().setDischargeDisposition(dischargeDisposition);</span>
+<span class="nc" id="L330">	}</span>
+
+	/**
+	 * Set the discharge location
+	 * @param dischargedToLocation the discharge location
+	 */
+	@ComesFrom(path = &quot;Encounter.hospitalization.destination.Location&quot;, field = 37, comment = &quot;Discharged to Location&quot;)
+	public void setDischargedToLocation(Location dischargedToLocation) {
+<span class="nc" id="L338">		addResource(dischargedToLocation);</span>
+<span class="nc" id="L339">		encounter.getHospitalization().setDestination(ParserUtils.toReference(dischargedToLocation, encounter, &quot;destination&quot;));</span>
+<span class="nc" id="L340">	}</span>
+
+	/**
+	 * Set the dietary accomodations
+	 * @param dietType the dietary accomodations
+	 */
+	@ComesFrom(path = &quot;Encounter.hospitalization.dietPreference&quot;, table=&quot;0114&quot;, field = 38, comment = &quot;Diet Type&quot;)
+	public void setDietType(CodeableConcept dietType) {
+<span class="nc" id="L348">		encounter.getHospitalization().addDietPreference(dietType);</span>
+<span class="nc" id="L349">	}</span>
+
+	/**
+	 * Set the status of the bed 
+	 * @param bedStatus the status of the bed 
+	 */
+	@ComesFrom(path = &quot;Encounter.location.location(Encounter.location.Location.operationalStatus)&quot;, field = 40, table = &quot;0116&quot;, comment = &quot;Bed Status&quot;)
+	public void setBedStatus(Coding bedStatus) {
+<span class="nc bnc" id="L357" title="All 2 branches missed.">		if (location != null) {</span>
+<span class="nc" id="L358">			location.setStatus(mapBedStatus(bedStatus));</span>
+		}
+<span class="nc" id="L360">	}</span>
+
+	private LocationStatus mapBedStatus(Coding bedStatus) {
+		// TODO Auto-generated method stub
+<span class="nc bnc" id="L364" title="All 2 branches missed.">		if (!bedStatus.hasCode()) {</span>
+<span class="nc" id="L365">			return null;</span>
+		}
+<span class="nc bnc" id="L367" title="All 4 branches missed.">		if (bedStatus.hasSystem() &amp;&amp; bedStatus.getSystem().endsWith(&quot;0116&quot;)) {</span>
+<span class="nc bnc" id="L368" title="All 4 branches missed.">			switch (bedStatus.getCode()) {</span>
+			case &quot;O&quot;, &quot;U&quot;, &quot;I&quot;:
+<span class="nc" id="L370">				return LocationStatus.ACTIVE;</span>
+			case &quot;H&quot;, &quot;K&quot;:
+<span class="nc" id="L372">				return LocationStatus.SUSPENDED;</span>
+			case &quot;C&quot;:
+<span class="nc" id="L374">				return LocationStatus.INACTIVE;</span>
+			default:
+<span class="nc" id="L376">				return null;</span>
+			}
+		}
+<span class="nc" id="L379">		return null;</span>
+	}
+
+	/**
+	 * Set the pending location
+	 * @param pendingLocation the pending location
+	 */
+	@ComesFrom(path = &quot;Encounter.location&quot;, field = 42, comment = &quot;Pending Location&quot;)
+	public void setPendingLocation(Location pendingLocation) {
+<span class="nc" id="L388">		location = addResource(pendingLocation);</span>
+<span class="nc" id="L389">		EncounterLocationComponent loc = encounter.addLocation()</span>
+<span class="nc" id="L390">				.setLocation(ParserUtils.toReference(pendingLocation, encounter, &quot;location&quot;));</span>
+<span class="nc" id="L391">		loc.setStatus(EncounterLocationStatus.PLANNED);</span>
+<span class="nc" id="L392">	}</span>
+	
+	/**
+	 * Set the prior temp location
+	 * @param priorTemporaryLocation the prior temp location
+	 */
+	@ComesFrom(path = &quot;Encounter.location&quot;, field = 43, comment = &quot;Prior Temporary Location&quot;)
+	public void setPriorTemporaryLocation(Location priorTemporaryLocation) {
+<span class="nc" id="L400">		location = addResource(priorTemporaryLocation);</span>
+<span class="nc" id="L401">		EncounterLocationComponent loc = encounter.addLocation()</span>
+<span class="nc" id="L402">				.setLocation(ParserUtils.toReference(priorTemporaryLocation, encounter, &quot;location&quot;));</span>
+<span class="nc" id="L403">		loc.setStatus(EncounterLocationStatus.COMPLETED);</span>
+<span class="nc" id="L404">	}</span>
+		
+	/**
+	 * Set the admit date
+	 * @param admitDateTime the admit date
+	 */
+	@ComesFrom(path = &quot;Encounter.period.start&quot;, field = 44, comment = &quot;Admit Date/Time&quot;)	
+	public void setAdmitDateTime(DateTimeType admitDateTime) {
+<span class="nc" id="L412">		encounter.getPeriod().setStartElement(admitDateTime);</span>
+<span class="nc" id="L413">	}</span>
+
+	/**
+	 * Set the discharge date
+	 * @param dischargeDateTime the discharge date
+	 */
+	@ComesFrom(path = &quot;Encounter.period.end&quot;, field = 45, comment = &quot;Discharge Date/Time&quot;)
+	public void setDischargeDateTime(DateTimeType dischargeDateTime) {
+<span class="nc" id="L421">		encounter.getPeriod().setEndElement(dischargeDateTime);</span>
+<span class="nc" id="L422">	}</span>
+
+	/**
+	 * Set an alternate visit id
+	 * @param alternateVisitID the alternate visit id
+	 */
+	@ComesFrom(path = &quot;Encounter.identifier&quot;, field = 50, comment = &quot;Alternate Visit ID&quot;)
+	public void setAlternateVisitID(Identifier alternateVisitID) {
+<span class="nc" id="L430">		encounter.addIdentifier(alternateVisitID);</span>
+<span class="nc" id="L431">	}</span>
+
+	/**
+	 * Add other healthcare providers
+	 * @param otherHealthcareProvider the other healthcare provider
+	 */
+	@ComesFrom(path = &quot;Encounter.participant.individual.Practitioner&quot;, field = 52, comment = &quot;Other Healthcare Provider&quot;)
+	public void setOtherHealthcareProvider(Practitioner otherHealthcareProvider) {
+<span class="nc" id="L439">		addResource(otherHealthcareProvider);</span>
+<span class="nc" id="L440">		EncounterParticipantComponent part = encounter.addParticipant()</span>
+<span class="nc" id="L441">				.setIndividual(ParserUtils.toReference(otherHealthcareProvider, encounter, PRACTITIONER));</span>
+<span class="nc" id="L442">		part.addType(Codes.PARTICIPANT);</span>
+<span class="nc" id="L443">	}</span>
+
+	/**
+	 * Set the episode of care identifier
+	 * Create an episode of care and add the identifier.
+	 * @param serviceEpisodeIdentifier the episode of care identifier
+	 */
+	@ComesFrom(path = &quot;Encounter.episodeOfCare&quot;, field = 54, comment = &quot;Service Episode Identifier&quot;)
+	public void setServiceEpisodeIdentifier(Identifier serviceEpisodeIdentifier) {
+<span class="nc" id="L452">		EpisodeOfCare episodeOfCare = createResource(EpisodeOfCare.class);</span>
+<span class="nc" id="L453">		episodeOfCare.setPatient(ParserUtils.toReference(patient, episodeOfCare, &quot;patient&quot;));</span>
+<span class="nc" id="L454">		episodeOfCare.addIdentifier(serviceEpisodeIdentifier);</span>
+<span class="nc" id="L455">		encounter.addEpisodeOfCare(ParserUtils.toReference(episodeOfCare, encounter, &quot;episode-of-care&quot;));</span>
+<span class="nc" id="L456">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

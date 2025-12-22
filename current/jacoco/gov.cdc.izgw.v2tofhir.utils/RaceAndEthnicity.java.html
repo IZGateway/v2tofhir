@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RaceAndEthnicity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">gov.cdc.izgw.v2tofhir.utils</a> &gt; <span class="el_source">RaceAndEthnicity.java</span></div><h1>RaceAndEthnicity.java</h1><pre class="source lang-java linenums">package gov.cdc.izgw.v2tofhir.utils;
+
+import java.util.List;
+import java.util.function.UnaryOperator;
+
+import org.apache.commons.lang3.StringUtils;
+import org.hl7.fhir.r4.model.CodeableConcept;
+import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.Extension;
+import org.hl7.fhir.r4.model.StringType;
+
+import gov.cdc.izgw.v2tofhir.segment.PIDParser;
+
+/**
+ * This class contains utilities for dealing with translating CDC Race and 
+ * Ethnicity codes into FHIR extensions from US Core.
+ * 
+ * @author Audacious Inquiry
+ *
+ */
+public class RaceAndEthnicity {
+	/** Extension for US Core Ethnicity */
+	public static final String US_CORE_ETHNICITY = &quot;http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity&quot;;
+
+	/** Extension for US Core Race */
+	public static final String US_CORE_RACE = &quot;http://hl7.org/fhir/us/core/StructureDefinition/us-core-race&quot;;
+
+	/**
+	 * Map a CodeableConcept containing a CDC Ethnicity code into a US Core Ethnicity extension
+	 * 
+	 * @param ethnicity	The ethnicity code provided
+	 * @param ethnicityExtension	The extension to populate
+	 */
+	public static void setEthnicityCode(CodeableConcept ethnicity, Extension ethnicityExtension) {
+<span class="fc" id="L35">		Extension text = null;</span>
+<span class="pc bpc" id="L36" title="1 of 2 branches missed.">		if (ethnicity.hasText()) {</span>
+<span class="nc" id="L37">			text = new Extension(&quot;text&quot;, new StringType(ethnicity.getText()));</span>
+<span class="nc" id="L38">			ethnicityExtension.addExtension(&quot;text&quot;, text);</span>
+		}
+<span class="fc bfc" id="L40" title="All 2 branches covered.">		for (Coding coding: ethnicity.getCoding()) {</span>
+<span class="fc" id="L41">			String code = StringUtils.defaultString(coding.getCode());</span>
+<span class="fc" id="L42">			List&lt;String&gt; systemNames = Systems.getSystemNames(coding.getSystem());</span>
+			
+<span class="fc bfc" id="L44" title="All 2 branches covered.">			if (systemNames.contains(Systems.CDCREC) &amp;&amp; </span>
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">				setCategoryAndDetail(ethnicityExtension, coding, code, RaceAndEthnicity::getEthnicityCategory)</span>
+			) {
+<span class="nc" id="L47">				return;</span>
+			}
+			
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">			if (setUnknown(ethnicityExtension, code)) {</span>
+<span class="nc" id="L51">				return;</span>
+			}
+<span class="fc" id="L53">		}</span>
+	
+		// Didn't find CDCREC, or UNKNOWN look in other code sets.
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">		for (Coding coding: ethnicity.getCoding()) {</span>
+<span class="fc" id="L57">			String code = StringUtils.defaultString(coding.getCode());</span>
+			
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">			if (text == null) {</span>
+<span class="fc" id="L60">				text = new Extension(&quot;text&quot;, new StringType(code));</span>
+<span class="fc" id="L61">				ethnicityExtension.addExtension(text);</span>
+			}
+	
+			// Deal with common legacy codes
+<span class="fc" id="L65">			Coding c = new Coding(Systems.CDCREC, getEthnicityCategory(code), null);</span>
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">			if (c.hasCode()) {</span>
+<span class="fc" id="L67">				Extension category = ethnicityExtension.getExtensionByUrl(PIDParser.OMB_CATEGORY);</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">				if (category == null) {</span>
+<span class="fc" id="L69">					category = new Extension();</span>
+<span class="fc" id="L70">					category.setUrl(PIDParser.OMB_CATEGORY);</span>
+<span class="fc" id="L71">					ethnicityExtension.addExtension(category);</span>
+				} 
+<span class="fc" id="L73">				category.setValue(c);</span>
+<span class="fc" id="L74">				return;</span>
+			}
+<span class="nc" id="L76">		}</span>
+		// Nothing found, we bail
+<span class="nc" id="L78">		setUnknown(ethnicityExtension, &quot;UNK&quot;);</span>
+<span class="nc" id="L79">	}</span>
+
+	/**
+	 * Map a CodeableConcept containing a CDC Race Code into a US Core Race extension
+	 * @param race	The race code provided
+	 * @param raceExtension	The extension to populate
+	 */
+	public static void setRaceCode(CodeableConcept race, Extension raceExtension) {
+<span class="fc" id="L87">		Extension text = setRaceText(race, raceExtension);</span>
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">		if (!setCDCREC(race, raceExtension) &amp;&amp;  	// Didn't find CDCREC</span>
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">			!setLegacy(race, raceExtension, text)	// Didn't find a Legacy code</span>
+		) {
+<span class="nc" id="L91">			setUnknown(raceExtension, &quot;UNK&quot;);		// Then set value as unknown.</span>
+		}
+<span class="fc" id="L93">	}</span>
+
+	/**
+	 * Computes the ethnic group category from the code
+	 * 
+	 * This uses knowledge about the structure of the CDC Ethnicity code table to compute the values.
+	 * 
+	 * @param ethnicityCode	The given ethnicity code
+	 * @return	The OMB ethnicity category code
+	 */
+	private static String getEthnicityCategory(String ethnicityCode) {
+<span class="fc" id="L104">		ethnicityCode = ethnicityCode.toUpperCase();</span>
+<span class="pc bpc" id="L105" title="3 of 4 branches missed.">		if ((&quot;2135&quot;.compareTo(ethnicityCode) &gt;= 0 &amp;&amp; &quot;2186&quot;.compareTo(ethnicityCode) &lt; 0) ||</span>
+<span class="pc bpc" id="L106" title="1 of 2 branches missed.">			ethnicityCode.charAt(0) == 'H'</span>
+		) {
+<span class="nc" id="L108">			return &quot;2135-2&quot;;</span>
+		}
+<span class="pc bpc" id="L110" title="1 of 4 branches missed.">		if (&quot;2186-5&quot;.equals(ethnicityCode) || ethnicityCode.charAt(0) == 'N') {</span>
+<span class="fc" id="L111">			return &quot;2186-5&quot;;</span>
+		}
+<span class="nc" id="L113">		return null;</span>
+	}
+
+	/**
+	 * Computes the race category from the race code
+	 * 
+	 * This uses knowledge about the structure of the CDC Race code table to compute the values.
+	 * 
+	 * @param raceCode	The given race code
+	 * @return	The OMB Race category code
+	 */
+	private static String getRaceCategory(String raceCode) {
+<span class="fc" id="L125">		raceCode = raceCode.toUpperCase();</span>
+		// American Indian or Alaska Native
+		
+<span class="fc bfc" id="L128" title="All 2 branches covered.">		if (RaceAndEthnicity.isBetween(raceCode, &quot;1002&quot;, &quot;2027&quot;) ||</span>
+<span class="pc bpc" id="L129" title="1 of 2 branches missed.">			&quot;INDIAN&quot;.equals(raceCode) || </span>
+<span class="pc bpc" id="L130" title="1 of 2 branches missed.">			&quot;I&quot;.equals(raceCode)</span>
+		) {
+<span class="fc" id="L132">			return &quot;1002-5&quot;;</span>
+		}
+		// Asian
+<span class="pc bpc" id="L135" title="1 of 2 branches missed.">		if (RaceAndEthnicity.isBetween(raceCode, &quot;2028&quot;, &quot;2053&quot;) ||</span>
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">			&quot;ASIAN&quot;.equals(raceCode) || </span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">			&quot;A&quot;.equals(raceCode)</span>
+		) {
+<span class="fc" id="L139">			return &quot;2028-9&quot;;</span>
+		}
+		// Black or African American
+<span class="nc bnc" id="L142" title="All 2 branches missed.">		if (RaceAndEthnicity.isBetween(raceCode, &quot;2054&quot;, &quot;2076&quot;) ||</span>
+<span class="nc bnc" id="L143" title="All 2 branches missed.">			&quot;BLACK&quot;.equals(raceCode) || </span>
+<span class="nc bnc" id="L144" title="All 2 branches missed.">			&quot;B&quot;.equals(raceCode)</span>
+		) {
+<span class="nc" id="L146">			return &quot;2054-5&quot;;</span>
+		}
+		// Native Hawaiian or Other Pacific Islander
+<span class="nc bnc" id="L149" title="All 2 branches missed.">		if (RaceAndEthnicity.isBetween(raceCode, &quot;2076&quot;, &quot;2105&quot;) ||</span>
+<span class="nc bnc" id="L150" title="All 2 branches missed.">			&quot;2500-7&quot;.equals(raceCode) ||</span>
+<span class="nc bnc" id="L151" title="All 4 branches missed.">			&quot;HAWIIAN&quot;.equals(raceCode) || &quot;H&quot;.equals(raceCode)</span>
+		) { 
+<span class="nc" id="L153">			return &quot;2076-8&quot;;</span>
+		}
+		// White
+<span class="nc bnc" id="L156" title="All 2 branches missed.">		if (RaceAndEthnicity.isBetween(raceCode, &quot;2106&quot;, &quot;2130&quot;) ||</span>
+<span class="nc bnc" id="L157" title="All 2 branches missed.">			&quot;WHITE&quot;.equals(raceCode) || </span>
+<span class="nc bnc" id="L158" title="All 2 branches missed.">			&quot;W&quot;.equals(raceCode)</span>
+		) {
+<span class="nc" id="L160">			return &quot;2106-3&quot;;</span>
+		}
+<span class="nc bnc" id="L162" title="All 6 branches missed.">		if (&quot;2131-1&quot;.equals(raceCode) || &quot;OTHER&quot;.equals(raceCode) || &quot;O&quot;.equals(raceCode)) {</span>
+<span class="nc" id="L163">			return &quot;2131-1&quot;;</span>
+		}
+<span class="nc" id="L165">		return null;</span>
+	}
+
+	private static boolean isBetween(String string, String low, String high) {
+<span class="pc bpc" id="L169" title="1 of 4 branches missed.">		return low.compareTo(string) &lt;= 0 &amp;&amp; high.compareTo(string) &gt; 0;</span>
+	}
+
+	private static boolean setCategoryAndDetail(Extension extension, Coding coding, String code, UnaryOperator&lt;String&gt; categorize) {
+<span class="fc" id="L173">		Extension category = extension.getExtensionByUrl(PIDParser.OMB_CATEGORY);</span>
+	
+<span class="pc bpc" id="L175" title="2 of 4 branches missed.">		if (&quot;ASKU&quot;.equals(code) || &quot;UNK&quot;.equals(code)) {</span>
+			// Set OMB category to code and quit
+<span class="nc" id="L177">			extension.setExtension(null);  // Clear prior extensions, only ombCategory can be present</span>
+<span class="nc bnc" id="L178" title="All 2 branches missed.">			if (category == null) {</span>
+<span class="nc" id="L179">				extension.addExtension(PIDParser.OMB_CATEGORY, new Coding(Systems.NULL_FLAVOR, code, null));</span>
+			} else {
+<span class="nc" id="L181">				category.setValue(new Coding(Systems.NULL_FLAVOR, code, null));</span>
+			}
+<span class="nc" id="L183">			return true;</span>
+		}
+		
+		// Figure out category and detail codes
+<span class="fc" id="L187">		Coding categoryCode = new Coding().setCode(categorize.apply(code)).setSystem(Systems.CDCREC);</span>
+<span class="pc bpc" id="L188" title="1 of 2 branches missed.">		if (categoryCode.hasCode()) {</span>
+			// if category has a code, it was a legitimate race code
+<span class="pc bpc" id="L190" title="1 of 2 branches missed.">			if (category == null) {</span>
+<span class="fc" id="L191">				extension.addExtension(PIDParser.OMB_CATEGORY, categoryCode);</span>
+			} else {
+<span class="nc" id="L193">				category.setValue(categoryCode);</span>
+			}
+	
+			// If if smells enough like a CDCREC code
+<span class="fc bfc" id="L197" title="All 2 branches covered.">			if (coding.getCode().matches(&quot;^[1-2]\\d{3}-\\d$&quot;)) {</span>
+				// Add to detailed.
+<span class="fc" id="L199">				extension.addExtension(&quot;detailed&quot;, coding);</span>
+			}
+<span class="pc bpc" id="L201" title="1 of 4 branches missed.">			if (coding.hasDisplay() &amp;&amp; !extension.hasExtension(&quot;text&quot;)) {</span>
+<span class="fc" id="L202">				extension.addExtension(&quot;text&quot;, coding.getDisplayElement());</span>
+			}
+		}
+<span class="fc" id="L205">		return false;</span>
+	}
+
+	/**
+	 * Map a CodeableConcept containing a CDC Race code into a US Core extension
+	 * containing OMB Category and Detailed codes where possible.
+	 * 
+	 * @param race	The race code provided
+	 * @param raceExtension	The extension to populate
+	 * @return	true if a valid code was found and set
+	 */
+	private static boolean setCDCREC(CodeableConcept race, Extension raceExtension) {
+<span class="fc bfc" id="L217" title="All 2 branches covered.">		for (Coding coding: race.getCoding()) {</span>
+<span class="fc" id="L218">			String code = coding.getCode();</span>
+<span class="pc bpc" id="L219" title="1 of 2 branches missed.">			if (StringUtils.isBlank(code)) {</span>
+<span class="nc" id="L220">				continue;</span>
+			}
+			
+<span class="fc" id="L223">			List&lt;String&gt; systemNames = Systems.getSystemNames(coding.getSystem());</span>
+			
+<span class="pc bpc" id="L225" title="1 of 4 branches missed.">			if ((!coding.hasSystem() || systemNames.contains(Systems.CDCREC)) &amp;&amp;</span>
+<span class="pc bpc" id="L226" title="1 of 2 branches missed.">				setCategoryAndDetail(raceExtension, coding, code, RaceAndEthnicity::getRaceCategory)</span>
+			) {
+<span class="nc" id="L228">				return true;</span>
+			} 
+<span class="pc bpc" id="L230" title="1 of 2 branches missed.">			if (RaceAndEthnicity.setUnknown(raceExtension, code)) {</span>
+<span class="nc" id="L231">				return true;</span>
+			}
+<span class="fc" id="L233">		}</span>
+<span class="fc" id="L234">		return false;</span>
+	}
+
+	/**
+	 * Map a CodeableConcept containing a legacy race codes into a US Core extension
+	 * containing OMB Category where possible.
+	 * 
+	 * @param race	The code provided
+	 * @param raceExtension	The extension to populate
+	 * @param text	An existing text extension, if any
+	 * @return	true if a valid code was found and set
+	 */
+	private static boolean setLegacy(CodeableConcept race, Extension raceExtension, Extension text) {
+<span class="pc bpc" id="L247" title="1 of 2 branches missed.">		for (Coding coding: race.getCoding()) {</span>
+<span class="fc" id="L248">			String code = coding.getCode();</span>
+			
+<span class="pc bpc" id="L250" title="1 of 2 branches missed.">			if (StringUtils.isBlank(code)) {</span>
+<span class="nc" id="L251">				continue;</span>
+			}
+			
+<span class="pc bpc" id="L254" title="1 of 2 branches missed.">			if (text == null) {</span>
+<span class="fc" id="L255">				text = new Extension(&quot;text&quot;, new StringType(code));</span>
+<span class="fc" id="L256">				raceExtension.addExtension(text);</span>
+			}
+	
+			// Deal with common legacy codes
+<span class="fc" id="L260">			Coding c = new Coding(Systems.CDCREC, RaceAndEthnicity.getRaceCategory(code), null);</span>
+<span class="pc bpc" id="L261" title="1 of 2 branches missed.">			if (c.hasCode()) {</span>
+<span class="fc" id="L262">				Extension category = raceExtension.getExtensionByUrl(PIDParser.OMB_CATEGORY);</span>
+<span class="pc bpc" id="L263" title="1 of 2 branches missed.">				if (category == null) {</span>
+<span class="nc" id="L264">					raceExtension.addExtension(PIDParser.OMB_CATEGORY, c);</span>
+				} else {
+<span class="fc" id="L266">					category.setValue(c);</span>
+				}
+<span class="fc" id="L268">				return true;</span>
+			} 
+<span class="nc" id="L270">		}</span>
+<span class="nc" id="L271">		return false;</span>
+	}
+
+	/**
+	 * Set the text extension if there is text in the CodeableConcept
+	 * @param race	The race code
+	 * @param raceExtension	The extension to populate
+	 * @return	The text extension, if any
+	 */
+	private static Extension setRaceText(CodeableConcept race, Extension raceExtension) {
+<span class="fc" id="L281">		Extension text = null;</span>
+<span class="pc bpc" id="L282" title="1 of 2 branches missed.">		if (race.hasText()) {</span>
+<span class="nc" id="L283">			text = new Extension(&quot;text&quot;, new StringType(race.getText()));</span>
+<span class="nc" id="L284">			raceExtension.addExtension(text);</span>
+		}
+<span class="fc" id="L286">		return text;</span>
+	}
+
+	/**
+	 * Sets unknown values where appropriate
+	 */
+	private static boolean setUnknown(Extension raceExtension, String code) {
+		// Don't bother looking at systems, just codes.
+		
+		// Two switches are merged. This catches errors when DATA_ABSENT codes are used in
+		// the NULL_FLAVOR system and vice-versa.
+<span class="pc bpc" id="L297" title="2 of 3 branches missed.">		switch (code) {</span>
+		case &quot;asked-unknown&quot;, // Set OMB category to ASKU and quit  
+			 &quot;ASKU&quot;: 
+<span class="nc" id="L300">			raceExtension.setExtension(null);  // Clear prior extensions</span>
+<span class="nc" id="L301">			raceExtension.addExtension(PIDParser.OMB_CATEGORY, new Coding(Systems.NULL_FLAVOR, &quot;ASKU&quot;, null));</span>
+<span class="nc" id="L302">			return true;</span>
+		case &quot;unknown&quot;, // Set OMB category to UNK and quit
+			 &quot;UNK&quot;:  
+<span class="nc" id="L305">			raceExtension.setExtension(null);  // Clear prior extensions</span>
+<span class="nc" id="L306">			raceExtension.addExtension(PIDParser.OMB_CATEGORY, new Coding(Systems.NULL_FLAVOR, &quot;UNK&quot;, null));</span>
+<span class="nc" id="L307">			return true;</span>
+		default:
+<span class="fc" id="L309">			return false;</span>
+		}
+	}
+	private RaceAndEthnicity() {
+		// No instantiation
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

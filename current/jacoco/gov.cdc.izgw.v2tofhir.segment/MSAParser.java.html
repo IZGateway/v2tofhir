@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MSAParser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">gov.cdc.izgw.v2tofhir.segment</a> &gt; <span class="el_source">MSAParser.java</span></div><h1>MSAParser.java</h1><pre class="source lang-java linenums">package gov.cdc.izgw.v2tofhir.segment;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.hl7.fhir.instance.model.api.IBaseResource;
+import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.IdType;
+import org.hl7.fhir.r4.model.MessageHeader;
+import org.hl7.fhir.r4.model.OperationOutcome;
+import org.hl7.fhir.r4.model.MessageHeader.MessageHeaderResponseComponent;
+import org.hl7.fhir.r4.model.MessageHeader.ResponseType;
+import org.hl7.fhir.r4.model.OperationOutcome.IssueSeverity;
+import org.hl7.fhir.r4.model.OperationOutcome.IssueType;
+import org.hl7.fhir.r4.model.OperationOutcome.OperationOutcomeIssueComponent;
+
+import gov.cdc.izgw.v2tofhir.annotation.ComesFrom;
+import gov.cdc.izgw.v2tofhir.annotation.Produces;
+import gov.cdc.izgw.v2tofhir.converter.MessageParser;
+import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * Parse an MSA segment into MessageHeader and OperationOutcome resources.
+ * 
+ * @author Audacious Inquiry
+ * @see &lt;a href=&quot;https://hl7.org/fhir/uv/v2mappings/2024Jan/ConceptMap-segment-msa-to-messageheader.html&quot;&gt;V2 to FHIR: MSA to MessageHeader&lt;/a&gt;
+ */
+@Produces(segment=&quot;MSA&quot;, resource=OperationOutcome.class, extra=MessageHeader.class)
+<span class="fc" id="L30">@Slf4j</span>
+public class MSAParser extends AbstractSegmentParser {
+<span class="fc" id="L32">	private static final List&lt;FieldHandler&gt; fieldHandlers = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L33">	private MessageHeader mh = null;</span>
+<span class="fc" id="L34">	private MessageHeaderResponseComponent response = null;</span>
+	private OperationOutcomeIssueComponent issue;
+	
+	static {
+<span class="fc" id="L38">		log.debug(&quot;{} loaded&quot;, MSAParser.class.getName());</span>
+<span class="fc" id="L39">	}</span>
+	
+	/**
+	 * Construct a SegmentParser for MSA Segments
+	 * 
+	 * @param messageParser	The messageParser using this MSAParser
+	 */
+	public MSAParser(MessageParser messageParser) {
+<span class="fc" id="L47">		super(messageParser, &quot;MSA&quot;);</span>
+<span class="fc bfc" id="L48" title="All 2 branches covered.">		if (fieldHandlers.isEmpty()) {</span>
+<span class="fc" id="L49">			FieldHandler.initFieldHandlers(this, fieldHandlers);</span>
+		}
+<span class="fc" id="L51">	}</span>
+	
+	@Override
+	public List&lt;FieldHandler&gt; getFieldHandlers() {
+<span class="fc" id="L55">		return fieldHandlers;</span>
+	}
+
+	@Override
+	public IBaseResource setup() {
+<span class="fc" id="L60">		mh = getFirstResource(MessageHeader.class);</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">		if (mh == null) {</span>
+			// Log but otherwise ignore this.
+<span class="fc" id="L63">			log.error(&quot;MSH segment not parsed&quot;);</span>
+<span class="fc" id="L64">			mh = createResource(MessageHeader.class);</span>
+		}
+<span class="fc" id="L66">		response  = mh.getResponse();</span>
+<span class="fc" id="L67">		OperationOutcome oo = createResource(OperationOutcome.class);</span>
+<span class="fc" id="L68">		issue = oo.getIssueFirstRep();</span>
+<span class="fc" id="L69">		mh.getResponse().setDetails(ParserUtils.toReference(oo, mh, &quot;details&quot;));</span>
+<span class="fc" id="L70">		return mh;</span>
+	}
+	
+	/**
+	 * Set the response identifier from MSA-2
+	 * @param identifier	The identifier
+	 */
+	@ComesFrom(path = &quot;MessageHeader.response.identifier&quot;, field = 2)
+	public void setIdentifier(IdType identifier) {
+<span class="fc" id="L79">		mh.getResponse().setIdentifierElement(identifier);</span>
+<span class="fc" id="L80">	}</span>
+	/**
+	 * Set the acknowledgementCode and severity from MSA-1
+	 * @param acknowledgementCode	The Acknowledgement code from MSA-1
+	 */
+	@ComesFrom(path = &quot;OperationOutcome.issue.details.coding.code&quot;, table = &quot;0008&quot;, field = 1, 
+			   also = { &quot;OperationOutcome.issue.severity&quot;,
+					    &quot;OperationOutcome.issue.code&quot;,
+					    &quot;MessageHeader.response.code&quot;
+					  }
+	)
+	public void setAcknowledgementCode(Coding acknowledgementCode) { 
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">		if (acknowledgementCode == null) {</span>
+<span class="nc" id="L93">			response.setCode(ResponseType.OK);</span>
+		} else { 
+<span class="fc" id="L95">			issue.getDetails().addCoding(acknowledgementCode);</span>
+<span class="pc bpc" id="L96" title="1 of 2 branches missed.">			if (acknowledgementCode.hasCode()) {</span>
+<span class="pc bpc" id="L97" title="1 of 4 branches missed.">				switch (acknowledgementCode.getCode()) {</span>
+				case &quot;AA&quot;, &quot;CA&quot;: 
+<span class="fc" id="L99">					response.setCode(ResponseType.OK);</span>
+<span class="fc" id="L100">					issue.setCode(IssueType.INFORMATIONAL);</span>
+<span class="fc" id="L101">					issue.setSeverity(IssueSeverity.INFORMATION);</span>
+<span class="fc" id="L102">					break;</span>
+				case &quot;AE&quot;, &quot;CE&quot;: 
+<span class="fc" id="L104">					response.setCode(ResponseType.TRANSIENTERROR);</span>
+<span class="fc" id="L105">					issue.setCode(IssueType.TRANSIENT);</span>
+<span class="fc" id="L106">					issue.setSeverity(IssueSeverity.ERROR);</span>
+<span class="fc" id="L107">					break;</span>
+				case &quot;AR&quot;, &quot;CR&quot;: 
+<span class="fc" id="L109">					response.setCode(ResponseType.FATALERROR); </span>
+<span class="fc" id="L110">					issue.setCode(IssueType.PROCESSING);</span>
+<span class="fc" id="L111">					issue.setSeverity(IssueSeverity.FATAL);</span>
+<span class="fc" id="L112">					break;</span>
+				default:
+					break;
+				}
+			}
+		}
+<span class="fc" id="L118">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -1,0 +1,454 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Systems.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">gov.cdc.izgw.v2tofhir.utils</a> &gt; <span class="el_source">Systems.java</span></div><h1>Systems.java</h1><pre class="source lang-java linenums">package gov.cdc.izgw.v2tofhir.utils;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.apache.commons.lang3.StringUtils;
+import org.hl7.fhir.r4.model.NamingSystem;
+import org.hl7.fhir.r4.model.NamingSystem.NamingSystemIdentifierType;
+import org.hl7.fhir.r4.model.NamingSystem.NamingSystemUniqueIdComponent;
+
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * Utility class containing OIDs, URIs and names for various coding and identifier systems
+ *  
+ * @author Audacious Inquiry
+ *
+ */
+<span class="fc" id="L26">@Slf4j</span>
+public class Systems {
+	private Systems() {	}
+	
+	static {
+<span class="fc" id="L31">		log.debug(&quot;{} loaded&quot;, Systems.class.getName());</span>
+	}
+	/** The Act Code System OID */
+	public static final String ACT_CODE_OID = &quot;2.16.840.1.113883.5.4&quot;;
+	/** Code System URI for the code system used for Vaccine Information Statements */
+	public static final String CDCGS1VIS = &quot;urn:oid:2.16.840.1.114222.4.5.307&quot;;
+	/** OID for the code system used for Vaccine Information Statements */
+	public static final String CDCGS1VIS_OID = &quot;2.16.840.1.114222.4.5.307&quot;;
+	/** Code System URI for the code system used in the CDC V2.5.1 Immunization Guide */
+	public static final String CDCPHINVS = &quot;urn:oid:2.16.840.1.113883.12.471&quot;;
+	/** OID for the code system used in the CDC V2.5.1 Immunization Guide */
+	public static final String CDCPHINVS_OID = &quot;2.16.840.1.113883.12.471&quot;;
+	/** Code System URI for the code system used for CDC Race and Ethnicity */
+	public static final String CDCREC = &quot;urn:oid:2.16.840.1.113883.6.238&quot;;
+	/** OID for the code system used for CDC Race and Ethnicity */
+	public static final String CDCREC_OID = &quot;2.16.840.1.113883.6.238&quot;;
+	/** Code System URI for the code system used for ADA's Current Dental Terminology codes */
+	public static final String CDT = &quot;http://www.ada.org/cdt&quot;;
+	/** OID for the code system used for AMA's Current Procedure Terminology codes  */
+	public static final String CDT_OID = &quot;2.16.840.1.113883.6.13&quot;;
+	/** Code System URI for the code system used for AMA's Current Procedure Terminology codes */
+	public static final String CPT = &quot;http://www.ama-assn.org/go/cpt&quot;;
+	/** OID for the code system used for AMA's Current Procedure Terminology codes  */
+	public static final String CPT_OID = &quot;2.16.840.1.113883.6.12&quot;;
+	/** Code System URI for the code system used for CDC Vaccine Codes */
+	public static final String CVX = &quot;http://hl7.org/fhir/sid/cvx&quot;;
+	/** OID for the code system used for CDC Vaccine Codes */
+	public static final String CVX_OID = &quot;2.16.840.1.113883.12.292&quot;;
+	/** Code System URI for the code system used for DICOM codes */
+	public static final String DICOM = &quot;http://dicom.nema.org/resources/ontology/DCM&quot;;
+	/** OID for the code system used for DICOM codes */
+	public static final String DICOM_OID = &quot;1.2.840.10008.2.16.4&quot;;
+	/** Code System URI for the code system used for the URL namespace */
+	public static final String IETF = &quot;urn:ietf:rfc:3986&quot;;
+	/** OID for the code system used for the URL namespace */
+	public static final String IETF_OID = &quot;urn:ietf:rfc:3986&quot;;
+	/** Code System URI for HCPCS Codes */
+	public static final String HCPCS = &quot;http://www.cms.gov/Medicare/Coding/HCPCSReleaseCodeSets&quot;;
+	/** Code System OID for HCPCS Codes */
+	public static final String HCPCS_OID = &quot;2.16.840.1.113883.6.285&quot;;
+	/** Code System URI for the code system used by CDC's NHSN for Facility Locations */
+	public static final String HSLOC = &quot;https://www.cdc.gov/nhsn/cdaportal/terminology/codesystem/hsloc.html&quot;;
+	/** OID for the code system used for Vaccine Information Statements */
+	public static final String HSLOC_OID = &quot;2.16.840.1.113883.6.259&quot;;
+	/** Code System URI for the code system used by CDC's NHSN for Facility Locations */
+	public static final String ICD10CM = &quot;http://hl7.org/fhir/sid/icd-10-cm&quot;;
+	/** OID for the code system used for ICD-10-CM codes */
+	public static final String ICD10CM_OID = &quot;2.16.840.1.113883.6.3&quot;;
+	/** Code System URI for the code system used for ICD-9 Procedure Codes */
+	public static final String ICD10PCS = &quot;http://www.cms.gov/Medicare/Coding/ICD10&quot;;
+	/** OID for the code system used for ICD-9 Procedure Codes */
+	public static final String ICD10PCS_OID = &quot;2.16.840.1.113883.6.4&quot;;
+	/** Code System URI for the code system used for ICD-9-CM codes */
+	public static final String ICD9CM = &quot;http://hl7.org/fhir/sid/icd-9-cm&quot;;
+	/** OID for the code system used for ICD-9-CM codes */
+	public static final String ICD9CM_OID = &quot;2.16.840.1.113883.6.103&quot;;
+	/** Code System URI for the code system used for ICD-9 Procedure Codes */
+	public static final String ICD9PCS = &quot;http://hl7.org/fhir/sid/icd-9-cm&quot;;
+	/** OID for the code system used for ICD-9 Procedure Codes */
+	public static final String ICD9PCS_OID = &quot;2.16.840.1.113883.6.104&quot;;
+	/** Code System URI for the code system used for V2 Identifier types */
+	public static final String UNIVERSAL_ID_TYPE = &quot;http://terminology.hl7.org/CodeSystem/v2-0301&quot;;
+	/** OID for the code system used for V2 Identifier types */
+	public static final String UNIVERSAL_ID_TYPE_OID = &quot;2.16.840.1.113883.18.108&quot;;
+	/** Code System URI for the code system used for FHIR identifier types */
+	public static final String ID_TYPE = &quot;http://terminology.hl7.org/CodeSystem/v2-0203&quot;;
+	/** OID for the code system used for FHIR identifier types */
+	public static final String ID_TYPE_OID = &quot;2.16.840.1.113883.18.186&quot;;
+	/** Code System URI for the code system used for LOINC codes */
+	public static final String LOINC = &quot;http://loinc.org&quot;;
+	/** OID for the code system used for LOINC codes */
+	public static final String LOINC_OID = &quot;2.16.840.1.113883.6.1&quot;;
+	/** Code System URI for the code system used for CDC's Vaccine Manufacturer codes */
+	public static final String MVX = &quot;http://hl7.org/fhir/sid/mvx&quot;;
+	/** OID for the code system used for CDC's Vaccine Manufacturer codes */
+	public static final String MVX_OID = &quot;2.16.840.1.113883.12.227&quot;;
+	/** Code System URI for the code system used for US National Drug Codes */
+	public static final String NDC = &quot;http://hl7.org/fhir/sid/ndc&quot;;
+	/** OID for the code system used for US National Drug Codes */
+	public static final String NDC_OID = &quot;2.16.840.1.113883.6.69&quot;;
+	/** OID for the code system used for NCI Thesaurus Codes */
+	public static final String NCI = &quot;http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl&quot;;
+	/** Code System URI for the code system used for NCI Thesaurus Codes */
+	public static final String NCI_OID = &quot;2.16.840.1.113883.3.26.1.1&quot;;
+	/** Code System URI for the code system used for FDA's National Drug File */
+	public static final String NDFRT = &quot;http://hl7.org/fhir/ndfrt&quot;;
+	/** OID for the code system used for FDA's National Drug File */
+	public static final String NDFRT_OID = &quot;2.16.840.1.113883.6.209&quot;;
+	/** Code System URI for the code system used for RxNORM codes */
+	public static final String RXNORM = &quot;http://www.nlm.nih.gov/research/umls/rxnorm&quot;;
+	/** OID for the code system used for RxNORM codes */
+	public static final String RXNORM_OID = &quot;2.16.840.1.113883.6.88&quot;;
+	/** Code System URI for the code system used for SNOMED codes */
+	public static final String SNOMED = &quot;http://snomed.info/sct&quot;;
+	/** OID for the code system used for SNOMED codes */
+	public static final String SNOMED_OID = &quot;2.16.840.1.113883.6.96&quot;;
+	/** System for US Social Security Numbers */
+	public static final String SSN = &quot;http://hl7.org/fhir/sid/us-ssn&quot;;
+	/** OID for US Social Security Numbers */
+	public static final String SSN_OID = &quot;2.16.840.1.113883.4.1&quot;;
+	/** Code System URI for the code system used for UCUM unit codes */
+	public static final String UCUM = &quot;http://unitsofmeasure.org&quot;;
+	/** OID for the code system used for UCUM unit codes */
+	public static final String UCUM_OID = &quot;2.16.840.1.113883.6.8&quot;;
+
+	/** Participation Type */
+	public static final String V3_PARTICIPATION_TYPE = &quot;http://terminology.hl7.org/CodeSystem/v3-ParticipationType&quot;;
+	/** Act Encounter Code System */
+	// Note: ActEncounterCode is a ValueSet under ActCode
+	public static final String V3_ACT_ENCOUNTER_CODE = &quot;http://terminology.hl7.org/CodeSystem/v3-ActCode&quot;;
+
+	/** Code System URI for the code system used for Data Absent Reason */
+	public static final String DATA_ABSENT = &quot;http://terminology.hl7.org/CodeSystem/data-absent-reason&quot;;
+	/** Code System OID for the code system used for Data Absent Reason */
+	public static final String DATA_ABSENT_OID = &quot;2.16.840.1.113883.4.642.4.1048&quot;;
+
+	/** Code System URI for the code system used for Null Flavors */
+	public static final String NULL_FLAVOR = &quot;http://terminology.hl7.org/CodeSystem/v3-NullFlavor&quot;;
+	/** Code System OID for the code system used for Null Flavors */
+	public static final String NULL_FLAVOR_OID = &quot;2.16.840.1.113883.5.1008&quot;;
+	/** Code System URI for the location type code system */
+	public static final String LOCATION_TYPE = &quot;http://terminology.hl7.org/CodeSystem/location-physical-type&quot;;
+	/** Code System OID for the location type code system */
+	public static final String LOCATION_TYPE_OID = &quot;2.16.840.1.113883.4.642.3.328&quot;; 
+
+<span class="fc" id="L156">	static final String[] IDTYPE_NAMES =  { ID_TYPE, &quot;HL70203&quot;, &quot;0203&quot;, &quot;IDTYPE&quot;, &quot;2.16.840.1.113883.12.203&quot;, ID_TYPE_OID };</span>
+<span class="fc" id="L157">	static final String[] IDENTIFIER_TYPE_NAMES = { UNIVERSAL_ID_TYPE, &quot;HL70301&quot;, &quot;0301&quot;, &quot;2.16.840.1.113883.12.301&quot;, UNIVERSAL_ID_TYPE_OID };</span>
+	
+<span class="fc" id="L159">	private static final String[][] idTypeToDisplay = { { &quot;CLIA&quot;, &quot;Clinical Laboratory Improvement Amendments&quot; },</span>
+			{ &quot;CLIP&quot;, &quot;Clinical laboratory Improvement Program&quot; }, { &quot;DNS&quot;, &quot;An Internet host name&quot; },
+			{ &quot;EUI64&quot;, &quot;IEEE 64-bit Extended Unique Identifier&quot; }, { &quot;GUID&quot;, &quot;Same as UUID&quot; },
+			{ &quot;HCD&quot;, &quot;The CEN Healthcare Coding Scheme Designator&quot; }, { &quot;HL7&quot;, &quot;HL7 registration schemes&quot; },
+			{ &quot;ISO&quot;, &quot;An International Standards Organization Object Identifier (OID)&quot; },
+			{ &quot;L&quot;, &quot;First Locally defined coding entity identifier&quot; },
+			{ &quot;M&quot;, &quot;Second Locally defined coding entity identifier&quot; },
+			{ &quot;N&quot;, &quot;Third Locally defined coding entity identifier&quot; },
+			{ &quot;Random&quot;, &quot;Usually a base64 encoded string of random bits&quot; }, { &quot;URI&quot;, &quot;Uniform Resource Identifier&quot; },
+			{ &quot;UUID&quot;, &quot;The DCE Universal Unique Identifier&quot; }, { &quot;x400&quot;, &quot;An X.400 MHS identifier&quot; },
+			{ &quot;x500&quot;, &quot;An X.500 directory name&quot; } };
+<span class="fc" id="L170">	static Map&lt;String, String&gt; idTypeToDisplayMap = new LinkedHashMap&lt;&gt;();</span>
+	static {
+<span class="fc bfc" id="L172" title="All 2 branches covered.">		for (String[] pair : idTypeToDisplay) {</span>
+<span class="fc" id="L173">			idTypeToDisplayMap.put(pair[0], pair[1]);</span>
+		}
+	}
+	/** 
+	 * All the HL7 V2 identifier types from http://terminology.hl7.org/CodeSystem/v2-0203
+	 * Official URL: http://terminology.hl7.org/CodeSystem/v2-0203	Version: 4.0.0
+	 * Active as of 2022-12-07	Responsible: Health Level Seven International	Computable Name: IdentifierType
+	 * Other Identifiers: urn:ietf:rfc:3986#Uniform Resource Identifier (URI)#urn:oid:2.16.840.1.113883.18.108
+	 **/
+<span class="fc" id="L182">	public static final Set&lt;String&gt; IDENTIFIER_TYPES = Collections.unmodifiableSet(idTypeToDisplayMap.keySet());</span>
+	/** All the FHIR identifier types */
+<span class="fc" id="L184">	public static final Set&lt;String&gt; ID_TYPES = Collections.unmodifiableSet(new LinkedHashSet&lt;&gt;(</span>
+<span class="fc" id="L185">		Arrays.asList(&quot;AC&quot;, &quot;ACSN&quot;, &quot;AIN&quot;, &quot;AM&quot;, &quot;AMA&quot;, &quot;AN&quot;,</span>
+			&quot;ANC&quot;, &quot;AND&quot;, &quot;ANON&quot;, &quot;ANT&quot;, &quot;APRN&quot;, &quot;ASID&quot;, &quot;BA&quot;, &quot;BC&quot;, &quot;BCFN&quot;, &quot;BCT&quot;, &quot;BR&quot;, &quot;BRN&quot;, &quot;BSNR&quot;, &quot;CAAI&quot;, &quot;CC&quot;,
+			&quot;CONM&quot;, &quot;CY&quot;, &quot;CZ&quot;, &quot;DC&quot;, &quot;DCFN&quot;, &quot;DDS&quot;, &quot;DEA&quot;, &quot;DFN&quot;, &quot;DI&quot;, &quot;DL&quot;, &quot;DN&quot;, &quot;DO&quot;, &quot;DP&quot;, &quot;DPM&quot;, &quot;DR&quot;, &quot;DS&quot;,
+			&quot;DSG&quot;, &quot;EI&quot;, &quot;EN&quot;, &quot;ESN&quot;, &quot;FDR&quot;, &quot;FDRFN&quot;, &quot;FGN&quot;, &quot;FI&quot;, &quot;FILL&quot;, &quot;GI&quot;, &quot;GIN&quot;, &quot;GL&quot;, &quot;GN&quot;, &quot;HC&quot;, &quot;IND&quot;,
+			&quot;IRISTEM&quot;, &quot;JHN&quot;, &quot;LACSN&quot;, &quot;LANR&quot;, &quot;LI&quot;, &quot;L&amp;I&quot;, &quot;LN&quot;, &quot;LR&quot;, &quot;MA&quot;, &quot;MB&quot;, &quot;MC&quot;, &quot;MCD&quot;, &quot;MCN&quot;, &quot;MCR&quot;, &quot;MCT&quot;,
+			&quot;MD&quot;, &quot;MI&quot;, &quot;MR&quot;, &quot;MRT&quot;, &quot;MS&quot;, &quot;NBSNR&quot;, &quot;NCT&quot;, &quot;NE&quot;, &quot;NH&quot;, &quot;NI&quot;, &quot;NII&quot;, &quot;NIIP&quot;, &quot;NNxxx&quot;, &quot;NP&quot;, &quot;NPI&quot;, &quot;OBI&quot;,
+			&quot;OD&quot;, &quot;PA&quot;, &quot;PC&quot;, &quot;PCN&quot;, &quot;PE&quot;, &quot;PEN&quot;, &quot;PGN&quot;, &quot;PHC&quot;, &quot;PHE&quot;, &quot;PHO&quot;, &quot;PI&quot;, &quot;PIN&quot;, &quot;PLAC&quot;, &quot;PN&quot;, &quot;PNT&quot;, &quot;PPIN&quot;,
+			&quot;PPN&quot;, &quot;PRC&quot;, &quot;PRN&quot;, &quot;PT&quot;, &quot;QA&quot;, &quot;RI&quot;, &quot;RN&quot;, &quot;RPH&quot;, &quot;RR&quot;, &quot;RRI&quot;, &quot;RRP&quot;, &quot;SAMN&quot;, &quot;SB&quot;, &quot;SID&quot;, &quot;SL&quot;, &quot;SN&quot;,
+			&quot;SNBSN&quot;, &quot;SNO&quot;, &quot;SP&quot;, &quot;SR&quot;, &quot;SRX&quot;, &quot;SS&quot;, &quot;STN&quot;, &quot;TAX&quot;, &quot;TN&quot;, &quot;TPR&quot;, &quot;TRL&quot;, &quot;U&quot;, &quot;UDI&quot;, &quot;UPIN&quot;, &quot;USID&quot;, &quot;VN&quot;,
+			&quot;VP&quot;, &quot;VS&quot;, &quot;WC&quot;, &quot;WCN&quot;, &quot;WP&quot;, &quot;XV&quot;, &quot;XX&quot;)
+	));
+
+	// See https://terminology.hl7.org/5.5.0/CodeSystem-v2-0396.html
+<span class="fc" id="L198">	private static final String[][] stringToUri = {</span>
+		{ CDCGS1VIS, &quot;CDCGS1VIS&quot;, CDCGS1VIS_OID },
+		{ CDCPHINVS, &quot;CDCPHINVS&quot;, CDCPHINVS_OID },
+		{ CDCREC, &quot;CDCREC&quot;, &quot;http://terminology.hl7.org/CodeSystem/v2-0005&quot;, CDCREC_OID },
+		{ CPT, &quot;C4&quot;, &quot;CPT&quot;, &quot;CPT4&quot;, CPT_OID},
+		{ CDT, &quot;CDT&quot;, CDT_OID },
+		{ CVX, &quot;CVX&quot;, CVX_OID },
+		{ DICOM, &quot;DCM&quot;, &quot;DICOM&quot;, DICOM_OID },
+		{ HCPCS, &quot;HCPCS&quot;, HCPCS_OID },
+		{ HSLOC, &quot;HSLOC&quot;, HSLOC_OID },
+		{ ICD10CM, &quot;ICD10CM&quot;, ICD10CM_OID },
+		{ ICD10PCS, &quot;ICD10PCS&quot;, ICD10PCS_OID },
+		{ ICD9CM, &quot;ICD9CM&quot;, &quot;I9CDX&quot;, &quot;I9C&quot;, ICD9CM_OID },
+		{ ICD9PCS, &quot;ICD9PCS&quot;, &quot;I9CP&quot;, ICD9PCS_OID },
+		IDENTIFIER_TYPE_NAMES,
+		IDTYPE_NAMES,
+		{ IETF, &quot;IETF&quot;, IETF_OID },
+		{ LOINC, &quot;LN&quot;, &quot;LOINC&quot;, &quot;LNC&quot;, LOINC_OID },
+		{ LOCATION_TYPE, LOCATION_TYPE_OID },
+		{ MVX, &quot;MVX&quot;, MVX_OID },
+		{ NCI, &quot;NCI&quot;, &quot;NCIT&quot;, NCI_OID },
+		{ NDC, &quot;NDC&quot;, NDC_OID },
+		{ NDFRT, &quot;NDFRT&quot;, &quot;NDF-RT&quot;, NDFRT_OID },
+		{ RXNORM, &quot;RXNORM&quot;, RXNORM_OID },
+		{ SNOMED, &quot;SCT&quot;, &quot;SNOMEDCT&quot;, &quot;SNOMED-CT&quot;, &quot;SNOMED&quot;, &quot;SNM&quot;, SNOMED_OID },
+		{ SSN, &quot;SSN&quot;, SSN_OID },
+		{ UCUM, &quot;UCUM&quot;, UCUM_OID },
+		{ NULL_FLAVOR, &quot;NULLFLAVOR&quot;, NULL_FLAVOR_OID },
+		{ DATA_ABSENT, &quot;DATAABSENTREASON&quot;, DATA_ABSENT_OID }
+	};
+	
+	/** 
+	 * Get a list of aliases known by the V2 Converter for different coding and identifier systems.
+	 * 
+	 * Returns a list of string lists containing aliases for systems.  For each system,  
+	 * the FHIR preferred system URI is first in its sublist, the commonly used V2 namespace is second,
+	 * and the OID for the system is last.
+	 * 
+	 * @return	A list of string lists containing aliases for a coding or identifier system.  
+	 */
+	public static List&lt;List&lt;String&gt;&gt; getCodeSystemAliases() {
+<span class="fc" id="L239">		List&lt;List&lt;String&gt;&gt; a = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L240" title="All 2 branches covered.">		for (String[] s : stringToUri) {</span>
+<span class="fc" id="L241">			a.add(Arrays.asList(s));</span>
+		}
+<span class="fc" id="L243">		return a;</span>
+	}
+	
+<span class="fc" id="L246">	static Map&lt;String, NamingSystem&gt; namingSystems = new LinkedHashMap&lt;&gt;();</span>
+	static {
+<span class="fc bfc" id="L248" title="All 2 branches covered.">		for (String[] list: stringToUri) {</span>
+<span class="fc" id="L249">			addNamingSystem(list[1], list);</span>
+		}
+<span class="fc" id="L251">	}</span>
+	
+	/**
+	 * Add a naming system to the map of known systems.
+	 * @param name The name of the system
+	 * @param list	A list of strings containing aliases for a coding or identifier system.  
+	 * The first entry must be the URI.
+	 */
+	public static void addNamingSystem(String name, String... list) {
+<span class="fc" id="L260">		NamingSystem ns = null;</span>
+<span class="fc" id="L261">		String uri = list[0];</span>
+<span class="fc" id="L262">		ns = namingSystems.get(uri);</span>
+<span class="fc bfc" id="L263" title="All 2 branches covered.">		if (ns == null) {</span>
+			// Create a new one
+<span class="fc" id="L265">			ns = createNamingSystem(uri, name);</span>
+<span class="fc" id="L266">			namingSystems.put(uri, ns);</span>
+		}
+<span class="pc bpc" id="L268" title="1 of 2 branches missed.">		if (name != null) {</span>
+<span class="fc bfc" id="L269" title="All 2 branches covered.">			if (!ns.hasName()) {</span>
+<span class="fc" id="L270">				ns.setName(name);</span>
+			}
+<span class="fc" id="L272">			namingSystems.put(name, ns);</span>
+		}
+<span class="fc bfc" id="L274" title="All 2 branches covered.">		for (String s: list) {</span>
+<span class="fc bfc" id="L275" title="All 2 branches covered.">			if (!uri.equals(s)) {</span>
+<span class="fc" id="L276">				updateNamingSystem(ns, s);</span>
+			}
+<span class="fc" id="L278">			namingSystems.put(s, ns);</span>
+		}
+<span class="fc" id="L280">	}</span>
+	
+	/**
+	 * Create a naming system with the given URI and name.
+	 * @param uri	The URI for the naming system
+	 * @param name	A common name for the naming system
+	 * @return	The created naming system
+	 */
+	public static NamingSystem createNamingSystem(String uri, String name) {
+<span class="fc" id="L289">		NamingSystem ns = new NamingSystem();</span>
+<span class="fc" id="L290">		ns.setUrl(uri);</span>
+<span class="fc" id="L291">		NamingSystemUniqueIdComponent uid = ns.addUniqueId();</span>
+<span class="fc" id="L292">		uid.setType(NamingSystemIdentifierType.URI);</span>
+<span class="fc" id="L293">		uid.setValue(uri);</span>
+<span class="fc" id="L294">		uid.setPreferred(true);</span>
+<span class="fc" id="L295">		uid = ns.addUniqueId();</span>
+<span class="pc bpc" id="L296" title="1 of 2 branches missed.">		if (StringUtils.isNotBlank(name)) {</span>
+<span class="fc" id="L297">			uid.setType(NamingSystemIdentifierType.OTHER);</span>
+<span class="fc" id="L298">			uid.setValue(name.trim());</span>
+<span class="fc" id="L299">			uid.setPreferred(false);</span>
+		}
+<span class="fc" id="L301">		return ns;</span>
+	}
+	
+	/**
+	 * Add a unique id to a naming system if it doesn't already exist.
+	 * @param ns	The naming system to update
+	 * @param uid The unique id to add
+	 */
+	public static void updateNamingSystem(NamingSystem ns, String uid) {
+<span class="fc bfc" id="L310" title="All 2 branches covered.">		for (NamingSystemUniqueIdComponent uniqueId : ns.getUniqueId()) {</span>
+<span class="fc bfc" id="L311" title="All 2 branches covered.">			if (uid.equals(uniqueId.getValue())) {</span>
+<span class="fc" id="L312">				return;</span>
+			}
+<span class="fc" id="L314">		}</span>
+<span class="fc" id="L315">		NamingSystemUniqueIdComponent uniqueId = ns.addUniqueId();</span>
+<span class="fc" id="L316">		uniqueId.setValue(uid);</span>
+<span class="fc" id="L317">		uniqueId.setPreferred(false);</span>
+<span class="fc bfc" id="L318" title="All 2 branches covered.">		if (uid.matches(&quot;^([\\-a-z0-9]+):.*$&quot;)) {</span>
+<span class="fc" id="L319">			uniqueId.setType(NamingSystemIdentifierType.URI);</span>
+<span class="fc bfc" id="L320" title="All 2 branches covered.">		} else if (uid.matches(&quot;^\\d+(.\\d+)+$&quot;)) {</span>
+<span class="fc" id="L321">			uniqueId.setType(NamingSystemIdentifierType.OID);</span>
+<span class="pc bpc" id="L322" title="1 of 2 branches missed.">		} else if (uid.matches(&quot;^[0-9A-Fa-f]+(-[0-9A-Fa-f]+)+$&quot;)) {</span>
+<span class="nc" id="L323">			uniqueId.setType(NamingSystemIdentifierType.UUID);</span>
+		} else {
+<span class="fc" id="L325">			uniqueId.setType(NamingSystemIdentifierType.OTHER);</span>
+		}
+<span class="fc" id="L327">		namingSystems.put(uid, ns);</span>
+<span class="fc" id="L328">	}</span>
+
+	/**
+	 * Given a URI, get the associated OID
+	 * @param uri	The URI to get the OID for
+	 * @return the associated OID or null if none is known (without the urn:oid: prefix).
+	 */
+	public static String toOid(String uri) {
+<span class="nc bnc" id="L336" title="All 2 branches missed.">		if (StringUtils.isEmpty(uri)) {</span>
+<span class="nc" id="L337">			return null;</span>
+		}
+<span class="nc" id="L339">		NamingSystem ns = namingSystems.get(uri);</span>
+<span class="nc bnc" id="L340" title="All 2 branches missed.">		if (ns == null) {</span>
+<span class="nc" id="L341">			return null;</span>
+		}
+<span class="nc bnc" id="L343" title="All 2 branches missed.">		for (NamingSystemUniqueIdComponent uid : ns.getUniqueId()) {</span>
+<span class="nc bnc" id="L344" title="All 2 branches missed.">			if (NamingSystemIdentifierType.OID.equals(uid.getType())) {</span>
+<span class="nc" id="L345">				return uid.getValue();</span>
+			}
+<span class="nc" id="L347">		}</span>
+<span class="nc" id="L348">		return null;</span>
+	}
+	
+	/** 
+	 * Get the commonly used V2 name for a coding or identifier system.
+	 *  
+	 * @param uri	The system name
+	 * @return	The commonly used V2 name, or null if name is unknown. 
+	 */
+	public static String toTextName(String uri) {
+<span class="pc bpc" id="L358" title="1 of 2 branches missed.">		if (StringUtils.isEmpty(uri)) {</span>
+<span class="nc" id="L359">			return &quot;&quot;;</span>
+		}
+<span class="fc" id="L361">		NamingSystem ns = namingSystems.get(uri);</span>
+<span class="fc bfc" id="L362" title="All 2 branches covered.">		if (ns == null) {</span>
+<span class="fc" id="L363">			return null;</span>
+		}
+<span class="pc bpc" id="L365" title="1 of 2 branches missed.">		for (NamingSystemUniqueIdComponent uid : ns.getUniqueId()) {</span>
+<span class="fc bfc" id="L366" title="All 2 branches covered.">			if (!uid.getPreferred()) {  // First non-preferred uinque id is used as name </span>
+<span class="fc" id="L367">				return uid.getValue();</span>
+			}
+<span class="fc" id="L369">		}</span>
+<span class="nc bnc" id="L370" title="All 2 branches missed.">		if (ns.hasUniqueId()) {</span>
+<span class="nc" id="L371">			return ns.getUniqueIdFirstRep().getValue();</span>
+		}
+<span class="nc" id="L373">		return null;</span>
+		
+	}
+	/**
+	 * Given a OID, get the associated URI
+	 * @param oid The oid to look up, with or without urn:oid: prefix
+	 * @return the associated URI or null if none is known
+	 */
+	public static String toUri(String oid) {
+<span class="nc bnc" id="L382" title="All 2 branches missed.">		if (oid.startsWith(&quot;urn:oid:&quot;)) {</span>
+<span class="nc" id="L383">			oid = oid.substring(8);</span>
+		}
+<span class="nc" id="L385">		NamingSystem ns = namingSystems.get(oid);</span>
+<span class="nc bnc" id="L386" title="All 2 branches missed.">		if (ns == null) {</span>
+<span class="nc" id="L387">			return null;</span>
+		}
+<span class="nc" id="L389">		return ns.getUrl();</span>
+	}
+
+	/**
+	 * Get the aliases for any given system.
+	 * @param system	The system
+	 * @return	A list of names the system is known by.
+	 */
+	public static List&lt;String&gt; getSystemNames(String system) {
+<span class="fc bfc" id="L398" title="All 2 branches covered.">		if (StringUtils.isBlank(system)) {</span>
+<span class="fc" id="L399">			return Collections.emptyList();</span>
+		}
+<span class="fc" id="L401">		system = StringUtils.trim(system);</span>
+<span class="fc" id="L402">		String original = system;</span>
+<span class="fc" id="L403">		NamingSystem ns = getNamingSystem(system);</span>
+<span class="fc" id="L404">		List&lt;String&gt; found = null;</span>
+<span class="fc bfc" id="L405" title="All 2 branches covered.">		if (ns == null) {</span>
+<span class="fc" id="L406">			found = new ArrayList&lt;&gt;();</span>
+		} else {
+<span class="fc" id="L408">			found = ns.getUniqueId().stream().map(u -&gt; u.getValue()).collect(Collectors.toCollection(ArrayList::new));</span>
+		}
+		// Return a name for things that are obviously HL7 systems.
+<span class="pc bpc" id="L411" title="1 of 2 branches missed.">		if (&quot;HL7&quot;.equalsIgnoreCase(system)) {</span>
+			// Used in QPD-1 is some queries.
+<span class="nc bnc" id="L413" title="All 2 branches missed.">			if (found.isEmpty()) {</span>
+<span class="nc" id="L414">				found.add(&quot;http://terminology.hl7.org/CodeSystem/v2-0003&quot;);</span>
+			}
+<span class="fc" id="L416">		} else if (</span>
+<span class="fc bfc" id="L417" title="All 2 branches covered.">			system.matches(&quot;^(?i)(HL7-?|http://terminology.hl7.org/CodeSystem/v2-|)\\d{4}$&quot;) || </span>
+<span class="pc bpc" id="L418" title="1 of 2 branches missed.">			system.startsWith(&quot;2.16.840.1.113883.12.&quot;)	// V2 Table OID</span>
+		) {
+<span class="fc" id="L420">			String name = &quot;HL7&quot; + StringUtils.right(&quot;000&quot; + system, 4);</span>
+<span class="fc bfc" id="L421" title="All 2 branches covered.">			if (found.isEmpty()) {</span>
+<span class="fc" id="L422">				found.add(&quot;http://terminology.hl7.org/CodeSystem/v2-&quot; + StringUtils.right(name, 4));</span>
+			}
+<span class="fc" id="L424">			found.add(name);</span>
+		}
+		// Special case for table name as HL7 in IHE PIX/PDQ profile
+<span class="pc bpc" id="L427" title="1 of 4 branches missed.">		if (found.contains(&quot;HL70003&quot;) &amp;&amp; !found.contains(&quot;HL7&quot;)) {</span>
+<span class="fc" id="L428">			found.add(&quot;HL7&quot;);</span>
+		}
+<span class="fc bfc" id="L430" title="All 2 branches covered.">		if (!found.contains(original)) {</span>
+<span class="fc" id="L431">			found.add(original);</span>
+		}
+<span class="fc" id="L433">		return found;</span>
+	}
+	
+	/**
+	 * Get the NamingSystem for a given name, system uri, or other alias.
+	 * @param system	The search value
+	 * @return	The NamingSystem, or null if not found
+	 */
+	public static NamingSystem getNamingSystem(String system) {
+<span class="pc bpc" id="L442" title="1 of 2 branches missed.">		if (StringUtils.isBlank(system)) {</span>
+<span class="nc" id="L443">			return null;</span>
+		}
+<span class="fc" id="L445">		NamingSystem ns = namingSystems.get(system);</span>
+<span class="fc bfc" id="L446" title="All 2 branches covered.">		if (ns == null) {</span>
+			// Normalize value by replacing any whitespace, hypens or underscores, and uppercasing the text.
+<span class="fc" id="L448">			String normalizedValue = system.replace(&quot;[-_\\s]+&quot;, &quot;&quot;).toUpperCase();</span>
+<span class="fc" id="L449">			ns = namingSystems.get(normalizedValue);</span>
+		}
+<span class="fc" id="L451">		return ns;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
