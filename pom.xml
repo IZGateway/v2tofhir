@@ -104,6 +104,7 @@
     <dependencyManagement>
         <dependencies>
 			<!-- Import the dependency management POM to enforce consistent dependency versions -->
+			<!-- Commented out until izgw-dependency-management is published to GitHub packages
 			<dependency>
 				<groupId>gov.cdc.izgw</groupId>
 				<artifactId>izgw-dependency-management</artifactId>
@@ -111,6 +112,7 @@
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
+			-->
             <dependency> 
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-parent</artifactId>
@@ -316,26 +318,6 @@
 						</execution>
 					</executions>
 				</plugin>
-                <plugin>
-                    <groupId>org.jacoco</groupId>
-                    <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>${jacoco.version}</version>
-                    <executions>
-                        <execution>
-                            <id>prepare-agent</id>
-                            <phase>initialize</phase>
-                            <goals>
-                                <goal>prepare-agent</goal>
-                            </goals>
-                        </execution>
-                        <execution>
-                            <id>report</id>
-                            <goals>
-                                <goal>report</goal>
-                            </goals>
-                       </execution>
-                    </executions>
-                </plugin>           
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-surefire-plugin</artifactId>
