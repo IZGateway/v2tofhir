@@ -1,1 +1,0 @@
-typeSearchIndex = [{"l":"All Classes and Interfaces","u":"allclasses-index.html"},{"p":"test.gov.cdc.izgateway","l":"NamedArrayList"},{"p":"test.gov.cdc.izgateway.v2tofhir","l":"TestBase.NamedSegment"},{"p":"test.gov.cdc.izgateway.v2tofhir","l":"TestBase"},{"p":"test.gov.cdc.izgateway","l":"TestUtils"}];updateSearchResults();
