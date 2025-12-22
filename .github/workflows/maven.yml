@@ -1,17 +1,6 @@
 name: Java CI with Maven
 
 on:
-  workflow_dispatch:
-    inputs:
-      name:
-        description: 'Run Site Build?'
-        default: false
-        required: false
-        
-  #schedule:
-    # Mon-Fri at 6am
-  #  - cron: "00 6 * * 1,2,3,4,5" 
-
   push:
     branches:
       - Release*
@@ -35,6 +24,11 @@ on:
         description: 'Run SonarCloud analysis'
         required: false
         default: 'true'
+        type: boolean
+      runSiteBuild:
+        description: 'Run Site Build?'
+        required: false
+        default: 'false'
         type: boolean
 
 # Ensure only one build changes dev environment at the same time    
