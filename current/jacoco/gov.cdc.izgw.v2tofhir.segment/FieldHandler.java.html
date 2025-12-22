@@ -1,0 +1,384 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FieldHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">gov.cdc.izgw.v2tofhir.segment</a> &gt; <span class="el_source">FieldHandler.java</span></div><h1>FieldHandler.java</h1><pre class="source lang-java linenums">package gov.cdc.izgw.v2tofhir.segment;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.ServiceConfigurationError;
+
+import org.apache.commons.lang3.StringUtils;
+import org.hl7.fhir.instance.model.api.IBase;
+import org.hl7.fhir.instance.model.api.IBaseResource;
+
+import com.ainq.fhir.utils.PathUtils;
+import com.ainq.fhir.utils.Property;
+
+import ca.uhn.hl7v2.model.Composite;
+import ca.uhn.hl7v2.model.DataTypeException;
+import ca.uhn.hl7v2.model.Message;
+import ca.uhn.hl7v2.model.Segment;
+import ca.uhn.hl7v2.model.Structure;
+import ca.uhn.hl7v2.model.Type;
+import ca.uhn.hl7v2.model.v251.datatype.ST;
+import gov.cdc.izgw.v2tofhir.annotation.ComesFrom;
+import gov.cdc.izgw.v2tofhir.annotation.Produces;
+import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
+import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * A handler for processing field conversions in a Segment of a V2 message.
+ *
+ * @author Audacious Inquiry
+ */
+<span class="fc" id="L37">@Slf4j</span>
+public class FieldHandler implements Comparable&lt;FieldHandler&gt; {
+	/** Set VERIFY_METHODS to true to check method initialization */
+	private static final boolean VERIFY_METHODS = false;
+	/** Set GET_PROPERTY to true to get the property during initialization */
+	private static final boolean GET_PROPERTY = false;
+	private final ComesFrom from;
+	private final Produces produces;
+	private final Method method;
+	@SuppressWarnings(&quot;unused&quot;)
+	private final Property prop;
+	private final Class&lt;? extends IBase&gt; theClass;
+	private final Class&lt;? extends Type&gt; theType;
+	/**
+	 * @param method	The method to which the ComesFrom annotation applies.
+	 * @param from		The annotation
+	 * @param p	The class for the parser
+	 */
+<span class="fc" id="L55">	public FieldHandler(Method method, ComesFrom from, Processor&lt;Message, ? extends Structure&gt; p) {</span>
+<span class="fc" id="L56">		this.method = method;</span>
+<span class="fc" id="L57">		this.from = from;</span>
+<span class="fc" id="L58">		this.produces = p.getProduces();</span>
+		
+		if (GET_PROPERTY) {
+			/**
+			 * This still has a few small problems to fix on more complex
+			 * paths using [] and resolve() features.
+			 */
+			try {
+				prop = PathUtils.getProperty(
+					getResourceClass(produces, from.path(), p), 
+					from.path()
+				);
+			} catch (IllegalArgumentException e) {
+				log.error(e.getMessage(), e);
+				throw new ServiceConfigurationError(e.getMessage(), e);
+			}
+		} else {
+<span class="fc" id="L75">			prop = null;</span>
+		}
+		
+<span class="fc" id="L78">		Class&lt;?&gt;[] params = method.getParameterTypes();</span>
+
+<span class="fc bfc" id="L80" title="All 2 branches covered.">		if (IBase.class.isAssignableFrom(params[0])) {</span>
+			@SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L82">			Class&lt;? extends IBase&gt; param = (Class&lt;? extends IBase&gt;) params[0];</span>
+<span class="fc" id="L83">			theClass = param;</span>
+<span class="fc" id="L84">			theType = null;</span>
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">		} else if (Type.class.isAssignableFrom(params[0])) {</span>
+			@SuppressWarnings(&quot;unchecked&quot;)
+			// Direct handling of type in Parser (e.g., for OBX Segments where Type of OBX-5 is not known
+			// until OBX-2 is parsed.
+<span class="fc" id="L89">			Class&lt;? extends Type&gt; param = (Class&lt;? extends Type&gt;) params[0];</span>
+<span class="fc" id="L90">			theClass = null;</span>
+<span class="fc" id="L91">			theType = param;</span>
+<span class="fc" id="L92">		} else {</span>
+<span class="nc" id="L93">			throw new ServiceConfigurationError(&quot;Method does not accept a FHIR type: &quot; + method);</span>
+		}
+		
+		// Verify setValue works at initialization on a dummy
+		if (VERIFY_METHODS) {
+			IBase dummyObject = null;
+			try {
+				dummyObject = theClass.getDeclaredConstructor().newInstance();
+				// Test the method call
+				setValue(p, dummyObject);
+			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException
+					| InvocationTargetException | NoSuchMethodException | SecurityException e) {
+				throw new ServiceConfigurationError(&quot;Cannot create &quot; + theClass.getSimpleName() + &quot; for &quot; + method);
+			}
+		}
+<span class="fc" id="L108">	}</span>
+
+	private Class&lt;? extends IBaseResource&gt; getResourceClass(Produces produces, String path, Processor&lt;Message, ? extends Structure&gt; p) {
+<span class="nc" id="L111">		Class&lt;? extends IBaseResource&gt; resourceClass = produces.resource();</span>
+<span class="nc" id="L112">		String resourceName = StringUtils.substringBefore(path, &quot;.&quot;);</span>
+		// remove any array index
+<span class="nc bnc" id="L114" title="All 2 branches missed.">		resourceName = resourceName.contains(&quot;[&quot;) ? StringUtils.substringBefore(resourceName, &quot;[&quot;) : resourceName; </span>
+<span class="nc bnc" id="L115" title="All 2 branches missed.">		if (!resourceClass.getSimpleName().equals(resourceName)) {</span>
+<span class="nc bnc" id="L116" title="All 2 branches missed.">			for (Class&lt;? extends IBaseResource&gt; extraClass: produces.extra()) {</span>
+<span class="nc bnc" id="L117" title="All 2 branches missed.">				if (extraClass.getSimpleName().equals(resourceName)) {</span>
+<span class="nc" id="L118">					resourceClass = extraClass;</span>
+<span class="nc" id="L119">					break;</span>
+				}
+			}
+<span class="nc bnc" id="L122" title="All 2 branches missed.">			if (resourceClass == produces.resource()) {</span>
+<span class="nc" id="L123">				throw new IllegalArgumentException(</span>
+<span class="nc" id="L124">					&quot;Resource &quot; + resourceName + &quot; is not in @Produces.resource or @Produces.extra for &quot; + p.getClass().getSimpleName()</span>
+				);
+			}
+		}
+<span class="nc" id="L128">		return resourceClass;</span>
+	}
+
+	/**
+	 * Convert fields within a segment to components in a resource
+	 * 
+	 * @param p	The structure parser to do the handling for
+	 * @param segment	The segment to process
+	 * @param r	The resource to update
+	 */
+	public void handle(Processor&lt;Message, ? extends Structure&gt; p, Segment segment, IBaseResource r) {
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">		if (!from.fixed().isEmpty()) {</span>
+<span class="nc" id="L140">			setFixedValue(p);</span>
+<span class="pc bpc" id="L141" title="1 of 2 branches missed.">		} else if (from.field() != 0) {</span>
+<span class="fc" id="L142">			setFromFieldAndComponent(p, segment);</span>
+		} else {
+			// we have neither a fixed value nor a field and component,
+			// this is a configuration error.
+<span class="nc" id="L146">			log.error(&quot;ComesFrom missing fixed or field value&quot;);</span>
+		}
+<span class="fc" id="L148">	}</span>
+
+	private void setFixedValue(Processor&lt;Message, ? extends Structure&gt; p) {
+<span class="nc" id="L151">		ST st = new ST(null);</span>
+		try {
+<span class="nc" id="L153">			st.setValue(from.fixed());</span>
+<span class="nc" id="L154">			IBase value = DatatypeConverter.convert(theClass, st, from.table()); </span>
+<span class="nc" id="L155">			setValue(p, value);</span>
+<span class="nc" id="L156">		} catch (DataTypeException e) {</span>
+			// This will never happen.
+<span class="nc" id="L158">		}</span>
+<span class="nc" id="L159">	}</span>
+
+	private void setFromFieldAndComponent(Processor&lt;Message, ? extends Structure&gt; p, Segment segment) {
+<span class="fc" id="L162">		Type[] f = ParserUtils.getFields(segment, from.field());</span>
+<span class="fc bfc" id="L163" title="All 2 branches covered.">		if (f.length == 0) {</span>
+<span class="fc" id="L164">			return;</span>
+		}
+<span class="fc bfc" id="L166" title="All 2 branches covered.">		for (Type t: f) {</span>
+<span class="fc" id="L167">			t = getActualType(t);</span>
+<span class="pc bpc" id="L168" title="1 of 2 branches missed.">			if (t == null) {</span>
+<span class="nc" id="L169">				continue;</span>
+			}
+<span class="fc bfc" id="L171" title="All 2 branches covered.">			if (theClass != null) {</span>
+<span class="fc" id="L172">				IBase value = DatatypeConverter.convert(theClass, t, from.table());</span>
+<span class="fc bfc" id="L173" title="All 2 branches covered.">				if (value != null) {</span>
+<span class="fc" id="L174">					setValue(p, value);</span>
+				}
+<span class="pc bpc" id="L176" title="1 of 2 branches missed.">			} else if (theType != null) {</span>
+				// Let the parser handle the type conversion
+<span class="fc" id="L178">				setValue(p, t);</span>
+			}
+		}
+<span class="fc" id="L181">	}</span>
+
+	private Type getActualType(Type t) {
+<span class="fc" id="L184">		t = DatatypeConverter.adjustIfVaries(t, from.type());</span>
+<span class="fc bfc" id="L185" title="All 4 branches covered.">		if (t instanceof Composite comp &amp;&amp; from.component() != 0) {</span>
+			// Check for component
+<span class="fc" id="L187">			Type[] t2 = comp.getComponents();</span>
+<span class="pc bpc" id="L188" title="1 of 2 branches missed.">			if (from.component() &gt; t2.length) {</span>
+<span class="nc" id="L189">				return null;</span>
+			} 
+<span class="fc" id="L191">			return t2[from.component()-1];</span>
+		} 
+<span class="pc bpc" id="L193" title="1 of 2 branches missed.">		if (from.component() &lt; 2) {</span>
+<span class="fc" id="L194">			return t;</span>
+		}
+		// A component &gt; 1 does not exist in a primitive
+<span class="nc" id="L197">		return null;</span>
+	}
+
+	private IBase setValue(Processor&lt;Message, ? extends Structure&gt; p, IBase object) {
+		try {
+<span class="fc" id="L202">			method.invoke(p, object);</span>
+<span class="nc" id="L203">		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {</span>
+			// This is checked during initialization, so failure happens early if it is going to
+			// happen at all, so it's OK to throw an error here.
+<span class="nc" id="L206">			log.error(&quot;Cannot invoke {}: {}&quot;, method, e.getMessage(), e);</span>
+<span class="nc" id="L207">			throw new IllegalStateException(&quot;Cannot invoke &quot; + method, e);</span>
+<span class="fc" id="L208">		}</span>
+<span class="fc" id="L209">		return object;</span>
+	}
+	
+	private Type setValue(Processor&lt;Message, ? extends Structure&gt; p, Type object) {
+		try {
+<span class="fc" id="L214">			method.invoke(p, object);</span>
+<span class="nc" id="L215">		} catch (IllegalAccessException | IllegalArgumentException e) {</span>
+			// This is checked during initialization, so failure happens early if it is going to
+			// happen at all, so it's OK to throw an error here.
+<span class="nc" id="L218">			log.error(&quot;Cannot invoke {}: {}&quot;, method, e.getMessage(), e);</span>
+<span class="nc" id="L219">			throw new IllegalStateException(&quot;Cannot invoke &quot; + method, e);</span>
+<span class="nc" id="L220">		} catch (InvocationTargetException ex) {</span>
+<span class="nc bnc" id="L221" title="All 2 branches missed.">			if (ex.getTargetException() instanceof RuntimeException rte) {</span>
+<span class="nc" id="L222">				throw rte;</span>
+			}
+<span class="nc bnc" id="L224" title="All 2 branches missed.">			if (ex.getTargetException() instanceof Error err) {</span>
+<span class="nc" id="L225">				err.printStackTrace();</span>
+<span class="nc" id="L226">				throw new IllegalStateException(&quot;Error executing &quot; + method, err.getCause());</span>
+			}
+<span class="nc" id="L228">			throw new IllegalStateException(&quot;Exception executing &quot; + method, ex.getCause());</span>
+<span class="fc" id="L229">		}</span>
+<span class="fc" id="L230">		return object;</span>
+	}
+	
+	public String toString() {
+<span class="nc" id="L234">		return toString(from) + method.toString() ;</span>
+	}
+	
+	private String toString(ComesFrom from) {
+<span class="nc" id="L238">		StringBuilder b = new StringBuilder();</span>
+<span class="nc" id="L239">		b.append(&quot;\n@ComesFrom(path = \&quot;&quot;).append(from.path()).append(&quot;\&quot;&quot;);</span>
+<span class="nc" id="L240">		appendField(b, &quot;field&quot;, from.field());</span>
+<span class="nc" id="L241">		appendField(b, &quot;component&quot;, from.component());</span>
+<span class="nc" id="L242">		appendField(b, &quot;fixed&quot;, from.fixed());</span>
+<span class="nc" id="L243">		appendField(b, &quot;table&quot;, from.table());</span>
+<span class="nc" id="L244">		appendField(b, &quot;map&quot;, from.map());</span>
+<span class="nc" id="L245">		appendField(b, &quot;comment&quot;, from.comment());</span>
+<span class="nc" id="L246">		appendField(b, &quot;also&quot;, from.also());</span>
+<span class="nc" id="L247">		appendField(b, &quot;priority&quot;, from.priority());</span>
+<span class="nc" id="L248">		b.append(&quot;)\n&quot;);</span>
+<span class="nc" id="L249">		return b.toString();</span>
+	}
+
+	private void appendField(StringBuilder b, String name, String[] also) {
+<span class="nc bnc" id="L253" title="All 2 branches missed.">		if (also.length == 0) return;</span>
+<span class="nc" id="L254">		b.append(&quot;, &quot;).append(name).append(&quot; = { &quot;);</span>
+<span class="nc bnc" id="L255" title="All 2 branches missed.">		for (String v: also) {</span>
+<span class="nc" id="L256">			b.append(&quot;\&quot;&quot;).append(v).append(&quot;\&quot;, &quot;);</span>
+		}
+<span class="nc" id="L258">		b.setCharAt(b.length()-1, '}');</span>
+<span class="nc" id="L259">		b.setCharAt(b.length()-2, ' ');</span>
+<span class="nc" id="L260">	}</span>
+
+	private void appendField(StringBuilder b, String name, int value) {
+<span class="nc bnc" id="L263" title="All 2 branches missed.">		if (value &lt;= 0) return;</span>
+<span class="nc" id="L264">		b.append(&quot;, &quot;).append(name).append(&quot; = &quot;).append(value);</span>
+<span class="nc" id="L265">	}</span>
+
+	private void appendField(StringBuilder b, String name, String string) {
+<span class="nc bnc" id="L268" title="All 2 branches missed.">		if (StringUtils.isBlank(string)) {</span>
+<span class="nc" id="L269">			return;</span>
+		}
+<span class="nc" id="L271">		b.append(&quot;, &quot;).append(name).append(&quot; = \&quot;&quot;).append(string).append(&quot;\&quot;&quot;);</span>
+<span class="nc" id="L272">	}</span>
+	
+	/**
+	 * @param fh1	The first field handler to compare
+	 * @param fh2	The second field handler to compare
+	 * @return &amp;lt; 0 if fh1 &amp;lt; fh2, 0 if equal, &amp;gt; 0 if fh1 &amp;gt; fh2
+	 */
+	public static int compare(FieldHandler fh1, FieldHandler fh2) {
+<span class="pc bpc" id="L280" title="1 of 2 branches missed.">		if (fh1 == fh2)</span>
+<span class="nc" id="L281">			return 0;</span>
+<span class="pc bpc" id="L282" title="1 of 2 branches missed.">		if (fh1 == null) </span>
+<span class="nc" id="L283">			return -1;</span>
+<span class="pc bpc" id="L284" title="1 of 2 branches missed.">		if (fh2 == null)</span>
+<span class="nc" id="L285">			return 1;</span>
+		// Priority comparison is reversed
+<span class="fc" id="L287">		int comp = -Integer.compare(fh1.from.priority(), fh2.from.priority());</span>
+<span class="fc bfc" id="L288" title="All 2 branches covered.">		if (comp != 0) </span>
+<span class="fc" id="L289">			return comp;</span>
+<span class="fc" id="L290">		comp = Integer.compare(fh1.from.field(), fh2.from.field());</span>
+<span class="fc bfc" id="L291" title="All 2 branches covered.">		if (comp != 0) </span>
+<span class="fc" id="L292">			return comp;</span>
+<span class="fc" id="L293">		comp = Integer.compare(fh1.from.component(), fh2.from.component());</span>
+<span class="pc bpc" id="L294" title="1 of 2 branches missed.">		if (comp != 0) </span>
+<span class="fc" id="L295">			return comp;</span>
+<span class="nc" id="L296">		comp = fh1.toString().compareTo(fh2.toString());</span>
+<span class="nc bnc" id="L297" title="All 2 branches missed.">		if (comp != 0) </span>
+<span class="nc" id="L298">			return comp;</span>
+<span class="nc" id="L299">		return fh1.method.toString().compareTo(fh2.toString());</span>
+	}
+
+	@Override
+	public int compareTo(FieldHandler that) {
+<span class="fc" id="L304">		return compare(this, that);</span>
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+<span class="nc bnc" id="L309" title="All 2 branches missed.">		if (obj instanceof FieldHandler that) {</span>
+<span class="nc bnc" id="L310" title="All 2 branches missed.">			return compareTo(that) == 0;</span>
+		}
+<span class="nc" id="L312">		return false;</span>
+	}
+
+	@Override
+	public int hashCode() {
+<span class="nc" id="L317">		return from.hashCode() ^ method.hashCode();</span>
+	}
+
+	/**
+	 * initFieldHandlers must be called by a parser before calling parse(segment, parser)
+	 * 
+	 * @see AbstractStructureParser#getFieldHandlers()
+	 * @param p	The structure parser to compute the field handlers for.
+	 * @param fieldHandlers	The list to update with all of the field handlers 
+	 */
+	public static void initFieldHandlers(Processor&lt;Message, ? extends Structure&gt; p, List&lt;FieldHandler&gt; fieldHandlers) {
+		// Synchronize on the list in case two callers are trying to to initialize it at the 
+		// same time.  This avoids one thread from trying to use fieldHandlers while another 
+		// potentially overwrites it.
+<span class="fc" id="L331">		synchronized (fieldHandlers) { // NOSONAR This use of a parameter for synchronization is OK</span>
+			// We got the lock, recheck the entry condition.
+<span class="pc bpc" id="L333" title="1 of 2 branches missed.">			if (!fieldHandlers.isEmpty()) {</span>
+				// Another thread initialized the list.
+<span class="nc" id="L335">				return;</span>
+			}
+			/*
+			 * Go through and find all methods with a ComesFrom annotation.
+			 */
+<span class="fc bfc" id="L340" title="All 2 branches covered.">			for (Method method: p.getClass().getMethods()) {</span>
+<span class="fc bfc" id="L341" title="All 2 branches covered.">				for (ComesFrom from: method.getAnnotationsByType(ComesFrom.class)) {</span>
+<span class="fc" id="L342">					fieldHandlers.add(new FieldHandler(method, from, p));</span>
+				}
+			}
+<span class="fc" id="L345">			Collections.sort(fieldHandlers);</span>
+<span class="fc" id="L346">		}</span>
+<span class="fc" id="L347">	}</span>
+	
+	/**
+	 * Get all public methods with a ComesFrom annotation.
+	 * @param parserClass The parser to get the annotations from.
+	 * @return all methods with a ComesFrom annotation in processing order.
+	 */
+	public static List&lt;ComesFrom&gt; getComesFrom(
+		Class&lt;? extends AbstractStructureParser&gt; parserClass
+	) {
+<span class="fc" id="L357">		List&lt;ComesFrom&gt; a = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L358" title="All 2 branches covered.">		for (Method method: parserClass.getMethods()) {</span>
+<span class="fc" id="L359">			a.addAll(Arrays.asList(method.getAnnotationsByType(ComesFrom.class)));</span>
+		}
+<span class="fc" id="L361">		Collections.sort(a, FieldHandler::compareComesFrom);</span>
+<span class="fc" id="L362">		return a;</span>
+	}
+	
+	/**
+	 * Order ComesFrom annotations into processing order
+	 * @param a The first annotation
+	 * @param b The second annotation
+	 * @return The annotations in processing order
+	 */
+	public static int compareComesFrom(ComesFrom a, ComesFrom b) {
+<span class="pc bpc" id="L372" title="1 of 2 branches missed.">		if (Objects.equals(a, b)) {</span>
+<span class="nc" id="L373">			return 0;</span>
+		}
+<span class="fc" id="L375">		int comp = -Integer.compare(a.priority(), b.priority());</span>
+<span class="fc bfc" id="L376" title="All 2 branches covered.">		if (comp != 0) return comp;</span>
+<span class="fc" id="L377">		comp = Integer.compare(a.field(), b.field());</span>
+<span class="fc bfc" id="L378" title="All 2 branches covered.">		if (comp != 0) return comp;</span>
+<span class="fc" id="L379">		comp = Integer.compare(a.component(), b.component());</span>
+<span class="pc bpc" id="L380" title="1 of 2 branches missed.">		if (comp != 0) return comp;</span>
+<span class="nc" id="L381">		return a.path().compareTo(b.path());</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

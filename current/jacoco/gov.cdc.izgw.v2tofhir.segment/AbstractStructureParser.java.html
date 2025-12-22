@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractStructureParser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">gov.cdc.izgw.v2tofhir.segment</a> &gt; <span class="el_source">AbstractStructureParser.java</span></div><h1>AbstractStructureParser.java</h1><pre class="source lang-java linenums">package gov.cdc.izgw.v2tofhir.segment;
+
+import java.util.List;
+
+import org.hl7.fhir.instance.model.api.IBaseResource;
+import ca.uhn.hl7v2.HL7Exception;
+import ca.uhn.hl7v2.model.Message;
+import ca.uhn.hl7v2.model.Segment;
+import ca.uhn.hl7v2.model.Structure;
+import gov.cdc.izgw.v2tofhir.converter.Parser;
+import lombok.extern.slf4j.Slf4j;
+
+import org.hl7.fhir.r4.model.Resource;
+
+/**
+ * This is an abstract implementation for StructureParser instances used by the MessageParser.
+ * 
+ * @author Audacious Inquiry
+ */
+<span class="fc" id="L20">@Slf4j</span>
+public abstract class AbstractStructureParser {
+	/**
+	 * This class creates an AbstractStructureParser as a Structure Processor.
+	 * 
+	 * @author Audacious Inquiry
+	 */
+	public abstract static class AbstractStructureProcessor extends AbstractStructureParser implements Processor&lt;Message, Structure&gt; { 
+		AbstractStructureProcessor(Parser&lt;Message, Structure&gt; messageParser, String structureName) {
+<span class="nc" id="L29">			super(messageParser, structureName);</span>
+<span class="nc" id="L30">		}</span>
+		
+		/**
+		 * Annotation driven parsing.  Call this method to use parsing driven
+		 * by ComesFrom and Produces annotations in the parser.
+		 * 
+		 * This method will be called by MessageParser for each segment of the given type that
+		 * appears within the method.  It will create the primary resource produced by the
+		 * parser (by calling the setup() method) and then parses individual fields of the 
+		 * segment and passes them to parser methods to add them to the primary resource or 
+		 * to create any extra resources.
+		 * 
+		 * @param s The segment to be parsed
+		 */
+		public void parseSegment(Segment s) {
+			try {
+<span class="nc bnc" id="L46" title="All 4 branches missed.">				if (s == null || s.isEmpty()) {</span>
+<span class="nc" id="L47">					return;</span>
+				}
+<span class="nc" id="L49">			} catch (HL7Exception e) {</span>
+<span class="nc" id="L50">				log.warn(&quot;Unexpected HL7 Exception: {}&quot;, e.getMessage(), e);</span>
+<span class="nc" id="L51">				return;</span>
+<span class="nc" id="L52">			}</span>
+
+<span class="nc" id="L54">			super.segment = s;</span>
+<span class="nc" id="L55">			IBaseResource r = setup();</span>
+<span class="nc bnc" id="L56" title="All 2 branches missed.">			if (r == null) {</span>
+				// setup() returned nothing, there must be nothing to do
+<span class="nc" id="L58">				return;</span>
+			}
+<span class="nc" id="L60">			List&lt;FieldHandler&gt; handlers = getFieldHandlers();</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">			for (FieldHandler fieldHandler : handlers) {</span>
+<span class="nc" id="L62">				fieldHandler.handle(this, s, r);</span>
+<span class="nc" id="L63">			}</span>
+<span class="nc" id="L64">		}</span>
+		
+		@Override
+		public Parser&lt;Message, Structure&gt; getParser() {
+<span class="nc" id="L68">			return messageParser;</span>
+		}
+	}
+	
+	/** The current segment */
+	protected Segment segment;
+	/**
+	 * Returns the current segment being parsed.
+	 * @return the current segment being parsed.
+	 */
+	protected Segment getSegment() {
+<span class="fc" id="L79">		return segment;</span>
+	}
+
+	/**
+	 * Subclasses must implement this method to get the field handlers.
+	 * The list of field handers can be stored as a static member of the Parser
+	 * class, and initialized once from a concrete instance of that class
+	 * using initFieldHandlers.
+	 * 
+	 * @return	The list of Field Handlers
+	 */
+	protected abstract List&lt;FieldHandler&gt; getFieldHandlers(); 
+
+	protected final Parser&lt;Message, Structure&gt; messageParser;
+	private final String structureName;
+
+	/**
+	 * Contruct a StructureParser for the given messageParser and
+	 * @param messageParser
+	 * @param segmentName
+	 */
+<span class="fc" id="L100">	AbstractStructureParser(Parser&lt;Message, Structure&gt; messageParser, String structureName) {</span>
+<span class="fc" id="L101">		this.messageParser = messageParser;</span>
+<span class="fc" id="L102">		this.structureName = structureName;</span>
+<span class="fc" id="L103">	}</span>
+
+	/**
+	 * Implements the structure() operation for Processor
+	 * @return The name of the structure
+	 */
+	public String structure() {
+<span class="nc" id="L110">		return structureName;</span>
+	}
+	
+	/**
+	 * Implement isEmpty for Parser&amp;lt;Structure&amp;gt;
+	 * @param s	The structure to check
+	 * @return true if empty or in error
+	 */
+	public boolean isEmpty(Structure s) {
+		try {
+<span class="pc bpc" id="L120" title="2 of 4 branches missed.">			return s == null || s.isEmpty();</span>
+<span class="nc" id="L121">		} catch (HL7Exception e) {</span>
+<span class="nc" id="L122">			log.warn(&quot;Unexpected HL7 Exception: {}&quot;, e.getMessage(), e);</span>
+<span class="nc" id="L123">			return true;</span>
+		}
+	}
+	
+	/**
+	 * Get a property value from the context.
+	 * 
+	 * This is simply a convenience method for calling getContext().getProperty(t).
+	 * 
+	 * @param &lt;T&gt;	The type of property to retrieve.
+	 * @param t		The class type of the property	
+	 * @return		The requested property, or null if not present
+	 */
+	public &lt;T&gt; T getProperty(Class&lt;T&gt; t) {
+<span class="nc" id="L137">		return messageParser.getContext().getProperty(t);</span>
+	}
+	
+	/** 
+	 * Set up any resources that field handlers will use.  Used during
+	 * initialization of field handlers as well as during a normal 
+	 * parse operation.
+	 * 
+	 * NOTE: Setup can look at previously parsed items to determine if there is 
+	 * any work to do in the context of the current message.
+	 * 
+	 * @return the primary resource being created by this parser, or 
+	 * null if parsing in this context should do nothing.
+	 */
+	public abstract IBaseResource setup();
+	
+	/**
+	 * Get a resource of the specified type with the specified identifier.
+	 * @param &lt;R&gt;	The type of resource
+	 * @param clazz	The specified type of the resource
+	 * @param id	The identifier (just the id part, no resource type or url
+	 * @return	The requested resource, or null if not found.
+	 */
+	public &lt;R extends Resource&gt; R getResource(Class&lt;R&gt; clazz, String id) {
+<span class="nc" id="L161">		return messageParser.getResource(clazz, id);</span>
+	}
+	/**
+	 * Get all resources of the specified type that have been created during this parsing session.
+	 * @param &lt;R&gt;	The type of resource
+	 * @param clazz	The specified type of resource to retrieve
+	 * @return	A list of the requested resources, or an empty list of none were found.
+	 */
+	public &lt;R extends Resource&gt; List&lt;R&gt; getResources(Class&lt;R&gt; clazz) {
+<span class="nc" id="L170">		return messageParser.getResources(clazz);</span>
+	}
+	
+	/**
+	 * Create a resource of the specified type for this parsing session.
+	 * This method is typically called by the first segment of a group that is associated with 
+	 * a given resource.
+	 *  
+	 * @param &lt;R&gt;	The type of resource
+	 * @param theClass	The specified type for the resource to create
+	 * @return	A new resource of the specified type.  The id will already be populated.
+	 */
+	public &lt;R extends IBaseResource&gt; R createResource(Class&lt;R&gt; theClass) {
+<span class="fc" id="L183">		return messageParser.createResource(theClass, null);</span>
+	}
+	
+	/**
+	 * Add a resource for this parsing session.
+	 * This method is typically called to add resources that were created in some other
+	 * way than from createResource(), e.g., from DatatypeConverter.to* methods
+	 * that return a standalone resource.
+	 * 
+	 * @param &lt;R&gt;	The type of resource
+	 * @param resource	The resource
+	 * @return	The resource
+	 */
+	public &lt;R extends IBaseResource&gt; R addResource(R resource) {
+<span class="fc" id="L197">		return messageParser.addResource(null, resource);</span>
+	}
+	/**
+	 * Find a resource of the specified type for this parsing session, or create one if none
+	 * can be found or id is null or empty.
+	 * 
+	 * This method is typically called by the first segment of a group that is associated with 
+	 * a given resource.  It can be used to create a resource with a given id value if control
+	 * is needed over the id value.
+	 *  
+	 * @param &lt;R&gt;	The type of resource
+	 * @param clazz	The sepecified type for the resource to create
+	 * @param id The identifier to assign.
+	 * @return	A new resource of the specified type.  The id will already be populated.
+	 */
+	public &lt;R extends Resource&gt; R findResource(Class&lt;R&gt; clazz, String id) {
+<span class="nc" id="L213">		return messageParser.findResource(clazz, id);</span>
+	}
+	
+	/**
+	 * Get the first generated resource of the specified type.
+	 * 
+	 * @param &lt;R&gt;	The type of resource
+	 * @param clazz	The class of the resource
+	 * @return The generated resource or null if not found.
+	 */
+	public &lt;R extends Resource&gt; R getFirstResource(Class&lt;R&gt; clazz) {
+<span class="fc" id="L224">		return messageParser.getFirstResource(clazz);</span>
+	}
+
+	/**
+	 * Get the last generated resource of the specified type.
+	 * 
+	 * @param &lt;R&gt;	The type of resource
+	 * @param clazz	The class of the resource
+	 * @return The generated resource or null if not found.
+	 */
+	public &lt;R extends Resource&gt; R getLastResource(Class&lt;R&gt; clazz) {
+<span class="fc" id="L235">		return messageParser.getLastResource(clazz);</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
