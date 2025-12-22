@@ -103,14 +103,6 @@
 	</scm>
     <dependencyManagement>
         <dependencies>
-			<!-- Import the dependency management POM to enforce consistent dependency versions -->
-			<dependency>
-				<groupId>gov.cdc.izgw</groupId>
-				<artifactId>izgw-dependency-management</artifactId>
-				<version>1.0.0-SNAPSHOT</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
             <dependency> 
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-parent</artifactId>
