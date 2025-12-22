@@ -215,22 +215,23 @@ jobs:
             -DskipDependencyCheck=true \
             -Dimage.tag=$IMAGE_BRANCH_TAG 
 
-    - name: SonarCloud Scan
-      # Run on scheduled builds, workflow_dispatch with runSonar=true, or pull requests
-      if: |
-        github.event_name == 'schedule' || 
-        (github.event_name == 'workflow_dispatch' && github.event.inputs.runSonar == 'true') ||
-        github.event_name == 'pull_request'
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        mvn -B sonar:sonar \
-          -Dmaven.test.skip=true \
-          -Dsonar.organization=izgateway \
-          -Dsonar.projectKey=IZGateway_v2tofhir \
-          -Dsonar.host.url=https://sonarcloud.io \
-          -Dsonar.token=${{ secrets.SONAR_TOKEN }}
+    # SonarCloud Scan - Commented out, use SonarCloud GitHub App instead
+    # The SonarCloud GitHub App automatically scans PRs without needing this step
+    # To enable: Install SonarCloud GitHub App at https://github.com/apps/sonarcloud
+    # - name: SonarCloud Scan
+    #   if: |
+    #     github.event_name == 'schedule' || 
+    #     (github.event_name == 'workflow_dispatch' && github.event.inputs.runSonar == 'true')
+    #   env:
+    #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #   run: |
+    #     mvn -B sonar:sonar \
+    #       -Dmaven.test.skip=true \
+    #       -Dsonar.organization=izgateway \
+    #       -Dsonar.projectKey=IZGateway_v2tofhir \
+    #       -Dsonar.host.url=https://sonarcloud.io \
+    #       -Dsonar.token=${{ secrets.SONAR_TOKEN }}
 
 # Use GitHub Action to speed up and improve dependency checking
 # NOTE: Disable automatic dependency checking in the build, this replaces it          
