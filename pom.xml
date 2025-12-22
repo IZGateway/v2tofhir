@@ -34,7 +34,11 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.java.package>${project.groupId}</project.java.package>
 		<timestamp>${maven.build.timestamp}</timestamp>
-<<<<<<< Updated upstream
+		<hapi.v2.version>2.5.1</hapi.v2.version>
+    <hapi.fhir.version>8.0.0</hapi.fhir.version>
+		<tomcat.version>10.1.42</tomcat.version>
+		
+		<!-- JaCoCo Configuration -->
 		<jacoco.version>0.8.13</jacoco.version>
 		<jacoco.jar>${user.home}/.m2/repository/org/jacoco/org.jacoco.agent/${jacoco.version}/org.jacoco.agent-${jacoco.version}.jar</jacoco.jar>
 		<surefire.argLine>
@@ -43,18 +47,12 @@
 		  --add-opens=java.base/java.net=ALL-UNNAMED 
 		  <!-- -javaagent:${jacoco.jar}=destfile=target/jacoco.exec,append=true,output=file -->
 		</surefire.argLine>
-=======
-		<hapi.v2.version>2.5.1</hapi.v2.version>
-    <hapi.fhir.version>8.0.0</hapi.fhir.version>
-		<tomcat.version>10.1.42</tomcat.version>
 		
 		<!-- SonarCloud Configuration -->
 		<sonar.organization>izgateway</sonar.organization>
 		<sonar.host.url>https://sonarcloud.io</sonar.host.url>
 		<sonar.projectKey>IZGateway_v2tofhir</sonar.projectKey>
 		<sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
-		<jacoco.version>0.8.12</jacoco.version>
->>>>>>> Stashed changes
 	</properties>
 	<distributionManagement>
         <repository>
@@ -402,13 +400,11 @@
 						</execution>
 					</executions>
 				</plugin>
-<<<<<<< Updated upstream
-				    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-site-plugin</artifactId>
-                        <version>3.21.0</version>
-                    </plugin>
-=======
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-site-plugin</artifactId>
+					<version>3.21.0</version>
+				</plugin>
 				<plugin>
 					<groupId>org.jacoco</groupId>
 					<artifactId>jacoco-maven-plugin</artifactId>
@@ -434,7 +430,6 @@
 					<artifactId>sonar-maven-plugin</artifactId>
 					<version>4.0.0.4121</version>
 				</plugin>
->>>>>>> Stashed changes
 			</plugins>
 		</pluginManagement>
         <plugins>
