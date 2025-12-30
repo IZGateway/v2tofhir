@@ -20,11 +20,6 @@ on:
   # Manual trigger for on-demand builds
   workflow_dispatch:
     inputs:
-      runSonar:
-        description: 'Run SonarCloud analysis'
-        required: false
-        default: 'true'
-        type: boolean
       runSiteBuild:
         description: 'Run Site Build?'
         required: false
@@ -69,26 +64,6 @@ jobs:
           && cat << EOF > ~/.m2/toolchains.xml
           <?xml version="1.0" encoding="UTF8"?>
           <toolchains>
-            <toolchain>
-              <type>jdk</type>
-                <provides>
-                  <version>11</version>
-                  <vendor>sun</vendor>
-                </provides>
-                <configuration>
-                  <jdkHome>$JAVA_HOME_11_X64</jdkHome>
-                </configuration>
-            </toolchain>            
-            <toolchain>
-              <type>jdk</type>
-                <provides>
-                  <version>17</version>
-                  <vendor>sun</vendor>
-                </provides>
-                <configuration>
-                  <jdkHome>$JAVA_HOME_17_X64</jdkHome>
-                </configuration>
-            </toolchain>
             <toolchain>
               <type>jdk</type>
                 <provides>
@@ -238,7 +213,6 @@ jobs:
             
     - name: Publish Site
       uses: peaceiris/actions-gh-pages@v4
-      if: ${{ always() }}
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./target/site
