@@ -4,6 +4,10 @@ is intended to be a stand-alone set of HL7 Version 2 messaging conversion tools 
 contexts. It has been designed to support conversion of messages written according the the 
 (CDC HL7 Version 2 Immunization Implementation Guide)[https://repository.immregistries.org/files/resources/5bef530428317/hl7_2_5_1_release_1_5__2018_update.pdf] and may be suitable for other uses. This library depends on both the HAPI V2 and the HAPI FHIR libraries.
 
+## Versions
+
+- 1.0.0 - Built with Java 17
+
 ## JavaDoc
 See [The JavaDoc for the Current Build](https://vigilant-adventure-g62mzg1.pages.github.io/current/apidocs/gov/cdc/izgw/v2tofhir/package-summary.html)
 
