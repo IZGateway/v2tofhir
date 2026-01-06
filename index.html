@@ -1,3 +1,136 @@
-<html>
-	<body>Initial Commit</body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HL7v2 to FHIR (v2tofhir) - Documentation</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      color: #1b1b1b;
+      background-color: #f0f0f0;
+    }
+
+    header {
+      background-color: #005ea2;
+      color: white;
+      padding: 2rem 1rem;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    header p {
+      font-size: 1.1rem;
+      opacity: 0.9;
+    }
+
+    main {
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
+    .card-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+      border-left: 4px solid #005ea2;
+      transition: box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .card h2 {
+      font-size: 1.25rem;
+      color: #1a4480;
+      margin-bottom: 0.5rem;
+    }
+
+    .card p {
+      color: #71767a;
+      font-size: 0.95rem;
+      margin-bottom: 1rem;
+    }
+
+    .card a {
+      display: inline-block;
+      background-color: #005ea2;
+      color: white;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: background-color 0.2s ease;
+    }
+
+    .card a:hover {
+      background-color: #1a4480;
+    }
+
+    .section-title {
+      font-size: 1.1rem;
+      color: #71767a;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: #71767a;
+      font-size: 0.875rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>HL7v2 to FHIR (v2tofhir)</h1>
+    <p>Documentation and Reports</p>
+  </header>
+
+  <main>
+    <p class="section-title">Available Documentation</p>
+    <div class="card-container">
+      <div class="card">
+        <h2>Current Release</h2>
+        <p>Documentation for the latest stable release of the Transform Service.</p>
+        <a href="current/">View Documentation</a>
+      </div>
+
+      <div class="card">
+        <h2>Development</h2>
+        <p>Documentation from the develop branch, reflecting the latest changes in progress.</p>
+        <a href="develop/">View Documentation</a>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>HL7v2 to FHIR (v2tofhir)</p>
+  </footer>
+</body>
 </html>
