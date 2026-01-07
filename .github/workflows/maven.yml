@@ -17,20 +17,6 @@ on:
   schedule:
     - cron: '0 6 * * 1-5'
   
-  # Manual trigger for on-demand builds (testing from feature branch)
-  workflow_dispatch:
-    inputs:
-      runSonar:
-        description: 'Run SonarCloud analysis'
-        required: false
-        default: 'true'
-        type: boolean
-      runSiteBuild:
-        description: 'Run Site Build?'
-        required: false
-        default: 'false'
-        type: boolean
-
 # Ensure only one build changes dev environment at the same time    
 concurrency: v2tofhir
 # GITHUB_REF=refs/heads/testmain
@@ -72,21 +58,11 @@ jobs:
             <toolchain>
               <type>jdk</type>
                 <provides>
-                  <version>11</version>
+                  <version>21</version>
                   <vendor>sun</vendor>
                 </provides>
                 <configuration>
-                  <jdkHome>$JAVA_HOME_11_X64</jdkHome>
-                </configuration>
-            </toolchain>            
-            <toolchain>
-              <type>jdk</type>
-                <provides>
-                  <version>17</version>
-                  <vendor>sun</vendor>
-                </provides>
-                <configuration>
-                  <jdkHome>$JAVA_HOME_17_X64</jdkHome>
+                  <jdkHome>$JAVA_HOME_21_X64</jdkHome>
                 </configuration>
             </toolchain>
             <toolchain>
@@ -238,7 +214,6 @@ jobs:
             
     - name: Publish Site
       uses: peaceiris/actions-gh-pages@v4
-      if: ${{ always() }}
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./target/site
