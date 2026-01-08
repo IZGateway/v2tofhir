@@ -159,7 +159,7 @@ public class MessageParser extends BaseParser&lt;Message,Structure&gt; implement
 		try {
 <span class="nc" id="L160">			return unit.encode();</span>
 <span class="nc" id="L161">		} catch (HL7Exception e) {</span>
-<span class="nc" id="L162">			e.printStackTrace();</span>
+<span class="nc" id="L162">			log.warn(&quot;Unexpected HL7Exception encoding message: {}&quot;, e.getMessage(), e);</span>
 <span class="nc" id="L163">			return &quot;&quot;;</span>
 		}
 	}
@@ -173,7 +173,7 @@ public class MessageParser extends BaseParser&lt;Message,Structure&gt; implement
 			try {
 <span class="fc" id="L174">				return segment.encode();</span>
 <span class="nc" id="L175">			} catch (HL7Exception e) {</span>
-<span class="nc" id="L176">				e.printStackTrace();</span>
+<span class="nc" id="L176">				log.warn(&quot;Unexpected HL7Exception encoding message: {}&quot;, e.getMessage(), e);</span>
 <span class="nc" id="L177">				return &quot;&quot;;</span>
 			}
 		}

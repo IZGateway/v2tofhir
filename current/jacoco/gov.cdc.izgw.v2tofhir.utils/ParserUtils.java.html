@@ -391,7 +391,7 @@ public class ParserUtils {
 					}
 				}
 <span class="nc" id="L393">			} catch (HL7Exception e) {</span>
-<span class="nc" id="L394">				e.printStackTrace();</span>
+<span class="nc" id="L394">				log.warn(&quot;Unexpected HL7Exception iterating structures: {}&quot;, e.getMessage(), e);</span>
 <span class="fc" id="L395">			}</span>
 		}
 <span class="fc" id="L397">	}</span>
