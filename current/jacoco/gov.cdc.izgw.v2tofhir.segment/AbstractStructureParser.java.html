@@ -65,7 +65,7 @@ public abstract class AbstractStructureParser {
 		
 		@Override
 		public Parser&lt;Message, Structure&gt; getParser() {
-<span class="nc" id="L68">			return messageParser;</span>
+<span class="nc" id="L68">			return structureParser;</span>
 		}
 	}
 	
@@ -89,16 +89,16 @@ public abstract class AbstractStructureParser {
 	 */
 	protected abstract List&lt;FieldHandler&gt; getFieldHandlers(); 
 
-	protected final Parser&lt;Message, Structure&gt; messageParser;
+	protected final Parser&lt;Message, Structure&gt; structureParser;
 	private final String structureName;
 
 	/**
 	 * Contruct a StructureParser for the given messageParser and
-	 * @param messageParser
+	 * @param structureParser
 	 * @param segmentName
 	 */
-<span class="fc" id="L100">	AbstractStructureParser(Parser&lt;Message, Structure&gt; messageParser, String structureName) {</span>
-<span class="fc" id="L101">		this.messageParser = messageParser;</span>
+<span class="fc" id="L100">	AbstractStructureParser(Parser&lt;Message, Structure&gt; structureParser, String structureName) {</span>
+<span class="fc" id="L101">		this.structureParser = structureParser;</span>
 <span class="fc" id="L102">		this.structureName = structureName;</span>
 <span class="fc" id="L103">	}</span>
 
@@ -134,7 +134,7 @@ public abstract class AbstractStructureParser {
 	 * @return		The requested property, or null if not present
 	 */
 	public &lt;T&gt; T getProperty(Class&lt;T&gt; t) {
-<span class="nc" id="L137">		return messageParser.getContext().getProperty(t);</span>
+<span class="nc" id="L137">		return structureParser.getContext().getProperty(t);</span>
 	}
 	
 	/** 
@@ -158,7 +158,7 @@ public abstract class AbstractStructureParser {
 	 * @return	The requested resource, or null if not found.
 	 */
 	public &lt;R extends Resource&gt; R getResource(Class&lt;R&gt; clazz, String id) {
-<span class="nc" id="L161">		return messageParser.getResource(clazz, id);</span>
+<span class="nc" id="L161">		return structureParser.getResource(clazz, id);</span>
 	}
 	/**
 	 * Get all resources of the specified type that have been created during this parsing session.
@@ -167,7 +167,7 @@ public abstract class AbstractStructureParser {
 	 * @return	A list of the requested resources, or an empty list of none were found.
 	 */
 	public &lt;R extends Resource&gt; List&lt;R&gt; getResources(Class&lt;R&gt; clazz) {
-<span class="nc" id="L170">		return messageParser.getResources(clazz);</span>
+<span class="nc" id="L170">		return structureParser.getResources(clazz);</span>
 	}
 	
 	/**
@@ -180,7 +180,7 @@ public abstract class AbstractStructureParser {
 	 * @return	A new resource of the specified type.  The id will already be populated.
 	 */
 	public &lt;R extends IBaseResource&gt; R createResource(Class&lt;R&gt; theClass) {
-<span class="fc" id="L183">		return messageParser.createResource(theClass, null);</span>
+<span class="fc" id="L183">		return structureParser.createResource(theClass, null);</span>
 	}
 	
 	/**
@@ -194,7 +194,7 @@ public abstract class AbstractStructureParser {
 	 * @return	The resource
 	 */
 	public &lt;R extends IBaseResource&gt; R addResource(R resource) {
-<span class="fc" id="L197">		return messageParser.addResource(null, resource);</span>
+<span class="fc" id="L197">		return structureParser.addResource(null, resource);</span>
 	}
 	/**
 	 * Find a resource of the specified type for this parsing session, or create one if none
@@ -210,7 +210,7 @@ public abstract class AbstractStructureParser {
 	 * @return	A new resource of the specified type.  The id will already be populated.
 	 */
 	public &lt;R extends Resource&gt; R findResource(Class&lt;R&gt; clazz, String id) {
-<span class="nc" id="L213">		return messageParser.findResource(clazz, id);</span>
+<span class="nc" id="L213">		return structureParser.findResource(clazz, id);</span>
 	}
 	
 	/**
@@ -221,7 +221,7 @@ public abstract class AbstractStructureParser {
 	 * @return The generated resource or null if not found.
 	 */
 	public &lt;R extends Resource&gt; R getFirstResource(Class&lt;R&gt; clazz) {
-<span class="fc" id="L224">		return messageParser.getFirstResource(clazz);</span>
+<span class="fc" id="L224">		return structureParser.getFirstResource(clazz);</span>
 	}
 
 	/**
@@ -232,7 +232,7 @@ public abstract class AbstractStructureParser {
 	 * @return The generated resource or null if not found.
 	 */
 	public &lt;R extends Resource&gt; R getLastResource(Class&lt;R&gt; clazz) {
-<span class="fc" id="L235">		return messageParser.getLastResource(clazz);</span>
+<span class="fc" id="L235">		return structureParser.getLastResource(clazz);</span>
 	}
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
