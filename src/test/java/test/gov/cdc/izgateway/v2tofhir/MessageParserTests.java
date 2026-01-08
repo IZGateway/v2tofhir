@@ -113,7 +113,7 @@ class MessageParserTests extends TestBase {
 				Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
 			} catch (IOException e) {
 				// If we cannot write, just exit.
-				e.printStackTrace();
+				e.printStackTrace();  // NOSONAR
 				System.exit(1);
 			}
 		}

@@ -222,7 +222,6 @@ public class FieldHandler implements Comparable<FieldHandler> {
 				throw rte;
 			}
 			if (ex.getTargetException() instanceof Error err) {
-				err.printStackTrace();
 				throw new IllegalStateException("Error executing " + method, err.getCause());
 			}
 			throw new IllegalStateException("Exception executing " + method, ex.getCause());
