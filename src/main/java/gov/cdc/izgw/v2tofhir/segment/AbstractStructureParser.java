@@ -65,7 +65,7 @@ public abstract class AbstractStructureParser {
 		
 		@Override
 		public Parser<Message, Structure> getParser() {
-			return messageParser;
+			return structureParser;
 		}
 	}
 	
@@ -89,16 +89,16 @@ public abstract class AbstractStructureParser {
 	 */
 	protected abstract List<FieldHandler> getFieldHandlers(); 
 
-	protected final Parser<Message, Structure> messageParser;
+	protected final Parser<Message, Structure> structureParser;
 	private final String structureName;
 
 	/**
 	 * Contruct a StructureParser for the given messageParser and
-	 * @param messageParser
+	 * @param structureParser
 	 * @param segmentName
 	 */
-	AbstractStructureParser(Parser<Message, Structure> messageParser, String structureName) {
-		this.messageParser = messageParser;
+	AbstractStructureParser(Parser<Message, Structure> structureParser, String structureName) {
+		this.structureParser = structureParser;
 		this.structureName = structureName;
 	}
 
@@ -134,7 +134,7 @@ public abstract class AbstractStructureParser {
 	 * @return		The requested property, or null if not present
 	 */
 	public <T> T getProperty(Class<T> t) {
-		return messageParser.getContext().getProperty(t);
+		return structureParser.getContext().getProperty(t);
 	}
 	
 	/** 
@@ -158,7 +158,7 @@ public abstract class AbstractStructureParser {
 	 * @return	The requested resource, or null if not found.
 	 */
 	public <R extends Resource> R getResource(Class<R> clazz, String id) {
-		return messageParser.getResource(clazz, id);
+		return structureParser.getResource(clazz, id);
 	}
 	/**
 	 * Get all resources of the specified type that have been created during this parsing session.
@@ -167,7 +167,7 @@ public abstract class AbstractStructureParser {
 	 * @return	A list of the requested resources, or an empty list of none were found.
 	 */
 	public <R extends Resource> List<R> getResources(Class<R> clazz) {
-		return messageParser.getResources(clazz);
+		return structureParser.getResources(clazz);
 	}
 	
 	/**
@@ -180,7 +180,7 @@ public abstract class AbstractStructureParser {
 	 * @return	A new resource of the specified type.  The id will already be populated.
 	 */
 	public <R extends IBaseResource> R createResource(Class<R> theClass) {
-		return messageParser.createResource(theClass, null);
+		return structureParser.createResource(theClass, null);
 	}
 	
 	/**
@@ -194,7 +194,7 @@ public abstract class AbstractStructureParser {
 	 * @return	The resource
 	 */
 	public <R extends IBaseResource> R addResource(R resource) {
-		return messageParser.addResource(null, resource);
+		return structureParser.addResource(null, resource);
 	}
 	/**
 	 * Find a resource of the specified type for this parsing session, or create one if none
@@ -210,7 +210,7 @@ public abstract class AbstractStructureParser {
 	 * @return	A new resource of the specified type.  The id will already be populated.
 	 */
 	public <R extends Resource> R findResource(Class<R> clazz, String id) {
-		return messageParser.findResource(clazz, id);
+		return structureParser.findResource(clazz, id);
 	}
 	
 	/**
@@ -221,7 +221,7 @@ public abstract class AbstractStructureParser {
 	 * @return The generated resource or null if not found.
 	 */
 	public <R extends Resource> R getFirstResource(Class<R> clazz) {
-		return messageParser.getFirstResource(clazz);
+		return structureParser.getFirstResource(clazz);
 	}
 
 	/**
@@ -232,6 +232,6 @@ public abstract class AbstractStructureParser {
 	 * @return The generated resource or null if not found.
 	 */
 	public <R extends Resource> R getLastResource(Class<R> clazz) {
-		return messageParser.getLastResource(clazz);
+		return structureParser.getLastResource(clazz);
 	}
 }

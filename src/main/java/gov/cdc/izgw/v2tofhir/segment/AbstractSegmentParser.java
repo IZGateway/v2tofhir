@@ -34,8 +34,8 @@ public abstract class AbstractSegmentParser extends AbstractStructureParser impl
 	}
 	
 	@Override
-	public boolean isEmpty(Segment s) {
-		return super.isEmpty(s);
+	public boolean isEmpty(Segment segment) { // NOSONAR (Necessary for Inheritance)
+		return super.isEmpty(segment);
 	}
 	
 	/**
