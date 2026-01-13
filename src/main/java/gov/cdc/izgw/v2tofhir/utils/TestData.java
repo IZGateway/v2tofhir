@@ -142,7 +142,6 @@ public class TestData {
 			}
 		} catch (Exception ioex) {
 			log.error("Error loading test file " + name, ioex);
-			ioex.printStackTrace();
 			throw new ServiceConfigurationError("Cannot load test file " + name);
 		}
 	}
@@ -452,7 +451,7 @@ public class TestData {
 			
 			return node.getInner().toString();
 		} catch (IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e) {
-			e.printStackTrace();
+			log.error("Cannot get inner expression", e);
 		}
 		return "'Cannot determine tested value'";
 	}

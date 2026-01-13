@@ -163,7 +163,7 @@ public class TestBase implements ErrorReporter {
 				try {
 					fields = segment.segment().getField(i);
 				} catch (HL7Exception e) {
-					e.printStackTrace();
+					e.printStackTrace();  // NOSONAR
 					continue;
 				}
 				for (Type type : fields) {
@@ -265,7 +265,7 @@ public class TestBase implements ErrorReporter {
 			return v2Parser.parse(message);
 		} catch (Exception e) {
 			System.err.println("Error parsing : " + StringUtils.left(message, 90));
-			e.printStackTrace();
+			e.printStackTrace();  // NOSONAR
 			return null;
 		}
 	}

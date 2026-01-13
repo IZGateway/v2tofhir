@@ -391,7 +391,7 @@ public class ParserUtils {
 					}
 				}
 			} catch (HL7Exception e) {
-				e.printStackTrace();
+				log.warn("Unexpected HL7Exception iterating structures: {}", e.getMessage(), e);
 			}
 		}
 	}
