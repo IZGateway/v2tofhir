@@ -1,16 +1,12 @@
-name: Java CI with Maven
+name: Develop Build and Site Deployment
 
 on:
   push:
     branches:
-      - Release*
-      - main
       - develop
 
   pull_request:
     branches:
-      - Release*
-      - main
       - develop
 
   # Scheduled build: Monday-Friday at 6:00 AM UTC from develop branch
@@ -119,43 +115,6 @@ jobs:
         # default to force a revision check unless releasing
         echo DO_REVISION_CHECK=true >> $GITHUB_ENV
 
-    # If pulling to main branch (cutting a release), set branch tag appropriately  
-    - name: Sets env vars for pull to main 
-      if: ${{ github.base_ref == 'main' }}
-      run: |
-        IMAGE_TAG=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout | sed "s/-.*$/-v2tofhir-SNAPSHOT-${{github.run_number}}/"` 
-        echo IMAGE_TAG=$IMAGE_TAG >> $GITHUB_ENV
-        IMAGE_BRANCH_TAG=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout | sed "s/-.*$/-v2tofhir-SNAPSHOT/"`
-        echo IMAGE_BRANCH_TAG=$IMAGE_BRANCH_TAG >> $GITHUB_ENV
-        mvn versions:set -DnewVersion=$IMAGE_BRANCH_TAG -f pom.xml
-
-        # Skip revision check on merge
-        echo DO_REVISION_CHECK=false >> $GITHUB_ENV
-
-    # If pushing to main branch (cutting a release), set branch tag appropriately  
-    - name: Sets env vars for pull to main 
-      if: ${{ github.ref_name == 'main' }}
-      run: |
-        IMAGE_TAG=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout | sed "s/-.*$/-v2tofhir-RELEASE-${{github.run_number}}/"` 
-        echo IMAGE_TAG=$IMAGE_TAG >> $GITHUB_ENV
-        IMAGE_BRANCH_TAG=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout | sed "s/-.*$/-v2tofhir-RELEASE/"`
-        echo IMAGE_BRANCH_TAG=$IMAGE_BRANCH_TAG >> $GITHUB_ENV
-        #mvn versions:set -DnewVersion=$IMAGE_BRANCH_TAG -f pom.xml
-        #if [ ${{ github.event_name }} == 'push' ] 
-        #then
-        #  git config user.name github-actions
-        #  git config user.email github-actions@github.com
-        #  git add -A
-        #  # Only push if something was committed
-        #  if git commit -m "Update version to $IMAGE_BRANCH_TAG"
-        #  then
-        #    git pull
-        #    git push --force
-        #  fi
-        #fi
-        # Disable revision check on push to main. 
-        echo DO_REVISION_CHECK=false >> $GITHUB_ENV
-
     - name: List Environment variables
       shell: bash
       run: |
@@ -170,14 +129,6 @@ jobs:
         echo IMAGE_TAG: $IMAGE_TAG 
         echo IMAGE_BRANCH_TAG: $IMAGE_BRANCH_TAG 
         cd ~/.m2
-          
-    - name: Check that push to main is from release branch
-      # Don't filter on testmain to test push to main route
-      if: ${{ ! startsWith(github.base_ref, 'Release_v') && github.head_ref == 'main' }}
-      run: |
-        echo ${{ github.head_ref }} is NOT a Release branch and cannot be pushed to main
-        # Force failure
-        false    
 
     - name: Maven Install
       env:
@@ -190,8 +141,8 @@ jobs:
             -DskipDependencyCheck=true \
             -Dimage.tag=$IMAGE_BRANCH_TAG 
 
-# Use GitHub Action to speed up and improve dependency checking
-# NOTE: Disable automatic dependency checking in the build, this replaces it          
+    # Use GitHub Action to speed up and improve dependency checking
+    # NOTE: Disable automatic dependency checking in the build, this replaces it
     - name: Dependency Check
       env:  
         # Per https://github.com/marketplace/actions/dependency-check, fix JAVA_HOME location for action
@@ -235,47 +186,3 @@ jobs:
       with:
         name: DependencyCheck
         path: ./target/site/dependency-check-report.html
-
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    # This step should only be done on PUSH to main
-    if: github.ref == 'refs/heads/testmain' || github.ref == 'refs/heads/main'
-    steps:
-    - uses: actions/checkout@v4
-      # Necessary to enable push to protected branch
-      with:
-        ssh-key: ${{secrets.ACTIONS_KEY}}
-
-    - name: Create GitHub Release
-      id: create_release
-      uses: softprops/action-gh-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{env.TAG}}
-        name: IZ Gateway ${{env.TAG}} Release
-        body_path: ./docs/release/RELEASE_NOTES.md
-        draft: true
-        generate_release_notes: true
-        files: |
-          ./docs/release/*.md
-
-    - name: Upload release documentation as artifact for failed release
-      uses: actions/upload-artifact@v4
-      if: ${{ failure() }}
-      with:
-        name: release-failure
-        path: ./docs/release/*.md
-
-    - name: Checkin Release Documentation to Build
-      run: |
-        git config user.name github-actions
-        git config user.email github-actions@github.com
-        git config pull.rebase false 
-        git add ./docs/release
-        if git commit -m "generated"
-        then
-          git pull
-          git push
-        fi

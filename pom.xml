@@ -3,13 +3,13 @@
 	<parent>
 		<groupId>gov.cdc.izgw</groupId>
         <artifactId>izgw-bom</artifactId>
-        <version>1.1.0-SNAPSHOT</version>
+        <version>1.9.0-SNAPSHOT</version>
 	</parent>
 	<artifactId>v2tofhir</artifactId>
 	<version>2.0.0-v2tofhir-SNAPSHOT</version>
 	<name>HL7 Version 2 to FHIR Conversion</name>
 	<description>This is the v2tofhir Converter core code for the IZ Gateway Transformation Service</description>
-	<url>http://github.com/IZGateway/v2tofhir</url>
+	<url>http://github.com/austinmoody/v2tofhir</url>
 	<inceptionYear>2025</inceptionYear>
 	<licenses>
 		<license>
@@ -58,7 +58,7 @@
         <repository>
             <id>github</id>
             <name>V2 to FHIR Packages</name>
-            <url>https://maven.pkg.github.com/IZGateway/v2tofhir</url>
+            <url>https://maven.pkg.github.com/austinmoody/v2tofhir</url>
         </repository>
 	</distributionManagement>
 	<repositories>
@@ -76,7 +76,7 @@
         <repository>
             <id>github-bom</id>
             <name>GitHub Packages</name>
-            <url>https://maven.pkg.github.com/IZGateway/izgw-bom</url>
+            <url>https://maven.pkg.github.com/austinmoody/izgw-bom</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
@@ -87,7 +87,7 @@
         <repository>
             <id>v2tofhir</id>
             <name>GitHub Packages</name>
-            <url>https://maven.pkg.github.com/IZGateway/v2tofhir</url>
+            <url>https://maven.pkg.github.com/austinmoody/v2tofhir</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
@@ -97,9 +97,9 @@
         </repository>
     </repositories>
 	<scm>
-		<connection>scm:git:https://github.com/IZGateway/v2tofhir</connection>
-		<developerConnection>scm:git:https://github.com/IZGateway/v2tofhir</developerConnection>
-		<url>https://github.com/IZGateway/v2tofhir</url>
+		<connection>scm:git:https://github.com/austinmoody/v2tofhir</connection>
+		<developerConnection>scm:git:https://github.com/austinmoody/v2tofhir</developerConnection>
+		<url>https://github.com/austinmoody/v2tofhir</url>
 	</scm>
     <dependencyManagement>
         <dependencies>
