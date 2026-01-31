@@ -25,9 +25,13 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class Systems {
+	private Systems() {	}
+	
 	static {
 		log.debug("{} loaded", Systems.class.getName());
 	}
+	/** The Act Code System OID */
+	public static final String ACT_CODE_OID = "2.16.840.1.113883.5.4";
 	/** Code System URI for the code system used for Vaccine Information Statements */
 	public static final String CDCGS1VIS = "urn:oid:2.16.840.1.114222.4.5.307";
 	/** OID for the code system used for Vaccine Information Statements */
@@ -40,6 +44,10 @@ public class Systems {
 	public static final String CDCREC = "urn:oid:2.16.840.1.113883.6.238";
 	/** OID for the code system used for CDC Race and Ethnicity */
 	public static final String CDCREC_OID = "2.16.840.1.113883.6.238";
+	/** Code System URI for the code system used for ADA's Current Dental Terminology codes */
+	public static final String CDT = "http://www.ada.org/cdt";
+	/** OID for the code system used for AMA's Current Procedure Terminology codes  */
+	public static final String CDT_OID = "2.16.840.1.113883.6.13";
 	/** Code System URI for the code system used for AMA's Current Procedure Terminology codes */
 	public static final String CPT = "http://www.ama-assn.org/go/cpt";
 	/** OID for the code system used for AMA's Current Procedure Terminology codes  */
@@ -56,6 +64,10 @@ public class Systems {
 	public static final String IETF = "urn:ietf:rfc:3986";
 	/** OID for the code system used for the URL namespace */
 	public static final String IETF_OID = "urn:ietf:rfc:3986";
+	/** Code System URI for HCPCS Codes */
+	public static final String HCPCS = "http://www.cms.gov/Medicare/Coding/HCPCSReleaseCodeSets";
+	/** Code System OID for HCPCS Codes */
+	public static final String HCPCS_OID = "2.16.840.1.113883.6.285";
 	/** Code System URI for the code system used by CDC's NHSN for Facility Locations */
 	public static final String HSLOC = "https://www.cdc.gov/nhsn/cdaportal/terminology/codesystem/hsloc.html";
 	/** OID for the code system used for Vaccine Information Statements */
@@ -64,6 +76,10 @@ public class Systems {
 	public static final String ICD10CM = "http://hl7.org/fhir/sid/icd-10-cm";
 	/** OID for the code system used for ICD-10-CM codes */
 	public static final String ICD10CM_OID = "2.16.840.1.113883.6.3";
+	/** Code System URI for the code system used for ICD-9 Procedure Codes */
+	public static final String ICD10PCS = "http://www.cms.gov/Medicare/Coding/ICD10";
+	/** OID for the code system used for ICD-9 Procedure Codes */
+	public static final String ICD10PCS_OID = "2.16.840.1.113883.6.4";
 	/** Code System URI for the code system used for ICD-9-CM codes */
 	public static final String ICD9CM = "http://hl7.org/fhir/sid/icd-9-cm";
 	/** OID for the code system used for ICD-9-CM codes */
@@ -184,14 +200,18 @@ public class Systems {
 		{ CDCPHINVS, "CDCPHINVS", CDCPHINVS_OID },
 		{ CDCREC, "CDCREC", "http://terminology.hl7.org/CodeSystem/v2-0005", CDCREC_OID },
 		{ CPT, "C4", "CPT", "CPT4", CPT_OID},
+		{ CDT, "CDT", CDT_OID },
 		{ CVX, "CVX", CVX_OID },
 		{ DICOM, "DCM", "DICOM", DICOM_OID },
+		{ HCPCS, "HCPCS", HCPCS_OID },
 		{ HSLOC, "HSLOC", HSLOC_OID },
 		{ ICD10CM, "ICD10CM", ICD10CM_OID },
+		{ ICD10PCS, "ICD10PCS", ICD10PCS_OID },
 		{ ICD9CM, "ICD9CM", "I9CDX", "I9C", ICD9CM_OID },
 		{ ICD9PCS, "ICD9PCS", "I9CP", ICD9PCS_OID },
 		IDENTIFIER_TYPE_NAMES,
 		IDTYPE_NAMES,
+		{ IETF, "IETF", IETF_OID },
 		{ LOINC, "LN", "LOINC", "LNC", LOINC_OID },
 		{ LOCATION_TYPE, LOCATION_TYPE_OID },
 		{ MVX, "MVX", MVX_OID },
@@ -225,23 +245,47 @@ public class Systems {
 	
 	static Map<String, NamingSystem> namingSystems = new LinkedHashMap<>();
 	static {
-		NamingSystem ns = null;
 		for (String[] list: stringToUri) {
-			String uri = list[0];
-			ns = createNamingSystem(uri, list[1]);
-			for (String s: list) {
-				if (!uri.equals(s)) {
-					updateNamingSystem(ns, s);
-				}
-				namingSystems.put(s, ns);
-			}
+			addNamingSystem(list[1], list);
 		}
 	}
-
-	private Systems() {
+	
+	/**
+	 * Add a naming system to the map of known systems.
+	 * @param name The name of the system
+	 * @param list	A list of strings containing aliases for a coding or identifier system.  
+	 * The first entry must be the URI.
+	 */
+	public static void addNamingSystem(String name, String... list) {
+		NamingSystem ns = null;
+		String uri = list[0];
+		ns = namingSystems.get(uri);
+		if (ns == null) {
+			// Create a new one
+			ns = createNamingSystem(uri, name);
+			namingSystems.put(uri, ns);
+		}
+		if (name != null) {
+			if (!ns.hasName()) {
+				ns.setName(name);
+			}
+			namingSystems.put(name, ns);
+		}
+		for (String s: list) {
+			if (!uri.equals(s)) {
+				updateNamingSystem(ns, s);
+			}
+			namingSystems.put(s, ns);
+		}
 	}
 	
-	private static NamingSystem createNamingSystem(String uri, String name) {
+	/**
+	 * Create a naming system with the given URI and name.
+	 * @param uri	The URI for the naming system
+	 * @param name	A common name for the naming system
+	 * @return	The created naming system
+	 */
+	public static NamingSystem createNamingSystem(String uri, String name) {
 		NamingSystem ns = new NamingSystem();
 		ns.setUrl(uri);
 		NamingSystemUniqueIdComponent uid = ns.addUniqueId();
@@ -257,7 +301,12 @@ public class Systems {
 		return ns;
 	}
 	
-	private static void updateNamingSystem(NamingSystem ns, String uid) {
+	/**
+	 * Add a unique id to a naming system if it doesn't already exist.
+	 * @param ns	The naming system to update
+	 * @param uid The unique id to add
+	 */
+	public static void updateNamingSystem(NamingSystem ns, String uid) {
 		for (NamingSystemUniqueIdComponent uniqueId : ns.getUniqueId()) {
 			if (uid.equals(uniqueId.getValue())) {
 				return;
@@ -384,7 +433,12 @@ public class Systems {
 		return found;
 	}
 	
-	static NamingSystem getNamingSystem(String system) {
+	/**
+	 * Get the NamingSystem for a given name, system uri, or other alias.
+	 * @param system	The search value
+	 * @return	The NamingSystem, or null if not found
+	 */
+	public static NamingSystem getNamingSystem(String system) {
 		if (StringUtils.isBlank(system)) {
 			return null;
 		}
