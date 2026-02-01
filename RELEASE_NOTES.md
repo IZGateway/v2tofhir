@@ -1,3 +1,9 @@
+## [2.0.1] - 2026-02-01
+
+### Changes
+- fix: Issues getting previous commit notes for hotfixes (8a35c8e6)
+- Just fake stuff to test hotfix (96f98680)
+
 # Release Notes
 
 All notable changes to this project will be documented in this file.
