@@ -242,11 +242,11 @@ jobs:
           if [ -z "$PREVIOUS_TAG" ]; then
             echo "First release, getting all merge commits"
             # Get all merge commits
-            PR_CHANGES=$(git log --merges --oneline | grep "pull request" || true | sed -E 's/.*#([0-9]+).*/\1/' | while read -r pr; do gh pr view "$pr" --json number,title,url --jq '"- \(.title) ([#\(.number)](\(.url)))"' 2>/dev/null || echo ""; done | grep -v "^$" || true)
+            PR_CHANGES=$(git log --merges --oneline | { grep "pull request" || true; } | sed -E 's/.*#([0-9]+).*/\1/' | while read -r pr; do gh pr view "$pr" --json number,title,url --jq '"- \(.title) ([#\(.number)](\(.url)))"' 2>/dev/null || echo ""; done | { grep -v "^$" || true; })
           else
             echo "Generating release note from $PREVIOUS_TAG to HEAD"
             # Get merge commits since the previous tag
-            PR_CHANGES=$(git log ${PREVIOUS_TAG}..HEAD --merges --oneline | grep "pull request" || true | sed -E 's/.*#([0-9]+).*/\1/' | while read -r pr; do gh pr view "$pr" --json number,title,url --jq '"- \(.title) ([#\(.number)](\(.url)))"' 2>/dev/null || echo ""; done | grep -v "^$" || true)
+            PR_CHANGES=$(git log ${PREVIOUS_TAG}..HEAD --merges --oneline | { grep "pull request" || true; } | sed -E 's/.*#([0-9]+).*/\1/' | while read -r pr; do gh pr view "$pr" --json number,title,url --jq '"- \(.title) ([#\(.number)](\(.url)))"' 2>/dev/null || echo ""; done | { grep -v "^$" || true; })
           fi
           
           # Check if we found any PRs
