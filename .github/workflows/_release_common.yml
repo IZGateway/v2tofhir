@@ -286,11 +286,28 @@ jobs:
           
           # Check if RELEASE_NOTES.md exists
           if [ -f "RELEASE_NOTES.md" ]; then
-            # Prepend new entry to existing RELEASE_NOTES.md
-            cat RELEASE_NOTES.md >> RELEASE_NOTES_ENTRY.md
-            mv RELEASE_NOTES_ENTRY.md RELEASE_NOTES.md
+            # Insert new entry after the header, before existing release entries
+            # Find line number of first release entry (## [version])
+            FIRST_RELEASE_LINE=$(grep -n "^## \[" RELEASE_NOTES.md | head -1 | cut -d: -f1)
+            
+            if [ -n "$FIRST_RELEASE_LINE" ]; then
+              # Split file: header (before first release) and releases (from first release onward)
+              head -n $((FIRST_RELEASE_LINE - 1)) RELEASE_NOTES.md > RELEASE_NOTES_HEADER.md
+              tail -n +${FIRST_RELEASE_LINE} RELEASE_NOTES.md > RELEASE_NOTES_RELEASES.md
+              
+              # Combine: header + new entry + existing releases
+              cat RELEASE_NOTES_HEADER.md > RELEASE_NOTES.md
+              cat RELEASE_NOTES_ENTRY.md >> RELEASE_NOTES.md
+              cat RELEASE_NOTES_RELEASES.md >> RELEASE_NOTES.md
+              
+              rm -f RELEASE_NOTES_HEADER.md RELEASE_NOTES_RELEASES.md RELEASE_NOTES_ENTRY.md
+            else
+              # No existing release entries found, just append new entry
+              cat RELEASE_NOTES_ENTRY.md >> RELEASE_NOTES.md
+              rm -f RELEASE_NOTES_ENTRY.md
+            fi
           else
-            # Create new RELEASE_NOTES.md
+            # Create new RELEASE_NOTES.md with header and first entry
             cat > RELEASE_NOTES.md << EOF
           # Release Notes
           
@@ -301,7 +318,7 @@ jobs:
           
           EOF
             cat RELEASE_NOTES_ENTRY.md >> RELEASE_NOTES.md
-            rm RELEASE_NOTES_ENTRY.md
+            rm -f RELEASE_NOTES_ENTRY.md
           fi
           
           git add RELEASE_NOTES.md
