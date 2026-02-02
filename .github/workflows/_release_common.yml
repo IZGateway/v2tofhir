@@ -200,9 +200,11 @@ jobs:
           echo "Checking for SNAPSHOT dependencies..."
           
           # Check regular dependencies
-          # Get the current version of this project from the pom.xml, we want to filter this out of the dependency:list check
+          # Get the current project coordinates so we can filter this project itself out of the dependency:list check
           POM_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          SNAPSHOT_DEPS=$(mvn dependency:list | grep -v "$POM_VERSION" | grep SNAPSHOT || true)
+          GROUP_ID=$(mvn help:evaluate -Dexpression=project.groupId -q -DforceStdout)
+          ARTIFACT_ID=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
+          SNAPSHOT_DEPS=$(mvn dependency:list | grep SNAPSHOT | grep -v "^[[:space:]]*${GROUP_ID}:${ARTIFACT_ID}:" || true)
           
           # Check parent POM version separately (not included in dependency:list)
           if ! PARENT_VERSION=$(mvn help:evaluate -Dexpression=project.parent.version -q -DforceStdout); then
