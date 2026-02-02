@@ -457,10 +457,12 @@ jobs:
           # Discard all local changes from main branch (RELEASE_NOTES.md, etc.)
           echo "Discarding local changes to prepare for develop checkout..."
           git reset --hard HEAD
-          # Remove OWASP report directory
+          # Remove OWASP dependency-check report file (may be owned by root)
           # The dependency-check/Dependency-Check_Action action has its Docker
-          # running as root.
-          sudo rm -rf target/site/dependency-check-report.html || true
+          # running as root, so we may need sudo to delete the file.
+          if [ -e "target/site/dependency-check-report.html" ]; then
+            sudo rm target/site/dependency-check-report.html
+          fi
           git clean -fd
           
           # Restore workflow artifacts
