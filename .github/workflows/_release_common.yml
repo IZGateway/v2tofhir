@@ -466,97 +466,110 @@ jobs:
           git push origin "v${{ inputs.release-version }}"
           echo "Tag created on main"
 
-      - name: Update develop branch
+      - name: Create PR to sync develop branch
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          echo "Updating develop branch..."
-          
-          # Preserve workflow artifacts before git operations
-          echo "Preserving workflow artifacts (PR_CHANGES.txt)..."
-          if [ -f "PR_CHANGES.txt" ]; then
-            cp PR_CHANGES.txt /tmp/PR_CHANGES.txt
-            echo "PR_CHANGES.txt preserved"
-          fi
+          echo "Creating PR to sync release changes to develop..."
           
           # Discard all local changes from main branch (RELEASE_NOTES.md, etc.)
-          echo "Discarding local changes to prepare for develop checkout..."
+          echo "Discarding local changes to prepare for branch creation..."
           git reset --hard HEAD
           # Remove OWASP dependency-check report file (may be owned by root)
-          # The dependency-check/Dependency-Check_Action action has its Docker
-          # running as root, so we may need sudo to delete the file.
           if [ -e "target/site/dependency-check-report.html" ]; then
             sudo rm target/site/dependency-check-report.html
           fi
           git clean -fd
           
-          # Restore workflow artifacts
-          if [ -f "/tmp/PR_CHANGES.txt" ]; then
-            cp /tmp/PR_CHANGES.txt PR_CHANGES.txt
-            echo "PR_CHANGES.txt restored"
-          fi
-          
-          # Fetch latest develop and checkout
+          # Fetch latest develop
           git fetch origin develop
-          git checkout develop
-          git reset --hard origin/develop
           
-          # Restore workflow artifacts again after checkout
-          if [ -f "/tmp/PR_CHANGES.txt" ]; then
-            cp /tmp/PR_CHANGES.txt PR_CHANGES.txt
-            echo "PR_CHANGES.txt restored after checkout"
-          fi
+          # Create a temporary branch from develop for the PR
+          SYNC_BRANCH="sync-release-${{ inputs.release-version }}-to-develop"
+          echo "Creating sync branch: $SYNC_BRANCH"
+          git checkout -b "$SYNC_BRANCH" origin/develop
           
-          # Merge release branch to develop
-          # Use -X ours to prefer develop's version for conflicts (e.g., pom.xml version)
-          # During hotfix merges, develop may already be working on a newer version
-          echo "Merging release branch to develop..."
-          git merge --no-ff -X ours "${{ steps.validate.outputs.release_branch }}" -m "Merge release branch ${{ steps.validate.outputs.release_branch }} to develop"
-          
-          # Check if any hotfix files didn't merge cleanly (only for hotfix releases)
-          # With -X ours, conflicts are silently resolved to develop's version, which could
-          # mean hotfix code didn't actually make it into develop
-          if [[ "${{ inputs.release-type }}" == "hotfix" ]]; then
-            echo "Checking if all hotfix changes merged into develop..."
-          
-            # Get files changed in the hotfix branch (comparing to main, where hotfix branched from)
-            CHANGED_FILES=$(git diff --name-only origin/main...${{ steps.validate.outputs.release_branch }} | grep -v -E '^(pom\.xml|RELEASE_NOTES\.md)$' || true)
-          
-            UNMERGED_FILES=""
-            for file in $CHANGED_FILES; do
-              if [ -n "$file" ]; then
-                # Compare file content between hotfix branch and current develop
-                HOTFIX_CONTENT=$(git show ${{ steps.validate.outputs.release_branch }}:"$file" 2>/dev/null || echo "__FILE_NOT_FOUND__")
-                DEVELOP_CONTENT=$(git show HEAD:"$file" 2>/dev/null || echo "__FILE_NOT_FOUND__")
-          
-                if [ "$HOTFIX_CONTENT" != "$DEVELOP_CONTENT" ] && [ "$HOTFIX_CONTENT" != "__FILE_NOT_FOUND__" ]; then
-                  UNMERGED_FILES="$UNMERGED_FILES\n- $file"
-                fi
-              fi
-            done
-          
-            if [ -n "$UNMERGED_FILES" ]; then
-              echo "UNMERGED_HOTFIX_FILES<<EOF" >> $GITHUB_ENV
-              echo -e "$UNMERGED_FILES" >> $GITHUB_ENV
-              echo "EOF" >> $GITHUB_ENV
-              echo "⚠️ WARNING: Some hotfix files may not have merged cleanly into develop"
-              echo -e "Files to verify:$UNMERGED_FILES"
-            else
-              echo "✓ All hotfix changes appear to have merged into develop"
-            fi
+          # Merge release branch into sync branch
+          # If there are conflicts, the merge will fail and the PR will show conflicts
+          echo "Merging release branch into sync branch..."
+          if git merge --no-ff "${{ steps.validate.outputs.release_branch }}" -m "Merge release ${{ inputs.release-version }} to develop"; then
+            echo "✓ Merge completed without conflicts"
+            MERGE_STATUS="clean"
+          else
+            echo "⚠️ Merge has conflicts - PR will require manual resolution"
+            # Abort the failed merge so we can still create the branch
+            git merge --abort
+            # Create branch anyway with just the version bump (if applicable)
+            # The PR description will note that manual merge is needed
+            MERGE_STATUS="conflicts"
           fi
           
           # Bump to next SNAPSHOT version (only for standard releases)
-          if [[ -n "${{ steps.next-version.outputs.next_snapshot_version }}" ]]; then
+          if [[ -n "${{ steps.next-version.outputs.next_snapshot_version }}" && "$MERGE_STATUS" == "clean" ]]; then
             echo "Bumping to next SNAPSHOT version: ${{ steps.next-version.outputs.next_snapshot_version }}"
             mvn versions:set -DnewVersion=${{ steps.next-version.outputs.next_snapshot_version }} -DgenerateBackupPoms=false
             git add pom.xml
             git commit -m "chore: bump version to ${{ steps.next-version.outputs.next_snapshot_version }}"
-          else
-            echo "No next-snapshot-version specified (hotfix release), skipping version bump on develop"
           fi
           
-          # Push develop
-          git push origin develop
-          echo "Develop branch updated with RELEASE_NOTES and next SNAPSHOT version"
+          # Push the sync branch
+          git push origin "$SYNC_BRANCH"
+          echo "Sync branch pushed: $SYNC_BRANCH"
+          
+          # Build PR description
+          if [[ "$MERGE_STATUS" == "clean" ]]; then
+            PR_BODY="## Release Sync to Develop
+          
+          This PR syncs release \`${{ inputs.release-version }}\` changes to the develop branch.
+          
+          ### Changes included:
+          - Merge of release branch \`${{ steps.validate.outputs.release_branch }}\`"
+            
+            if [[ -n "${{ steps.next-version.outputs.next_snapshot_version }}" ]]; then
+              PR_BODY="$PR_BODY
+          - Version bump to \`${{ steps.next-version.outputs.next_snapshot_version }}\`"
+            fi
+            
+            PR_BODY="$PR_BODY
+          
+          ### Release type: \`${{ inputs.release-type }}\`
+          
+          ---
+          *This PR was automatically created by the release workflow.*"
+          else
+            PR_BODY="## ⚠️ Release Sync to Develop - Manual Merge Required
+          
+          This PR was created to sync release \`${{ inputs.release-version }}\` to develop, but **merge conflicts were detected**.
+          
+          ### Required actions:
+          1. Manually merge the release branch \`${{ steps.validate.outputs.release_branch }}\` into this branch
+          2. Resolve any conflicts (pay special attention to hotfix code changes)
+          3. Verify all release changes are included"
+          
+            if [[ -n "${{ steps.next-version.outputs.next_snapshot_version }}" ]]; then
+              PR_BODY="$PR_BODY
+          4. Run: \`mvn versions:set -DnewVersion=${{ steps.next-version.outputs.next_snapshot_version }} -DgenerateBackupPoms=false\`
+          5. Commit the version bump"
+            fi
+          
+            PR_BODY="$PR_BODY
+          
+          ### Release type: \`${{ inputs.release-type }}\`
+          
+          ---
+          *This PR was automatically created by the release workflow.*"
+          fi
+          
+          # Create the PR (label is optional - may not exist in all repos)
+          echo "Creating pull request..."
+          PR_URL=$(gh pr create \
+            --base develop \
+            --head "$SYNC_BRANCH" \
+            --title "Sync release ${{ inputs.release-version }} to develop" \
+            --body "$PR_BODY")
+          
+          echo "✓ Pull request created: $PR_URL"
+          echo "DEVELOP_SYNC_PR_URL=$PR_URL" >> $GITHUB_ENV
 
       - name: Generate GitHub Release body
         id: release-notes
