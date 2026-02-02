@@ -573,9 +573,6 @@ jobs:
           draft: false
           prerelease: false
           generate_release_notes: false
-          files: |
-            target/*.jar
-            target/*.pom
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
