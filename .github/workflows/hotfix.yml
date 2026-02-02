@@ -7,6 +7,11 @@
 # 2. Developers create fix/<issue> branches from hotfix/<version>
 # 3. PRs are merged back to hotfix/<version>
 # 4. When ready, run this workflow from the hotfix/<version> branch
+#
+# Note: Unlike the standard release workflow, hotfix releases do NOT include a 'next-snapshot-version'
+# input. Hotfixes are emergency fixes to production that are merged back to both main and develop.
+# The develop branch version is managed separately through standard releases, so hotfixes don't
+# bump the develop version during the release process.
 
 name: Release - Hotfix
 
