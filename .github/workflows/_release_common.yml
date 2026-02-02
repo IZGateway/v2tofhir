@@ -827,21 +827,7 @@ jobs:
           echo "2. **Git tag** (if created):" >> $GITHUB_STEP_SUMMARY
           echo "   \`git push origin --delete v${{ inputs.release-version }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "3. **Release branch** (when ready):" >> $GITHUB_STEP_SUMMARY
-          echo "   \`git push origin --delete ${{ steps.validate.outputs.release_branch }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "4. **GitHub Packages artifact** (if deployed):" >> $GITHUB_STEP_SUMMARY
-          echo "   \`\`\`bash" >> $GITHUB_STEP_SUMMARY
-          echo "   VERSION_ID=\\\$(gh api /orgs/IZGateway/packages/maven/gov.cdc.izgw.v2tofhir/versions --jq '.[] | select(.name==\"${{ inputs.release-version }}\") | .id')" >> $GITHUB_STEP_SUMMARY
-          echo "   gh api --method DELETE /orgs/IZGateway/packages/maven/gov.cdc.izgw.v2tofhir/versions/\\\$VERSION_ID" >> $GITHUB_STEP_SUMMARY
-          echo "   \`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "5. **GitHub Release** (if created):" >> $GITHUB_STEP_SUMMARY
-          echo "   \`gh release delete v${{ inputs.release-version }} --yes\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
-          echo "1. Review the error logs above" >> $GITHUB_STEP_SUMMARY
-          echo "2. Investigate the release branch manually if needed" >> $GITHUB_STEP_SUMMARY
-          echo "3. Clean up artifacts using commands above" >> $GITHUB_STEP_SUMMARY
-          echo "4. Fix issues on source branch" >> $GITHUB_STEP_SUMMARY
-          echo "5. Run the workflow again" >> $GITHUB_STEP_SUMMARY
+          # Redundant failure summary and next-steps section removed to avoid
+          # generating multiple "Release Failed" sections in the workflow summary.
+          # The primary failure summary earlier in this script now serves as the
+          # single source of truth for cleanup guidance and next steps.
