@@ -384,7 +384,12 @@ jobs:
           echo "- Build artifacts"
           echo "- Generate Site"
           echo "- Deploy artifacts to GitHub Packages"
-          mvn -B clean test package site deploy -DskipDependencyCheck=true
+          if mvn -B clean test package site deploy -DskipDependencyCheck=true; then
+            echo "Maven build, test, site generation, and deploy completed successfully."
+          else
+            echo "ERROR: Maven build, test, site generation, or deploy failed. Aborting release pipeline." >&2
+            exit 1
+          fi
 
       - name: Run OWASP Dependency Check
         env:
