@@ -647,14 +647,19 @@ jobs:
             # Check if the last commit is a merge from our release branch
             LAST_COMMIT_MSG=$(git log -1 --pretty=%B)
             if [[ "$LAST_COMMIT_MSG" == *"Merge release branch ${{ steps.validate.outputs.release_branch }}"* ]]; then
-              echo "✓ Found merge commit, attempting revert..."
-              git reset --hard HEAD~1
-              if git push origin main --force 2>&1; then
-                echo "✓ Successfully reverted merge commit on main"
-                CLEANUP_SUCCESSES="$CLEANUP_SUCCESSES\n- Main branch merge commit"
+              echo "✓ Found merge commit, attempting revert via git revert..."
+              # Revert the merge commit without rewriting history; assume mainline parent is 1
+              if git revert -m 1 HEAD --no-edit 2>&1; then
+                if git push origin main 2>&1; then
+                  echo "✓ Successfully reverted merge commit on main"
+                  CLEANUP_SUCCESSES="$CLEANUP_SUCCESSES\n- Main branch merge commit"
+                else
+                  echo " FAILED to push revert commit to main"
+                  CLEANUP_WARNINGS="$CLEANUP_WARNINGS\n- Main branch merge commit (revert push failed - MANUAL CLEANUP REQUIRED)"
+                fi
               else
-                echo " FAILED to revert main branch"
-                CLEANUP_WARNINGS="$CLEANUP_WARNINGS\n- Main branch merge commit (revert failed - MANUAL CLEANUP REQUIRED)"
+                echo " FAILED to create revert commit on main"
+                CLEANUP_WARNINGS="$CLEANUP_WARNINGS\n- Main branch merge commit (git revert failed - MANUAL CLEANUP REQUIRED)"
               fi
             else
               echo " No merge commit found on main (skipped)"
