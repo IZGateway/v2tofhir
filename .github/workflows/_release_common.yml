@@ -442,9 +442,15 @@ jobs:
             echo "Main branch exists, fetching..."
             git fetch origin main
             git checkout main
-            # Use -X theirs to prefer release branch version for conflicts (e.g., RELEASE_NOTES.md)
-            # During a release, the release branch has the authoritative version of release documentation
-            git merge --no-ff -X theirs "${{ steps.validate.outputs.release_branch }}" -m "Merge release branch ${{ steps.validate.outputs.release_branch }}"
+            # Perform a standard merge of the release branch into main
+            git merge --no-ff "${{ steps.validate.outputs.release_branch }}" -m "Merge release branch ${{ steps.validate.outputs.release_branch }}"
+
+            # Ensure release documentation comes from the release branch (e.g., RELEASE_NOTES.md)
+            # This avoids using a global '-X theirs' strategy, which could discard unrelated changes on main.
+            if git show "${{ steps.validate.outputs.release_branch }}:RELEASE_NOTES.md" >/dev/null 2>&1; then
+              git checkout "${{ steps.validate.outputs.release_branch }}" -- RELEASE_NOTES.md
+              git commit -am "Use release branch documentation for RELEASE_NOTES.md"
+            fi
           else
             echo "Main branch does not exist (first release), creating from release branch..."
             git checkout -b main
