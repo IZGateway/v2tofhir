@@ -205,7 +205,17 @@ jobs:
           SNAPSHOT_DEPS=$(mvn dependency:list | grep -v "$POM_VERSION" | grep SNAPSHOT || true)
           
           # Check parent POM version separately (not included in dependency:list)
-          PARENT_VERSION=$(mvn help:evaluate -Dexpression=project.parent.version -q -DforceStdout)
+          if ! PARENT_VERSION=$(mvn help:evaluate -Dexpression=project.parent.version -q -DforceStdout); then
+            echo "ERROR: Failed to determine parent POM version using Maven (project.parent.version)."
+            echo "Please ensure the parent POM is correctly configured and has an accessible version."
+            exit 1
+          fi
+          if [ -z "$PARENT_VERSION" ]; then
+            echo "ERROR: Maven returned an empty parent POM version (project.parent.version)."
+            echo "This may happen if the parent version is inherited or managed indirectly."
+            echo "Please configure an explicit parent version or adjust the release workflow check."
+            exit 1
+          fi
           if [[ "$PARENT_VERSION" == *"SNAPSHOT"* ]]; then
             echo "ERROR: Parent POM is a SNAPSHOT version: $PARENT_VERSION"
             exit 1
