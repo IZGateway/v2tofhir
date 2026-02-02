@@ -1,0 +1,835 @@
+# Reusable Release Workflow
+# This workflow contains the shared release logic used by both standard releases and hotfixes.
+# It should not be triggered directly - use release.yml or hotfix.yml instead.
+#
+
+name: Release - Common
+
+on:
+  workflow_call:
+    inputs:
+      release-version:
+        description: 'Release version (e.g., 2.4.0)'
+        required: true
+        type: string
+      next-snapshot-version:
+        description: 'Next SNAPSHOT version (e.g., 2.5.0 or 3.0.0) - leave blank to auto-increment minor version. Only used for standard releases.'
+        required: false
+        type: string
+      release-type:
+        description: 'Type of release: standard (from develop) or hotfix (from hotfix/* branch)'
+        required: false
+        type: string
+        default: 'standard'
+
+permissions:
+  contents: write # required for pushing branches, tags, and commits
+  packages: write # required for publishing and deleting GitHub Packages versions
+  pull-requests: read # required for gh pr view when generating release notes
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ssh-key: ${{ secrets.ACTIONS_KEY }}
+          fetch-depth: 0  # Full history for release notes generation
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+          server-id: github
+          server-username: GITHUB_ACTOR
+          server-password: GITHUB_TOKEN
+
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@v5
+        with:
+          maven-version: 3.9.0
+
+      - name: Set up Toolchain
+        shell: bash
+        run: |
+          mkdir -p ~/.m2 \
+          && cat << EOF > ~/.m2/toolchains.xml
+          <?xml version="1.0" encoding="UTF-8"?>
+          <toolchains>
+          <toolchain>
+           <type>jdk</type>
+             <provides>
+               <version>21</version>
+               <vendor>sun</vendor>
+             </provides>
+             <configuration>
+               <jdkHome>$JAVA_HOME_21_X64</jdkHome>
+             </configuration>
+          </toolchain>            
+          </toolchains>
+          EOF
+          
+          cat << EOF > ~/.m2/settings.xml
+          <?xml version="1.0" encoding="UTF-8"?>
+          <settings>
+          <servers> 
+           <server>
+             <id>github</id>
+             <username>${{github.actor}}</username>
+             <password>${{ secrets.GITHUB_TOKEN }}</password>
+           </server>          
+           <server>
+             <id>github-bom</id>
+             <username>${{github.actor}}</username>
+             <password>${{ secrets.GITHUB_TOKEN }}</password>
+           </server>
+           <server>
+             <id>github-core</id>
+             <username>${{github.actor}}</username>
+             <password>${{ secrets.GITHUB_TOKEN }}</password>
+           </server>
+          </servers>
+          </settings>
+          EOF
+          
+          echo BASE_TAG=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout` >> $GITHUB_ENV
+          echo COMPUTERNAME=`hostname` >> $GITHUB_ENV
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Validate prerequisites
+        id: validate
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Validating release prerequisites..."
+          echo "Release type: ${{ inputs.release-type }}"
+          
+          # Validate version formats
+          if [[ ! "${{ inputs.release-version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: Release version must be in format X.Y.Z (e.g., 2.4.0)"
+            exit 1
+          fi
+          echo "Version format validation passed"
+          
+          # Validate next-snapshot-version format if provided (for standard releases)
+          if [[ "${{ inputs.release-type }}" == "standard" && -n "${{ inputs.next-snapshot-version }}" ]]; then
+            # Allow either X.Y.Z or X.Y.Z-SNAPSHOT format
+            if [[ ! "${{ inputs.next-snapshot-version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-SNAPSHOT)?$ ]]; then
+              echo "Error: Next SNAPSHOT version must be in format X.Y.Z or X.Y.Z-SNAPSHOT (e.g., 2.5.0 or 2.5.0-SNAPSHOT)"
+              exit 1
+            fi
+            echo "Next SNAPSHOT version format validation passed"
+          fi
+          
+          # If not provided for standard releases, it will be auto-calculated
+          if [[ "${{ inputs.release-type }}" == "standard" && -z "${{ inputs.next-snapshot-version }}" ]]; then
+            echo "Next SNAPSHOT version not provided - will auto-increment minor version"
+          fi
+          
+          # Validate current branch based on release type
+          CURRENT_BRANCH="${{ github.ref_name }}"
+          if [[ "${{ inputs.release-type }}" == "standard" ]]; then
+            if [[ "$CURRENT_BRANCH" != "develop" ]]; then
+              echo "Error: Standard release workflow must be run from 'develop' branch"
+              echo "Current branch: $CURRENT_BRANCH"
+              exit 1
+            fi
+            echo "Running standard release from develop branch"
+            RELEASE_BRANCH="release/${{ inputs.release-version }}"
+          else
+            # Hotfix release - must be run from hotfix/* branch
+            if [[ ! "$CURRENT_BRANCH" =~ ^hotfix/ ]]; then
+              echo "Error: Hotfix release workflow must be run from a 'hotfix/*' branch"
+              echo "Current branch: $CURRENT_BRANCH"
+              exit 1
+            fi
+            echo "Running hotfix release from $CURRENT_BRANCH"
+            # For hotfix, the branch already exists - use it directly
+            RELEASE_BRANCH="$CURRENT_BRANCH"
+          fi
+          
+          echo "release_branch=$RELEASE_BRANCH" >> $GITHUB_OUTPUT
+          echo "Release branch: $RELEASE_BRANCH"
+          
+          # For standard releases, check if release branch already exists
+          if [[ "${{ inputs.release-type }}" == "standard" ]]; then
+            if git ls-remote --exit-code --heads origin "$RELEASE_BRANCH" >/dev/null 2>&1; then
+              echo "Error: Release branch '$RELEASE_BRANCH' already exists"
+              exit 1
+            fi
+            echo "Release branch does not exist yet"
+          fi
+          
+          # Check if tag already exists
+          if git ls-remote --exit-code --tags origin "v${{ inputs.release-version }}" >/dev/null 2>&1; then
+            echo "Error: Tag 'v${{ inputs.release-version }}' already exists"
+            echo "This version has already been released. Please use a different version number."
+            exit 1
+          fi
+          echo "Release tag does not exist yet"
+          
+          # Check if artifact already exists in GitHub Packages
+          echo "Checking if artifact already exists in GitHub Packages..."
+          
+          # Try to check if the package version exists using GitHub API
+          # Note: This checks for the package version, not individual artifacts
+          PACKAGE_EXISTS=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            "/orgs/IZGateway/packages/maven/gov.cdc.izgw.v2tofhir/versions" \
+            --jq ".[] | select(.name==\"${{ inputs.release-version }}\") | .name" 2>/dev/null || echo "")
+          
+          if [ -n "$PACKAGE_EXISTS" ]; then
+            echo "ERROR: Artifact version ${{ inputs.release-version }} already exists in GitHub Packages"
+            exit 1
+          fi
+          
+          echo "Artifact does not exist in GitHub Packages yet"
+
+      - name: Check for SNAPSHOT dependencies
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Checking for SNAPSHOT dependencies..."
+          
+          # Check regular dependencies
+          # Get the current version of this project from the pom.xml, we want to filter this out of the dependency:list check
+          POM_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          SNAPSHOT_DEPS=$(mvn dependency:list | grep -v "$POM_VERSION" | grep SNAPSHOT || true)
+          
+          # Check parent POM version separately (not included in dependency:list)
+          PARENT_VERSION=$(mvn help:evaluate -Dexpression=project.parent.version -q -DforceStdout)
+          if [[ "$PARENT_VERSION" == *"SNAPSHOT"* ]]; then
+            echo "ERROR: Parent POM is a SNAPSHOT version: $PARENT_VERSION"
+            exit 1
+          fi
+          echo "Parent POM version is a release version: $PARENT_VERSION"
+          
+          # Check if any regular dependencies are SNAPSHOT
+          if [ -n "$SNAPSHOT_DEPS" ]; then
+            echo "ERROR: Found SNAPSHOT dependencies in the project:"
+            echo "$SNAPSHOT_DEPS"
+            exit 1
+          fi
+          
+          echo "No SNAPSHOT dependencies found - ready for release"
+
+      - name: Create release branch
+        if: ${{ inputs.release-type == 'standard' }}
+        run: |
+          echo "Creating release branch: ${{ steps.validate.outputs.release_branch }}"
+          git checkout -b "${{ steps.validate.outputs.release_branch }}"
+          git push origin "${{ steps.validate.outputs.release_branch }}"
+          echo "Release branch created and pushed"
+
+      - name: Generate release notes from PRs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Generating release note entries from merged PRs..."
+          
+          # Get the previous tag (most recent tag by version, not by ancestry)
+          # This works even when develop branch doesn't have tags in its commit history
+          PREVIOUS_TAG=$(git tag -l "v*" --sort=-v:refname | head -n 1)
+          
+          if [ -z "$PREVIOUS_TAG" ]; then
+            echo "First release, getting all merge commits"
+            # Get all merge commits
+            PR_CHANGES=$(git log --merges --oneline | { grep "pull request" || true; } | sed -E 's/.*#([0-9]+).*/\1/' | while read -r pr; do gh pr view "$pr" --json number,title,url --jq '"- \(.title) ([#\(.number)](\(.url)))"' 2>/dev/null || echo ""; done | { grep -v "^$" || true; })
+          else
+            echo "Generating release note from $PREVIOUS_TAG to HEAD"
+            # Get merge commits since the previous tag
+            PR_CHANGES=$(git log ${PREVIOUS_TAG}..HEAD --merges --oneline | { grep "pull request" || true; } | sed -E 's/.*#([0-9]+).*/\1/' | while read -r pr; do gh pr view "$pr" --json number,title,url --jq '"- \(.title) ([#\(.number)](\(.url)))"' 2>/dev/null || echo ""; done | { grep -v "^$" || true; })
+          fi
+          
+          # Check if we found any PRs
+          if [ -z "$PR_CHANGES" ]; then
+            echo "WARNING: No merged PRs found. Using commit messages as fallback."
+            if [ -z "$PREVIOUS_TAG" ]; then
+              PR_CHANGES=$(git log --pretty=format:"- %s (%h)" --no-merges)
+            else
+              PR_CHANGES=$(git log ${PREVIOUS_TAG}..HEAD --pretty=format:"- %s (%h)" --no-merges)
+            fi
+          fi
+          
+          # Save PR changes to file for reuse in both RELEASE_NOTES.md and GitHub Release
+          echo "$PR_CHANGES" > PR_CHANGES.txt
+          echo "Release notes generated and saved to PR_CHANGES.txt"
+
+      - name: Update RELEASE_NOTES.md
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Updating RELEASE_NOTES.md with generated release notes..."
+          
+          # Read pre-generated PR changes
+          PR_CHANGES=$(cat PR_CHANGES.txt)
+          
+          # Get current date
+          RELEASE_DATE=$(date +%Y-%m-%d)
+          
+          # Create new release note entry
+          cat > RELEASE_NOTES_ENTRY.md << EOF
+          ## [${{ inputs.release-version }}] - $RELEASE_DATE
+          
+          ### Changes
+          $PR_CHANGES
+          
+          EOF
+          
+          # Check if RELEASE_NOTES.md exists
+          if [ -f "RELEASE_NOTES.md" ]; then
+            # Insert new entry after the header, before existing release entries
+            # Find line number of first release entry (## [version])
+            FIRST_RELEASE_LINE=$(grep -n "^## \[" RELEASE_NOTES.md | head -1 | cut -d: -f1)
+          
+            if [ -n "$FIRST_RELEASE_LINE" ]; then
+              # Split file: header (before first release) and releases (from first release onward)
+              head -n $((FIRST_RELEASE_LINE - 1)) RELEASE_NOTES.md > RELEASE_NOTES_HEADER.md
+              tail -n +${FIRST_RELEASE_LINE} RELEASE_NOTES.md > RELEASE_NOTES_RELEASES.md
+          
+              # Combine: header + new entry + existing releases
+              cat RELEASE_NOTES_HEADER.md > RELEASE_NOTES.md
+              cat RELEASE_NOTES_ENTRY.md >> RELEASE_NOTES.md
+              cat RELEASE_NOTES_RELEASES.md >> RELEASE_NOTES.md
+          
+              rm -f RELEASE_NOTES_HEADER.md RELEASE_NOTES_RELEASES.md RELEASE_NOTES_ENTRY.md
+            else
+              # No existing release entries found, just append new entry
+              cat RELEASE_NOTES_ENTRY.md >> RELEASE_NOTES.md
+              rm -f RELEASE_NOTES_ENTRY.md
+            fi
+          else
+            # Create new RELEASE_NOTES.md with header and first entry
+            cat > RELEASE_NOTES.md << EOF
+          # Release Notes
+          
+          All notable changes to this project will be documented in this file.
+          
+          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+          
+          EOF
+            cat RELEASE_NOTES_ENTRY.md >> RELEASE_NOTES.md
+            rm -f RELEASE_NOTES_ENTRY.md
+          fi
+          
+          git add RELEASE_NOTES.md
+          git commit -m "docs: update RELEASE_NOTES.md for release ${{ inputs.release-version }}"
+          echo "RELEASE_NOTES.md updated"
+
+      - name: Set release version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Setting version to ${{ inputs.release-version }}"
+          mvn versions:set -DnewVersion=${{ inputs.release-version }} -DgenerateBackupPoms=false
+          git add pom.xml
+          git commit -m "chore: prepare release ${{ inputs.release-version }}"
+          git push origin "${{ steps.validate.outputs.release_branch }}"
+          echo "Release version set and committed"
+
+      - name: Calculate next SNAPSHOT version
+        id: next-version
+        if: ${{ inputs.release-type == 'standard' }}
+        run: |
+          echo "Calculating next SNAPSHOT version..."
+          
+          if [[ -z "${{ inputs.next-snapshot-version }}" ]]; then
+            # Auto-calculate by incrementing minor version
+            RELEASE_VERSION="${{ inputs.release-version }}"
+            IFS='.' read -r major minor patch <<< "$RELEASE_VERSION"
+            NEXT_SNAPSHOT="${major}.$((minor + 1)).0-SNAPSHOT"
+            echo "Auto-calculated next snapshot version: $NEXT_SNAPSHOT"
+          else
+            # Use provided value, append -SNAPSHOT if not already present
+            PROVIDED="${{ inputs.next-snapshot-version }}"
+            if [[ "$PROVIDED" == *"-SNAPSHOT" ]]; then
+              NEXT_SNAPSHOT="$PROVIDED"
+              echo "Using provided next snapshot version: $NEXT_SNAPSHOT"
+            else
+              NEXT_SNAPSHOT="${PROVIDED}-SNAPSHOT"
+              echo "Using provided version with -SNAPSHOT appended: $NEXT_SNAPSHOT"
+            fi
+          fi
+          
+          echo "next_snapshot_version=$NEXT_SNAPSHOT" >> $GITHUB_OUTPUT
+          echo "Final next SNAPSHOT version: $NEXT_SNAPSHOT"
+
+      - name: Build, Test, Deploy artifacts, and generate Site
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMON_PASS: ${{ secrets.COMMON_PASS }}
+          ELASTIC_API_KEY: ${{ secrets.ELASTIC_API_KEY }}
+        run: |
+          echo "Using Maven to:"
+          echo "- Test"
+          echo "- Build artifacts"
+          echo "- Generate Site"
+          echo "- Deploy artifacts to GitHub Packages"
+          mvn -B clean test package site deploy -DskipDependencyCheck=true
+
+      - name: Run OWASP Dependency Check
+        env:
+          # Per https://github.com/marketplace/actions/dependency-check, fix JAVA_HOME location for action
+          JAVA_HOME: /opt/jdk
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: HL7v2 to FHIR (v2tofhir)
+          path: target/v2tofhir-${{ inputs.release-version }}.jar
+          format: 'HTML'
+          out: 'target/site'
+          args: >
+            --ossIndexUsername ${{ secrets.OSS_INDEX_USERNAME }}
+            --ossIndexPassword ${{ secrets.OSS_INDEX_PASSWORD }}        
+            --failOnCVSS 7
+            --suppression ./dependency-suppression.xml
+            --disableNuspec    
+            --disableNugetconf  
+            --disableAssembly      
+
+      - name: Upload dependency check report
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-report
+          path: ./target/site/dependency-check-report.html
+          if-no-files-found: ignore
+
+      - name: Publish Site (Current)
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./target/site
+          destination_dir: current
+
+      - name: Publish Site (Versioned)
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./target/site
+          destination_dir: v${{ inputs.release-version }}
+
+      - name: Merge release branch to main
+        run: |
+          echo "Merging release branch to main..."
+          
+          # Check if main branch exists
+          if git ls-remote --exit-code --heads origin main >/dev/null 2>&1; then
+            echo "Main branch exists, fetching..."
+            git fetch origin main
+            git checkout main
+            # Use -X theirs to prefer release branch version for conflicts (e.g., RELEASE_NOTES.md)
+            # During a release, the release branch has the authoritative version of release documentation
+            git merge --no-ff -X theirs "${{ steps.validate.outputs.release_branch }}" -m "Merge release branch ${{ steps.validate.outputs.release_branch }}"
+          else
+            echo "Main branch does not exist (first release), creating from release branch..."
+            git checkout -b main
+          fi
+          
+          git push origin main
+          echo "Release branch merged to main"
+
+      - name: Create Git tag on main
+        run: |
+          echo "Creating tag v${{ inputs.release-version }} on main branch..."
+          git tag -a "v${{ inputs.release-version }}" -m "Release version ${{ inputs.release-version }}"
+          git push origin "v${{ inputs.release-version }}"
+          echo "Tag created on main"
+
+      - name: Update develop branch
+        run: |
+          echo "Updating develop branch..."
+          
+          # Preserve workflow artifacts before git operations
+          echo "Preserving workflow artifacts (PR_CHANGES.txt)..."
+          if [ -f "PR_CHANGES.txt" ]; then
+            cp PR_CHANGES.txt /tmp/PR_CHANGES.txt
+            echo "PR_CHANGES.txt preserved"
+          fi
+          
+          # Discard all local changes from main branch (RELEASE_NOTES.md, etc.)
+          echo "Discarding local changes to prepare for develop checkout..."
+          git reset --hard HEAD
+          # Remove OWASP report directory
+          # The dependency-check/Dependency-Check_Action action has its Docker
+          # running as root.
+          sudo rm -rf target/site/dependency-check-report.html || true
+          git clean -fd
+          
+          # Restore workflow artifacts
+          if [ -f "/tmp/PR_CHANGES.txt" ]; then
+            cp /tmp/PR_CHANGES.txt PR_CHANGES.txt
+            echo "PR_CHANGES.txt restored"
+          fi
+          
+          # Fetch latest develop and checkout
+          git fetch origin develop
+          git checkout develop
+          git reset --hard origin/develop
+          
+          # Restore workflow artifacts again after checkout
+          if [ -f "/tmp/PR_CHANGES.txt" ]; then
+            cp /tmp/PR_CHANGES.txt PR_CHANGES.txt
+            echo "PR_CHANGES.txt restored after checkout"
+          fi
+          
+          # Merge release branch to develop
+          # Use -X ours to prefer develop's version for conflicts (e.g., pom.xml version)
+          # During hotfix merges, develop may already be working on a newer version
+          echo "Merging release branch to develop..."
+          git merge --no-ff -X ours "${{ steps.validate.outputs.release_branch }}" -m "Merge release branch ${{ steps.validate.outputs.release_branch }} to develop"
+          
+          # Check if any hotfix files didn't merge cleanly (only for hotfix releases)
+          # With -X ours, conflicts are silently resolved to develop's version, which could
+          # mean hotfix code didn't actually make it into develop
+          if [[ "${{ inputs.release-type }}" == "hotfix" ]]; then
+            echo "Checking if all hotfix changes merged into develop..."
+          
+            # Get files changed in the hotfix branch (comparing to main, where hotfix branched from)
+            CHANGED_FILES=$(git diff --name-only origin/main...${{ steps.validate.outputs.release_branch }} | grep -v -E '^(pom\.xml|RELEASE_NOTES\.md)$' || true)
+          
+            UNMERGED_FILES=""
+            for file in $CHANGED_FILES; do
+              if [ -n "$file" ]; then
+                # Compare file content between hotfix branch and current develop
+                HOTFIX_CONTENT=$(git show ${{ steps.validate.outputs.release_branch }}:"$file" 2>/dev/null || echo "__FILE_NOT_FOUND__")
+                DEVELOP_CONTENT=$(git show HEAD:"$file" 2>/dev/null || echo "__FILE_NOT_FOUND__")
+          
+                if [ "$HOTFIX_CONTENT" != "$DEVELOP_CONTENT" ] && [ "$HOTFIX_CONTENT" != "__FILE_NOT_FOUND__" ]; then
+                  UNMERGED_FILES="$UNMERGED_FILES\n- $file"
+                fi
+              fi
+            done
+          
+            if [ -n "$UNMERGED_FILES" ]; then
+              echo "UNMERGED_HOTFIX_FILES<<EOF" >> $GITHUB_ENV
+              echo -e "$UNMERGED_FILES" >> $GITHUB_ENV
+              echo "EOF" >> $GITHUB_ENV
+              echo "⚠️ WARNING: Some hotfix files may not have merged cleanly into develop"
+              echo -e "Files to verify:$UNMERGED_FILES"
+            else
+              echo "✓ All hotfix changes appear to have merged into develop"
+            fi
+          fi
+          
+          # Bump to next SNAPSHOT version (only for standard releases)
+          if [[ -n "${{ steps.next-version.outputs.next_snapshot_version }}" ]]; then
+            echo "Bumping to next SNAPSHOT version: ${{ steps.next-version.outputs.next_snapshot_version }}"
+            mvn versions:set -DnewVersion=${{ steps.next-version.outputs.next_snapshot_version }} -DgenerateBackupPoms=false
+            git add pom.xml
+            git commit -m "chore: bump version to ${{ steps.next-version.outputs.next_snapshot_version }}"
+          else
+            echo "No next-snapshot-version specified (hotfix release), skipping version bump on develop"
+          fi
+          
+          # Push develop
+          git push origin develop
+          echo "Develop branch updated with RELEASE_NOTES and next SNAPSHOT version"
+
+      - name: Generate GitHub Release body
+        id: release-notes
+        run: |
+          echo "Creating GitHub Release body from pre-generated release notes..."
+          
+          # Read pre-generated PR changes
+          PR_CHANGES=$(cat PR_CHANGES.txt)
+          
+          # Save release notes to file for GitHub Release
+          cat << EOF > GITHUB_RELEASE_BODY.md
+          # Release ${{ inputs.release-version }}
+          
+          ## Changes
+          
+          $PR_CHANGES
+          
+          EOF
+          echo "GitHub Release body created"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ inputs.release-version }}
+          name: HL7v2 to FHIR (v2tofhir) v${{ inputs.release-version }}
+          body_path: GITHUB_RELEASE_BODY.md
+          draft: false
+          prerelease: false
+          generate_release_notes: false
+          files: |
+            target/*.jar
+            target/*.pom
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        run: |
+          echo "## Release Complete!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Release Details" >> $GITHUB_STEP_SUMMARY
+          echo "- **Release type:** ${{ inputs.release-type }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Release version:** ${{ inputs.release-version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Release branch:** ${{ steps.validate.outputs.release_branch }} (kept)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tag:** v${{ inputs.release-version }} (on main)" >> $GITHUB_STEP_SUMMARY
+          if [[ -n "${{ steps.next-version.outputs.next_snapshot_version }}" ]]; then
+            echo "- **Next version:** ${{ steps.next-version.outputs.next_snapshot_version }} (on develop)" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Warn if hotfix files didn't merge cleanly into develop
+          if [[ -n "$UNMERGED_HOTFIX_FILES" ]]; then
+            echo "### ⚠️ Action Required: Verify Hotfix Merge to Develop" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "The following hotfix files may not have merged cleanly into \`develop\` due to conflicts:" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "$UNMERGED_HOTFIX_FILES" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Please manually verify these changes are in \`develop\`, or cherry-pick them if needed.**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Cleanup on failure
+        if: failure()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "=========================================="
+          echo "Starting cleanup of failed release..."
+          echo "=========================================="
+          echo ""
+          
+          # Track cleanup status
+          CLEANUP_WARNINGS=""
+          CLEANUP_SUCCESSES=""
+          
+          # Delete git tag if it exists
+          echo "Checking for git tag v${{ inputs.release-version }}..."
+          if git ls-remote --exit-code --tags origin "v${{ inputs.release-version }}" >/dev/null 2>&1; then
+            echo "✓ Tag exists, attempting deletion..."
+            if git push origin --delete "v${{ inputs.release-version }}" 2>&1; then
+              echo "✓ Successfully deleted git tag"
+              CLEANUP_SUCCESSES="$CLEANUP_SUCCESSES\n- Git tag v${{ inputs.release-version }}"
+            else
+              echo " FAILED to delete git tag"
+              CLEANUP_WARNINGS="$CLEANUP_WARNINGS\n- Git tag v${{ inputs.release-version }} (deletion failed)"
+            fi
+          else
+            echo " Tag does not exist (skipped)"
+          fi
+          echo ""
+          
+          # Revert merge to main if it happened
+          echo "Checking for merge to main..."
+          if git ls-remote --exit-code --heads origin main >/dev/null 2>&1; then
+            echo "✓ Main branch exists, checking for merge commit..."
+            git fetch origin main
+            git checkout main
+          
+            # Check if the last commit is a merge from our release branch
+            LAST_COMMIT_MSG=$(git log -1 --pretty=%B)
+            if [[ "$LAST_COMMIT_MSG" == *"Merge release branch ${{ steps.validate.outputs.release_branch }}"* ]]; then
+              echo "✓ Found merge commit, attempting revert..."
+              git reset --hard HEAD~1
+              if git push origin main --force 2>&1; then
+                echo "✓ Successfully reverted merge commit on main"
+                CLEANUP_SUCCESSES="$CLEANUP_SUCCESSES\n- Main branch merge commit"
+              else
+                echo " FAILED to revert main branch"
+                CLEANUP_WARNINGS="$CLEANUP_WARNINGS\n- Main branch merge commit (revert failed - MANUAL CLEANUP REQUIRED)"
+              fi
+            else
+              echo " No merge commit found on main (skipped)"
+            fi
+          else
+            echo " Main branch does not exist (skipped)"
+          fi
+          echo ""
+          
+          # Delete release branch if it exists (only for standard releases)
+          if [[ "${{ inputs.release-type }}" == "standard" ]]; then
+            echo "Checking for release branch ${{ steps.validate.outputs.release_branch }}..."
+            if git ls-remote --exit-code --heads origin "${{ steps.validate.outputs.release_branch }}" >/dev/null 2>&1; then
+              echo "✓ Release branch exists, attempting deletion..."
+              if git push origin --delete "${{ steps.validate.outputs.release_branch }}" 2>&1; then
+                echo "✓ Successfully deleted release branch"
+                CLEANUP_SUCCESSES="$CLEANUP_SUCCESSES\n- Release branch ${{ steps.validate.outputs.release_branch }}"
+              else
+                echo " FAILED to delete release branch"
+                CLEANUP_WARNINGS="$CLEANUP_WARNINGS\n- Release branch ${{ steps.validate.outputs.release_branch }} (deletion failed)"
+              fi
+            else
+              echo " Release branch does not exist (skipped)"
+            fi
+          else
+            echo " Hotfix branch kept for investigation: ${{ steps.validate.outputs.release_branch }}"
+          fi
+          echo ""
+          
+          # Delete artifact from GitHub Packages if it was deployed
+          echo "Checking for GitHub Packages artifact version ${{ inputs.release-version }}..."
+          VERSION_ID=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            "/orgs/IZGateway/packages/maven/gov.cdc.izgw.v2tofhir/versions" \
+            --jq ".[] | select(.name==\"${{ inputs.release-version }}\") | .id" 2>&1)
+          
+          if [ $? -ne 0 ]; then
+            echo " FAILED to query GitHub Packages API"
+            echo "Error: $VERSION_ID"
+            CLEANUP_WARNINGS="$CLEANUP_WARNINGS\n- GitHub Packages artifact (API query failed - may still exist)"
+          elif [ -n "$VERSION_ID" ]; then
+            echo "✓ Found artifact (version ID: $VERSION_ID), attempting deletion..."
+            DELETE_RESULT=$(gh api --method DELETE "/orgs/IZGateway/packages/maven/gov.cdc.izgw.v2tofhir/versions/$VERSION_ID" 2>&1)
+            if [ $? -eq 0 ]; then
+              echo "✓ Successfully deleted GitHub Packages artifact"
+              CLEANUP_SUCCESSES="$CLEANUP_SUCCESSES\n- GitHub Packages artifact v${{ inputs.release-version }}"
+          
+              # Verify deletion
+              sleep 2
+              VERIFY_ID=$(gh api \
+                -H "Accept: application/vnd.github+json" \
+                "/orgs/IZGateway/packages/maven/gov.cdc.izgw.v2tofhir/versions" \
+                --jq ".[] | select(.name==\"${{ inputs.release-version }}\") | .id" 2>/dev/null || echo "")
+              if [ -n "$VERIFY_ID" ]; then
+                echo " WARNING: Artifact still exists after deletion attempt"
+                CLEANUP_WARNINGS="$CLEANUP_WARNINGS\n- GitHub Packages artifact v${{ inputs.release-version }} (deletion appeared to succeed but artifact still exists)"
+              else
+                echo "✓ Verified: Artifact successfully removed"
+              fi
+            else
+              echo " FAILED to delete GitHub Packages artifact"
+              echo "Error: $DELETE_RESULT"
+              CLEANUP_WARNINGS="$CLEANUP_WARNINGS\n- GitHub Packages artifact v${{ inputs.release-version }} (deletion failed - MANUAL CLEANUP REQUIRED)"
+            fi
+          else
+            echo " Artifact does not exist (skipped)"
+          fi
+          echo ""
+          
+          # Delete GitHub Release if it was created
+          echo "Checking for GitHub Release v${{ inputs.release-version }}..."
+          if gh release view "v${{ inputs.release-version }}" >/dev/null 2>&1; then
+            echo "✓ Release exists, attempting deletion..."
+            DELETE_RESULT=$(gh release delete "v${{ inputs.release-version }}" --yes 2>&1)
+            if [ $? -eq 0 ]; then
+              echo "✓ Successfully deleted GitHub Release"
+              CLEANUP_SUCCESSES="$CLEANUP_SUCCESSES\n- GitHub Release v${{ inputs.release-version }}"
+          
+              # Verify deletion
+              sleep 2
+              if gh release view "v${{ inputs.release-version }}" >/dev/null 2>&1; then
+                echo " WARNING: Release still exists after deletion attempt"
+                CLEANUP_WARNINGS="$CLEANUP_WARNINGS\n- GitHub Release v${{ inputs.release-version }} (deletion appeared to succeed but release still exists)"
+              else
+                echo "✓ Verified: Release successfully removed"
+              fi
+            else
+              echo " FAILED to delete GitHub Release"
+              echo "Error: $DELETE_RESULT"
+              CLEANUP_WARNINGS="$CLEANUP_WARNINGS\n- GitHub Release v${{ inputs.release-version }} (deletion failed)"
+            fi
+          else
+            echo " Release does not exist (skipped)"
+          fi
+          echo ""
+          
+          # Summary
+          echo "=========================================="
+          echo "Cleanup Summary"
+          echo "=========================================="
+          if [ -n "$CLEANUP_SUCCESSES" ]; then
+            echo -e "\n✓ Successfully cleaned up:$CLEANUP_SUCCESSES"
+          fi
+          if [ -n "$CLEANUP_WARNINGS" ]; then
+            echo -e "\n WARNINGS - Manual cleanup may be required for:$CLEANUP_WARNINGS"
+          fi
+          if [ -z "$CLEANUP_SUCCESSES" ] && [ -z "$CLEANUP_WARNINGS" ]; then
+            echo " No artifacts found to clean up"
+          fi
+          echo ""
+          
+          echo "## Release Failed - Cleanup Attempted" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The release process failed. Cleanup was performed with the following results:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -n "$CLEANUP_SUCCESSES" ]; then
+            echo "### ✓ Successfully Cleaned Up" >> $GITHUB_STEP_SUMMARY
+            echo -e "$CLEANUP_SUCCESSES" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ -n "$CLEANUP_WARNINGS" ]; then
+            echo "###  Manual Cleanup Required" >> $GITHUB_STEP_SUMMARY
+            echo "The following items could not be automatically cleaned up:" >> $GITHUB_STEP_SUMMARY
+            echo -e "$CLEANUP_WARNINGS" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Action Required:** Please manually delete these items before re-running the release." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ -z "$CLEANUP_SUCCESSES" ] && [ -z "$CLEANUP_WARNINGS" ]; then
+            echo "###  Nothing to Clean Up" >> $GITHUB_STEP_SUMMARY
+            echo "No release artifacts were found (the workflow failed early)." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "1. Review the cleanup logs above for any warnings" >> $GITHUB_STEP_SUMMARY
+          if [ -n "$CLEANUP_WARNINGS" ]; then
+            echo "2. **Manually clean up any items marked with  WARNING**" >> $GITHUB_STEP_SUMMARY
+            echo "3. Review the workflow error logs to identify what failed" >> $GITHUB_STEP_SUMMARY
+            echo "4. Fix issues on source branch" >> $GITHUB_STEP_SUMMARY
+            echo "5. Run the workflow again" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "2. Review the workflow error logs to identify what failed" >> $GITHUB_STEP_SUMMARY
+            echo "3. Fix issues on source branch" >> $GITHUB_STEP_SUMMARY
+            echo "4. Run the workflow again" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Common Issues" >> $GITHUB_STEP_SUMMARY
+          echo "- Tests failing: Fix tests and re-run" >> $GITHUB_STEP_SUMMARY
+          echo "- SNAPSHOT dependencies: Update dependencies to release versions" >> $GITHUB_STEP_SUMMARY
+          echo "- Authentication issues: Verify GitHub Packages credentials" >> $GITHUB_STEP_SUMMARY
+          echo "- Artifact already exists: Manually delete the GitHub Package version before retrying" >> $GITHUB_STEP_SUMMARY
+
+
+          echo "## Release Failed - Branch Kept" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The release process failed. The release branch **${{ steps.validate.outputs.release_branch }}** has been kept for investigation." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Manual Cleanup Required" >> $GITHUB_STEP_SUMMARY
+          echo "You may need to clean up the following (check if they exist):" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "1. **Main branch merge** (if it happened):" >> $GITHUB_STEP_SUMMARY
+          echo "   \`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "   git checkout main" >> $GITHUB_STEP_SUMMARY
+          echo "   git reset --hard HEAD~1  # Revert the merge commit" >> $GITHUB_STEP_SUMMARY
+          echo "   git push origin main --force" >> $GITHUB_STEP_SUMMARY
+          echo "   \`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "2. **Git tag** (if created):" >> $GITHUB_STEP_SUMMARY
+          echo "   \`git push origin --delete v${{ inputs.release-version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "3. **Release branch** (when ready):" >> $GITHUB_STEP_SUMMARY
+          echo "   \`git push origin --delete ${{ steps.validate.outputs.release_branch }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "4. **GitHub Packages artifact** (if deployed):" >> $GITHUB_STEP_SUMMARY
+          echo "   \`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "   VERSION_ID=\\\$(gh api /orgs/IZGateway/packages/maven/gov.cdc.izgw.v2tofhir/versions --jq '.[] | select(.name==\"${{ inputs.release-version }}\") | .id')" >> $GITHUB_STEP_SUMMARY
+          echo "   gh api --method DELETE /orgs/IZGateway/packages/maven/gov.cdc.izgw.v2tofhir/versions/\\\$VERSION_ID" >> $GITHUB_STEP_SUMMARY
+          echo "   \`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "5. **GitHub Release** (if created):" >> $GITHUB_STEP_SUMMARY
+          echo "   \`gh release delete v${{ inputs.release-version }} --yes\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "1. Review the error logs above" >> $GITHUB_STEP_SUMMARY
+          echo "2. Investigate the release branch manually if needed" >> $GITHUB_STEP_SUMMARY
+          echo "3. Clean up artifacts using commands above" >> $GITHUB_STEP_SUMMARY
+          echo "4. Fix issues on source branch" >> $GITHUB_STEP_SUMMARY
+          echo "5. Run the workflow again" >> $GITHUB_STEP_SUMMARY
