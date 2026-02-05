@@ -28,7 +28,8 @@ Key behaviors:
 - Uses the existing `hotfix/*` branch (no new branch created).
 - Builds/tests, deploys, runs OWASP check, publishes site, updates `RELEASE_NOTES.md`.
 - Merges to `main` with `-X theirs`, tags `vX.Y.Z`.
-- Merges back to `develop` with `-X ours` (no version bump). If any hotfix files may need manual cherry-pick, the summary lists them (`UNMERGED_HOTFIX_FILES`).
+- Merges back to `develop` with `-X ours` (no version bump). With `-X ours`, the `develop` version of any conflicting files is kept automatically; the hotfix version is not applied in those spots.
+- If there are such files, the job summary lists them under `UNMERGED_HOTFIX_FILES`. This is a warning/inspection list, not necessarily a list of failed merges: it highlights files where hotfix changes may not have been carried over to `develop`. For each file, compare `develop` with your `hotfix/X.Y.Z` branch and manually cherry-pick or reapply the hotfix changes only if they are still desired on `develop`.
 
 ## Outputs and artifacts
 - Git tag `vX.Y.Z` on `main` and a GitHub Release with generated notes.
