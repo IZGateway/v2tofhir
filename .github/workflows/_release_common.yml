@@ -855,24 +855,6 @@ jobs:
           echo "- Authentication issues: Verify GitHub Packages credentials" >> $GITHUB_STEP_SUMMARY
           echo "- Artifact already exists: Manually delete the GitHub Package version before retrying" >> $GITHUB_STEP_SUMMARY
 
-
-          echo "## Release Failed - Branch Kept" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "The release process failed. The release branch **${{ steps.validate.outputs.release_branch }}** has been kept for investigation." >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Manual Cleanup Required" >> $GITHUB_STEP_SUMMARY
-          echo "You may need to clean up the following (check if they exist):" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "1. **Main branch merge** (if it happened):" >> $GITHUB_STEP_SUMMARY
-          echo "   \`\`\`bash" >> $GITHUB_STEP_SUMMARY
-          echo "   git checkout main" >> $GITHUB_STEP_SUMMARY
-          echo "   git reset --hard HEAD~1  # Revert the merge commit" >> $GITHUB_STEP_SUMMARY
-          echo "   git push origin main --force" >> $GITHUB_STEP_SUMMARY
-          echo "   \`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "2. **Git tag** (if created):" >> $GITHUB_STEP_SUMMARY
-          echo "   \`git push origin --delete v${{ inputs.release-version }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
           # Redundant failure summary and next-steps section removed to avoid
           # generating multiple "Release Failed" sections in the workflow summary.
           # The primary failure summary earlier in this script now serves as the
