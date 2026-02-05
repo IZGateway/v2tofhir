@@ -14,7 +14,8 @@ Key behaviors:
 - Builds/tests, deploys to GitHub Packages, runs OWASP dependency check.
 - Publishes site to GitHub Pages (`current/` and `vX.Y.Z/`).
 - Updates `RELEASE_NOTES.md`, merges to `main` with `-X theirs`, tags `vX.Y.Z`.
-- Merges back to `develop` with `-X ours` and bumps to the next SNAPSHOT version.
+- Merges back to `develop` with `-X ours`.
+- For standard releases, bumps `develop` to the next SNAPSHOT version (hotfix releases do not bump the version).
 
 ## Hotfix release (from hotfix/*)
 1. Create `hotfix/X.Y.Z` from `main` and merge fixes into that branch.
