@@ -95,9 +95,6 @@ public class HumanNameParser implements DatatypeParser<HumanName> {
 	 * @return The parsed name in a HumanName object
 	 */
 	public static HumanName computeFromString(String name) {
-		if (name == null) {
-			return null;
-		}
 		HumanName hn = new HumanName();
 		hn.setText(name);
 		String[] parts = name.split("\\s");
@@ -187,10 +184,6 @@ public class HumanNameParser implements DatatypeParser<HumanName> {
 	public HumanName convert(Type t) {
 		t = DatatypeConverter.adjustIfVaries(t);
 		if (t instanceof Primitive pt) {
-			if (t instanceof Primitive p && DatatypeConverter.isDeleted(p)) {
-				return DatatypeConverter.markDeleted(new HumanName());
-			}
-
 			return fromString(pt.getValue());
 		}
 

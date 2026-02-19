@@ -23,14 +23,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.hl7.fhir.instance.model.api.IBase;
 import org.hl7.fhir.r4.model.Bundle;
-import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.InstantType;
 import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.Parameters;
 import org.hl7.fhir.r4.model.Patient;
-import org.hl7.fhir.r4.model.Provenance;
 import org.hl7.fhir.r4.model.Resource;
 import org.hl7.fhir.r4.model.StringType;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -43,7 +41,6 @@ import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.DataTypeException;
 import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.model.Segment;
-import ca.uhn.hl7v2.model.Structure;
 import ca.uhn.hl7v2.model.Type;
 import ca.uhn.hl7v2.model.v251.datatype.ST;
 import ca.uhn.hl7v2.model.v251.message.QBP_Q11;
@@ -58,11 +55,10 @@ import gov.cdc.izgw.v2tofhir.segment.AbstractSegmentParser;
 import gov.cdc.izgw.v2tofhir.segment.FieldHandler;
 import gov.cdc.izgw.v2tofhir.segment.IzDetail;
 import gov.cdc.izgw.v2tofhir.segment.PIDParser;
-import gov.cdc.izgw.v2tofhir.segment.Processor;
+import gov.cdc.izgw.v2tofhir.segment.StructureParser;
 import gov.cdc.izgw.v2tofhir.utils.Mapping;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 import gov.cdc.izgw.v2tofhir.utils.QBPUtils;
-import gov.cdc.izgw.v2tofhir.utils.TestData;
 import gov.cdc.izgw.v2tofhir.utils.TextUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -98,12 +94,12 @@ class MessageParserTests extends TestBase {
 		
 		id = 0;
 		Bundle b = p.convert(msg);
-		System.out.println(yamlParser.encodeResourceToString(b));
+		
 		testData.evaluateAllAgainst(b);
 		writeTheTests(testData, msg);
 	}
 	
-	private static final MessageParser MP = new MessageParser();
+	private static MessageParser MP = new MessageParser();
 	private static BufferedWriter bw = null;
 	
 	void writeTheTests(TestData testData, Message msg) {
@@ -113,13 +109,13 @@ class MessageParserTests extends TestBase {
 				Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
 			} catch (IOException e) {
 				// If we cannot write, just exit.
-				e.printStackTrace();  // NOSONAR
+				e.printStackTrace();
 				System.exit(1);
 			}
 		}
 		for (String segment: testData.getTestData().split("\r")) {
 			String segmentName = StringUtils.left(segment, 3);
-			Class<Processor<Message, Structure>> parser = MP.loadParser(segmentName);
+			Class<StructureParser> parser = MP.loadParser(segmentName);
 			if (parser == null) {
 				// Skip segments there is no parser for.
 				continue;
@@ -127,7 +123,7 @@ class MessageParserTests extends TestBase {
 			LinkedHashMap<String, String> assertions = getExistingAssertions(testData, segmentName);
 			
 			for (ComesFrom ann: parser.getAnnotationsByType(ComesFrom.class)) {
-				String annotation = getAssertion(ann, msg);
+				String annotation = getAssertion(segmentName, ann, msg);
 				String key = StringUtils.substringBetween(annotation, "@", ".exists(");
 				String exists = assertions.get(key);
 				if (exists != null) {
@@ -163,7 +159,7 @@ class MessageParserTests extends TestBase {
 		}
 		return assertions;
 	}
-	private static String getAssertion(ComesFrom ann, Message msg) {
+	private static String getAssertion(String segmentName, ComesFrom ann, Message msg) {
 		StringBuilder b = new StringBuilder();
 		addComesFrom(ann, b);
 		Terser t = new Terser(msg);
@@ -211,7 +207,6 @@ class MessageParserTests extends TestBase {
 			try {
 				bw.close();
 			} catch (IOException e) {
-				// Do nothing
 			}
 		}
 	}
@@ -288,17 +283,10 @@ class MessageParserTests extends TestBase {
 				assertTrue(uri.getValueAsString().endsWith("&_count=" + value));
 			}
 		} else {
-			boolean found = false;
-			for (BundleEntryComponent entry: b1.getEntry()) {
-				if (produces.resource().isInstance(entry.getResource())) {
-					found = true;
-					break;
-				}
-			}
-			if (!messageParser.getContext().isStoringProvenance() || !(produces.resource().isInstance(Provenance.class))) {
-				// Don't error on lack of provenance if we aren't storing it!
-				assertTrue(found, "The bundle should have entries of type "  + produces.resource().getSimpleName());
-			}
+			assertTrue(b1.getEntry().stream()
+					.anyMatch(e -> produces.resource().isInstance(e.getResource())), 
+				"The bundle should have entries of type " 
+					+ produces.getClass().getSimpleName());
 		}
 		log.debug(segment.segment().encode());
 		if (log.isDebugEnabled()) {
@@ -506,7 +494,7 @@ class MessageParserTests extends TestBase {
 				}
 			}
 		}
-		log.info("Produced {} <> value {}", produced, value);
+		log.info("Produced {} <> value {}", l, value);
 		return null;
 	}
 	

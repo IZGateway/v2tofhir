@@ -391,7 +391,7 @@ public class ParserUtils {
 					}
 				}
 			} catch (HL7Exception e) {
-				log.warn("Unexpected HL7Exception iterating structures: {}", e.getMessage(), e);
+				e.printStackTrace();
 			}
 		}
 	}
@@ -439,8 +439,7 @@ public class ParserUtils {
 			type = v.getData();
 		}
 		if (type instanceof Composite comp) {
-			Type[] a = comp.getComponents();
-			return number < a.length ? a[number] : null;
+			return comp.getComponents()[number];
 		}
 		if (number == 0) {
 			// This handles the case of requesting the first component of what used to
@@ -615,10 +614,6 @@ public class ParserUtils {
 		Reference fRef = (Reference) first.getUserData(REFERENCE_LINK);
 		Reference lRef = (Reference) later.getUserData(REFERENCE_LINK);
 		
-		if (fRef == null || lRef == null) {
-			return;
-		}
-		
 		lRef.setReferenceElement(fRef.getReferenceElement());
 		// If the first reference doesn't have an identifier, copy the identifier
 		// from lRef into it.
@@ -659,7 +654,6 @@ public class ParserUtils {
 			resource.setUserData(REFERENCE_LINK, ref);
 			// And the reference to the resource
 			ref.setUserData("Resource", resource);
-			ref.setResource(resource);
 		}
 		
 		IdType id = resource.getIdElement();

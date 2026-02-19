@@ -11,8 +11,6 @@ import java.io.OutputStream;
 import java.io.StreamTokenizer;
 import java.io.StringReader;
 import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
@@ -356,12 +354,7 @@ class DatatypeConverterTests extends TestBase {
 	}
 
 	private HttpURLConnection getUrlConnection() throws IOException {
-		URL url;
-		try {
-			url = new URI(base).toURL();
-		} catch (URISyntaxException e) {
-			throw new IOException(e.getMessage(), e);
-		}
+		URL url = new URL(base);
 		HttpURLConnection con = (HttpURLConnection) url.openConnection();
 		con.setRequestMethod("POST");
 		con.setDoInput(true);

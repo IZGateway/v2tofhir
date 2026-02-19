@@ -1,16 +1,17 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
-		<groupId>gov.cdc.izgw</groupId>
-        <artifactId>izgw-bom</artifactId>
-        <version>1.2.0</version>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>3.5.0</version>
 	</parent>
+	<groupId>gov.cdc.izgw</groupId>
 	<artifactId>v2tofhir</artifactId>
-	<version>2.0.0</version>
+	<version>1.0.0-v2tofhir-SNAPSHOT</version>
 	<name>HL7 Version 2 to FHIR Conversion</name>
 	<description>This is the v2tofhir Converter core code for the IZ Gateway Transformation Service</description>
 	<url>http://github.com/IZGateway/v2tofhir</url>
-	<inceptionYear>2025</inceptionYear>
+	<inceptionYear>2024</inceptionYear>
 	<licenses>
 		<license>
 			<name>MIT-LICENSE</name>
@@ -28,160 +29,112 @@
 	<properties>
 		<buildno>${timestamp}</buildno>
 		<image.tag>${project.build.finalName}</image.tag>
-		<java.version>21</java.version>
+		<java.version>17</java.version>
 		<maven.build.timestamp.format>yyyyMMddHHmm</maven.build.timestamp.format>
 		<project.build.finalName>${project.artifactId}-${project.version}-${timestamp}</project.build.finalName>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.java.package>${project.groupId}</project.java.package>
+		<!-- 17 needs a certified encryption module -->
 		<timestamp>${maven.build.timestamp}</timestamp>
 		<hapi.v2.version>2.5.1</hapi.v2.version>
     <hapi.fhir.version>8.0.0</hapi.fhir.version>
 		<tomcat.version>10.1.42</tomcat.version>
-		
-		<!-- JaCoCo Configuration -->
-		<jacoco.version>0.8.13</jacoco.version>
-		<jacoco.jar>${user.home}/.m2/repository/org/jacoco/org.jacoco.agent/${jacoco.version}/org.jacoco.agent-${jacoco.version}.jar</jacoco.jar>
-		<surefire.argLine>
-		  -Xmx2048m 
-		  --add-opens=java.base/java.lang.reflect=ALL-UNNAMED 
-		  --add-opens=java.base/java.net=ALL-UNNAMED 
-		  <!-- -javaagent:${jacoco.jar}=destfile=target/jacoco.exec,append=true,output=file -->
-		</surefire.argLine>
-		
-		<!-- SonarCloud Configuration -->
-		<sonar.organization>izgateway</sonar.organization>
-		<sonar.host.url>https://sonarcloud.io</sonar.host.url>
-		<sonar.projectKey>IZGateway_v2tofhir</sonar.projectKey>
-		<sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 	</properties>
 	<distributionManagement>
-        <repository>
-            <id>github</id>
-            <name>V2 to FHIR Packages</name>
-            <url>https://maven.pkg.github.com/IZGateway/v2tofhir</url>
-        </repository>
+		<repository>
+			<id>github</id>
+			<name>GitHub Packages</name>
+			<url>https://maven.pkg.github.com/IZGateway/v2tofhir</url>
+		</repository>
 	</distributionManagement>
-	<repositories>
-        <repository>
-            <id>central</id>
-            <name>Maven Central Repository</name>
-            <url>https://repo.maven.apache.org/maven2</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>github-bom</id>
-            <name>GitHub Packages</name>
-            <url>https://maven.pkg.github.com/IZGateway/izgw-bom</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>v2tofhir</id>
-            <name>GitHub Packages</name>
-            <url>https://maven.pkg.github.com/IZGateway/v2tofhir</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
 	<scm>
 		<connection>scm:git:https://github.com/IZGateway/v2tofhir</connection>
 		<developerConnection>scm:git:https://github.com/IZGateway/v2tofhir</developerConnection>
 		<url>https://github.com/IZGateway/v2tofhir</url>
 	</scm>
-    <dependencyManagement>
-        <dependencies>
-            <dependency> 
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-parent</artifactId>
-                <version>${spring-boot.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
-                <version>${spring-boot.version}</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
 	<dependencies>
 		<dependency>
 			<groupId>ca.uhn.hapi</groupId>
 			<artifactId>hapi-base</artifactId>
+			<version>${hapi.v2.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>ca.uhn.hapi</groupId>
 			<artifactId>hapi-structures-v21</artifactId>
+			<version>${hapi.v2.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>ca.uhn.hapi</groupId>
 			<artifactId>hapi-structures-v22</artifactId>
+			<version>${hapi.v2.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>ca.uhn.hapi</groupId>
 			<artifactId>hapi-structures-v23</artifactId>
+			<version>${hapi.v2.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>ca.uhn.hapi</groupId>
 			<artifactId>hapi-structures-v231</artifactId>
+			<version>${hapi.v2.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>ca.uhn.hapi</groupId>
 			<artifactId>hapi-structures-v24</artifactId>
+			<version>${hapi.v2.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>ca.uhn.hapi</groupId>
 			<artifactId>hapi-structures-v25</artifactId>
+			<version>${hapi.v2.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>ca.uhn.hapi</groupId>
 			<artifactId>hapi-structures-v251</artifactId>
+			<version>${hapi.v2.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>ca.uhn.hapi</groupId>
 			<artifactId>hapi-structures-v27</artifactId>
+			<version>${hapi.v2.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>ca.uhn.hapi</groupId>
 			<artifactId>hapi-structures-v28</artifactId>
+			<version>${hapi.v2.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>ca.uhn.hapi</groupId>
 			<artifactId>hapi-structures-v281</artifactId>
+			<version>${hapi.v2.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>ca.uhn.hapi.fhir</groupId>
 			<artifactId>hapi-fhir-base</artifactId>
+			<version>${hapi.fhir.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>ca.uhn.hapi.fhir</groupId>
 			<artifactId>hapi-fhir-structures-r4</artifactId>
+			<version>${hapi.fhir.version}</version>
 		</dependency>
 		<!-- Needed for FHIRPath -->
 		<dependency>
 			<groupId>ca.uhn.hapi.fhir</groupId>
 			<artifactId>hapi-fhir-validation</artifactId>
+			<version>${hapi.fhir.version}</version>
 		</dependency>
 		<!-- Needed for FHIRPath -->
 		<dependency>
 			<groupId>ca.uhn.hapi.fhir</groupId>
 			<artifactId>hapi-fhir-validation-resources-r4</artifactId>
+			<version>${hapi.fhir.version}</version>
 		</dependency>
 		<!-- Needed by FHIRPath -->
 		<dependency>
 			<groupId>ca.uhn.hapi.fhir</groupId>
 			<artifactId>hapi-fhir-caching-caffeine</artifactId>
+			<version>${hapi.fhir.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
@@ -210,26 +163,32 @@
 		<dependency>
 			<groupId>com.opencsv</groupId>
 			<artifactId>opencsv</artifactId>
+			<version>5.9</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
+			<version>[2.15.0,)</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-compress</artifactId>
+			<version>[1.26.2,)</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-validator</groupId>
 			<artifactId>commons-validator</artifactId>
+			<version>1.9.0</version>
 		</dependency>
-        <dependency>
-            <groupId>commons-beanutils</groupId>
-            <artifactId>commons-beanutils</artifactId>
-        </dependency>		
+    <dependency>
+      <groupId>commons-beanutils</groupId>
+      <artifactId>commons-beanutils</artifactId>
+      <version>1.11.0</version>
+    </dependency>		
 		<dependency>
 			<groupId>io.azam.ulidj</groupId>
 			<artifactId>ulidj</artifactId>
+			<version>1.0.4</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
@@ -238,6 +197,7 @@
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-text</artifactId>
+			<version>[1.11.0,)</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -260,8 +220,8 @@
 				<plugin>
 					<artifactId>maven-compiler-plugin</artifactId>
 					<configuration>
-						<source>21</source>
-						<target>21</target>
+						<source>17</source>
+						<target>17</target>
 						<annotationProcessorPaths>
 							<path>
 								<groupId>org.projectlombok</groupId>
@@ -311,30 +271,18 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-surefire-plugin</artifactId>
-					<version>3.5.3</version>
 					<configuration>
 						<useSystemClassLoader>true</useSystemClassLoader>
-                        <forkCount>1</forkCount>
 						<reuseForks>true</reuseForks>
 						<testFailureIgnore>false</testFailureIgnore>
 						<systemPropertyVariables>
 							<elastic.api.key>${env.ELASTIC_API_KEY}</elastic.api.key>
 						</systemPropertyVariables>
-                        <skip>${maven.test.skip}</skip>
-                        <includes>
-                            <include>**/*Tests.java</include>
-                        </includes>
-                        <argLine>@{argLine} ${surefire.argLine}</argLine>
+						<argLine>--add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED</argLine>
+						<includes>
+							<include>**/*Tests.java</include>
+						</includes>
 					</configuration>
-					<executions>
-                        <execution>
-                            <id>unit-test</id>
-                            <phase>test</phase>
-                            <goals>
-                                <goal>test</goal>
-                            </goals>
-                        </execution>
-					</executions>
 				</plugin>
 				<plugin>
 					<!-- Since all libraries are deliverable, this should in fact be
@@ -368,44 +316,8 @@
 						</execution>
 					</executions>
 				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-site-plugin</artifactId>
-					<version>3.21.0</version>
-				</plugin>
-				<plugin>
-					<groupId>org.jacoco</groupId>
-					<artifactId>jacoco-maven-plugin</artifactId>
-					<version>${jacoco.version}</version>
-					<executions>
-						<execution>
-							<id>prepare-agent</id>
-							<goals>
-								<goal>prepare-agent</goal>
-							</goals>
-						</execution>
-						<execution>
-							<id>report</id>
-							<phase>verify</phase>
-							<goals>
-								<goal>report</goal>
-							</goals>
-						</execution>
-					</executions>
-				</plugin>
-				<plugin>
-					<groupId>org.sonarsource.scanner.maven</groupId>
-					<artifactId>sonar-maven-plugin</artifactId>
-					<version>4.0.0.4121</version>
-				</plugin>
 			</plugins>
 		</pluginManagement>
-        <plugins>
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-            </plugin>
-        </plugins>
 	</build>
 	<reporting>
 		<plugins>
@@ -433,27 +345,22 @@
 					</reportSet>
 				</reportSets>
 			</plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-report-plugin</artifactId>
-                <version>3.5.3</version>
-            </plugin>
-    		<plugin>
+			<plugin>
 				<groupId>org.owasp</groupId>
 				<artifactId>dependency-check-maven</artifactId>
 				<version>8.4.3</version>
 				<configuration>
-                    <!--nvdApiKey>${env.NVDAPIKEY}</nvdApiKey-->
+					<!--nvdApiKey>${env.NVDAPIKEY}</nvdApiKey-->
 					<formats>
 						<format>HTML</format>
 					</formats>
-                    <!-- Disable .NET Analyzer -->
+					<!-- Disable .NET Analyzer -->
 					<assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
 					<nugetconfAnalyzerEnabled>false</nugetconfAnalyzerEnabled>
 					<nuspecAnalyzerEnabled>false</nuspecAnalyzerEnabled>
-                    <!-- Fail builds where this is used to 7 High to Critical -->
+					<!-- Fail builds where this is used to 7 High to Critical -->
 					<failBuildOnCVSS>7</failBuildOnCVSS>
-                    <!-- Don't fail on error (for cases where CVE REPO is bad) -->
+					<!-- Don't fail on error (for cases where CVE REPO is bad) -->
 					<failOnError>false</failOnError>
 					<skip>${skipDependencyCheck}</skip>
 					<suppressionFile>${project.basedir}/dependency-suppression.xml</suppressionFile>
@@ -467,18 +374,6 @@
 					</reportSet>
 				</reportSets>
 			</plugin>
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.13</version>
-                <reportSets>
-                    <reportSet>
-                        <reports>
-                            <report>report</report>
-                        </reports>
-                    </reportSet>
-                </reportSets>
-            </plugin>			
 		</plugins>
 	</reporting>
 </project>

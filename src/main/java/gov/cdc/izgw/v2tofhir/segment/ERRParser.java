@@ -11,7 +11,6 @@ import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.MessageHeader;
 import org.hl7.fhir.r4.model.OperationOutcome;
 import org.hl7.fhir.r4.model.StringType;
-
 import org.hl7.fhir.r4.model.OperationOutcome.IssueSeverity;
 import org.hl7.fhir.r4.model.OperationOutcome.IssueType;
 import org.hl7.fhir.r4.model.OperationOutcome.OperationOutcomeIssueComponent;
@@ -155,7 +154,7 @@ public class ERRParser extends AbstractSegmentParser {
 					issue.setCode(type);
 				}
 			} catch (FHIRException fex) {
-				getParser().warn("Unexpected FHIRException: {}", fex.getMessage(), fex);
+				warnException("Unexpected FHIRException: {}", fex.getMessage(), fex);
 			}
 		}
 	}

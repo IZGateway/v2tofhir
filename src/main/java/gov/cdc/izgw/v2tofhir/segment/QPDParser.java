@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
-import org.hl7.fhir.instance.model.api.IBase;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.BaseDateTimeType;
@@ -40,7 +39,6 @@ import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
 import gov.cdc.izgw.v2tofhir.utils.IzQuery;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
-import gov.cdc.izgw.v2tofhir.utils.V2Utils;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -138,28 +136,28 @@ public class QPDParser extends AbstractSegmentParser {
 	}
 	
 	@Override
-	public IBase parse(Segment seg) {
-		Type query = V2Utils.getField(seg, 1);
+	public void parse(Segment seg) {
+		Type query = getField(seg, 1);
 		CodeableConcept queryName = DatatypeConverter.toCodeableConcept(query);
 		if (queryName == null) {
 			try {
-				getParser().warn("Cannot parse unnamed query for: " + seg.encode());
+				warn("Cannot parse unnamed query for: " + seg.encode());
 			} catch (HL7Exception e) {
 				// Ignore it.
 			}
-			return null;
+			return;
 		}
-		IBase b = setup();
+		setup();
 		
 		params.getMeta().addTag(queryName.getCodingFirstRep());
 		
-		String queryTag = ParserUtils.toString(V2Utils.getField(seg, 2));
+		String queryTag = ParserUtils.toString(getField(seg, 2));
 		String[] parameters = getQueryParameters(queryName);
 		params.getMeta().addTag("QueryTag", queryTag, null);
 
 		if (parameters.length == 0) {
-			getParser().warn("Cannot parse {} query", query);
-			return b;
+			log.warn("Cannot parse {} query", query);
+			return;
 		}
 		String request = getSearchRequest(seg, parameters);
 		
@@ -179,7 +177,6 @@ public class QPDParser extends AbstractSegmentParser {
 		}
 		// Always add the search translation to params.
 		params.addParameter("_search", request);
-		return b;
 	}
 
 	private String getSearchRequest(Segment seg, String[] parameters) {
@@ -187,7 +184,7 @@ public class QPDParser extends AbstractSegmentParser {
 		request = new StringBuilder("/fhir/");
 		request.append(parameters[3]).append("?");
 		for (int i = 3, offset = 4; i <= seg.numFields() && offset < parameters.length; i++, offset += 4) {
-			Type[] types = V2Utils.getFields(seg, i); // Get the fields
+			Type[] types = getFields(seg, i); // Get the fields
 			for (Type t : types) {
 				String fhirType = parameters[offset + 3];
 				t = adjustIfVaries(t, parameters[offset + 1]);

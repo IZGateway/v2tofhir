@@ -21,10 +21,9 @@ import lombok.Data;
  * 
  * In order to make these decisions, Context provides a place to store information
  * about previously created objects.
- * @param <P> The parser to use
  */
 @Data
-public class Context<P extends Parser<?, ?>> {
+public class Context {
 	/**
 	 * The event that generated the message, used to provide context during parsing.
 	 */
@@ -37,31 +36,24 @@ public class Context<P extends Parser<?, ?>> {
 	 * The bundle being created.
 	 */
 	private Bundle bundle;
-	
-	private boolean generatingOriginalText = true;
-
 	/**
 	 * Whether or not Provenance resources should be created. 
 	 */
 	private boolean storingProvenance = true;
 	/**
-	 * Whether or not to log a message on a processor load failure
-	 */
-	private boolean warnOnFailedLoad = false;
-	/**
 	 * Other properties associated with this context.
 	 */
 	private final Map<String, Object> properties = new LinkedHashMap<>();
 	
-	private final P parser;
+	private final MessageParser messageParser;
 	
 	/** 
 	 * Create a new Context for use with the given message parser.
 	 * 
-	 * @param parser	The message parser using this context.
+	 * @param messageParser	The message parser using this context.
 	 */
-	public Context(P parser) {
-		this.parser = parser;
+	public Context(MessageParser messageParser) {
+		this.messageParser = messageParser;
 	}
 	
 	/**
@@ -73,11 +65,7 @@ public class Context<P extends Parser<?, ?>> {
 		setEventCode(null);
 	}
 	
-	/**
-	 * Add the profile identifier to the context
-	 * @param profileId
-	 */
-	public void addProfileId(String profileId) {
+	void addProfileId(String profileId) {
 		if (profileId == null || StringUtils.isEmpty(profileId)) {
 			return;
 		}

@@ -94,6 +94,11 @@ public class IzDetail {
 		immunization = null;
 		immunizationRecommendation = null;
 
+		if (checkRXA()) {
+			// We figured it out from the RXA
+			return;
+		}
+		
 		// RXA couldn't be checked, fall back to MSH profile.
 		for (CanonicalType url: mp.getBundle().getMeta().getProfile()) {
 			if ("CDCPHINVS#Z32".equals(url.getValue()) || "CDCPHINVS#Z22".equals(url.getValue())) {
@@ -134,10 +139,9 @@ public class IzDetail {
 	
 	/**
 	 * Looks at the RXA to see whether this is an Immunization or ImmunizationRecommendation
-	 * TODO: Consider how to integrate this check, or remove it
+	 * 
 	 * @return	true if RXA was checked, false if it could not be checked.
 	 */
-	@SuppressWarnings("unused")
 	private boolean checkRXA() {
 		// Set default value
 		boolean defaulted = true;

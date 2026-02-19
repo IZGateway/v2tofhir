@@ -1,4 +1,4 @@
-package gov.cdc.izgw.v2tofhir.utils;
+package test.gov.cdc.izgateway.v2tofhir;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -9,7 +9,6 @@ import org.apache.commons.lang3.StringUtils;
 
 /**
  * A filter that reads lines from a reader with continuation lines (lines ending in a backslash) collapsed
- * into a single line.
  * 
  * @author Audacious Inquiry
  */
@@ -20,7 +19,7 @@ public class ContinuationReader implements AutoCloseable {
 	 * Construct a continuation reader from a reader
 	 * @param in	The reader
 	 */
-	public ContinuationReader(Reader in) {
+	protected ContinuationReader(Reader in) {
 		this.br = IOUtils.toBufferedReader(in);
 	}
 	/**

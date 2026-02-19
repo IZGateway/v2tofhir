@@ -273,9 +273,4 @@ public class YamlParser implements IParser {
 	public IParser setDontEncodeElements(Collection<String> theDontEncodeElements) {
 		return jsonParser.setDontEncodeElements(theDontEncodeElements);
 	}
-	
-	@Override
-	public void parseInto(Reader theSource, IBase theTarget) throws IOException {
-		jsonParser.parseInto(YamlUtils.fromYaml(theSource), theTarget);
-	}
 }
