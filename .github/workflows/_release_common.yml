@@ -467,6 +467,7 @@ jobs:
             git checkout -b main
           fi
           
+          git remote set-url origin git@github.com:${{ github.repository }}.git
           git push origin main
           echo "Release branch merged to main"
 
@@ -655,7 +656,9 @@ jobs:
           echo "Starting cleanup of failed release..."
           echo "=========================================="
           echo ""
-          
+
+          git remote set-url origin git@github.com:${{ github.repository }}.git
+
           # Track cleanup status
           CLEANUP_WARNINGS=""
           CLEANUP_SUCCESSES=""
