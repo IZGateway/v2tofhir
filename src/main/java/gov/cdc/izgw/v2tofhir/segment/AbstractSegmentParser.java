@@ -1,14 +1,15 @@
 package gov.cdc.izgw.v2tofhir.segment;
 
 import java.util.List;
-import java.util.ServiceConfigurationError;
 
-import org.hl7.fhir.r4.model.Type;
-
-import ca.uhn.hl7v2.HL7Exception;
+import org.hl7.fhir.instance.model.api.IBase;
+import org.hl7.fhir.instance.model.api.IBaseResource;
+import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.model.Segment;
 import ca.uhn.hl7v2.model.Structure;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
+import gov.cdc.izgw.v2tofhir.converter.Parser;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -18,7 +19,10 @@ import lombok.extern.slf4j.Slf4j;
  * @author Audacious Inquiry
  */
 @Slf4j
-public abstract class AbstractSegmentParser extends AbstractStructureParser {
+public abstract class AbstractSegmentParser extends AbstractStructureParser implements Processor<Message, Segment> {
+	private final Parser<Message, Structure> parser;
+	@Getter
+	private final MessageParser messageParser;
 	/**
 	 * Construct a segment parser for the specified message parser and segment type
 	 * @param p	The message parser
@@ -26,48 +30,51 @@ public abstract class AbstractSegmentParser extends AbstractStructureParser {
 	 */
 	protected AbstractSegmentParser(MessageParser p, String s) {
 		super(p, s);
+		parser = messageParser = p;
 	}
 	
 	@Override
-	public void parse(Structure seg) throws HL7Exception {
-		if (seg instanceof Segment s) {
-			parse(s);
-		}
+	public boolean isEmpty(Segment segment) { // NOSONAR (Necessary for Inheritance)
+		return super.isEmpty(segment);
 	}
 	
+	/**
+	 * Annotation driven parsing.  Call this method to use parsing driven
+	 * by ComesFrom and Produces annotations in the parser.
+	 * 
+	 * This method will be called by MessageParser for each segment of the given type that
+	 * appears within the method.  It will create the primary resource produced by the
+	 * parser (by calling the setup() method) and then parses individual fields of the 
+	 * segment and passes them to parser methods to add them to the primary resource or 
+	 * to create any extra resources.
+	 * 
+	 * @param segment The segment to be parsed
+	 */
 	@Override
-	public void parse(Segment segment) {
+	public IBase parse(Segment segment) {
 		if (isEmpty(segment)) {
-			return;
+			return null;
 		}
-		
-		if (getProduces() == null) {
-			throw new ServiceConfigurationError(
-				"Missing @Produces on " + this.getClass().getSimpleName()
-			);
+
+		super.segment = segment;
+		IBaseResource r = setup();
+		if (r == null) {
+			// setup() returned nothing, there must be nothing to do
+			return null;
 		}
-		super.parse(segment);
+		List<FieldHandler> handlers = getFieldHandlers();
+		for (FieldHandler fieldHandler : handlers) {
+			fieldHandler.handle(this, segment, r);
+		}
+		return r;
 	}
+	
 
-	/**
-	 * Warn about a specific problem found while parsing.
-	 * 
-	 * @see warnException
-	 * 
-	 * @param msg	The message format to use for the warning.
-	 * @param args	Arguments for the message.  The last argument should still be part of the message.
-	 */
-	void warn(String msg, Object ...args) {
-		log.warn(msg, args);
-	}
-
-	/**
-	 * Warn about an exception found while parsing.
-	 * 
-	 * @param msg	The message format to use for the warning.
-	 * @param args	Arguments for the message. The last argument should be the exception found.
-	 */
-	void warnException(String msg, Object ...args) {
-		log.warn(msg, args);
+	@SuppressWarnings("unchecked")
+	@Override
+	public Parser<Message, Segment> getParser() {
+		@SuppressWarnings("rawtypes")
+		Parser p = parser;
+		return (Parser<Message, Segment>)p;
 	}
 }

@@ -18,7 +18,9 @@ import com.ainq.fhir.utils.Property;
 
 import ca.uhn.hl7v2.model.Composite;
 import ca.uhn.hl7v2.model.DataTypeException;
+import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.model.Segment;
+import ca.uhn.hl7v2.model.Structure;
 import ca.uhn.hl7v2.model.Type;
 import ca.uhn.hl7v2.model.v251.datatype.ST;
 import gov.cdc.izgw.v2tofhir.annotation.ComesFrom;
@@ -50,7 +52,7 @@ public class FieldHandler implements Comparable<FieldHandler> {
 	 * @param from		The annotation
 	 * @param p	The class for the parser
 	 */
-	public FieldHandler(Method method, ComesFrom from, AbstractStructureParser p) {
+	public FieldHandler(Method method, ComesFrom from, Processor<Message, ? extends Structure> p) {
 		this.method = method;
 		this.from = from;
 		this.produces = p.getProduces();
@@ -105,7 +107,7 @@ public class FieldHandler implements Comparable<FieldHandler> {
 		}
 	}
 
-	private Class<? extends IBaseResource> getResourceClass(Produces produces, String path, StructureParser p) {
+	private Class<? extends IBaseResource> getResourceClass(Produces produces, String path, Processor<Message, ? extends Structure> p) {
 		Class<? extends IBaseResource> resourceClass = produces.resource();
 		String resourceName = StringUtils.substringBefore(path, ".");
 		// remove any array index
@@ -133,8 +135,8 @@ public class FieldHandler implements Comparable<FieldHandler> {
 	 * @param segment	The segment to process
 	 * @param r	The resource to update
 	 */
-	public void handle(StructureParser p, Segment segment, IBaseResource r) {
-		if (from.fixed().length() != 0) {
+	public void handle(Processor<Message, ? extends Structure> p, Segment segment, IBaseResource r) {
+		if (!from.fixed().isEmpty()) {
 			setFixedValue(p);
 		} else if (from.field() != 0) {
 			setFromFieldAndComponent(p, segment);
@@ -145,7 +147,7 @@ public class FieldHandler implements Comparable<FieldHandler> {
 		}
 	}
 
-	private void setFixedValue(StructureParser p) {
+	private void setFixedValue(Processor<Message, ? extends Structure> p) {
 		ST st = new ST(null);
 		try {
 			st.setValue(from.fixed());
@@ -156,7 +158,7 @@ public class FieldHandler implements Comparable<FieldHandler> {
 		}
 	}
 
-	private void setFromFieldAndComponent(StructureParser p, Segment segment) {
+	private void setFromFieldAndComponent(Processor<Message, ? extends Structure> p, Segment segment) {
 		Type[] f = ParserUtils.getFields(segment, from.field());
 		if (f.length == 0) {
 			return;
@@ -195,28 +197,34 @@ public class FieldHandler implements Comparable<FieldHandler> {
 		return null;
 	}
 
-	private IBase setValue(StructureParser p, IBase object) {
+	private IBase setValue(Processor<Message, ? extends Structure> p, IBase object) {
 		try {
 			method.invoke(p, object);
 		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			// This is checked during initialization, so failure happens early if it is going to
 			// happen at all, so it's OK to throw an error here.
 			log.error("Cannot invoke {}: {}", method, e.getMessage(), e);
-			throw new ServiceConfigurationError("Cannot invoke " + method, e);
+			throw new IllegalStateException("Cannot invoke " + method, e);
 		}
 		return object;
 	}
 	
-	private Type setValue(StructureParser p, Type object) {
+	private Type setValue(Processor<Message, ? extends Structure> p, Type object) {
 		try {
 			method.invoke(p, object);
 		} catch (IllegalAccessException | IllegalArgumentException e) {
 			// This is checked during initialization, so failure happens early if it is going to
 			// happen at all, so it's OK to throw an error here.
 			log.error("Cannot invoke {}: {}", method, e.getMessage(), e);
-			throw new ServiceConfigurationError("Cannot invoke " + method, e);
+			throw new IllegalStateException("Cannot invoke " + method, e);
 		} catch (InvocationTargetException ex) {
-			throw new ServiceConfigurationError("Exception executing " + method, ex.getCause());
+			if (ex.getTargetException() instanceof RuntimeException rte) {
+				throw rte;
+			}
+			if (ex.getTargetException() instanceof Error err) {
+				throw new IllegalStateException("Error executing " + method, err.getCause());
+			}
+			throw new IllegalStateException("Exception executing " + method, ex.getCause());
 		}
 		return object;
 	}
@@ -315,7 +323,7 @@ public class FieldHandler implements Comparable<FieldHandler> {
 	 * @param p	The structure parser to compute the field handlers for.
 	 * @param fieldHandlers	The list to update with all of the field handlers 
 	 */
-	public static void initFieldHandlers(AbstractStructureParser p, List<FieldHandler> fieldHandlers) {
+	public static void initFieldHandlers(Processor<Message, ? extends Structure> p, List<FieldHandler> fieldHandlers) {
 		// Synchronize on the list in case two callers are trying to to initialize it at the 
 		// same time.  This avoids one thread from trying to use fieldHandlers while another 
 		// potentially overwrites it.

@@ -30,7 +30,9 @@ import ca.uhn.hl7v2.parser.EncodingCharacters;
 import ca.uhn.hl7v2.parser.ModelClassFactory;
 import ca.uhn.hl7v2.parser.Parser;
 import ca.uhn.hl7v2.parser.PipeParser;
+import gov.cdc.izgw.v2tofhir.utils.ErrorReporter;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
+import gov.cdc.izgw.v2tofhir.utils.TestData;
 import lombok.extern.slf4j.Slf4j;
 import test.gov.cdc.izgateway.TestUtils;
 
@@ -41,7 +43,7 @@ import test.gov.cdc.izgateway.TestUtils;
  *
  */
 @Slf4j
-public class TestBase {
+public class TestBase implements ErrorReporter {
 	static {
 		log.debug("{} loaded", TestBase.class.getName());
 	}
@@ -161,7 +163,7 @@ public class TestBase {
 				try {
 					fields = segment.segment().getField(i);
 				} catch (HL7Exception e) {
-					e.printStackTrace();
+					e.printStackTrace();  // NOSONAR
 					continue;
 				}
 				for (Type type : fields) {
@@ -263,7 +265,7 @@ public class TestBase {
 			return v2Parser.parse(message);
 		} catch (Exception e) {
 			System.err.println("Error parsing : " + StringUtils.left(message, 90));
-			e.printStackTrace();
+			e.printStackTrace();  // NOSONAR
 			return null;
 		}
 	}
@@ -271,7 +273,6 @@ public class TestBase {
 	static Segment parseSegment(String segment) throws Exception {
 		ModelClassFactory factory = v2Parser.getHapiContext().getModelClassFactory();
 		String segName = StringUtils.substringBefore(segment, "|");
-		@SuppressWarnings("serial")
 		Message message = new GenericMessage.V251(factory) {
 			@Override
 		    public String getEncodingCharactersValue() throws HL7Exception {
@@ -323,6 +324,21 @@ public class TestBase {
 				explodeComposite(comp2, set);
 			}
 		}
+	}
+	/**
+	 * Set the error reporter to this instance, so that tests can capture warnings.
+	 */
+	public TestBase() {
+		ErrorReporter.set(this);
+	}
+
+	@Override
+	public void warn(String message, Object... args) {
+		if (args != null && args.length > 0 && args[args.length - 1] instanceof Throwable) {
+			// During testing, the logs get excessively large if we log the stack trace
+			args[args.length - 1] = null;
+		}
+		log.warn(message, args);
 	}
 
 }

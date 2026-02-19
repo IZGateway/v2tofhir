@@ -3,15 +3,24 @@ name: Java CI with Maven
 on:
   push:
     branches:
-      - Release*
-      - main
       - develop
 
   pull_request:
     branches:
-      - Release*
-      - main
       - develop
+
+  # Scheduled build: Monday-Friday at 6:00 AM UTC from develop branch
+  schedule:
+    - cron: '0 6 * * 1-5'
+  
+  # Manual trigger for on-demand builds
+  workflow_dispatch:
+    inputs:
+      runSiteBuild:
+        description: 'Run Site Build?'
+        required: false
+        default: 'false'
+        type: boolean
 
 # Ensure only one build changes dev environment at the same time    
 concurrency: v2tofhir
@@ -29,12 +38,13 @@ jobs:
       # Necessary to enable push to protected branch
       with:
         ssh-key: ${{secrets.ACTIONS_KEY}}
+        fetch-depth: 0  # Shallow clones should be disabled for better SonarCloud analysis
         
-    - name: Set up JDK 17
+    - name: Set up JDK 21
       uses: actions/setup-java@v4
       with:
-        java-version: '17'
-        distribution: 'adopt'
+        java-version: '21'
+        distribution: 'temurin'
         cache: maven
         
     - name: Set up Maven
@@ -45,37 +55,26 @@ jobs:
     - name: Set up Toolchain
       shell: bash
       run: |
-          echo BASE_TAG=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout` >> $GITHUB_ENV
           echo COMPUTERNAME=`hostname` >> $GITHUB_ENV
           mkdir -p ~/.m2 \
           && cat << EOF > ~/.m2/toolchains.xml
-          <?xml version="1.0" encoding="UTF8"?>
+          <?xml version="1.0" encoding="UTF-8"?>
           <toolchains>
             <toolchain>
               <type>jdk</type>
                 <provides>
-                  <version>11</version>
+                  <version>21</version>
                   <vendor>sun</vendor>
                 </provides>
                 <configuration>
-                  <jdkHome>$JAVA_HOME_11_X64</jdkHome>
-                </configuration>
-            </toolchain>            
-            <toolchain>
-              <type>jdk</type>
-                <provides>
-                  <version>17</version>
-                  <vendor>sun</vendor>
-                </provides>
-                <configuration>
-                  <jdkHome>$JAVA_HOME_17_X64</jdkHome>
+                  <jdkHome>$JAVA_HOME_21_X64</jdkHome>
                 </configuration>
             </toolchain>            
           </toolchains>
           EOF
           
           cat << EOF > ~/.m2/settings.xml
-          <?xml version="1.0" encoding="UTF8"?>
+          <?xml version="1.0" encoding="UTF-8"?>
           <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
@@ -90,6 +89,16 @@ jobs:
                 <username>${{ env.GITHUB_ACTOR }}</username>
                 <password>${{ secrets.GITHUB_TOKEN }}</password>
               </server>
+              <server>
+                <id>github-bom</id>
+                <username>${{ env.GITHUB_ACTOR }}</username>
+                <password>${{ secrets.GITHUB_TOKEN }}</password>
+              </server>
+              <server>
+                <id>v2tofhir</id>
+                <username>${{ env.GITHUB_ACTOR }}</username>
+                <password>${{ secrets.GITHUB_TOKEN }}</password>
+              </server>
             </servers>
             <mirrors />
             <proxies />
@@ -97,6 +106,7 @@ jobs:
             <activeProfiles />
           </settings>
           EOF
+          echo BASE_TAG=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout` >> $GITHUB_ENV
           
     - name: Sets env vars for push or pull request to release branch (default behavior)
       run: |
@@ -105,44 +115,7 @@ jobs:
         # default to force a revision check unless releasing
         echo DO_REVISION_CHECK=true >> $GITHUB_ENV
 
-    # If pulling to main branch (cutting a release), set branch tag appropriately  
-    - name: Sets env vars for pull to main 
-      if: ${{ github.base_ref == 'main' }}
-      run: |
-        IMAGE_TAG=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout | sed "s/-.*$/-v2tofhir-SNAPSHOT-${{github.run_number}}/"` 
-        echo IMAGE_TAG=$IMAGE_TAG >> $GITHUB_ENV
-        IMAGE_BRANCH_TAG=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout | sed "s/-.*$/-v2tofhir-SNAPSHOT/"`
-        echo IMAGE_BRANCH_TAG=$IMAGE_BRANCH_TAG >> $GITHUB_ENV
-        mvn versions:set -DnewVersion=$IMAGE_BRANCH_TAG -f pom.xml
-
-        # Skip revision check on merge
-        echo DO_REVISION_CHECK=false >> $GITHUB_ENV
-
-    # If pushing to main branch (cutting a release), set branch tag appropriately  
-    - name: Sets env vars for pull to main 
-      if: ${{ github.ref_name == 'main' }}
-      run: |
-        IMAGE_TAG=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout | sed "s/-.*$/-v2tofhir-RELEASE-${{github.run_number}}/"` 
-        echo IMAGE_TAG=$IMAGE_TAG >> $GITHUB_ENV
-        IMAGE_BRANCH_TAG=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout | sed "s/-.*$/-v2tofhir-RELEASE/"`
-        echo IMAGE_BRANCH_TAG=$IMAGE_BRANCH_TAG >> $GITHUB_ENV
-        mvn versions:set -DnewVersion=$IMAGE_BRANCH_TAG -f pom.xml
-        if [ ${{ github.event_name }} == 'push' ] 
-        then
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-          git add -A
-          # Only push if something was committed
-          if git commit -m "Update version to $IMAGE_BRANCH_TAG"
-          then
-            git pull
-            git push
-          fi
-        fi
-        # Disable revision check on push to main. 
-        echo DO_REVISION_CHECK=false >> $GITHUB_ENV
-
-    - name: List m2
+    - name: List Environment variables
       shell: bash
       run: |
         # Display data for DX
@@ -156,15 +129,6 @@ jobs:
         echo IMAGE_TAG: $IMAGE_TAG 
         echo IMAGE_BRANCH_TAG: $IMAGE_BRANCH_TAG 
         cd ~/.m2
-        ls -l
-          
-    - name: Check that push to main is from release branch
-      # Don't filter on testmain to test push to main route
-      if: ${{ ! startsWith(github.base_ref, 'Release_v') && github.head_ref == 'main' }}
-      run: |
-        echo ${{ github.head_ref }} is NOT a Release branch and cannot be pushed to main
-        # Force failure
-        false    
 
     - name: Maven Install
       env:
@@ -188,7 +152,10 @@ jobs:
         project: V2 to FHIR
         path: target/v2tofhir-${{env.IMAGE_BRANCH_TAG}}.jar
         format: 'HTML'
+        out: 'target/site'
         args: >
+          --ossIndexUsername ${{ secrets.OSS_INDEX_USERNAME }}
+          --ossIndexPassword ${{ secrets.OSS_INDEX_PASSWORD }}        
           --failOnCVSS 7
           --suppression ./dependency-suppression.xml
           --disableNuspec    
@@ -197,11 +164,14 @@ jobs:
             
     - name: Publish Site
       uses: peaceiris/actions-gh-pages@v4
-      if: ${{ always() }}
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./target/site
         destination_dir: current
+
+    - name: List M2
+      if: ${{ failure() }}
+      run: ls -lR ~/.m2 > ./m2-listing.txt
 
     - name: Upload build environment as artifact for failed build
       uses: actions/upload-artifact@v4
@@ -215,48 +185,4 @@ jobs:
       if: ${{ always() }}
       with:
         name: DependencyCheck
-        path: ./reports
-
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    # This step should only be done on PUSH to main
-    if: github.ref == 'refs/heads/testmain' || github.ref == 'refs/heads/main'
-    steps:
-    - uses: actions/checkout@v4
-      # Necessary to enable push to protected branch
-      with:
-        ssh-key: ${{secrets.ACTIONS_KEY}}
-
-    - name: Create GitHub Release
-      id: create_release
-      uses: softprops/action-gh-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{env.TAG}}
-        name: IZ Gateway ${{env.TAG}} Release
-        body_path: ./docs/release/RELEASE_NOTES.md
-        draft: true
-        generate_release_notes: true
-        files: |
-          ./docs/release/*.md
-
-    - name: Upload release documentation as artifact for failed release
-      uses: actions/upload-artifact@v4
-      if: ${{ failure() }}
-      with:
-        name: release-failure
-        path: ./docs/release/*.md
-
-    - name: Checkin Release Documentation to Build
-      run: |
-        git config user.name github-actions
-        git config user.email github-actions@github.com
-        git config pull.rebase false 
-        git add ./docs/release
-        if git commit -m "generated"
-        then
-          git pull
-          git push
-        fi
+        path: ./target/site/dependency-check-report.html
