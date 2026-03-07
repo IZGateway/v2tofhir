@@ -1546,49 +1546,51 @@ public class DatatypeConverter {
 <span class="fc" id="L1546">		ts1.setValue(value);</span>
 <span class="fc" id="L1547">		Calendar cal = ts1.getValueAsCalendar();</span>
 <span class="fc" id="L1548">		InstantType t = new InstantType(cal);</span>
-<span class="fc" id="L1549">		t.setPrecision(prec);</span>
-<span class="fc" id="L1550">		return t;</span>
+		// Preserve the original timezone from the Calendar
+<span class="fc" id="L1550">		t.setTimeZone(cal.getTimeZone());</span>
+<span class="fc" id="L1551">		t.setPrecision(prec);</span>
+<span class="fc" id="L1552">		return t;</span>
 	}
 
 	private static InstantType toInstantViaFHIR(String original, Exception e) {
 		try {
 			// We failed to convert, try as FHIR
-<span class="fc" id="L1556">			BaseDateTimeType fhirType = new DateTimeType();</span>
-<span class="fc" id="L1557">			fhirType.setValueAsString(original);</span>
-<span class="fc" id="L1558">			Date date = fhirType.getValue();</span>
-<span class="fc" id="L1559">			TemporalPrecisionEnum prec = fhirType.getPrecision();</span>
-<span class="fc" id="L1560">			InstantType instant = new InstantType();</span>
-<span class="fc" id="L1561">			TimeZone tz = fhirType.getTimeZone();</span>
-<span class="fc" id="L1562">			instant.setValue(date);</span>
-<span class="fc" id="L1563">			instant.setPrecision(prec);</span>
-<span class="fc" id="L1564">			instant.setTimeZone(tz);</span>
-<span class="fc" id="L1565">			return instant;</span>
-<span class="fc" id="L1566">		} catch (Exception ex) {</span>
-<span class="fc" id="L1567">			warn(&quot;Unexpected FHIR {} parsing {} as InstantType: {}&quot;, e.getClass().getSimpleName(), original,</span>
-<span class="fc" id="L1568">					ex.getMessage(), ex);</span>
-<span class="fc" id="L1569">			return null;</span>
+<span class="fc" id="L1558">			BaseDateTimeType fhirType = new DateTimeType();</span>
+<span class="fc" id="L1559">			fhirType.setValueAsString(original);</span>
+<span class="fc" id="L1560">			Date date = fhirType.getValue();</span>
+<span class="fc" id="L1561">			TemporalPrecisionEnum prec = fhirType.getPrecision();</span>
+<span class="fc" id="L1562">			InstantType instant = new InstantType();</span>
+<span class="fc" id="L1563">			TimeZone tz = fhirType.getTimeZone();</span>
+<span class="fc" id="L1564">			instant.setValue(date);</span>
+<span class="fc" id="L1565">			instant.setPrecision(prec);</span>
+<span class="fc" id="L1566">			instant.setTimeZone(tz);</span>
+<span class="fc" id="L1567">			return instant;</span>
+<span class="fc" id="L1568">		} catch (Exception ex) {</span>
+<span class="fc" id="L1569">			warn(&quot;Unexpected FHIR {} parsing {} as InstantType: {}&quot;, e.getClass().getSimpleName(), original,</span>
+<span class="fc" id="L1570">					ex.getMessage(), ex);</span>
+<span class="fc" id="L1571">			return null;</span>
 		}
 	}
 
 	private static TemporalPrecisionEnum getPrecision(String decimal, int len) {
 		TemporalPrecisionEnum prec;
-<span class="fc bfc" id="L1575" title="All 2 branches covered.">		if (len &lt; 5) {</span>
-<span class="fc" id="L1576">			prec = TemporalPrecisionEnum.YEAR;</span>
-<span class="fc bfc" id="L1577" title="All 2 branches covered.">		} else if (len &lt; 7) {</span>
-<span class="fc" id="L1578">			prec = TemporalPrecisionEnum.MONTH;</span>
-<span class="fc bfc" id="L1579" title="All 2 branches covered.">		} else if (len &lt; 9) {</span>
-<span class="fc" id="L1580">			prec = TemporalPrecisionEnum.DAY;</span>
-<span class="fc bfc" id="L1581" title="All 2 branches covered.">		} else if (len &lt; 13) {</span>
-<span class="fc" id="L1582">			prec = TemporalPrecisionEnum.MINUTE;</span>
-<span class="fc bfc" id="L1583" title="All 2 branches covered.">		} else if (len &lt; 15) {</span>
-<span class="fc" id="L1584">			prec = TemporalPrecisionEnum.SECOND;</span>
+<span class="fc bfc" id="L1577" title="All 2 branches covered.">		if (len &lt; 5) {</span>
+<span class="fc" id="L1578">			prec = TemporalPrecisionEnum.YEAR;</span>
+<span class="fc bfc" id="L1579" title="All 2 branches covered.">		} else if (len &lt; 7) {</span>
+<span class="fc" id="L1580">			prec = TemporalPrecisionEnum.MONTH;</span>
+<span class="fc bfc" id="L1581" title="All 2 branches covered.">		} else if (len &lt; 9) {</span>
+<span class="fc" id="L1582">			prec = TemporalPrecisionEnum.DAY;</span>
+<span class="fc bfc" id="L1583" title="All 2 branches covered.">		} else if (len &lt; 13) {</span>
+<span class="fc" id="L1584">			prec = TemporalPrecisionEnum.MINUTE;</span>
+<span class="fc bfc" id="L1585" title="All 2 branches covered.">		} else if (len &lt; 15) {</span>
+<span class="fc" id="L1586">			prec = TemporalPrecisionEnum.SECOND;</span>
 		} else {
-<span class="fc" id="L1586">			prec = TemporalPrecisionEnum.MILLI;</span>
+<span class="fc" id="L1588">			prec = TemporalPrecisionEnum.MILLI;</span>
 		}
-<span class="fc bfc" id="L1588" title="All 2 branches covered.">		if (!decimal.isEmpty()) {</span>
-<span class="fc" id="L1589">			prec = TemporalPrecisionEnum.MILLI;</span>
+<span class="fc bfc" id="L1590" title="All 2 branches covered.">		if (!decimal.isEmpty()) {</span>
+<span class="fc" id="L1591">			prec = TemporalPrecisionEnum.MILLI;</span>
 		}
-<span class="fc" id="L1591">		return prec;</span>
+<span class="fc" id="L1593">		return prec;</span>
 	}
 
 	/**
@@ -1598,23 +1600,23 @@ public class DatatypeConverter {
 	 * @return The ISO-8601 string without punctuation.
 	 */
 	public static String removeIsoPunct(String value) {
-<span class="pc bpc" id="L1601" title="1 of 2 branches missed.">		if (value == null) {</span>
-<span class="nc" id="L1602">			return null;</span>
+<span class="pc bpc" id="L1603" title="1 of 2 branches missed.">		if (value == null) {</span>
+<span class="nc" id="L1604">			return null;</span>
 		}
-<span class="fc" id="L1604">		value = value.toUpperCase();</span>
-<span class="fc" id="L1605">		String left = value.substring(0, Math.min(11, value.length()));</span>
-<span class="fc bfc" id="L1606" title="All 2 branches covered.">		String right = value.length() == left.length() ? &quot;&quot; : value.substring(left.length());</span>
-<span class="fc" id="L1607">		left = left.replace(&quot;-&quot;, &quot;&quot;).replace(&quot;T&quot;, &quot;&quot;); // Remove - and T from date part</span>
-<span class="fc" id="L1608">		String tz = &quot;&quot;;</span>
-<span class="fc bfc" id="L1609" title="All 2 branches covered.">		if (right.contains(&quot;+&quot;)) {</span>
-<span class="fc" id="L1610">			tz = &quot;+&quot; + StringUtils.substringAfter(right, &quot;+&quot;);</span>
-<span class="fc bfc" id="L1611" title="All 2 branches covered.">		} else if (right.contains(&quot;-&quot;)) {</span>
-<span class="fc" id="L1612">			tz = &quot;-&quot; + StringUtils.substringAfter(right, &quot;-&quot;);</span>
+<span class="fc" id="L1606">		value = value.toUpperCase();</span>
+<span class="fc" id="L1607">		String left = value.substring(0, Math.min(11, value.length()));</span>
+<span class="fc bfc" id="L1608" title="All 2 branches covered.">		String right = value.length() == left.length() ? &quot;&quot; : value.substring(left.length());</span>
+<span class="fc" id="L1609">		left = left.replace(&quot;-&quot;, &quot;&quot;).replace(&quot;T&quot;, &quot;&quot;); // Remove - and T from date part</span>
+<span class="fc" id="L1610">		String tz = &quot;&quot;;</span>
+<span class="fc bfc" id="L1611" title="All 2 branches covered.">		if (right.contains(&quot;+&quot;)) {</span>
+<span class="fc" id="L1612">			tz = &quot;+&quot; + StringUtils.substringAfter(right, &quot;+&quot;);</span>
+<span class="fc bfc" id="L1613" title="All 2 branches covered.">		} else if (right.contains(&quot;-&quot;)) {</span>
+<span class="fc" id="L1614">			tz = &quot;-&quot; + StringUtils.substringAfter(right, &quot;-&quot;);</span>
 		}
-<span class="fc" id="L1614">		right = StringUtils.left(right, right.length() - tz.length());</span>
-<span class="fc" id="L1615">		right = right.replace(&quot;:&quot;, &quot;&quot;);</span>
-<span class="fc" id="L1616">		value = left + right + tz.replace(&quot;:&quot;, &quot;&quot;);</span>
-<span class="fc" id="L1617">		return value;</span>
+<span class="fc" id="L1616">		right = StringUtils.left(right, right.length() - tz.length());</span>
+<span class="fc" id="L1617">		right = right.replace(&quot;:&quot;, &quot;&quot;);</span>
+<span class="fc" id="L1618">		value = left + right + tz.replace(&quot;:&quot;, &quot;&quot;);</span>
+<span class="fc" id="L1619">		return value;</span>
 	}
 
 	/**
@@ -1624,13 +1626,13 @@ public class DatatypeConverter {
 	 * @return The InstantType converted from the V2 datatype
 	 */
 	public static InstantType toInstantType(Type type) {
-<span class="fc bfc" id="L1627" title="All 2 branches covered.">		if (type instanceof Varies v) {</span>
-<span class="fc" id="L1628">			type = v.getData();</span>
+<span class="fc bfc" id="L1629" title="All 2 branches covered.">		if (type instanceof Varies v) {</span>
+<span class="fc" id="L1630">			type = v.getData();</span>
 		}
-<span class="pc bpc" id="L1630" title="1 of 4 branches missed.">		if (type instanceof Primitive p &amp;&amp; isDeleted(p)) {</span>
-<span class="nc" id="L1631">			return markDeleted(new InstantType());</span>
+<span class="pc bpc" id="L1632" title="1 of 4 branches missed.">		if (type instanceof Primitive p &amp;&amp; isDeleted(p)) {</span>
+<span class="nc" id="L1633">			return markDeleted(new InstantType());</span>
 		} 
-<span class="fc" id="L1633">		return toInstantType(ParserUtils.toString(type));</span>
+<span class="fc" id="L1635">		return toInstantType(ParserUtils.toString(type));</span>
 	}
 
 	/**
@@ -1640,23 +1642,23 @@ public class DatatypeConverter {
 	 * @return The IntegerType converted from the V2 datatype
 	 */
 	public static IntegerType toIntegerType(Type pt) {
-<span class="fc" id="L1643">		DecimalType dt = toDecimalType(pt);</span>
-<span class="pc bpc" id="L1644" title="1 of 4 branches missed.">		if (dt == null || dt.isEmpty()) {</span>
-<span class="fc" id="L1645">			return null;</span>
+<span class="fc" id="L1645">		DecimalType dt = toDecimalType(pt);</span>
+<span class="pc bpc" id="L1646" title="1 of 4 branches missed.">		if (dt == null || dt.isEmpty()) {</span>
+<span class="fc" id="L1647">			return null;</span>
 		}
-<span class="pc bpc" id="L1647" title="1 of 4 branches missed.">		if (pt instanceof Primitive p &amp;&amp; isDeleted(p)) {</span>
-<span class="nc" id="L1648">			return markDeleted(new IntegerType());</span>
+<span class="pc bpc" id="L1649" title="1 of 4 branches missed.">		if (pt instanceof Primitive p &amp;&amp; isDeleted(p)) {</span>
+<span class="nc" id="L1650">			return markDeleted(new IntegerType());</span>
 		}
-<span class="fc" id="L1650">		BigDecimal decimal = dt.getValue();</span>
-<span class="fc" id="L1651">		BigInteger bigInt = decimal.toBigInteger();</span>
+<span class="fc" id="L1652">		BigDecimal decimal = dt.getValue();</span>
+<span class="fc" id="L1653">		BigInteger bigInt = decimal.toBigInteger();</span>
 		try {
-<span class="fc" id="L1653">			int value = bigInt.intValueExact();</span>
-<span class="fc" id="L1654">			IntegerType i = new IntegerType(value);</span>
-<span class="fc" id="L1655">			i.setValue(i.getValue()); // Force normalization of string value</span>
-<span class="fc" id="L1656">			return i;</span>
-<span class="fc" id="L1657">		} catch (ArithmeticException ex) {</span>
-<span class="fc" id="L1658">			warn(&quot;Integer overflow value in field {}&quot;, pt.toString());</span>
-<span class="fc" id="L1659">			return null;</span>
+<span class="fc" id="L1655">			int value = bigInt.intValueExact();</span>
+<span class="fc" id="L1656">			IntegerType i = new IntegerType(value);</span>
+<span class="fc" id="L1657">			i.setValue(i.getValue()); // Force normalization of string value</span>
+<span class="fc" id="L1658">			return i;</span>
+<span class="fc" id="L1659">		} catch (ArithmeticException ex) {</span>
+<span class="fc" id="L1660">			warn(&quot;Integer overflow value in field {}&quot;, pt.toString());</span>
+<span class="fc" id="L1661">			return null;</span>
 		}
 	}
 
@@ -1667,18 +1669,18 @@ public class DatatypeConverter {
 	 * @return The PositiveIntType converted from the V2 datatype
 	 */
 	public static PositiveIntType toPositiveIntType(Type pt) {
-<span class="pc bpc" id="L1670" title="1 of 4 branches missed.">		if (pt instanceof Primitive p &amp;&amp; isDeleted(p)) {</span>
-<span class="nc" id="L1671">			return markDeleted(new PositiveIntType());</span>
+<span class="pc bpc" id="L1672" title="1 of 4 branches missed.">		if (pt instanceof Primitive p &amp;&amp; isDeleted(p)) {</span>
+<span class="nc" id="L1673">			return markDeleted(new PositiveIntType());</span>
 		}
-<span class="fc" id="L1673">		IntegerType dt = toIntegerType(pt);</span>
-<span class="pc bpc" id="L1674" title="1 of 4 branches missed.">		if (dt == null || dt.isEmpty()) {</span>
-<span class="fc" id="L1675">			return null;</span>
+<span class="fc" id="L1675">		IntegerType dt = toIntegerType(pt);</span>
+<span class="pc bpc" id="L1676" title="1 of 4 branches missed.">		if (dt == null || dt.isEmpty()) {</span>
+<span class="fc" id="L1677">			return null;</span>
 		}
-<span class="pc bpc" id="L1677" title="1 of 2 branches missed.">		if (dt.getValue() &lt; 0) {</span>
-<span class="nc" id="L1678">			warn(&quot;Illegal negative value in field {}&quot;, pt.toString());</span>
-<span class="nc" id="L1679">			return null;</span>
+<span class="pc bpc" id="L1679" title="1 of 2 branches missed.">		if (dt.getValue() &lt; 0) {</span>
+<span class="nc" id="L1680">			warn(&quot;Illegal negative value in field {}&quot;, pt.toString());</span>
+<span class="nc" id="L1681">			return null;</span>
 		}
-<span class="fc" id="L1681">		return new PositiveIntType(dt.getValue());</span>
+<span class="fc" id="L1683">		return new PositiveIntType(dt.getValue());</span>
 	}
 
 	/**
@@ -1688,95 +1690,95 @@ public class DatatypeConverter {
 	 * @return The Quantity converted from the V2 datatype
 	 */
 	public static Quantity toQuantity(Type type) {
-<span class="pc bpc" id="L1691" title="1 of 2 branches missed.">		if (type == null) {</span>
-<span class="nc" id="L1692">			return null;</span>
+<span class="pc bpc" id="L1693" title="1 of 2 branches missed.">		if (type == null) {</span>
+<span class="nc" id="L1694">			return null;</span>
 		}
-<span class="fc" id="L1694">		type = adjustIfVaries(type);</span>
+<span class="fc" id="L1696">		type = adjustIfVaries(type);</span>
 
-<span class="fc bfc" id="L1696" title="All 2 branches covered.">		if (type instanceof Primitive pt) {</span>
-<span class="pc bpc" id="L1697" title="2 of 4 branches missed.">			if (type instanceof Primitive p &amp;&amp; isDeleted(p)) {</span>
-<span class="nc" id="L1698">				return markDeleted(new Quantity());</span>
+<span class="fc bfc" id="L1698" title="All 2 branches covered.">		if (type instanceof Primitive pt) {</span>
+<span class="pc bpc" id="L1699" title="2 of 4 branches missed.">			if (type instanceof Primitive p &amp;&amp; isDeleted(p)) {</span>
+<span class="nc" id="L1700">				return markDeleted(new Quantity());</span>
 			}
-<span class="fc" id="L1700">			return getQuantity(pt);</span>
+<span class="fc" id="L1702">			return getQuantity(pt);</span>
 		} 
-<span class="pc bpc" id="L1702" title="1 of 2 branches missed.">		if (!(type instanceof Composite comp)) {</span>
-<span class="nc" id="L1703">			return null;</span>
+<span class="pc bpc" id="L1704" title="1 of 2 branches missed.">		if (!(type instanceof Composite comp)) {</span>
+<span class="nc" id="L1705">			return null;</span>
 		}
 		
-<span class="fc" id="L1706">		Type[] types = comp.getComponents();</span>
-<span class="pc bpc" id="L1707" title="1 of 2 branches missed.">		if (types.length &lt; 1) {</span>
-<span class="nc" id="L1708">			return null;</span>
+<span class="fc" id="L1708">		Type[] types = comp.getComponents();</span>
+<span class="pc bpc" id="L1709" title="1 of 2 branches missed.">		if (types.length &lt; 1) {</span>
+<span class="nc" id="L1710">			return null;</span>
 		}
-<span class="fc" id="L1710">		String typeName = type.getName();</span>
-<span class="pc bpc" id="L1711" title="1 of 2 branches missed.">		if (&quot;CQ&quot;.equals(typeName)) { </span>
-<span class="fc" id="L1712">			return getCQasQuantity(types);</span>
+<span class="fc" id="L1712">		String typeName = type.getName();</span>
+<span class="pc bpc" id="L1713" title="1 of 2 branches missed.">		if (&quot;CQ&quot;.equals(typeName)) { </span>
+<span class="fc" id="L1714">			return getCQasQuantity(types);</span>
 		} 
 
-<span class="nc bnc" id="L1715" title="All 4 branches missed.">		if (&quot;SN&quot;.equals(typeName) &amp;&amp; types.length &lt; 4) {</span>
-<span class="nc" id="L1716">			return getSNasQuantity(types);</span>
+<span class="nc bnc" id="L1717" title="All 4 branches missed.">		if (&quot;SN&quot;.equals(typeName) &amp;&amp; types.length &lt; 4) {</span>
+<span class="nc" id="L1718">			return getSNasQuantity(types);</span>
 		}
 
-<span class="nc" id="L1719">		return null;</span>
+<span class="nc" id="L1721">		return null;</span>
 	}
 
 	private static Quantity getCQasQuantity(Type[] types) {
-<span class="fc" id="L1723">		Quantity qt = getQuantity((Primitive) types[0]);</span>
-<span class="pc bpc" id="L1724" title="1 of 2 branches missed.">		if (types.length &gt; 1) {</span>
-<span class="pc bpc" id="L1725" title="1 of 2 branches missed.">			if (qt == null) {</span>
-<span class="nc" id="L1726">				qt = new Quantity();</span>
+<span class="fc" id="L1725">		Quantity qt = getQuantity((Primitive) types[0]);</span>
+<span class="pc bpc" id="L1726" title="1 of 2 branches missed.">		if (types.length &gt; 1) {</span>
+<span class="pc bpc" id="L1727" title="1 of 2 branches missed.">			if (qt == null) {</span>
+<span class="nc" id="L1728">				qt = new Quantity();</span>
 			}
-<span class="fc" id="L1728">			setUnits(qt, types[1]);</span>
+<span class="fc" id="L1730">			setUnits(qt, types[1]);</span>
 		}
-<span class="fc" id="L1730">		return qt;</span>
+<span class="fc" id="L1732">		return qt;</span>
 	}
 
 	private static Quantity getSNasQuantity(Type[] types) {
-<span class="nc" id="L1734">		String qualifier = ParserUtils.toString(types[0]);</span>
-<span class="nc" id="L1735">		Quantity qt = getQuantity((Primitive) types[1]);</span>
-<span class="nc bnc" id="L1736" title="All 4 branches missed.">		if (qt == null || StringUtils.isEmpty(qualifier)) {</span>
-<span class="nc" id="L1737">			return qt;</span>
+<span class="nc" id="L1736">		String qualifier = ParserUtils.toString(types[0]);</span>
+<span class="nc" id="L1737">		Quantity qt = getQuantity((Primitive) types[1]);</span>
+<span class="nc bnc" id="L1738" title="All 4 branches missed.">		if (qt == null || StringUtils.isEmpty(qualifier)) {</span>
+<span class="nc" id="L1739">			return qt;</span>
 		} 
-<span class="nc bnc" id="L1739" title="All 2 branches missed.">		if (List.of(&quot;&lt;&quot;, &quot;&gt;&quot;, &quot;&lt;=&quot;, &quot;&gt;=&quot;).contains(qualifier)) {</span>
-<span class="nc" id="L1740">			qt.setComparator(QuantityComparator.fromCode(qualifier));</span>
+<span class="nc bnc" id="L1741" title="All 2 branches missed.">		if (List.of(&quot;&lt;&quot;, &quot;&gt;&quot;, &quot;&lt;=&quot;, &quot;&gt;=&quot;).contains(qualifier)) {</span>
+<span class="nc" id="L1742">			qt.setComparator(QuantityComparator.fromCode(qualifier));</span>
 		}
-<span class="nc" id="L1742">		return qt;</span>
+<span class="nc" id="L1744">		return qt;</span>
 	}
 
-<span class="fc" id="L1745">	private static final List&lt;String&gt; COMPARATORS = Arrays.asList(&quot;&gt;&quot;, &quot;&gt;=&quot;, &quot;&lt;&quot;, &quot;&lt;=&quot;);</span>
+<span class="fc" id="L1747">	private static final List&lt;String&gt; COMPARATORS = Arrays.asList(&quot;&gt;&quot;, &quot;&gt;=&quot;, &quot;&lt;&quot;, &quot;&lt;=&quot;);</span>
 	/**
 	 * Convert a type to a Range
 	 * @param type	The type to convert
 	 * @return	A new Range
 	 */
 	public static Range toRange(Type type) {
-<span class="nc bnc" id="L1752" title="All 2 branches missed.">		if (type == null) {</span>
-<span class="nc" id="L1753">			return null;</span>
+<span class="nc bnc" id="L1754" title="All 2 branches missed.">		if (type == null) {</span>
+<span class="nc" id="L1755">			return null;</span>
 		}
-<span class="nc" id="L1755">		type = adjustIfVaries(type);</span>
-<span class="nc bnc" id="L1756" title="All 4 branches missed.">		if (!&quot;SN&quot;.equals(type.getName()) || !(type instanceof Composite comp)) {</span>
-<span class="nc" id="L1757">			return null;</span>
+<span class="nc" id="L1757">		type = adjustIfVaries(type);</span>
+<span class="nc bnc" id="L1758" title="All 4 branches missed.">		if (!&quot;SN&quot;.equals(type.getName()) || !(type instanceof Composite comp)) {</span>
+<span class="nc" id="L1759">			return null;</span>
 		}
-<span class="nc" id="L1759">    	Range range = new Range();</span>
-<span class="nc" id="L1760">		Type[] types = comp.getComponents();</span>
-<span class="nc" id="L1761">		String comparator = ParserUtils.toString(types[0]);</span>
-<span class="nc bnc" id="L1762" title="All 2 branches missed.">		if (types.length &gt; 1) {</span>
-<span class="nc" id="L1763">			Quantity q1 = toQuantity(types[1]);</span>
-<span class="nc bnc" id="L1764" title="All 2 branches missed.">			if (types.length &gt; 3) {</span>
-<span class="nc" id="L1765">				Quantity q2 = toQuantity(types[3]);</span>
-<span class="nc" id="L1766">				range.setHigh(q2);</span>
-<span class="nc bnc" id="L1767" title="All 2 branches missed.">			} else if (StringUtils.isEmpty(comparator)) {</span>
-<span class="nc" id="L1768">				range.setLow(q1);</span>
-<span class="nc" id="L1769">				range.setHigh(q1);</span>
-<span class="nc bnc" id="L1770" title="All 2 branches missed.">			} else if (COMPARATORS.contains(comparator)) {</span>
-<span class="nc bnc" id="L1771" title="All 2 branches missed.">				if (comparator.charAt(0) == '&lt;') {</span>
-<span class="nc" id="L1772">					range.setHigh(q1);</span>
+<span class="nc" id="L1761">    	Range range = new Range();</span>
+<span class="nc" id="L1762">		Type[] types = comp.getComponents();</span>
+<span class="nc" id="L1763">		String comparator = ParserUtils.toString(types[0]);</span>
+<span class="nc bnc" id="L1764" title="All 2 branches missed.">		if (types.length &gt; 1) {</span>
+<span class="nc" id="L1765">			Quantity q1 = toQuantity(types[1]);</span>
+<span class="nc bnc" id="L1766" title="All 2 branches missed.">			if (types.length &gt; 3) {</span>
+<span class="nc" id="L1767">				Quantity q2 = toQuantity(types[3]);</span>
+<span class="nc" id="L1768">				range.setHigh(q2);</span>
+<span class="nc bnc" id="L1769" title="All 2 branches missed.">			} else if (StringUtils.isEmpty(comparator)) {</span>
+<span class="nc" id="L1770">				range.setLow(q1);</span>
+<span class="nc" id="L1771">				range.setHigh(q1);</span>
+<span class="nc bnc" id="L1772" title="All 2 branches missed.">			} else if (COMPARATORS.contains(comparator)) {</span>
+<span class="nc bnc" id="L1773" title="All 2 branches missed.">				if (comparator.charAt(0) == '&lt;') {</span>
+<span class="nc" id="L1774">					range.setHigh(q1);</span>
 				} else {
-<span class="nc" id="L1774">					range.setLow(q1);</span>
+<span class="nc" id="L1776">					range.setLow(q1);</span>
 				}
 			}
 		}
 
-<span class="nc bnc" id="L1779" title="All 2 branches missed.">		return range.isEmpty() ? null : range;</span>
+<span class="nc bnc" id="L1781" title="All 2 branches missed.">		return range.isEmpty() ? null : range;</span>
     }
 
 	/**
@@ -1786,14 +1788,14 @@ public class DatatypeConverter {
 	 * @return The converted Quantity
 	 */
 	public static Quantity toQuantityLengthOfStay(Type pt) {
-<span class="nc" id="L1789">		Quantity qt = toQuantity(pt);</span>
-<span class="nc bnc" id="L1790" title="All 4 branches missed.">		if (qt == null || qt.isEmpty()) {</span>
-<span class="nc" id="L1791">			return null;</span>
+<span class="nc" id="L1791">		Quantity qt = toQuantity(pt);</span>
+<span class="nc bnc" id="L1792" title="All 4 branches missed.">		if (qt == null || qt.isEmpty()) {</span>
+<span class="nc" id="L1793">			return null;</span>
 		}
-<span class="nc" id="L1793">		qt.setCode(&quot;d&quot;);</span>
-<span class="nc" id="L1794">		qt.setUnit(&quot;days&quot;);</span>
-<span class="nc" id="L1795">		qt.setSystem(Systems.UCUM);</span>
-<span class="nc" id="L1796">		return qt;</span>
+<span class="nc" id="L1795">		qt.setCode(&quot;d&quot;);</span>
+<span class="nc" id="L1796">		qt.setUnit(&quot;days&quot;);</span>
+<span class="nc" id="L1797">		qt.setSystem(Systems.UCUM);</span>
+<span class="nc" id="L1798">		return qt;</span>
 	}
 
 	/**
@@ -1803,19 +1805,19 @@ public class DatatypeConverter {
 	 * @return an Expression using FHIRPath for the error location.
 	 */
 	public static Expression toExpression(Type type) {
-<span class="nc bnc" id="L1806" title="All 2 branches missed.">		if (type == null) {</span>
-<span class="nc" id="L1807">			return null;</span>
+<span class="nc bnc" id="L1808" title="All 2 branches missed.">		if (type == null) {</span>
+<span class="nc" id="L1809">			return null;</span>
 		}
-<span class="nc" id="L1809">		type = adjustIfVaries(type);</span>
-<span class="nc bnc" id="L1810" title="All 2 branches missed.">		if (&quot;ERL&quot;.equals(type.getName())) {</span>
+<span class="nc" id="L1811">		type = adjustIfVaries(type);</span>
+<span class="nc bnc" id="L1812" title="All 2 branches missed.">		if (&quot;ERL&quot;.equals(type.getName())) {</span>
 			try {
-<span class="nc" id="L1812">				return new Expression().setLanguage(&quot;text/fhirpath&quot;)</span>
-<span class="nc" id="L1813">						.setExpression(PathUtils.v2ToFHIRPath(type.encode()));</span>
-<span class="nc" id="L1814">			} catch (HL7Exception e) {</span>
-<span class="nc" id="L1815">				warn(UNEXPECTED_HL7_EXCEPTION, e.getMessage(), e);</span>
+<span class="nc" id="L1814">				return new Expression().setLanguage(&quot;text/fhirpath&quot;)</span>
+<span class="nc" id="L1815">						.setExpression(PathUtils.v2ToFHIRPath(type.encode()));</span>
+<span class="nc" id="L1816">			} catch (HL7Exception e) {</span>
+<span class="nc" id="L1817">				warn(UNEXPECTED_HL7_EXCEPTION, e.getMessage(), e);</span>
 			}
 		}
-<span class="nc" id="L1818">		return null;</span>
+<span class="nc" id="L1820">		return null;</span>
 	}
 
 	/**
@@ -1825,13 +1827,13 @@ public class DatatypeConverter {
 	 * @return The MarkdownType converted from the V2 datatype
 	 */
 	public static MarkdownType toMarkdownType(Type t) {
-<span class="nc" id="L1828">		StringType st = toStringType(t);</span>
-<span class="nc bnc" id="L1829" title="All 2 branches missed.">		if (st == null) {</span>
-<span class="nc" id="L1830">			return null;</span>
+<span class="nc" id="L1830">		StringType st = toStringType(t);</span>
+<span class="nc bnc" id="L1831" title="All 2 branches missed.">		if (st == null) {</span>
+<span class="nc" id="L1832">			return null;</span>
 		}
-<span class="nc" id="L1832">		MarkdownType md = new MarkdownType();</span>
-<span class="nc" id="L1833">		md.setValue(st.getValue());</span>
-<span class="nc" id="L1834">		return md;</span>
+<span class="nc" id="L1834">		MarkdownType md = new MarkdownType();</span>
+<span class="nc" id="L1835">		md.setValue(st.getValue());</span>
+<span class="nc" id="L1836">		return md;</span>
 	}
 
 	/**
@@ -1841,47 +1843,47 @@ public class DatatypeConverter {
 	 * @return The StringType converted from the V2 datatype
 	 */
 	public static StringType toStringType(Type type) {
-<span class="pc bpc" id="L1844" title="1 of 2 branches missed.">		if (type == null) {</span>
-<span class="nc" id="L1845">			return null;</span>
+<span class="pc bpc" id="L1846" title="1 of 2 branches missed.">		if (type == null) {</span>
+<span class="nc" id="L1847">			return null;</span>
 		}
-<span class="fc" id="L1847">		type = adjustIfVaries(type);</span>
-<span class="fc bfc" id="L1848" title="All 2 branches covered.">		if (type instanceof Primitive pt) {</span>
-<span class="pc bpc" id="L1849" title="1 of 2 branches missed.">			if (isDeleted(pt)) {</span>
-<span class="nc" id="L1850">				return markDeleted(new StringType());</span>
+<span class="fc" id="L1849">		type = adjustIfVaries(type);</span>
+<span class="fc bfc" id="L1850" title="All 2 branches covered.">		if (type instanceof Primitive pt) {</span>
+<span class="pc bpc" id="L1851" title="1 of 2 branches missed.">			if (isDeleted(pt)) {</span>
+<span class="nc" id="L1852">				return markDeleted(new StringType());</span>
 			}
-<span class="fc" id="L1852">			return new StringType(pt.getValue());</span>
+<span class="fc" id="L1854">			return new StringType(pt.getValue());</span>
 		}
-<span class="fc" id="L1854">		String s = null;</span>
-<span class="pc bpc" id="L1855" title="3 of 4 branches missed.">		switch (type.getName()) {</span>
+<span class="fc" id="L1856">		String s = null;</span>
+<span class="pc bpc" id="L1857" title="3 of 4 branches missed.">		switch (type.getName()) {</span>
 		case &quot;CE&quot;, &quot;CF&quot;, &quot;CNE&quot;, &quot;CWE&quot;:
-<span class="nc" id="L1857">			CodeableConcept cc = toCodeableConcept(type);</span>
-<span class="nc" id="L1858">			s = toString(cc);</span>
-<span class="nc" id="L1859">			break;</span>
+<span class="nc" id="L1859">			CodeableConcept cc = toCodeableConcept(type);</span>
+<span class="nc" id="L1860">			s = toString(cc);</span>
+<span class="nc" id="L1861">			break;</span>
 		case &quot;ERL&quot;:
 			try {
-<span class="fc" id="L1862">				s = type.encode();</span>
-<span class="nc" id="L1863">			} catch (HL7Exception e) {</span>
-<span class="nc" id="L1864">				warn(UNEXPECTED_HL7_EXCEPTION, e.getMessage(), e);</span>
+<span class="fc" id="L1864">				s = type.encode();</span>
+<span class="nc" id="L1865">			} catch (HL7Exception e) {</span>
+<span class="nc" id="L1866">				warn(UNEXPECTED_HL7_EXCEPTION, e.getMessage(), e);</span>
 				// ignore this error.
-<span class="fc" id="L1866">			}</span>
-<span class="nc" id="L1867">			break;</span>
+<span class="fc" id="L1868">			}</span>
+<span class="nc" id="L1869">			break;</span>
 		case &quot;CQ&quot;:
-<span class="nc" id="L1869">			Quantity qt = toQuantity(type);</span>
-<span class="nc" id="L1870">			s = toString(qt);</span>
-<span class="nc" id="L1871">			break;</span>
+<span class="nc" id="L1871">			Quantity qt = toQuantity(type);</span>
+<span class="nc" id="L1872">			s = toString(qt);</span>
+<span class="nc" id="L1873">			break;</span>
 		default:
 			break;
 		}
-<span class="pc bpc" id="L1875" title="1 of 2 branches missed.">		if (s == null) {</span>
-<span class="nc" id="L1876">			return null;</span>
+<span class="pc bpc" id="L1877" title="1 of 2 branches missed.">		if (s == null) {</span>
+<span class="nc" id="L1878">			return null;</span>
 		}
-<span class="fc" id="L1878">		return new StringType(s);</span>
+<span class="fc" id="L1880">		return new StringType(s);</span>
 	}
 
 	private static final String V2_TIME_FORMAT = &quot;HHmmss.SSSS&quot;;
 	private static final String FHIR_TIME_FORMAT = &quot;HH:mm:ss.SSS&quot;;
 	/** The V2 types involving date and time */
-<span class="fc" id="L1884">	public static final List&lt;String&gt; DATETIME_TYPES = Collections.unmodifiableList(Arrays.asList(&quot;DT&quot;, &quot;DTM&quot;, &quot;TS&quot;));</span>
+<span class="fc" id="L1886">	public static final List&lt;String&gt; DATETIME_TYPES = Collections.unmodifiableList(Arrays.asList(&quot;DT&quot;, &quot;DTM&quot;, &quot;TS&quot;));</span>
 
 	/**
 	 * Convert a string to a FHIR TimeType object.
@@ -1895,87 +1897,87 @@ public class DatatypeConverter {
 	 */
 	public static TimeType toTimeType(String value) {
 
-<span class="fc bfc" id="L1898" title="All 2 branches covered.">		if (StringUtils.isBlank(value)) {</span>
-<span class="fc" id="L1899">			return null;</span>
+<span class="fc bfc" id="L1900" title="All 2 branches covered.">		if (StringUtils.isBlank(value)) {</span>
+<span class="fc" id="L1901">			return null;</span>
 		}
-<span class="fc" id="L1901">		value = value.replace(&quot;:&quot;, &quot;&quot;).replace(&quot; &quot;, &quot;&quot;);</span>
-<span class="fc bfc" id="L1902" title="All 2 branches covered.">		if (!value.matches(&quot;^\\d{2}&quot; + &quot;(&quot; + &quot;\\d{2}&quot; + &quot;(&quot; + &quot;\\.\\d{1,4}&quot; + &quot;)?&quot; + &quot;)?&quot; + &quot;(&quot; + &quot;\\[\\-+]\\d{2}&quot; + &quot;(&quot;</span>
+<span class="fc" id="L1903">		value = value.replace(&quot;:&quot;, &quot;&quot;).replace(&quot; &quot;, &quot;&quot;);</span>
+<span class="fc bfc" id="L1904" title="All 2 branches covered.">		if (!value.matches(&quot;^\\d{2}&quot; + &quot;(&quot; + &quot;\\d{2}&quot; + &quot;(&quot; + &quot;\\.\\d{1,4}&quot; + &quot;)?&quot; + &quot;)?&quot; + &quot;(&quot; + &quot;\\[\\-+]\\d{2}&quot; + &quot;(&quot;</span>
 				+ &quot;\\d{2}&quot; + &quot;)?&quot; + &quot;)?$&quot;)) {
-<span class="fc" id="L1904">			warn(&quot;Value {} does not match date pattern for V2 HH[MM[SS[.S[S[S[S]]]]]][+/-ZZZZ]&quot;, value);</span>
-<span class="fc" id="L1905">			return null;</span>
+<span class="fc" id="L1906">			warn(&quot;Value {} does not match date pattern for V2 HH[MM[SS[.S[S[S[S]]]]]][+/-ZZZZ]&quot;, value);</span>
+<span class="fc" id="L1907">			return null;</span>
 		}
 		// Parse according to V2 rule: HH[MM[SS[.S[S[S[S]]]]]][+/-ZZZZ]
 		// Remove any inserted : or space values.
-<span class="fc" id="L1909">		String timePart = value.split(&quot;[\\-+]&quot;)[0];</span>
-<span class="fc" id="L1910">		String zonePart = StringUtils.right(value, value.length() - (timePart.length() + 1));</span>
-<span class="fc" id="L1911">		String wholePart = StringUtils.substringBefore(timePart, &quot;.&quot;);</span>
+<span class="fc" id="L1911">		String timePart = value.split(&quot;[\\-+]&quot;)[0];</span>
+<span class="fc" id="L1912">		String zonePart = StringUtils.right(value, value.length() - (timePart.length() + 1));</span>
+<span class="fc" id="L1913">		String wholePart = StringUtils.substringBefore(timePart, &quot;.&quot;);</span>
 		try {
-<span class="fc bfc" id="L1913" title="All 2 branches covered.">			if (!checkTime(wholePart, &quot;time&quot;)) {</span>
-<span class="fc" id="L1914">				return null;</span>
+<span class="fc bfc" id="L1915" title="All 2 branches covered.">			if (!checkTime(wholePart, &quot;time&quot;)) {</span>
+<span class="fc" id="L1916">				return null;</span>
 			}
-<span class="pc bpc" id="L1916" title="3 of 4 branches missed.">			if (zonePart.isEmpty() || !checkTime(zonePart, &quot;timezone&quot;)) {</span>
-<span class="fc" id="L1917">				return null;</span>
+<span class="pc bpc" id="L1918" title="3 of 4 branches missed.">			if (zonePart.isEmpty() || !checkTime(zonePart, &quot;timezone&quot;)) {</span>
+<span class="fc" id="L1919">				return null;</span>
 			}
-<span class="nc" id="L1919">		} catch (NumberFormatException ex) {</span>
-<span class="nc" id="L1920">			warn(&quot;Not a valid time {}&quot;, value);</span>
-<span class="nc" id="L1921">			return null;</span>
-<span class="nc" id="L1922">		}</span>
-<span class="nc bnc" id="L1923" title="All 2 branches missed.">		boolean hasTz = timePart.length() &lt; value.length();</span>
-<span class="nc" id="L1924">		String fmt = StringUtils.left(V2_TIME_FORMAT, timePart.length());</span>
-<span class="nc bnc" id="L1925" title="All 2 branches missed.">		if (hasTz) {</span>
-<span class="nc" id="L1926">			fmt += &quot;ZZZZ&quot;; // It has a time zone</span>
+<span class="nc" id="L1921">		} catch (NumberFormatException ex) {</span>
+<span class="nc" id="L1922">			warn(&quot;Not a valid time {}&quot;, value);</span>
+<span class="nc" id="L1923">			return null;</span>
+<span class="nc" id="L1924">		}</span>
+<span class="nc bnc" id="L1925" title="All 2 branches missed.">		boolean hasTz = timePart.length() &lt; value.length();</span>
+<span class="nc" id="L1926">		String fmt = StringUtils.left(V2_TIME_FORMAT, timePart.length());</span>
+<span class="nc bnc" id="L1927" title="All 2 branches missed.">		if (hasTz) {</span>
+<span class="nc" id="L1928">			fmt += &quot;ZZZZ&quot;; // It has a time zone</span>
 		}
-<span class="nc" id="L1928">		FastDateFormat ft = FastDateFormat.getInstance(fmt);</span>
+<span class="nc" id="L1930">		FastDateFormat ft = FastDateFormat.getInstance(fmt);</span>
 
 		try {
-<span class="nc" id="L1931">			Date d = ft.parse(value);</span>
-<span class="nc" id="L1932">			TimeType t = new TimeType();</span>
-<span class="nc bnc" id="L1933" title="All 2 branches missed.">			if (value.contains(&quot;.&quot;)) {</span>
-<span class="nc" id="L1934">				fmt = FHIR_TIME_FORMAT;</span>
+<span class="nc" id="L1933">			Date d = ft.parse(value);</span>
+<span class="nc" id="L1934">			TimeType t = new TimeType();</span>
+<span class="nc bnc" id="L1935" title="All 2 branches missed.">			if (value.contains(&quot;.&quot;)) {</span>
+<span class="nc" id="L1936">				fmt = FHIR_TIME_FORMAT;</span>
 			} else
-<span class="nc bnc" id="L1936" title="All 3 branches missed.">				switch (timePart.length()) {</span>
+<span class="nc bnc" id="L1938" title="All 3 branches missed.">				switch (timePart.length()) {</span>
 				case 1, 2:
-<span class="nc" id="L1938">					fmt = StringUtils.left(FHIR_TIME_FORMAT, 2);</span>
-<span class="nc" id="L1939">					break;</span>
+<span class="nc" id="L1940">					fmt = StringUtils.left(FHIR_TIME_FORMAT, 2);</span>
+<span class="nc" id="L1941">					break;</span>
 				case 3, 4:
-<span class="nc" id="L1941">					fmt = StringUtils.left(FHIR_TIME_FORMAT, 5);</span>
-<span class="nc" id="L1942">					break;</span>
+<span class="nc" id="L1943">					fmt = StringUtils.left(FHIR_TIME_FORMAT, 5);</span>
+<span class="nc" id="L1944">					break;</span>
 				default:
-<span class="nc" id="L1944">					fmt = StringUtils.left(FHIR_TIME_FORMAT, 8);</span>
+<span class="nc" id="L1946">					fmt = StringUtils.left(FHIR_TIME_FORMAT, 8);</span>
 					break;
 				}
-<span class="nc bnc" id="L1947" title="All 2 branches missed.">			if (hasTz) {</span>
-<span class="nc" id="L1948">				fmt += &quot;ZZZZ&quot;; // It has a time zone</span>
+<span class="nc bnc" id="L1949" title="All 2 branches missed.">			if (hasTz) {</span>
+<span class="nc" id="L1950">				fmt += &quot;ZZZZ&quot;; // It has a time zone</span>
 			}
-<span class="nc" id="L1950">			ft = FastDateFormat.getInstance(fmt);</span>
-<span class="nc" id="L1951">			t.setValue(ft.format(d));</span>
-<span class="nc" id="L1952">			return t;</span>
-<span class="nc" id="L1953">		} catch (ParseException e) {</span>
-<span class="nc" id="L1954">			warn(&quot;Error parsing time {}&quot;, value);</span>
-<span class="nc" id="L1955">			return null;</span>
+<span class="nc" id="L1952">			ft = FastDateFormat.getInstance(fmt);</span>
+<span class="nc" id="L1953">			t.setValue(ft.format(d));</span>
+<span class="nc" id="L1954">			return t;</span>
+<span class="nc" id="L1955">		} catch (ParseException e) {</span>
+<span class="nc" id="L1956">			warn(&quot;Error parsing time {}&quot;, value);</span>
+<span class="nc" id="L1957">			return null;</span>
 		}
 	}
 
 	private static boolean checkTime(String wholePart, String where) {
-<span class="fc" id="L1960">		String[] parts = { &quot;hour&quot;, &quot;minute&quot;, &quot;second&quot; };</span>
+<span class="fc" id="L1962">		String[] parts = { &quot;hour&quot;, &quot;minute&quot;, &quot;second&quot; };</span>
 		int i;
-<span class="pc bpc" id="L1962" title="1 of 4 branches missed.">		for (i = 0; i &lt; wholePart.length() &amp;&amp; i &lt; 6; i += 2) {</span>
-<span class="fc" id="L1963">			String part = StringUtils.substring(wholePart, i, i + 2);</span>
-<span class="pc bpc" id="L1964" title="1 of 2 branches missed.">			if (part.length() != 2) {</span>
-<span class="nc" id="L1965">				warn(&quot;Missing {} digits in {} of {} &quot;, parts[i / 2], where, wholePart);</span>
-<span class="nc" id="L1966">				return false;</span>
+<span class="pc bpc" id="L1964" title="1 of 4 branches missed.">		for (i = 0; i &lt; wholePart.length() &amp;&amp; i &lt; 6; i += 2) {</span>
+<span class="fc" id="L1965">			String part = StringUtils.substring(wholePart, i, i + 2);</span>
+<span class="pc bpc" id="L1966" title="1 of 2 branches missed.">			if (part.length() != 2) {</span>
+<span class="nc" id="L1967">				warn(&quot;Missing {} digits in {} of {} &quot;, parts[i / 2], where, wholePart);</span>
+<span class="nc" id="L1968">				return false;</span>
 			}
-<span class="fc" id="L1968">			int v = Integer.parseInt(part);</span>
-<span class="fc bfc" id="L1969" title="All 6 branches covered.">			if ((i == 0 &amp;&amp; v &gt; 23) || (v &gt; 60)) {</span>
-<span class="fc" id="L1970">				warn(&quot;Invalid {} in {} of {}&quot;, parts[i / 2], where, wholePart);</span>
-<span class="fc" id="L1971">				return false;</span>
+<span class="fc" id="L1970">			int v = Integer.parseInt(part);</span>
+<span class="fc bfc" id="L1971" title="All 6 branches covered.">			if ((i == 0 &amp;&amp; v &gt; 23) || (v &gt; 60)) {</span>
+<span class="fc" id="L1972">				warn(&quot;Invalid {} in {} of {}&quot;, parts[i / 2], where, wholePart);</span>
+<span class="fc" id="L1973">				return false;</span>
 			}
 		}
-<span class="pc bpc" id="L1974" title="1 of 2 branches missed.">		if (i &lt; 2) {</span>
-<span class="nc" id="L1975">			warn(&quot;Missing hours in {} of {}&quot;, wholePart, where);</span>
-<span class="nc" id="L1976">			return false;</span>
+<span class="pc bpc" id="L1976" title="1 of 2 branches missed.">		if (i &lt; 2) {</span>
+<span class="nc" id="L1977">			warn(&quot;Missing hours in {} of {}&quot;, wholePart, where);</span>
+<span class="nc" id="L1978">			return false;</span>
 		}
-<span class="pc bpc" id="L1978" title="1 of 2 branches missed.">		return i &gt; 0;</span>
+<span class="pc bpc" id="L1980" title="1 of 2 branches missed.">		return i &gt; 0;</span>
 	}
 
 	/**
@@ -1986,10 +1988,10 @@ public class DatatypeConverter {
 	 */
 	public static TimeType toTimeType(Type type) {
 		// This will convert the first primitive component of anything to a time.
-<span class="pc bpc" id="L1989" title="1 of 4 branches missed.">		if (type instanceof Primitive p &amp;&amp; isDeleted(p)) {</span>
-<span class="nc" id="L1990">			return markDeleted(new TimeType());</span>
+<span class="pc bpc" id="L1991" title="1 of 4 branches missed.">		if (type instanceof Primitive p &amp;&amp; isDeleted(p)) {</span>
+<span class="nc" id="L1992">			return markDeleted(new TimeType());</span>
 		}
-<span class="fc" id="L1992">		return toTimeType(ParserUtils.toString(type));</span>
+<span class="fc" id="L1994">		return toTimeType(ParserUtils.toString(type));</span>
 	}
 
 	/**
@@ -1999,19 +2001,19 @@ public class DatatypeConverter {
 	 * @return The UnsignedIntType converted from the V2 datatype
 	 */
 	public static UnsignedIntType toUnsignedIntType(Type pt) {
-<span class="fc" id="L2002">		DecimalType dt = toDecimalType(pt);</span>
-<span class="pc bpc" id="L2003" title="1 of 4 branches missed.">		if (dt == null || dt.isEmpty()) {</span>
-<span class="fc" id="L2004">			return null;</span>
+<span class="fc" id="L2004">		DecimalType dt = toDecimalType(pt);</span>
+<span class="pc bpc" id="L2005" title="1 of 4 branches missed.">		if (dt == null || dt.isEmpty()) {</span>
+<span class="fc" id="L2006">			return null;</span>
 		}
-<span class="pc bpc" id="L2006" title="1 of 2 branches missed.">		if (dt.getValue().compareTo(BigDecimal.ZERO) &lt; 0) {</span>
-<span class="nc" id="L2007">			warn(&quot;Illegal negative value in field {}&quot;, pt.toString(), pt);</span>
-<span class="nc" id="L2008">			return null;</span>
+<span class="pc bpc" id="L2008" title="1 of 2 branches missed.">		if (dt.getValue().compareTo(BigDecimal.ZERO) &lt; 0) {</span>
+<span class="nc" id="L2009">			warn(&quot;Illegal negative value in field {}&quot;, pt.toString(), pt);</span>
+<span class="nc" id="L2010">			return null;</span>
 		}
-<span class="fc bfc" id="L2010" title="All 2 branches covered.">		if (dt.getValue().compareTo(MAX_UNSIGNED_VALUE) &gt; 0) {</span>
-<span class="fc" id="L2011">			warn(&quot;Unsigned Integer overflow value in field {}&quot;, pt.toString(), pt);</span>
-<span class="fc" id="L2012">			return null;</span>
+<span class="fc bfc" id="L2012" title="All 2 branches covered.">		if (dt.getValue().compareTo(MAX_UNSIGNED_VALUE) &gt; 0) {</span>
+<span class="fc" id="L2013">			warn(&quot;Unsigned Integer overflow value in field {}&quot;, pt.toString(), pt);</span>
+<span class="fc" id="L2014">			return null;</span>
 		}
-<span class="fc" id="L2014">		return new UnsignedIntType(dt.getValueAsInteger());</span>
+<span class="fc" id="L2016">		return new UnsignedIntType(dt.getValueAsInteger());</span>
 	}
 
 	/**
@@ -2021,113 +2023,113 @@ public class DatatypeConverter {
 	 * @return The UriType converted from the V2 datatype
 	 */
 	public static UriType toUriType(Type type) {
-<span class="pc bpc" id="L2024" title="1 of 2 branches missed.">		if (type == null) {</span>
-<span class="nc" id="L2025">			return null;</span>
+<span class="pc bpc" id="L2026" title="1 of 2 branches missed.">		if (type == null) {</span>
+<span class="nc" id="L2027">			return null;</span>
 		}
-<span class="fc" id="L2027">		type = adjustIfVaries(type);</span>
-<span class="pc bpc" id="L2028" title="1 of 2 branches missed.">		if (type instanceof Primitive pt) {</span>
-<span class="pc bpc" id="L2029" title="1 of 2 branches missed.">			if (isDeleted(pt)) {</span>
-<span class="nc" id="L2030">				return markDeleted(new UriType());</span>
+<span class="fc" id="L2029">		type = adjustIfVaries(type);</span>
+<span class="pc bpc" id="L2030" title="1 of 2 branches missed.">		if (type instanceof Primitive pt) {</span>
+<span class="pc bpc" id="L2031" title="1 of 2 branches missed.">			if (isDeleted(pt)) {</span>
+<span class="nc" id="L2032">				return markDeleted(new UriType());</span>
 			}
-<span class="fc" id="L2032">			return new UriType(StringUtils.strip(pt.getValue()));</span>
+<span class="fc" id="L2034">			return new UriType(StringUtils.strip(pt.getValue()));</span>
 		}
-<span class="nc" id="L2034">		Type[] types = ((Composite) type).getComponents();</span>
-<span class="nc bnc" id="L2035" title="All 2 branches missed.">		if (types.length == 0) {</span>
-<span class="nc" id="L2036">			return null;</span>
+<span class="nc" id="L2036">		Type[] types = ((Composite) type).getComponents();</span>
+<span class="nc bnc" id="L2037" title="All 2 branches missed.">		if (types.length == 0) {</span>
+<span class="nc" id="L2038">			return null;</span>
 		}
-<span class="nc bnc" id="L2038" title="All 2 branches missed.">		if (&quot;HD&quot;.equals(type.getName())) { // NOSONAR Name</span>
+<span class="nc bnc" id="L2040" title="All 2 branches missed.">		if (&quot;HD&quot;.equals(type.getName())) { // NOSONAR Name</span>
 											// comparison is
 											// correct
-<span class="nc" id="L2041">			Identifier id = toIdentifier(type);</span>
-<span class="nc bnc" id="L2042" title="All 4 branches missed.">			if (id != null &amp;&amp; !id.isEmpty()) {</span>
-<span class="nc" id="L2043">				return new UriType(id.getValue());</span>
+<span class="nc" id="L2043">			Identifier id = toIdentifier(type);</span>
+<span class="nc bnc" id="L2044" title="All 4 branches missed.">			if (id != null &amp;&amp; !id.isEmpty()) {</span>
+<span class="nc" id="L2045">				return new UriType(id.getValue());</span>
 			}
 		}
-<span class="nc" id="L2046">		return null;</span>
+<span class="nc" id="L2048">		return null;</span>
 	}
 
 	private static int compareUnitsBySystem(Coding c1, Coding c2) {
-<span class="nc bnc" id="L2050" title="All 2 branches missed.">		if (Systems.UCUM.equals(c1.getSystem())) {</span>
-<span class="nc" id="L2051">			return -1;</span>
-<span class="nc bnc" id="L2052" title="All 2 branches missed.">		} else if (Systems.UCUM.equals(c2.getSystem())) {</span>
-<span class="nc" id="L2053">			return 1;</span>
+<span class="nc bnc" id="L2052" title="All 2 branches missed.">		if (Systems.UCUM.equals(c1.getSystem())) {</span>
+<span class="nc" id="L2053">			return -1;</span>
+<span class="nc bnc" id="L2054" title="All 2 branches missed.">		} else if (Systems.UCUM.equals(c2.getSystem())) {</span>
+<span class="nc" id="L2055">			return 1;</span>
 		}
-<span class="nc" id="L2055">		return StringUtils.compare(c1.getSystem(), c2.getSystem());</span>
+<span class="nc" id="L2057">		return StringUtils.compare(c1.getSystem(), c2.getSystem());</span>
 	}
 
 	private static Coding getCoding(Composite composite, int index, boolean hasDisplay) {
-<span class="fc" id="L2059">		Type[] types = composite.getComponents();</span>
-<span class="fc" id="L2060">		int versionIndex = 6;</span>
-<span class="fc" id="L2061">		int codeSystemOID = 13;</span>
-<span class="pc bpc" id="L2062" title="1 of 2 branches missed.">		if (&quot;EI&quot;.equals(composite.getName())) { // NOSONAR Use of string comparison is correct</span>
-<span class="nc" id="L2063">			versionIndex = 99;</span>
-<span class="nc" id="L2064">			codeSystemOID = 2;</span>
-<span class="nc" id="L2065">			hasDisplay = false;</span>
-<span class="fc bfc" id="L2066" title="All 2 branches covered.">		} else if (index == 3) {</span>
-<span class="fc" id="L2067">			versionIndex = 7;</span>
-<span class="fc" id="L2068">			codeSystemOID = 16;</span>
-<span class="pc bpc" id="L2069" title="1 of 2 branches missed.">		} else if (index == 9) {</span>
-<span class="nc" id="L2070">			versionIndex = 12;</span>
-<span class="nc" id="L2071">			codeSystemOID = 20;</span>
+<span class="fc" id="L2061">		Type[] types = composite.getComponents();</span>
+<span class="fc" id="L2062">		int versionIndex = 6;</span>
+<span class="fc" id="L2063">		int codeSystemOID = 13;</span>
+<span class="pc bpc" id="L2064" title="1 of 2 branches missed.">		if (&quot;EI&quot;.equals(composite.getName())) { // NOSONAR Use of string comparison is correct</span>
+<span class="nc" id="L2065">			versionIndex = 99;</span>
+<span class="nc" id="L2066">			codeSystemOID = 2;</span>
+<span class="nc" id="L2067">			hasDisplay = false;</span>
+<span class="fc bfc" id="L2068" title="All 2 branches covered.">		} else if (index == 3) {</span>
+<span class="fc" id="L2069">			versionIndex = 7;</span>
+<span class="fc" id="L2070">			codeSystemOID = 16;</span>
+<span class="pc bpc" id="L2071" title="1 of 2 branches missed.">		} else if (index == 9) {</span>
+<span class="nc" id="L2072">			versionIndex = 12;</span>
+<span class="nc" id="L2073">			codeSystemOID = 20;</span>
 		}
 		try {
-<span class="fc" id="L2074">			Coding coding = new Coding();</span>
-<span class="pc bpc" id="L2075" title="1 of 2 branches missed.">			if (index &gt;= types.length) {</span>
-<span class="nc" id="L2076">				return null;</span>
+<span class="fc" id="L2076">			Coding coding = new Coding();</span>
+<span class="pc bpc" id="L2077" title="1 of 2 branches missed.">			if (index &gt;= types.length) {</span>
+<span class="nc" id="L2078">				return null;</span>
 			}
-<span class="fc" id="L2078">			setValue(coding::setCode, types, index++);</span>
-<span class="pc bpc" id="L2079" title="1 of 2 branches missed.">			if (hasDisplay) {</span>
-<span class="fc" id="L2080">				setValue(coding::setDisplay, types, index++);</span>
+<span class="fc" id="L2080">			setValue(coding::setCode, types, index++);</span>
+<span class="pc bpc" id="L2081" title="1 of 2 branches missed.">			if (hasDisplay) {</span>
+<span class="fc" id="L2082">				setValue(coding::setDisplay, types, index++);</span>
 			}
-<span class="fc" id="L2082">			setValue(coding::setSystem, types, index++);</span>
-<span class="fc" id="L2083">			setValue(coding::setVersion, types, versionIndex);</span>
-<span class="fc" id="L2084">			setValue(coding::setSystem, types, codeSystemOID);</span>
+<span class="fc" id="L2084">			setValue(coding::setSystem, types, index++);</span>
+<span class="fc" id="L2085">			setValue(coding::setVersion, types, versionIndex);</span>
+<span class="fc" id="L2086">			setValue(coding::setSystem, types, codeSystemOID);</span>
 
-<span class="fc" id="L2086">			Mapping.map(coding);</span>
-<span class="pc bpc" id="L2087" title="1 of 4 branches missed.">			if (!coding.hasDisplay() || coding.getDisplay().equals(coding.getCode())) {</span>
+<span class="fc" id="L2088">			Mapping.map(coding);</span>
+<span class="pc bpc" id="L2089" title="1 of 4 branches missed.">			if (!coding.hasDisplay() || coding.getDisplay().equals(coding.getCode())) {</span>
 				// See if we can do better for display names
-<span class="fc" id="L2089">				Mapping.setDisplay(coding);</span>
+<span class="fc" id="L2091">				Mapping.setDisplay(coding);</span>
 			}
-<span class="fc" id="L2091">			return coding;</span>
-<span class="nc" id="L2092">		} catch (Exception e) {</span>
-<span class="nc" id="L2093">			warn(&quot;Unexpected {} converting {}[{}] to Coding: {}&quot;, e.getClass().getName(), composite.toString(),</span>
-<span class="nc" id="L2094">					index, e.getMessage(), e);</span>
-<span class="nc" id="L2095">			return null;</span>
+<span class="fc" id="L2093">			return coding;</span>
+<span class="nc" id="L2094">		} catch (Exception e) {</span>
+<span class="nc" id="L2095">			warn(&quot;Unexpected {} converting {}[{}] to Coding: {}&quot;, e.getClass().getName(), composite.toString(),</span>
+<span class="nc" id="L2096">					index, e.getMessage(), e);</span>
+<span class="nc" id="L2097">			return null;</span>
 		}
 	}
 
 	private static Quantity getQuantity(Primitive pt) {
-<span class="fc" id="L2100">		Quantity qt = new Quantity();</span>
-<span class="fc" id="L2101">		String value = null;</span>
-<span class="fc bfc" id="L2102" title="All 2 branches covered.">		if (StringUtils.isBlank(pt.getValue())) {</span>
-<span class="fc" id="L2103">			return null;</span>
+<span class="fc" id="L2102">		Quantity qt = new Quantity();</span>
+<span class="fc" id="L2103">		String value = null;</span>
+<span class="fc bfc" id="L2104" title="All 2 branches covered.">		if (StringUtils.isBlank(pt.getValue())) {</span>
+<span class="fc" id="L2105">			return null;</span>
 		}
-<span class="fc" id="L2105">		value = pt.getValue().strip();</span>
-<span class="fc" id="L2106">		String[] valueParts = value.split(&quot;\\s+&quot;);</span>
+<span class="fc" id="L2107">		value = pt.getValue().strip();</span>
+<span class="fc" id="L2108">		String[] valueParts = value.split(&quot;\\s+&quot;);</span>
 		try {
-<span class="fc" id="L2108">			DecimalType v = new DecimalType(valueParts[0]);</span>
-<span class="fc" id="L2109">			qt.setValue(v.getValue());</span>
-<span class="fc" id="L2110">		} catch (NumberFormatException ex) {</span>
-<span class="fc" id="L2111">			warn(&quot;Unexpected NumberFormatException parsing {}: {}&quot;, valueParts[0], ex.getMessage(), ex);</span>
-<span class="fc" id="L2112">			return null;</span>
-<span class="fc" id="L2113">		}</span>
-<span class="fc bfc" id="L2114" title="All 2 branches covered.">		if (valueParts.length &gt; 1) {</span>
-<span class="fc" id="L2115">			Coding coding = Units.toUcum(valueParts[1]);</span>
-<span class="fc bfc" id="L2116" title="All 2 branches covered.">			if (coding != null) {</span>
-<span class="fc" id="L2117">				qt.setCode(coding.getCode());</span>
-<span class="fc" id="L2118">				qt.setUnit(coding.getDisplay());</span>
-<span class="fc" id="L2119">				qt.setSystem(coding.getSystem());</span>
+<span class="fc" id="L2110">			DecimalType v = new DecimalType(valueParts[0]);</span>
+<span class="fc" id="L2111">			qt.setValue(v.getValue());</span>
+<span class="fc" id="L2112">		} catch (NumberFormatException ex) {</span>
+<span class="fc" id="L2113">			warn(&quot;Unexpected NumberFormatException parsing {}: {}&quot;, valueParts[0], ex.getMessage(), ex);</span>
+<span class="fc" id="L2114">			return null;</span>
+<span class="fc" id="L2115">		}</span>
+<span class="fc bfc" id="L2116" title="All 2 branches covered.">		if (valueParts.length &gt; 1) {</span>
+<span class="fc" id="L2117">			Coding coding = Units.toUcum(valueParts[1]);</span>
+<span class="fc bfc" id="L2118" title="All 2 branches covered.">			if (coding != null) {</span>
+<span class="fc" id="L2119">				qt.setCode(coding.getCode());</span>
+<span class="fc" id="L2120">				qt.setUnit(coding.getDisplay());</span>
+<span class="fc" id="L2121">				qt.setSystem(coding.getSystem());</span>
 			}
 		}
-<span class="pc bpc" id="L2122" title="1 of 2 branches missed.">		if (qt.isEmpty()) {</span>
-<span class="nc" id="L2123">			return null;</span>
+<span class="pc bpc" id="L2124" title="1 of 2 branches missed.">		if (qt.isEmpty()) {</span>
+<span class="nc" id="L2125">			return null;</span>
 		}
-<span class="fc" id="L2125">		return qt;</span>
+<span class="fc" id="L2127">		return qt;</span>
 	}
 
 	private static void setUnits(Quantity qt, Type unit) {
-<span class="fc" id="L2129">		setUnits(qt, toCodeableConcept(unit));</span>
-<span class="fc" id="L2130">	}</span>
+<span class="fc" id="L2131">		setUnits(qt, toCodeableConcept(unit));</span>
+<span class="fc" id="L2132">	}</span>
 
 	/**
 	 * This method can be used to combine two separate fields into a singular
@@ -2138,72 +2140,72 @@ public class DatatypeConverter {
 	 * @param cc The concept representing the units.
 	 */
 	public static void setUnits(Quantity qt, CodeableConcept cc) {
-<span class="pc bpc" id="L2141" title="2 of 4 branches missed.">		if (cc != null &amp;&amp; cc.hasCoding()) {</span>
-<span class="fc" id="L2142">			List&lt;Coding&gt; codingList = cc.getCoding();</span>
-<span class="fc" id="L2143">			Collections.sort(codingList, DatatypeConverter::compareUnitsBySystem);</span>
-<span class="fc" id="L2144">			Coding coding = codingList.get(0);</span>
-<span class="fc" id="L2145">			Coding units = Units.toUcum(coding.getCode());</span>
-<span class="fc bfc" id="L2146" title="All 2 branches covered.">			if (units != null) {</span>
-<span class="fc" id="L2147">				qt.setCode(units.getCode());</span>
-<span class="fc" id="L2148">				qt.setSystem(Systems.UCUM);</span>
-<span class="fc" id="L2149">				qt.setUnit(units.getDisplay());</span>
+<span class="pc bpc" id="L2143" title="2 of 4 branches missed.">		if (cc != null &amp;&amp; cc.hasCoding()) {</span>
+<span class="fc" id="L2144">			List&lt;Coding&gt; codingList = cc.getCoding();</span>
+<span class="fc" id="L2145">			Collections.sort(codingList, DatatypeConverter::compareUnitsBySystem);</span>
+<span class="fc" id="L2146">			Coding coding = codingList.get(0);</span>
+<span class="fc" id="L2147">			Coding units = Units.toUcum(coding.getCode());</span>
+<span class="fc bfc" id="L2148" title="All 2 branches covered.">			if (units != null) {</span>
+<span class="fc" id="L2149">				qt.setCode(units.getCode());</span>
+<span class="fc" id="L2150">				qt.setSystem(Systems.UCUM);</span>
+<span class="fc" id="L2151">				qt.setUnit(units.getDisplay());</span>
 			} else {
-<span class="fc bfc" id="L2151" title="All 2 branches covered.">				qt.setUnit(coding.hasDisplay() ? coding.getDisplay() : coding.getCode());</span>
-<span class="fc" id="L2152">				qt.setSystem(coding.getSystem());</span>
-<span class="fc" id="L2153">				qt.setCode(coding.getCode());</span>
+<span class="fc bfc" id="L2153" title="All 2 branches covered.">				qt.setUnit(coding.hasDisplay() ? coding.getDisplay() : coding.getCode());</span>
+<span class="fc" id="L2154">				qt.setSystem(coding.getSystem());</span>
+<span class="fc" id="L2155">				qt.setCode(coding.getCode());</span>
 			}
 		}
-<span class="fc" id="L2156">	}</span>
+<span class="fc" id="L2158">	}</span>
 
 	private static void setValue(Consumer&lt;String&gt; consumer, Type[] types, int i) {
-<span class="fc" id="L2159">		Type type = adjustIfVaries(types, i);</span>
-<span class="fc bfc" id="L2160" title="All 2 branches covered.">		if (type instanceof Primitive st) {</span>
-<span class="fc" id="L2161">			String value = ParserUtils.toString(st);</span>
-<span class="fc bfc" id="L2162" title="All 2 branches covered.">			if (StringUtils.isNotEmpty(value)) {</span>
-<span class="fc" id="L2163">				consumer.accept(st.getValue());</span>
+<span class="fc" id="L2161">		Type type = adjustIfVaries(types, i);</span>
+<span class="fc bfc" id="L2162" title="All 2 branches covered.">		if (type instanceof Primitive st) {</span>
+<span class="fc" id="L2163">			String value = ParserUtils.toString(st);</span>
+<span class="fc bfc" id="L2164" title="All 2 branches covered.">			if (StringUtils.isNotEmpty(value)) {</span>
+<span class="fc" id="L2165">				consumer.accept(st.getValue());</span>
 			}
 		}
-<span class="fc" id="L2166">	}</span>
+<span class="fc" id="L2168">	}</span>
 
 	private static String toString(CodeableConcept cc) {
-<span class="nc bnc" id="L2169" title="All 2 branches missed.">		if (cc == null) {</span>
-<span class="nc" id="L2170">			return null;</span>
+<span class="nc bnc" id="L2171" title="All 2 branches missed.">		if (cc == null) {</span>
+<span class="nc" id="L2172">			return null;</span>
 		}
-<span class="nc bnc" id="L2172" title="All 2 branches missed.">		if (cc.hasText()) {</span>
-<span class="nc" id="L2173">			return cc.getText();</span>
+<span class="nc bnc" id="L2174" title="All 2 branches missed.">		if (cc.hasText()) {</span>
+<span class="nc" id="L2175">			return cc.getText();</span>
 		}
-<span class="nc bnc" id="L2175" title="All 2 branches missed.">		if (cc.hasCoding()) {</span>
-<span class="nc" id="L2176">			Coding coding = cc.getCodingFirstRep();</span>
-<span class="nc bnc" id="L2177" title="All 2 branches missed.">			if (coding.hasDisplay()) {</span>
-<span class="nc" id="L2178">				return coding.getDisplay();</span>
+<span class="nc bnc" id="L2177" title="All 2 branches missed.">		if (cc.hasCoding()) {</span>
+<span class="nc" id="L2178">			Coding coding = cc.getCodingFirstRep();</span>
+<span class="nc bnc" id="L2179" title="All 2 branches missed.">			if (coding.hasDisplay()) {</span>
+<span class="nc" id="L2180">				return coding.getDisplay();</span>
 			}
-<span class="nc bnc" id="L2180" title="All 2 branches missed.">			if (coding.hasCode()) {</span>
-<span class="nc" id="L2181">				return coding.getCode();</span>
+<span class="nc bnc" id="L2182" title="All 2 branches missed.">			if (coding.hasCode()) {</span>
+<span class="nc" id="L2183">				return coding.getCode();</span>
 			}
 		}
-<span class="nc" id="L2184">		return null;</span>
+<span class="nc" id="L2186">		return null;</span>
 	}
 
 	private static String toString(Quantity qt) {
-<span class="nc bnc" id="L2188" title="All 2 branches missed.">		if (qt == null) {</span>
-<span class="nc" id="L2189">			return null;</span>
+<span class="nc bnc" id="L2190" title="All 2 branches missed.">		if (qt == null) {</span>
+<span class="nc" id="L2191">			return null;</span>
 		}
-<span class="nc" id="L2191">		StringBuilder b = new StringBuilder();</span>
-<span class="nc bnc" id="L2192" title="All 2 branches missed.">		if (qt.hasValue()) {</span>
-<span class="nc" id="L2193">			b.append(qt.getValue().toString());</span>
+<span class="nc" id="L2193">		StringBuilder b = new StringBuilder();</span>
+<span class="nc bnc" id="L2194" title="All 2 branches missed.">		if (qt.hasValue()) {</span>
+<span class="nc" id="L2195">			b.append(qt.getValue().toString());</span>
 		}
-<span class="nc bnc" id="L2195" title="All 2 branches missed.">		if (qt.hasUnit()) {</span>
-<span class="nc" id="L2196">			b.append(' ');</span>
-<span class="nc" id="L2197">			b.append(qt.getUnit());</span>
+<span class="nc bnc" id="L2197" title="All 2 branches missed.">		if (qt.hasUnit()) {</span>
+<span class="nc" id="L2198">			b.append(' ');</span>
+<span class="nc" id="L2199">			b.append(qt.getUnit());</span>
 		}
-<span class="nc bnc" id="L2199" title="All 2 branches missed.">		if (StringUtils.isBlank(b)) {</span>
-<span class="nc" id="L2200">			return null;</span>
+<span class="nc bnc" id="L2201" title="All 2 branches missed.">		if (StringUtils.isBlank(b)) {</span>
+<span class="nc" id="L2202">			return null;</span>
 		}
-<span class="nc" id="L2202">		return b.toString();</span>
+<span class="nc" id="L2204">		return b.toString();</span>
 	}
 	
 	private static void warn(String message, Object ... args) {
-<span class="fc" id="L2206">		ErrorReporter.get().warn(message, args);</span>
-<span class="fc" id="L2207">	}</span>
+<span class="fc" id="L2208">		ErrorReporter.get().warn(message, args);</span>
+<span class="fc" id="L2209">	}</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
