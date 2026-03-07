@@ -1546,6 +1546,8 @@ public class DatatypeConverter {
 		ts1.setValue(value);
 		Calendar cal = ts1.getValueAsCalendar();
 		InstantType t = new InstantType(cal);
+		// Preserve the original timezone from the Calendar
+		t.setTimeZone(cal.getTimeZone());
 		t.setPrecision(prec);
 		return t;
 	}
