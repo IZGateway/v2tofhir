@@ -20,6 +20,7 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.function.Consumer;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.hl7.fhir.instance.model.api.IBase;
 import org.hl7.fhir.r4.model.Address;
@@ -455,11 +456,11 @@ public class DatatypeConverter {
 			type = StringUtils.defaultIfEmpty(type, "").toLowerCase();
 			subType = StringUtils.defaultIfEmpty(subType, "").toLowerCase();
 			newType = TYPE_MAP.get(subType);
-			if (StringUtils.contains(newType, "/")) {
+			if (Strings.CS.contains(newType, "/")) {
 				return newType;
 			}
 			newType = TYPE_MAP.get(type.toLowerCase());
-			if (StringUtils.contains(newType, "/")) {
+			if (Strings.CS.contains(newType, "/")) {
 				return newType;
 			}
 		}
@@ -2054,7 +2055,7 @@ public class DatatypeConverter {
 		} else if (Systems.UCUM.equals(c2.getSystem())) {
 			return 1;
 		}
-		return StringUtils.compare(c1.getSystem(), c2.getSystem());
+		return Strings.CS.compare(c1.getSystem(), c2.getSystem());
 	}
 
 	private static Coding getCoding(Composite composite, int index, boolean hasDisplay) {

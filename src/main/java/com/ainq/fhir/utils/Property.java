@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.ServiceConfigurationError;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.hl7.fhir.exceptions.FHIRException;
 import org.hl7.fhir.instance.model.api.IBase;
 import org.hl7.fhir.instance.model.api.IBaseExtension;
@@ -72,7 +73,7 @@ public class Property {
 			} else if (b instanceof Resource r) {
 				if (b instanceof Parameters params) {
 					for (ParametersParameterComponent param : params.getParameter()) {
-						if (StringUtils.equals(param.getName(), propertyName)) {
+						if (Strings.CS.equals(param.getName(), propertyName)) {
 							return new Property(propertyName, param.getValue());
 						}
 					}
