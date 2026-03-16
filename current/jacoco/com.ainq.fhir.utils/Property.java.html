@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.ServiceConfigurationError;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.hl7.fhir.exceptions.FHIRException;
 import org.hl7.fhir.instance.model.api.IBase;
 import org.hl7.fhir.instance.model.api.IBaseExtension;
@@ -27,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
  * Property is a facade over the various version specific model instances
  * of Property.
  */
-<span class="fc" id="L30">@Slf4j</span>
+<span class="fc" id="L31">@Slf4j</span>
 public class Property {
 	/**
 	 * Get the named property from the object.
@@ -37,82 +38,82 @@ public class Property {
 	 * @throws FHIRException When a FHIRException occurs in the HAPI framework
 	 */
 	public static Property getProperty(IBase b, String propertyName) throws FHIRException { // NOSONAR ? intentional
-<span class="pc bpc" id="L40" title="1 of 2 branches missed.">		if (&quot;resolve()&quot;.equals(propertyName)) {</span>
-<span class="nc bnc" id="L41" title="All 2 branches missed.">			if (b instanceof IBaseReference ref) {</span>
-<span class="nc" id="L42">				IBaseResource res = (IBaseResource)ref.getUserData(&quot;Resource&quot;);</span>
-<span class="nc bnc" id="L43" title="All 2 branches missed.">				return res == null ? null : new Property(res);</span>
+<span class="pc bpc" id="L41" title="1 of 2 branches missed.">		if (&quot;resolve()&quot;.equals(propertyName)) {</span>
+<span class="nc bnc" id="L42" title="All 2 branches missed.">			if (b instanceof IBaseReference ref) {</span>
+<span class="nc" id="L43">				IBaseResource res = (IBaseResource)ref.getUserData(&quot;Resource&quot;);</span>
+<span class="nc bnc" id="L44" title="All 2 branches missed.">				return res == null ? null : new Property(res);</span>
 			} else {
-<span class="nc" id="L45">				throw new IllegalArgumentException(&quot;Cannot resolve() a &quot; + b.getClass().getSimpleName());</span>
+<span class="nc" id="L46">				throw new IllegalArgumentException(&quot;Cannot resolve() a &quot; + b.getClass().getSimpleName());</span>
 			}
-<span class="pc bpc" id="L47" title="1 of 4 branches missed.">		} else if (Character.isUpperCase(propertyName.charAt(0)) &amp;&amp; b instanceof IBaseReference ref) {</span>
+<span class="pc bpc" id="L48" title="1 of 4 branches missed.">		} else if (Character.isUpperCase(propertyName.charAt(0)) &amp;&amp; b instanceof IBaseReference ref) {</span>
 			// Using XXX.reference.ResourceName is short-hand for resolve().ResourceName
 			// when b is a reference.
-<span class="fc" id="L50">			IBaseResource res = (IBaseResource)ref.getUserData(&quot;Resource&quot;);</span>
-<span class="pc bpc" id="L51" title="1 of 4 branches missed.">			return (res != null &amp;&amp; res.fhirType().equals(propertyName)) ? new Property(res) : null;</span>
+<span class="fc" id="L51">			IBaseResource res = (IBaseResource)ref.getUserData(&quot;Resource&quot;);</span>
+<span class="pc bpc" id="L52" title="1 of 4 branches missed.">			return (res != null &amp;&amp; res.fhirType().equals(propertyName)) ? new Property(res) : null;</span>
 		}
-<span class="pc bpc" id="L53" title="1 of 2 branches missed.">		if (propertyName.contains(&quot;-&quot;)) {</span>
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">		if (propertyName.contains(&quot;-&quot;)) {</span>
 			// The actual property is for an extension from us-core
-<span class="nc bnc" id="L55" title="All 2 branches missed.">			String extensionName = (propertyName.startsWith(&quot;us-core-&quot;) ?</span>
-<span class="nc" id="L56">					PathUtils.US_CORE_EXT_PREFIX : PathUtils.FHIR_EXT_PREFIX) + propertyName;</span>
-<span class="nc bnc" id="L57" title="All 2 branches missed.">			if (ExtensionUtil.hasExtension(b, extensionName)) {</span>
-<span class="nc" id="L58">				return new Property(ExtensionUtil.getExtensionByUrl(b, extensionName));</span>
+<span class="nc bnc" id="L56" title="All 2 branches missed.">			String extensionName = (propertyName.startsWith(&quot;us-core-&quot;) ?</span>
+<span class="nc" id="L57">					PathUtils.US_CORE_EXT_PREFIX : PathUtils.FHIR_EXT_PREFIX) + propertyName;</span>
+<span class="nc bnc" id="L58" title="All 2 branches missed.">			if (ExtensionUtil.hasExtension(b, extensionName)) {</span>
+<span class="nc" id="L59">				return new Property(ExtensionUtil.getExtensionByUrl(b, extensionName));</span>
 			} else {
-<span class="nc" id="L60">				return null;</span>
+<span class="nc" id="L61">				return null;</span>
 			}
 		}
 		
-<span class="fc" id="L64">		String[] theName = new String[] { propertyName };</span>
-<span class="fc" id="L65">		String type = PathUtils.getType(b, theName );</span>
-<span class="fc" id="L66">		propertyName = theName[0];</span>
+<span class="fc" id="L65">		String[] theName = new String[] { propertyName };</span>
+<span class="fc" id="L66">		String type = PathUtils.getType(b, theName );</span>
+<span class="fc" id="L67">		propertyName = theName[0];</span>
 
-<span class="pc bpc" id="L68" title="5 of 6 branches missed.">		switch (b.getClass().getPackageName()) {</span>
+<span class="pc bpc" id="L69" title="5 of 6 branches missed.">		switch (b.getClass().getPackageName()) {</span>
 		case &quot;org.hl7.fhir.r4.model&quot;:
-<span class="fc bfc" id="L70" title="All 2 branches covered.">			if (b instanceof Element e) {</span>
-<span class="fc" id="L71">				return new Property(e, propertyName, type);</span>
-<span class="pc bpc" id="L72" title="1 of 2 branches missed.">			} else if (b instanceof Resource r) {</span>
-<span class="fc bfc" id="L73" title="All 2 branches covered.">				if (b instanceof Parameters params) {</span>
-<span class="fc bfc" id="L74" title="All 2 branches covered.">					for (ParametersParameterComponent param : params.getParameter()) {</span>
-<span class="fc bfc" id="L75" title="All 2 branches covered.">						if (StringUtils.equals(param.getName(), propertyName)) {</span>
-<span class="fc" id="L76">							return new Property(propertyName, param.getValue());</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">			if (b instanceof Element e) {</span>
+<span class="fc" id="L72">				return new Property(e, propertyName, type);</span>
+<span class="pc bpc" id="L73" title="1 of 2 branches missed.">			} else if (b instanceof Resource r) {</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">				if (b instanceof Parameters params) {</span>
+<span class="fc bfc" id="L75" title="All 2 branches covered.">					for (ParametersParameterComponent param : params.getParameter()) {</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">						if (Strings.CS.equals(param.getName(), propertyName)) {</span>
+<span class="fc" id="L77">							return new Property(propertyName, param.getValue());</span>
 						}
-<span class="fc" id="L78">					}</span>
-<span class="fc" id="L79">					return null;</span>
+<span class="fc" id="L79">					}</span>
+<span class="fc" id="L80">					return null;</span>
 				}
-<span class="fc" id="L81">				return new Property(r, propertyName, type);</span>
+<span class="fc" id="L82">				return new Property(r, propertyName, type);</span>
 			}
-<span class="nc" id="L83">			break;</span>
+<span class="nc" id="L84">			break;</span>
 		case &quot;org.hl7.fhir.r4b.model&quot;:
-<span class="nc bnc" id="L85" title="All 2 branches missed.">			if (b instanceof org.hl7.fhir.r4b.model.Element e) {</span>
-<span class="nc" id="L86">				return new Property(e, propertyName, type);</span>
-<span class="nc bnc" id="L87" title="All 2 branches missed.">			} else if (b instanceof org.hl7.fhir.r4b.model.Resource r) {</span>
-<span class="nc" id="L88">				return new Property(r, propertyName, type);</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">			if (b instanceof org.hl7.fhir.r4b.model.Element e) {</span>
+<span class="nc" id="L87">				return new Property(e, propertyName, type);</span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">			} else if (b instanceof org.hl7.fhir.r4b.model.Resource r) {</span>
+<span class="nc" id="L89">				return new Property(r, propertyName, type);</span>
 			}
-<span class="nc" id="L90">			break;</span>
+<span class="nc" id="L91">			break;</span>
 		case &quot;org.hl7.fhir.r5.model&quot;:
-<span class="nc bnc" id="L92" title="All 2 branches missed.">			if (b instanceof org.hl7.fhir.r5.model.Element e) {</span>
-<span class="nc" id="L93">				return new Property(e, propertyName, type);</span>
-<span class="nc bnc" id="L94" title="All 2 branches missed.">			} else if (b instanceof org.hl7.fhir.r5.model.Resource r) {</span>
-<span class="nc" id="L95">				return new Property(r, propertyName, type);</span>
+<span class="nc bnc" id="L93" title="All 2 branches missed.">			if (b instanceof org.hl7.fhir.r5.model.Element e) {</span>
+<span class="nc" id="L94">				return new Property(e, propertyName, type);</span>
+<span class="nc bnc" id="L95" title="All 2 branches missed.">			} else if (b instanceof org.hl7.fhir.r5.model.Resource r) {</span>
+<span class="nc" id="L96">				return new Property(r, propertyName, type);</span>
 			}
-<span class="nc" id="L97">			break;</span>
+<span class="nc" id="L98">			break;</span>
 		case &quot;org.hl7.fhir.dstu3.model&quot;:
-<span class="nc bnc" id="L99" title="All 2 branches missed.">			if (b instanceof org.hl7.fhir.dstu3.model.Element e) {</span>
-<span class="nc" id="L100">				return new Property(e, propertyName, type);</span>
-<span class="nc bnc" id="L101" title="All 2 branches missed.">			} else if (b instanceof org.hl7.fhir.dstu3.model.Resource r) {</span>
-<span class="nc" id="L102">				return new Property(r, propertyName, type);</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">			if (b instanceof org.hl7.fhir.dstu3.model.Element e) {</span>
+<span class="nc" id="L101">				return new Property(e, propertyName, type);</span>
+<span class="nc bnc" id="L102" title="All 2 branches missed.">			} else if (b instanceof org.hl7.fhir.dstu3.model.Resource r) {</span>
+<span class="nc" id="L103">				return new Property(r, propertyName, type);</span>
 			}
-<span class="nc" id="L104">			break;</span>
+<span class="nc" id="L105">			break;</span>
 		case &quot;org.hl7.fhir.dstu2.model&quot;:
-<span class="nc bnc" id="L106" title="All 2 branches missed.">			if (b instanceof org.hl7.fhir.dstu2.model.Element e) {</span>
-<span class="nc" id="L107">				return new Property(e, propertyName, type);</span>
-<span class="nc bnc" id="L108" title="All 2 branches missed.">			} else if (b instanceof org.hl7.fhir.dstu2.model.Resource r) {</span>
-<span class="nc" id="L109">				return new Property(r, propertyName, type);</span>
+<span class="nc bnc" id="L107" title="All 2 branches missed.">			if (b instanceof org.hl7.fhir.dstu2.model.Element e) {</span>
+<span class="nc" id="L108">				return new Property(e, propertyName, type);</span>
+<span class="nc bnc" id="L109" title="All 2 branches missed.">			} else if (b instanceof org.hl7.fhir.dstu2.model.Resource r) {</span>
+<span class="nc" id="L110">				return new Property(r, propertyName, type);</span>
 			}
-<span class="nc" id="L111">			break;</span>
+<span class="nc" id="L112">			break;</span>
 		default:
-<span class="nc" id="L113">			throw new FHIRException(&quot;Unsupported package &quot; + b.getClass().getPackageName());</span>
+<span class="nc" id="L114">			throw new FHIRException(&quot;Unsupported package &quot; + b.getClass().getPackageName());</span>
 		}
-<span class="nc" id="L115">		throw new FHIRException(&quot;Not an Element&quot;);</span>
+<span class="nc" id="L116">		throw new FHIRException(&quot;Not an Element&quot;);</span>
 	}
 	
 	/**
@@ -127,57 +128,57 @@ public class Property {
 	 * @throws FHIRException When a the HAPI FHIR package is not present 
 	 */
 	public static IBase makeProperty(IBase b, String propertyName) throws FHIRException { // NOSONAR ? intentional
-<span class="nc bnc" id="L130" title="All 6 branches missed.">		switch (b.getClass().getPackageName()) {</span>
+<span class="nc bnc" id="L131" title="All 6 branches missed.">		switch (b.getClass().getPackageName()) {</span>
 		case &quot;org.hl7.fhir.r4.model&quot;:
-<span class="nc bnc" id="L132" title="All 2 branches missed.">			if (b instanceof Element e) {</span>
-<span class="nc" id="L133">				return e.makeProperty(propertyName.hashCode(), propertyName);</span>
-<span class="nc bnc" id="L134" title="All 2 branches missed.">			} else if (b instanceof Resource r) {</span>
-<span class="nc" id="L135">				return r.makeProperty(propertyName.hashCode(), propertyName);</span>
+<span class="nc bnc" id="L133" title="All 2 branches missed.">			if (b instanceof Element e) {</span>
+<span class="nc" id="L134">				return e.makeProperty(propertyName.hashCode(), propertyName);</span>
+<span class="nc bnc" id="L135" title="All 2 branches missed.">			} else if (b instanceof Resource r) {</span>
+<span class="nc" id="L136">				return r.makeProperty(propertyName.hashCode(), propertyName);</span>
 			}
-<span class="nc" id="L137">			break;</span>
+<span class="nc" id="L138">			break;</span>
 		case &quot;org.hl7.fhir.r4b.model&quot;:
-<span class="nc bnc" id="L139" title="All 2 branches missed.">			if (b instanceof org.hl7.fhir.r4b.model.Element e) {</span>
-<span class="nc" id="L140">				return e.makeProperty(propertyName.hashCode(), propertyName);</span>
-<span class="nc bnc" id="L141" title="All 2 branches missed.">			} else if (b instanceof org.hl7.fhir.r4b.model.Resource r) {</span>
-<span class="nc" id="L142">				return r.makeProperty(propertyName.hashCode(), propertyName);</span>
+<span class="nc bnc" id="L140" title="All 2 branches missed.">			if (b instanceof org.hl7.fhir.r4b.model.Element e) {</span>
+<span class="nc" id="L141">				return e.makeProperty(propertyName.hashCode(), propertyName);</span>
+<span class="nc bnc" id="L142" title="All 2 branches missed.">			} else if (b instanceof org.hl7.fhir.r4b.model.Resource r) {</span>
+<span class="nc" id="L143">				return r.makeProperty(propertyName.hashCode(), propertyName);</span>
 			}
-<span class="nc" id="L144">			break;</span>
+<span class="nc" id="L145">			break;</span>
 		case &quot;org.hl7.fhir.r5.model&quot;:
-<span class="nc bnc" id="L146" title="All 2 branches missed.">			if (b instanceof org.hl7.fhir.r5.model.Element e) {</span>
-<span class="nc" id="L147">				return e.makeProperty(propertyName.hashCode(), propertyName);</span>
-<span class="nc bnc" id="L148" title="All 2 branches missed.">			} else if (b instanceof org.hl7.fhir.r4.model.Resource r) {</span>
-<span class="nc" id="L149">				return r.makeProperty(propertyName.hashCode(), propertyName);</span>
+<span class="nc bnc" id="L147" title="All 2 branches missed.">			if (b instanceof org.hl7.fhir.r5.model.Element e) {</span>
+<span class="nc" id="L148">				return e.makeProperty(propertyName.hashCode(), propertyName);</span>
+<span class="nc bnc" id="L149" title="All 2 branches missed.">			} else if (b instanceof org.hl7.fhir.r4.model.Resource r) {</span>
+<span class="nc" id="L150">				return r.makeProperty(propertyName.hashCode(), propertyName);</span>
 			}
-<span class="nc" id="L151">			break;</span>
+<span class="nc" id="L152">			break;</span>
 		case &quot;org.hl7.fhir.dstu3.model&quot;:
-<span class="nc bnc" id="L153" title="All 2 branches missed.">			if (b instanceof org.hl7.fhir.dstu3.model.Element e) {</span>
-<span class="nc" id="L154">				return e.makeProperty(propertyName.hashCode(), propertyName);</span>
-<span class="nc bnc" id="L155" title="All 2 branches missed.">			} else if (b instanceof org.hl7.fhir.dstu3.model.Resource r) {</span>
-<span class="nc" id="L156">				return r.makeProperty(propertyName.hashCode(), propertyName);</span>
+<span class="nc bnc" id="L154" title="All 2 branches missed.">			if (b instanceof org.hl7.fhir.dstu3.model.Element e) {</span>
+<span class="nc" id="L155">				return e.makeProperty(propertyName.hashCode(), propertyName);</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">			} else if (b instanceof org.hl7.fhir.dstu3.model.Resource r) {</span>
+<span class="nc" id="L157">				return r.makeProperty(propertyName.hashCode(), propertyName);</span>
 			}
-<span class="nc" id="L158">			break;</span>
+<span class="nc" id="L159">			break;</span>
 		case &quot;org.hl7.fhir.dstu2.model&quot;:
-<span class="nc bnc" id="L160" title="All 2 branches missed.">			if (b instanceof org.hl7.fhir.dstu2.model.Element e) {</span>
-<span class="nc" id="L161">				org.hl7.fhir.dstu2.model.Property p = e.getChildByName(propertyName);</span>
+<span class="nc bnc" id="L161" title="All 2 branches missed.">			if (b instanceof org.hl7.fhir.dstu2.model.Element e) {</span>
+<span class="nc" id="L162">				org.hl7.fhir.dstu2.model.Property p = e.getChildByName(propertyName);</span>
 				// This is a ton of ick.
 				try {
-<span class="nc bnc" id="L164" title="All 2 branches missed.">					if (p.getMaxCardinality() &gt; 1) {</span>
-<span class="nc" id="L165">						return e.addChild(propertyName);</span>
+<span class="nc bnc" id="L165" title="All 2 branches missed.">					if (p.getMaxCardinality() &gt; 1) {</span>
+<span class="nc" id="L166">						return e.addChild(propertyName);</span>
 					} else {
-<span class="nc" id="L167">						e.setProperty(propertyName, null);</span>
-<span class="nc" id="L168">						return null;</span>
+<span class="nc" id="L168">						e.setProperty(propertyName, null);</span>
+<span class="nc" id="L169">						return null;</span>
 					}
-<span class="nc" id="L170">				} catch (FHIRException ex) {</span>
+<span class="nc" id="L171">				} catch (FHIRException ex) {</span>
 					// Cannot add the specified child, assume it is a singleton
 				}
-<span class="nc bnc" id="L173" title="All 2 branches missed.">			} else if (b instanceof org.hl7.fhir.dstu2.model.Resource r) {</span>
-<span class="nc" id="L174">				return r.addChild(propertyName);</span>
+<span class="nc bnc" id="L174" title="All 2 branches missed.">			} else if (b instanceof org.hl7.fhir.dstu2.model.Resource r) {</span>
+<span class="nc" id="L175">				return r.addChild(propertyName);</span>
 			}
-<span class="nc" id="L176">			break;</span>
+<span class="nc" id="L177">			break;</span>
 		default:
-<span class="nc" id="L178">			throw new FHIRException(&quot;Unsupported package &quot; + b.getClass().getPackageName());</span>
+<span class="nc" id="L179">			throw new FHIRException(&quot;Unsupported package &quot; + b.getClass().getPackageName());</span>
 		}
-<span class="nc" id="L180">		throw new FHIRException(&quot;Not an Element&quot;);</span>
+<span class="nc" id="L181">		throw new FHIRException(&quot;Not an Element&quot;);</span>
 	}
 	/**
 	 * Get values for a property of a FHIR Element
@@ -187,8 +188,8 @@ public class Property {
 	 */
 	@SuppressWarnings(&quot;unchecked&quot;)
 	public static List&lt;IBase&gt; getValues(IBase b, String propertyName) {
-<span class="fc" id="L190">		 Property prop = getProperty(b, propertyName);</span>
-<span class="fc bfc" id="L191" title="All 2 branches covered.">		 return prop == null ? Collections.emptyList() : (List&lt;IBase&gt;) prop.getValues();</span>
+<span class="fc" id="L191">		 Property prop = getProperty(b, propertyName);</span>
+<span class="fc bfc" id="L192" title="All 2 branches covered.">		 return prop == null ? Collections.emptyList() : (List&lt;IBase&gt;) prop.getValues();</span>
 	}
 	private final Object property;
 	private final Method getName;
@@ -200,93 +201,93 @@ public class Property {
 	private String name;
 	private String typeCode;
 	private String definition;
-<span class="pc" id="L203">	private int minCardinality = -1;</span>
-<span class="pc" id="L204">	private int maxCardinality = -1;</span>
-<span class="pc" id="L205">	private List&lt;? super IBase&gt; values = null;</span>
+<span class="pc" id="L204">	private int minCardinality = -1;</span>
+<span class="pc" id="L205">	private int maxCardinality = -1;</span>
+<span class="pc" id="L206">	private List&lt;? super IBase&gt; values = null;</span>
 	
-<span class="fc" id="L207">	private Property(Object property, String type) {</span>
-<span class="pc bpc" id="L208" title="1 of 2 branches missed.">		if (property == null) {</span>
-<span class="nc" id="L209">			throw new NullPointerException(&quot;Property cannot be null&quot;);</span>
+<span class="fc" id="L208">	private Property(Object property, String type) {</span>
+<span class="pc bpc" id="L209" title="1 of 2 branches missed.">		if (property == null) {</span>
+<span class="nc" id="L210">			throw new NullPointerException(&quot;Property cannot be null&quot;);</span>
 		}
-<span class="fc" id="L211">		this.property = property;</span>
-<span class="fc" id="L212">		Class&lt;?&gt; clazz = property.getClass();</span>
-<span class="fc" id="L213">		String method = null;</span>
+<span class="fc" id="L212">		this.property = property;</span>
+<span class="fc" id="L213">		Class&lt;?&gt; clazz = property.getClass();</span>
+<span class="fc" id="L214">		String method = null;</span>
 		try {
-<span class="fc" id="L215">			getName = clazz.getDeclaredMethod(method = &quot;getName&quot;);  // NOSONAR assignment OK</span>
-<span class="fc" id="L216">			getTypeCode = clazz.getDeclaredMethod(method = &quot;getTypeCode&quot;);	// NOSONAR assignment OK</span>
-<span class="fc" id="L217">			getDefinition = clazz.getDeclaredMethod(method = &quot;getDefinition&quot;);	// NOSONAR assignment OK</span>
-<span class="fc" id="L218">			getMinCardinality = clazz.getDeclaredMethod(method = &quot;getMinCardinality&quot;);	// NOSONAR assignment OK</span>
-<span class="fc" id="L219">			getMaxCardinality = clazz.getDeclaredMethod(method = &quot;getMaxCardinality&quot;);	// NOSONAR assignment OK</span>
-<span class="fc" id="L220">			getValues = clazz.getDeclaredMethod(method = &quot;getValues&quot;);	// NOSONAR assignment OK</span>
-<span class="pc bpc" id="L221" title="1 of 2 branches missed.">			if (type != null) {</span>
-<span class="nc" id="L222">				typeCode = type;</span>
+<span class="fc" id="L216">			getName = clazz.getDeclaredMethod(method = &quot;getName&quot;);  // NOSONAR assignment OK</span>
+<span class="fc" id="L217">			getTypeCode = clazz.getDeclaredMethod(method = &quot;getTypeCode&quot;);	// NOSONAR assignment OK</span>
+<span class="fc" id="L218">			getDefinition = clazz.getDeclaredMethod(method = &quot;getDefinition&quot;);	// NOSONAR assignment OK</span>
+<span class="fc" id="L219">			getMinCardinality = clazz.getDeclaredMethod(method = &quot;getMinCardinality&quot;);	// NOSONAR assignment OK</span>
+<span class="fc" id="L220">			getMaxCardinality = clazz.getDeclaredMethod(method = &quot;getMaxCardinality&quot;);	// NOSONAR assignment OK</span>
+<span class="fc" id="L221">			getValues = clazz.getDeclaredMethod(method = &quot;getValues&quot;);	// NOSONAR assignment OK</span>
+<span class="pc bpc" id="L222" title="1 of 2 branches missed.">			if (type != null) {</span>
+<span class="nc" id="L223">				typeCode = type;</span>
 			}
-<span class="nc" id="L224">		} catch (NoSuchMethodException | SecurityException e) {</span>
-<span class="nc" id="L225">			String msg = &quot;Cannot access Propery.&quot; + method + &quot;() method&quot;; </span>
-<span class="nc" id="L226">			log.error(&quot;{} : {}&quot;, msg, e.getMessage(), e);</span>
-<span class="nc" id="L227">			throw new ServiceConfigurationError(msg, e);</span>
-<span class="fc" id="L228">		}</span>
-<span class="fc" id="L229">	}</span>
+<span class="nc" id="L225">		} catch (NoSuchMethodException | SecurityException e) {</span>
+<span class="nc" id="L226">			String msg = &quot;Cannot access Propery.&quot; + method + &quot;() method&quot;; </span>
+<span class="nc" id="L227">			log.error(&quot;{} : {}&quot;, msg, e.getMessage(), e);</span>
+<span class="nc" id="L228">			throw new ServiceConfigurationError(msg, e);</span>
+<span class="fc" id="L229">		}</span>
+<span class="fc" id="L230">	}</span>
 	
-<span class="nc" id="L231">	private Property(IBaseExtension&lt;?, ?&gt; extension) {</span>
-<span class="nc" id="L232">		property = extension;</span>
-<span class="nc" id="L233">		name = StringUtils.substringAfter(extension.getUrl(), &quot;StructureDefinition/&quot;);</span>
-<span class="nc" id="L234">		typeCode = &quot;Extension&quot;;</span>
-<span class="nc" id="L235">		definition = &quot;Optional Extension Element - found in all resources.&quot;;</span>
-<span class="nc" id="L236">		minCardinality = 0;</span>
-<span class="nc" id="L237">		maxCardinality = Integer.MAX_VALUE;</span>
-<span class="nc" id="L238">		values = Collections.singletonList(extension.getValue());</span>
-<span class="nc" id="L239">		getName = null;</span>
-<span class="nc" id="L240">		getTypeCode = null;</span>
-<span class="nc" id="L241">		getDefinition = null;</span>
-<span class="nc" id="L242">		getMinCardinality = null;</span>
-<span class="nc" id="L243">		getMaxCardinality = null;</span>
-<span class="nc" id="L244">		getValues = null;</span>
-<span class="nc" id="L245">	}</span>
+<span class="nc" id="L232">	private Property(IBaseExtension&lt;?, ?&gt; extension) {</span>
+<span class="nc" id="L233">		property = extension;</span>
+<span class="nc" id="L234">		name = StringUtils.substringAfter(extension.getUrl(), &quot;StructureDefinition/&quot;);</span>
+<span class="nc" id="L235">		typeCode = &quot;Extension&quot;;</span>
+<span class="nc" id="L236">		definition = &quot;Optional Extension Element - found in all resources.&quot;;</span>
+<span class="nc" id="L237">		minCardinality = 0;</span>
+<span class="nc" id="L238">		maxCardinality = Integer.MAX_VALUE;</span>
+<span class="nc" id="L239">		values = Collections.singletonList(extension.getValue());</span>
+<span class="nc" id="L240">		getName = null;</span>
+<span class="nc" id="L241">		getTypeCode = null;</span>
+<span class="nc" id="L242">		getDefinition = null;</span>
+<span class="nc" id="L243">		getMinCardinality = null;</span>
+<span class="nc" id="L244">		getMaxCardinality = null;</span>
+<span class="nc" id="L245">		getValues = null;</span>
+<span class="nc" id="L246">	}</span>
 	
 	/**
 	 * Create a Property for a resource
 	 * @param res	The resource
 	 */
-<span class="fc" id="L251">	public Property(IBaseResource res) {</span>
-<span class="pc bpc" id="L252" title="1 of 2 branches missed.">		if (res == null) {</span>
-<span class="nc" id="L253">			throw new NullPointerException(&quot;res cannot be null&quot;);</span>
+<span class="fc" id="L252">	public Property(IBaseResource res) {</span>
+<span class="pc bpc" id="L253" title="1 of 2 branches missed.">		if (res == null) {</span>
+<span class="nc" id="L254">			throw new NullPointerException(&quot;res cannot be null&quot;);</span>
 		}
-<span class="fc" id="L255">		property = res;</span>
-<span class="fc" id="L256">		name = &quot;resolve()&quot;;</span>
-<span class="fc" id="L257">		typeCode = res.fhirType();</span>
-<span class="fc" id="L258">		definition = res.fhirType();</span>
-<span class="fc" id="L259">		minCardinality = 0;</span>
-<span class="fc" id="L260">		maxCardinality = Integer.MAX_VALUE;</span>
-<span class="fc" id="L261">		values = Collections.singletonList(res);</span>
-<span class="fc" id="L262">		getName = null;</span>
-<span class="fc" id="L263">		getTypeCode = null;</span>
-<span class="fc" id="L264">		getDefinition = null;</span>
-<span class="fc" id="L265">		getMinCardinality = null;</span>
-<span class="fc" id="L266">		getMaxCardinality = null;</span>
-<span class="fc" id="L267">		getValues = null;</span>
-<span class="fc" id="L268">	}</span>
+<span class="fc" id="L256">		property = res;</span>
+<span class="fc" id="L257">		name = &quot;resolve()&quot;;</span>
+<span class="fc" id="L258">		typeCode = res.fhirType();</span>
+<span class="fc" id="L259">		definition = res.fhirType();</span>
+<span class="fc" id="L260">		minCardinality = 0;</span>
+<span class="fc" id="L261">		maxCardinality = Integer.MAX_VALUE;</span>
+<span class="fc" id="L262">		values = Collections.singletonList(res);</span>
+<span class="fc" id="L263">		getName = null;</span>
+<span class="fc" id="L264">		getTypeCode = null;</span>
+<span class="fc" id="L265">		getDefinition = null;</span>
+<span class="fc" id="L266">		getMinCardinality = null;</span>
+<span class="fc" id="L267">		getMaxCardinality = null;</span>
+<span class="fc" id="L268">		getValues = null;</span>
+<span class="fc" id="L269">	}</span>
 	
 	/**
 	 * Create a property for a known property with the given name.
 	 * @param propertyName	The property
 	 * @param value	The value of the property
 	 */
-<span class="fc" id="L275">	public Property(String propertyName, Type value) {</span>
-<span class="fc" id="L276">		property = value;</span>
-<span class="fc" id="L277">		name = propertyName;</span>
-<span class="fc" id="L278">		typeCode = value.fhirType();</span>
-<span class="fc" id="L279">		definition = value.fhirType();</span>
-<span class="fc" id="L280">		minCardinality = 0;</span>
-<span class="fc" id="L281">		maxCardinality = 1;</span>
-<span class="fc" id="L282">		values = Collections.singletonList(value);</span>
-<span class="fc" id="L283">		getName = null;</span>
-<span class="fc" id="L284">		getTypeCode = null;</span>
-<span class="fc" id="L285">		getDefinition = null;</span>
-<span class="fc" id="L286">		getMinCardinality = null;</span>
-<span class="fc" id="L287">		getMaxCardinality = null;</span>
-<span class="fc" id="L288">		getValues = null;</span>
-<span class="fc" id="L289">	}</span>
+<span class="fc" id="L276">	public Property(String propertyName, Type value) {</span>
+<span class="fc" id="L277">		property = value;</span>
+<span class="fc" id="L278">		name = propertyName;</span>
+<span class="fc" id="L279">		typeCode = value.fhirType();</span>
+<span class="fc" id="L280">		definition = value.fhirType();</span>
+<span class="fc" id="L281">		minCardinality = 0;</span>
+<span class="fc" id="L282">		maxCardinality = 1;</span>
+<span class="fc" id="L283">		values = Collections.singletonList(value);</span>
+<span class="fc" id="L284">		getName = null;</span>
+<span class="fc" id="L285">		getTypeCode = null;</span>
+<span class="fc" id="L286">		getDefinition = null;</span>
+<span class="fc" id="L287">		getMinCardinality = null;</span>
+<span class="fc" id="L288">		getMaxCardinality = null;</span>
+<span class="fc" id="L289">		getValues = null;</span>
+<span class="fc" id="L290">	}</span>
 
 
 	
@@ -296,8 +297,8 @@ public class Property {
 	 * @param type The specific subtype or null (for properties like Patient.deceased)
 	 */
 	public Property(org.hl7.fhir.r4.model.Property property, String type) {
-<span class="fc" id="L299">		this((Object)property, type);</span>
-<span class="fc" id="L300">	}</span>
+<span class="fc" id="L300">		this((Object)property, type);</span>
+<span class="fc" id="L301">	}</span>
 
 	/**
 	 * Create a new Property accessing an R4b Property
@@ -305,8 +306,8 @@ public class Property {
 	 * @param type The specific subtype or null (for properties like Patient.deceased)
 	 */
 	public Property(org.hl7.fhir.r4b.model.Property property, String type) {
-<span class="nc" id="L308">		this((Object)property, type);</span>
-<span class="nc" id="L309">	}</span>
+<span class="nc" id="L309">		this((Object)property, type);</span>
+<span class="nc" id="L310">	}</span>
 
 	/**
 	 * Create a new Property accessing an R5 Property
@@ -314,8 +315,8 @@ public class Property {
 	 * @param type The specific subtype or null (for properties like Patient.deceased)
 	 */
 	public Property(org.hl7.fhir.r5.model.Property property, String type) {
-<span class="nc" id="L317">		this((Object)property, type);</span>
-<span class="nc" id="L318">	}</span>
+<span class="nc" id="L318">		this((Object)property, type);</span>
+<span class="nc" id="L319">	}</span>
 
 	/**
 	 * Create a new Property accessing a DSTU3 Property
@@ -323,8 +324,8 @@ public class Property {
 	 * @param type The specific subtype or null (for properties like Patient.deceased)
 	 */
 	public Property(org.hl7.fhir.dstu3.model.Property property, String type) {
-<span class="nc" id="L326">		this((Object)property, type);</span>
-<span class="nc" id="L327">	}</span>
+<span class="nc" id="L327">		this((Object)property, type);</span>
+<span class="nc" id="L328">	}</span>
 
 	/**
 	 * Create a new Property accessing a DSTU2 Property
@@ -332,8 +333,8 @@ public class Property {
 	 * @param type The specific subtype or null (for properties like Patient.deceased)
 	 */
 	public Property(org.hl7.fhir.dstu2.model.Property property, String type) {
-<span class="nc" id="L335">		this((Object)property, type);</span>
-<span class="nc" id="L336">	}</span>
+<span class="nc" id="L336">		this((Object)property, type);</span>
+<span class="nc" id="L337">	}</span>
 	
 	/** 
 	 * Create a property of an R4 Resource
@@ -342,8 +343,8 @@ public class Property {
 	 * @param type	The type for the property
 	 */
 	public Property(Resource r, String propertyName, String type) {
-<span class="fc" id="L345">		this(getChildByName(r, propertyName), type);</span>
-<span class="fc" id="L346">	}</span>
+<span class="fc" id="L346">		this(getChildByName(r, propertyName), type);</span>
+<span class="fc" id="L347">	}</span>
 
 	/** 
 	 * Create a property of an R4 Element
@@ -352,17 +353,17 @@ public class Property {
 	 * @param type	The type for the property
 	 */
 	public Property(Element e, String propertyName, String type) {
-<span class="fc" id="L355">		this(e.getChildByName(propertyName), type);</span>
-<span class="fc" id="L356">	}</span>
+<span class="fc" id="L356">		this(e.getChildByName(propertyName), type);</span>
+<span class="fc" id="L357">	}</span>
 
 	private static Object getChildByName(Resource r, String propertyName) {
-<span class="pc bpc" id="L359" title="3 of 4 branches missed.">		if (&quot;eventCoding&quot;.equals(propertyName) &amp;&amp; r instanceof MessageHeader mh) {</span>
-<span class="nc" id="L360">			return new org.hl7.fhir.r4.model.Property(</span>
+<span class="pc bpc" id="L360" title="3 of 4 branches missed.">		if (&quot;eventCoding&quot;.equals(propertyName) &amp;&amp; r instanceof MessageHeader mh) {</span>
+<span class="nc" id="L361">			return new org.hl7.fhir.r4.model.Property(</span>
 				propertyName, &quot;Coding&quot;, 
 				&quot;Code that identifies the event this message represents and connects it with its definition.&quot;, 
-<span class="nc" id="L363">				0, 1, mh.getEventCoding()); </span>
+<span class="nc" id="L364">				0, 1, mh.getEventCoding()); </span>
 		}
-<span class="fc" id="L365">		return r.getChildByName(propertyName);</span>
+<span class="fc" id="L366">		return r.getChildByName(propertyName);</span>
 	}
 
 	/** 
@@ -372,8 +373,8 @@ public class Property {
 	 * @param type	The type for the property
 	 */
 	public Property(org.hl7.fhir.r4b.model.Element e, String propertyName, String type) {
-<span class="nc" id="L375">		this(e.getChildByName(propertyName), type);</span>
-<span class="nc" id="L376">	}</span>
+<span class="nc" id="L376">		this(e.getChildByName(propertyName), type);</span>
+<span class="nc" id="L377">	}</span>
 
 	/** 
 	 * Create a property of an R4B Resource
@@ -382,8 +383,8 @@ public class Property {
 	 * @param type	The type for the property
 	 */
 	public Property(org.hl7.fhir.r4b.model.Resource r, String propertyName, String type) {
-<span class="nc" id="L385">		this(r.getChildByName(propertyName), type);</span>
-<span class="nc" id="L386">	}</span>
+<span class="nc" id="L386">		this(r.getChildByName(propertyName), type);</span>
+<span class="nc" id="L387">	}</span>
 
 	/** 
 	 * Create a property of an R5 Element
@@ -392,8 +393,8 @@ public class Property {
 	 * @param type	The type for the property
 	 */
 	public Property(org.hl7.fhir.r5.model.Element e, String propertyName, String type) {
-<span class="nc" id="L395">		this(e.getChildByName(propertyName), type);</span>
-<span class="nc" id="L396">	}</span>
+<span class="nc" id="L396">		this(e.getChildByName(propertyName), type);</span>
+<span class="nc" id="L397">	}</span>
 
 	/** 
 	 * Create a property of an R5 Resource
@@ -402,8 +403,8 @@ public class Property {
 	 * @param type	The type for the property
 	 */
 	public Property(org.hl7.fhir.r5.model.Resource r, String propertyName, String type) {
-<span class="nc" id="L405">		this(r.getChildByName(propertyName), type);</span>
-<span class="nc" id="L406">	}</span>
+<span class="nc" id="L406">		this(r.getChildByName(propertyName), type);</span>
+<span class="nc" id="L407">	}</span>
 
 	/** 
 	 * Create a property of an STU3 Element
@@ -412,8 +413,8 @@ public class Property {
 	 * @param type	The type for the property
 	 */
 	public Property(org.hl7.fhir.dstu3.model.Element e, String propertyName, String type) {
-<span class="nc" id="L415">		this(e.getChildByName(propertyName), type);</span>
-<span class="nc" id="L416">	}</span>
+<span class="nc" id="L416">		this(e.getChildByName(propertyName), type);</span>
+<span class="nc" id="L417">	}</span>
 
 	/** 
 	 * Create a property of an STU3 Resource
@@ -422,8 +423,8 @@ public class Property {
 	 * @param type	The type for the property
 	 */
 	public Property(org.hl7.fhir.dstu3.model.Resource r, String propertyName, String type) {
-<span class="nc" id="L425">		this(r.getChildByName(propertyName), type);</span>
-<span class="nc" id="L426">	}</span>
+<span class="nc" id="L426">		this(r.getChildByName(propertyName), type);</span>
+<span class="nc" id="L427">	}</span>
 
 	/** 
 	 * Create a property of an STU2 Element
@@ -432,8 +433,8 @@ public class Property {
 	 * @param type	The type for the property
 	 */
 	public Property(org.hl7.fhir.dstu2.model.Element e, String propertyName, String type) {
-<span class="nc" id="L435">		this(e.getChildByName(propertyName), type);</span>
-<span class="nc" id="L436">	}</span>
+<span class="nc" id="L436">		this(e.getChildByName(propertyName), type);</span>
+<span class="nc" id="L437">	}</span>
 
 	/** 
 	 * Create a property of an STU2 Resource
@@ -442,8 +443,8 @@ public class Property {
 	 * @param type	The type for the property
 	 */
 	public Property(org.hl7.fhir.dstu2.model.Resource r, String propertyName, String type) {
-<span class="nc" id="L445">		this(r.getChildByName(propertyName), type);</span>
-<span class="nc" id="L446">	}</span>
+<span class="nc" id="L446">		this(r.getChildByName(propertyName), type);</span>
+<span class="nc" id="L447">	}</span>
 
 	/**
 	 * Get the name of the property
@@ -451,12 +452,12 @@ public class Property {
 	 */
 	public String getName() {
 		try {
-<span class="nc bnc" id="L454" title="All 2 branches missed.">			if (name == null) {</span>
-<span class="nc" id="L455">				name = (String) getName.invoke(property);</span>
+<span class="nc bnc" id="L455" title="All 2 branches missed.">			if (name == null) {</span>
+<span class="nc" id="L456">				name = (String) getName.invoke(property);</span>
 			}
-<span class="nc" id="L457">			return name;</span>
-<span class="nc" id="L458">		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {</span>
-<span class="nc" id="L459">			throw new FHIRException(&quot;Error retriving property name&quot;, e);</span>
+<span class="nc" id="L458">			return name;</span>
+<span class="nc" id="L459">		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {</span>
+<span class="nc" id="L460">			throw new FHIRException(&quot;Error retriving property name&quot;, e);</span>
 		}
 	}
 	
@@ -466,12 +467,12 @@ public class Property {
 	 */
 	public String getTypeCode() {
 		try {
-<span class="nc bnc" id="L469" title="All 2 branches missed.">			if (typeCode == null) {</span>
-<span class="nc" id="L470">				typeCode = (String) getTypeCode.invoke(property);</span>
+<span class="nc bnc" id="L470" title="All 2 branches missed.">			if (typeCode == null) {</span>
+<span class="nc" id="L471">				typeCode = (String) getTypeCode.invoke(property);</span>
 			}
-<span class="nc" id="L472">			return typeCode;</span>
-<span class="nc" id="L473">		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {</span>
-<span class="nc" id="L474">			throw new FHIRException(&quot;Error retriving property type&quot;, e);</span>
+<span class="nc" id="L473">			return typeCode;</span>
+<span class="nc" id="L474">		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {</span>
+<span class="nc" id="L475">			throw new FHIRException(&quot;Error retriving property type&quot;, e);</span>
 		}
 	}
 
@@ -481,15 +482,15 @@ public class Property {
 	 * @throws ClassNotFoundException If the class cannot be found.
 	 */
 	public Class&lt;IBase&gt; getType() throws ClassNotFoundException {
-<span class="nc" id="L484">		String type = getTypeCode();</span>
-<span class="nc bnc" id="L485" title="All 2 branches missed.">		if (Character.isLowerCase(type.charAt(0))) {</span>
+<span class="nc" id="L485">		String type = getTypeCode();</span>
+<span class="nc bnc" id="L486" title="All 2 branches missed.">		if (Character.isLowerCase(type.charAt(0))) {</span>
 			// Convert a primitive to it's HAPI type name.
-<span class="nc" id="L487">			type = Character.toUpperCase(type.charAt(0)) + type.substring(1) + &quot;Type&quot;;</span>
+<span class="nc" id="L488">			type = Character.toUpperCase(type.charAt(0)) + type.substring(1) + &quot;Type&quot;;</span>
 		}
-<span class="nc" id="L489">		type = property.getClass().getPackageName() + type;</span>
+<span class="nc" id="L490">		type = property.getClass().getPackageName() + type;</span>
 		@SuppressWarnings(&quot;unchecked&quot;)
-<span class="nc" id="L491">		Class&lt;IBase&gt; t = (Class&lt;IBase&gt;) Patient.class.getClassLoader().loadClass(type); </span>
-<span class="nc" id="L492">		return t;</span>
+<span class="nc" id="L492">		Class&lt;IBase&gt; t = (Class&lt;IBase&gt;) Patient.class.getClassLoader().loadClass(type); </span>
+<span class="nc" id="L493">		return t;</span>
 	}
 
 	/**
@@ -498,12 +499,12 @@ public class Property {
 	 */
 	public String getDefinition() {
 		try {
-<span class="nc bnc" id="L501" title="All 2 branches missed.">			if (definition == null) {</span>
-<span class="nc" id="L502">				definition = (String) getDefinition.invoke(property);</span>
+<span class="nc bnc" id="L502" title="All 2 branches missed.">			if (definition == null) {</span>
+<span class="nc" id="L503">				definition = (String) getDefinition.invoke(property);</span>
 			}
-<span class="nc" id="L504">			return definition;</span>
-<span class="nc" id="L505">		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {</span>
-<span class="nc" id="L506">			throw new FHIRException(&quot;Error retriving property definition&quot;, e);</span>
+<span class="nc" id="L505">			return definition;</span>
+<span class="nc" id="L506">		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {</span>
+<span class="nc" id="L507">			throw new FHIRException(&quot;Error retriving property definition&quot;, e);</span>
 		}
 	}
 	
@@ -513,12 +514,12 @@ public class Property {
 	 */
 	public int getMinCardinality() {
 		try {
-<span class="nc bnc" id="L516" title="All 2 branches missed.">			if (minCardinality &lt; 0) {</span>
-<span class="nc" id="L517">				minCardinality = (int) getMinCardinality.invoke(property);</span>
+<span class="nc bnc" id="L517" title="All 2 branches missed.">			if (minCardinality &lt; 0) {</span>
+<span class="nc" id="L518">				minCardinality = (int) getMinCardinality.invoke(property);</span>
 			}
-<span class="nc" id="L519">			return minCardinality;</span>
-<span class="nc" id="L520">		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {</span>
-<span class="nc" id="L521">			throw new FHIRException(&quot;Error retriving property minCardinality&quot;, e);</span>
+<span class="nc" id="L520">			return minCardinality;</span>
+<span class="nc" id="L521">		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {</span>
+<span class="nc" id="L522">			throw new FHIRException(&quot;Error retriving property minCardinality&quot;, e);</span>
 		}
 	}
 	
@@ -528,12 +529,12 @@ public class Property {
 	 */
 	public int getMaxCardinality() {
 		try {
-<span class="nc bnc" id="L531" title="All 2 branches missed.">			if (maxCardinality &lt; 0) {</span>
-<span class="nc" id="L532">				maxCardinality = (int) getMaxCardinality.invoke(property);</span>
+<span class="nc bnc" id="L532" title="All 2 branches missed.">			if (maxCardinality &lt; 0) {</span>
+<span class="nc" id="L533">				maxCardinality = (int) getMaxCardinality.invoke(property);</span>
 			}
-<span class="nc" id="L534">			return maxCardinality;</span>
-<span class="nc" id="L535">		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {</span>
-<span class="nc" id="L536">			throw new FHIRException(&quot;Error retriving property maxCardinality&quot;, e);</span>
+<span class="nc" id="L535">			return maxCardinality;</span>
+<span class="nc" id="L536">		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {</span>
+<span class="nc" id="L537">			throw new FHIRException(&quot;Error retriving property maxCardinality&quot;, e);</span>
 		}
 	}
 	
@@ -544,12 +545,12 @@ public class Property {
 	@SuppressWarnings(&quot;unchecked&quot;)
 	List&lt;? super IBase&gt; getValues() { // NOSONAR ? intentional
 		try {
-<span class="fc bfc" id="L547" title="All 2 branches covered.">			if (values == null) {</span>
-<span class="fc" id="L548">				values = (List&lt;? super IBase&gt;) getValues.invoke(property);</span>
+<span class="fc bfc" id="L548" title="All 2 branches covered.">			if (values == null) {</span>
+<span class="fc" id="L549">				values = (List&lt;? super IBase&gt;) getValues.invoke(property);</span>
 			}
-<span class="fc" id="L550">			return values;</span>
-<span class="nc" id="L551">		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {</span>
-<span class="nc" id="L552">			throw new FHIRException(&quot;Error retriving property values&quot;, e);</span>
+<span class="fc" id="L551">			return values;</span>
+<span class="nc" id="L552">		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {</span>
+<span class="nc" id="L553">			throw new FHIRException(&quot;Error retriving property values&quot;, e);</span>
 		}
 	}
 }
