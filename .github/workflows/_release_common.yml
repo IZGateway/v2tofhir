@@ -109,7 +109,7 @@ jobs:
       - name: Configure Git
         run: |
           git config user.name "izg-release-automation[bot]"
-          git config user.email "${{ secrets.RELEASE_AUTOMATION_APP_ID }}-izg-release-automation[bot]@users.noreply.github.com"
+          git config user.email "izg-release-automation[bot]@users.noreply.github.com"
 
       - name: Validate prerequisites
         id: validate
