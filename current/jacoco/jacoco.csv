@@ -3,14 +3,14 @@ HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.segment,RXRParser,0,49,2,
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.segment,PD1Parser,261,35,24,2,45,11,16,5,4,4
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.segment,ORCParser,206,354,26,29,48,74,29,24,9,13
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.segment,RXAParser,126,346,30,39,24,78,23,30,2,16
-HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.segment,QAKParser,17,91,2,5,5,23,2,8,0,6
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.segment,OBRParser,231,0,34,0,60,0,38,0,20,0
+HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.segment,QAKParser,17,91,2,5,5,23,2,8,0,6
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.segment,RCPParser,10,100,6,8,1,22,5,7,0,5
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.segment,QIDParser,2,61,1,1,1,16,2,4,1,4
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.segment,OBXParser,999,503,134,56,210,118,118,36,15,18
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.segment,EVNParser,54,62,2,4,10,18,4,8,3,6
-HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.segment,Processor.NullProcessor,8,3,0,0,4,1,4,1,4,1
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.segment,NK1Parser,89,124,6,10,24,31,14,10,9,7
+HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.segment,Processor.NullProcessor,8,3,0,0,4,1,4,1,4,1
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.segment,DSCParser,2,55,1,1,1,14,2,4,1,4
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.segment,MSAParser,6,158,3,9,1,39,3,10,0,6
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.segment,IzDetail,141,285,31,33,28,68,22,19,1,8
@@ -34,9 +34,9 @@ HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.converter,Normalizer,121,
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.converter,DatatypeConverter,1691,2786,322,314,408,525,254,172,27,56
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.converter,MyGenericComposite,43,22,0,0,11,7,9,4,9,4
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.converter,BaseParser,173,460,17,37,22,118,18,28,3,16
+HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.converter,MyGenericPrimitive,47,22,0,0,13,7,10,4,10,4
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.converter,DatatypeConverter.Converter,7,0,0,0,1,0,1,0,1,0
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.converter,MessageParser,98,152,5,7,21,43,9,9,4,8
-HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.converter,MyGenericPrimitive,47,22,0,0,13,7,10,4,10,4
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.converter,Context,11,74,2,2,3,21,4,7,2,7
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.converter,DatatypeConverter.MyTSComponentOne,0,4,0,0,0,2,0,1,0,1
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.converter,Parser,87,236,13,21,19,42,12,15,3,7
