@@ -3,7 +3,7 @@
 ## Tech Stack
 
 **Framework:** Spring Boot (version 3.5.0)  
-**Language:** Java 17  
+**Language:** Java 21  
 **Build Tool:** Maven  
 **Core Libraries:**
 - **HL7 V2 Processing:** HAPI V2 (structures v2.1 through v2.8.1)
@@ -18,6 +18,54 @@
 **Additional Libraries:**
 - **Identifier Generation:** ULID-J
 - **Caching:** HAPI FHIR Caffeine Caching
+
+## Build & Test Commands
+
+```bash
+# Build
+mvn clean install          # Full build with tests
+mvn clean package          # Package without install
+mvn clean install -DskipTests  # Skip tests
+
+# Test
+mvn test                                      # All tests
+mvn test -Dtest=MessageParserTests            # Single test class
+mvn test -Dtest=MessageParserTests#testTheData  # Single test method
+
+# Security & coverage
+mvn dependency-check:check  # OWASP vulnerability scan (fails on CVSS >= 7)
+mvn clean site              # Full site: JavaDoc + JaCoCo + dependency report
+```
+
+Test class naming convention: suffix with `Tests` (not `Test`). Surefire is configured to match `**/*Tests.java`.
+
+## Architecture: V2 Message Flow
+
+```
+HL7 V2 String/Message
+  → MessageParser.convert()
+  → MSH parsed → Context initialized (event code, profile IDs)
+  → DocumentReference created with raw message as attachment
+  → Segments iterated; per segment:
+      → SegmentParser loaded by reflection (built-in or custom via V2TOFHIR_PARSER_PACKAGES)
+      → parser.setup() creates primary FHIR resource via createResource()
+      → FieldHandlers (driven by @ComesFrom) extract V2 fields → DatatypeConverter → FHIR types
+      → Multi-segment resources accumulate across segments (e.g., Patient from PID+PD1+PV1;
+        Immunization from ORC+RXA+RXR+OBX — use getLastResource() to access the in-progress resource)
+  → Bundle (BundleType.MESSAGE) returned with all resources
+```
+
+**Key classes in the flow:**
+
+| Class | Role |
+|---|---|
+| `MessageParser` | Entry point; orchestrates parse loop |
+| `BaseParser` | Abstract base; resource lifecycle, ULID assignment, parser discovery |
+| `AbstractSegmentParser` | Base for segment parsers; initializes FieldHandlers from annotations |
+| `DatatypeConverter` | 100+ static methods for V2↔FHIR type conversion |
+| `FieldHandler` | Bridges @ComesFrom annotations to actual field extraction + method invocation |
+| `Systems` | 150+ OID/URI constants (SNOMED, LOINC, CVX, NDC, RxNorm, UCUM, …) |
+| `Mapping` | Loads 100+ CSV concept maps from `src/main/resources/coding/` for V2↔FHIR code translation |
 
 ## Naming Conventions
 
@@ -62,18 +110,47 @@
 
 ## Annotation-Driven Development
 
-**@ComesFrom:** Documents V2-to-FHIR field mappings
-- Specifies source field/component indices
-- Documents FHIR paths and V2 terser paths
-- Supports priority-based processing order
+**@ComesFrom:** Documents and drives V2→FHIR field mappings. One method can carry multiple `@ComesFrom` annotations (each is a separate handler entry).
 
-**@Produces:** Declares resources created by parsers
-- Specifies primary resource type
-- Lists additional resource types in `extra` array
+| Attribute | Purpose |
+|---|---|
+| `path` | FHIR path for the target value (e.g., `"Patient.name"`) |
+| `field` | V2 field index (1-based) |
+| `component` | V2 component index within the field (optional) |
+| `source` | Terser path array (e.g., `"PID-5"`) — alternative to field+component |
+| `fhir` | Target FHIR type when it can't be inferred from path |
+| `map` | Concept map name (CSV file in `src/main/resources/coding/`) for code translation |
+| `table` | HL7 V2 table identifier |
+| `fixed` | Fixed string value to inject |
+| `priority` | Processing order (higher = earlier); default 0 |
+| `also` | Additional FHIR paths affected by this field |
 
-**Field Handlers:** Annotation-driven parsing using `FieldHandler` class
-- Initialize in static blocks
-- Process fields based on `@ComesFrom` annotations
+```java
+@Produces(segment = "PID", resource = Patient.class, extra = { RelatedPerson.class, Account.class })
+public class PIDParser extends AbstractSegmentParser {
+
+    @ComesFrom(path = "Patient.identifier", field = 2)
+    @ComesFrom(path = "Patient.identifier", field = 3)
+    @ComesFrom(path = "Patient.identifier", field = 20, comment = "Driver's License Number")
+    public void addIdentifier(Identifier ident) {
+        patient.addIdentifier(ident);
+    }
+}
+```
+
+**FieldHandler initialization** — always in a static block; FieldHandlers are shared across instances:
+
+```java
+private static final List<FieldHandler> fieldHandlers = new ArrayList<>();
+static {
+    AbstractSegmentParser.initFieldHandlers(PIDParser.class, fieldHandlers);
+}
+```
+
+**@Produces:** Class-level; declares primary resource and any extras the parser creates.
+- `segment` — V2 segment name (e.g., `"PID"`)
+- `resource` — Primary FHIR resource class
+- `extra` — Additional resource classes the parser may create
 
 ## Conversion Principles
 
@@ -163,6 +240,8 @@ src/
 - Coverage: Focus on edge cases (empty/null datatypes, malformed segments) and mapping correctness
 - Performance: Keep unit tests fast (<250ms each); heavier integration tests may be separately profiled
 
+**Test infrastructure pattern:** Message and segment tests use `TestData` objects loaded from `src/test/resources/`. Tests are parameterized via `@MethodSource`; each `TestData` carries both the V2 input and FHIRPath assertion expressions evaluated via `testData.evaluateAllAgainst(bundle)`. Use `parser.setIdGenerator(...)` for deterministic IDs in snapshot tests.
+
 **Dependencies:**
 - Use Maven for dependency management
 - Follow spring-boot-starter-parent versions
@@ -201,7 +280,7 @@ src/
 
 ## Maven Build Configuration
 
-**Compiler:** Java 17 with Lombok annotation processing  
+**Compiler:** Java 21 with Lombok annotation processing  
 **Testing:** Surefire plugin with JaCoCo code coverage  
 **Security:** OWASP dependency check (fails on CVSS >= 7)  
 **Reporting:** JavaDoc, project info, test reports, dependency check  
@@ -248,6 +327,8 @@ src/
 - Works with both V2 and FHIR types
 - Produces identical output for converted data
 - Supports validation and comparison
+
+**Concept Maps:** 100+ CSV files in `src/main/resources/coding/` map V2 codes to FHIR codes. Reference them by filename (without extension) in the `map` attribute of `@ComesFrom`. The `Mapping` utility loads and caches these at startup.
 
 ## License
 
