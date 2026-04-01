@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>QBPUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">gov.cdc.izgw.v2tofhir.utils</a> &gt; <span class="el_source">QBPUtils.java</span></div><h1>QBPUtils.java</h1><pre class="source lang-java linenums">package gov.cdc.izgw.v2tofhir.utils;
+
+import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.ServiceConfigurationError;
+
+import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.hl7v2.HL7Exception;
+import ca.uhn.hl7v2.model.DataTypeException;
+import ca.uhn.hl7v2.model.Message;
+import ca.uhn.hl7v2.model.Segment;
+import ca.uhn.hl7v2.model.Type;
+import ca.uhn.hl7v2.model.Varies;
+import ca.uhn.hl7v2.model.v251.datatype.CE;
+import ca.uhn.hl7v2.model.v251.message.QBP_Q11;
+import ca.uhn.hl7v2.model.v251.segment.MSH;
+import ca.uhn.hl7v2.model.v251.segment.QPD;
+import io.azam.ulidj.ULID;
+
+/**
+ * This class supports construction of an HL7 QBP Message following the
+ * CDC HL7 Version 2.5.1 Implementation Guide for Immunization Messaging
+ * from HTTP GET parameters retrieved using ServletRequest.getParameters()
+ * or from a map of Strings to a list of Strings.
+ * 
+ * NOTE On HAPI DatatypeException and HL7Exception:  The HAPI V2 code is pervasive with these
+ * checked exceptions due to message validation capabilities.  Well written HAPI code is 
+ * unlikely to encounter them.  As a user of this library, instead of catching the error
+ * wherever it occurs, you can just simply wrap a whole method that uses it in a try/catch block.
+ * 
+ * @see &lt;a href=&quot;https://repository.immregistries.org/files/resources/5bef530428317/hl7_2_5_1_release_1_5__2018_update.pdf&quot;&gt;CDC HL7 Version 2.5.1 Implementation Guide for Immunization Messaging&lt;/a&gt;
+ * 	
+ * @author Audacious Inquiry
+ */
+public class QBPUtils {
+<span class="fc" id="L39">	static final FhirContext R4 = FhirContext.forR4();</span>
+	private QBPUtils() {}
+	/**
+	 * Create a QBP message for an Immunization History (Z34) or Forecast (Z44)
+	 * @param profile	The message profile (Z34 or Z44).
+	 * @return The QBP message structure
+	 * @throws DataTypeException	If an error occured creating the message.
+	 */
+	public static QBP_Q11 createMessage(
+		String profile
+	) throws DataTypeException {
+<span class="fc" id="L50">		QBP_Q11 qbp = new QBP_Q11();</span>
+<span class="fc" id="L51">		MSH msh = qbp.getMSH();</span>
+		// Use standard encoding characters
+<span class="fc" id="L53">		msh.getFieldSeparator().setValue(&quot;|&quot;);</span>
+<span class="fc" id="L54">		msh.getEncodingCharacters().setValue(&quot;^~\\&amp;&quot;);</span>
+		
+		// Set time of message to now.
+<span class="fc" id="L57">		msh.getDateTimeOfMessage().getTime().setValue(new Date());</span>
+		
+		// Set message type correctly
+<span class="fc" id="L60">		msh.getMessageType().getMessageCode().setValue(&quot;QBP&quot;);</span>
+<span class="fc" id="L61">		msh.getMessageType().getTriggerEvent().setValue(&quot;Q11&quot;);</span>
+<span class="fc" id="L62">		msh.getMessageType().getMessageStructure().setValue(&quot;QBP_Q11&quot;);</span>
+		
+		// Give it a unique identifier
+<span class="fc" id="L65">		msh.getMessageControlID().setValue(ULID.random());</span>
+		
+		// Set version and protocol flags
+<span class="fc" id="L68">		msh.getVersionID().getVersionID().setValue(&quot;2.5.1&quot;);</span>
+<span class="fc" id="L69">		msh.getAcceptAcknowledgmentType().setValue(&quot;NE&quot;);</span>
+<span class="fc" id="L70">		msh.getApplicationAcknowledgmentType().setValue(&quot;NE&quot;);</span>
+		
+		// Set the profile identifer
+<span class="fc" id="L73">		msh.getMessageProfileIdentifier(0).getEntityIdentifier().setValue(profile);</span>
+<span class="fc" id="L74">		msh.getMessageProfileIdentifier(0).getNamespaceID().setValue(&quot;CDCPHINVS&quot;);</span>
+		
+		// Initialize the QPD segment appropriately
+<span class="fc" id="L77">		QPD qpd = qbp.getQPD();</span>
+<span class="fc" id="L78">		CE mqn = qpd.getMessageQueryName(); </span>
+<span class="fc" id="L79">		mqn.getIdentifier().setValue(profile);</span>
+<span class="fc" id="L80">		mqn.getText().setValue(</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">			&quot;Z44&quot;.equals(profile) ? &quot;Request Evaluated History and Forecast&quot; : &quot;Request Immunization History&quot;</span>
+		);
+<span class="fc" id="L83">		mqn.getNameOfCodingSystem().setValue(&quot;CDCPHINVS&quot;);</span>
+<span class="fc" id="L84">		qpd.getQueryTag().setValue(ULID.random());</span>
+		
+<span class="fc" id="L86">		return qbp;</span>
+	}
+	
+	/**
+	 * Set the sending application for a QBP message.
+	 * @param qbp	The QBP message
+	 * @param sendingApp	The sending application
+	 * @throws DataTypeException	If an error occurs
+	 */
+	public static void setSendingApplication(QBP_Q11 qbp, String sendingApp) throws DataTypeException {
+<span class="fc" id="L96">		qbp.getMSH().getSendingApplication().getHd1_NamespaceID().setValue(sendingApp);	</span>
+<span class="fc" id="L97">	}</span>
+	
+	/**
+	 * Set the sending facility for a QBP message.
+	 * @param qbp	The QBP message
+	 * @param sendingFacility	The sending facility
+	 * @throws DataTypeException	If an error occurs
+	 */
+	public static void setSendingFacility(QBP_Q11 qbp, String sendingFacility) throws DataTypeException {
+<span class="fc" id="L106">		qbp.getMSH().getSendingFacility().getHd1_NamespaceID().setValue(sendingFacility);	</span>
+<span class="fc" id="L107">	}</span>
+	
+	/**
+	 * Set the receiving application for a QBP message.
+	 * @param qbp	The QBP message
+	 * @param receivingApp	The receiving application
+	 * @throws DataTypeException	If an error occurs
+	 */
+	public static void setReceivingApplication(QBP_Q11 qbp, String receivingApp) throws DataTypeException {
+<span class="fc" id="L116">		qbp.getMSH().getReceivingApplication().getHd1_NamespaceID().setValue(receivingApp);	</span>
+<span class="fc" id="L117">	}</span>
+	
+	/**
+	 * Set the receiving facility for a QBP message.
+	 * @param qbp	The QBP message
+	 * @param receivingFacility	The receiving facility
+	 * @throws DataTypeException	If an error occurs
+	 */
+	public static void setReceivingFacility(QBP_Q11 qbp, String receivingFacility) throws DataTypeException {
+<span class="fc" id="L126">		qbp.getMSH().getReceivingFacility().getHd1_NamespaceID().setValue(receivingFacility);	</span>
+<span class="fc" id="L127">	}</span>
+
+	/**
+	 * Add the FHIR Search Request Parameters to the QBP Message.
+	 * 
+	 * @param qbp	The QBP message to update
+	 * @param map	A map such as that returned by ServletRequest.getParameters() 
+	 * containing the request parameters
+	 * @param isPatient 
+	 * @return	The updated QPD Segment
+	 * @throws HL7Exception If an error occurs
+	 */
+	public static IzQuery addRequestParamsToQPD(QBP_Q11 qbp, Map&lt;String, String[]&gt; map, boolean isPatient) throws HL7Exception {
+<span class="nc" id="L140">		IzQuery query = new IzQuery(qbp.getQPD());</span>
+<span class="nc bnc" id="L141" title="All 2 branches missed.">		for (Map.Entry&lt;String, String[]&gt; e: map.entrySet()) {</span>
+			// Modify the parameter name for patient queries so that the 
+			// keys are preceded by &quot;patient.&quot;
+<span class="nc bnc" id="L144" title="All 2 branches missed.">			String param = isPatient ? &quot;patient.&quot; + e.getKey() : e.getKey();</span>
+<span class="nc" id="L145">			query.addParameter(param, Arrays.asList(e.getValue()));</span>
+<span class="nc" id="L146">		}</span>
+<span class="nc" id="L147">		query.update();</span>
+<span class="nc" id="L148">		return query;</span>
+	}
+
+	/**
+	 * Add the FHIR Search Request Parameters to the QBP Message.
+	 * 
+	 * @param qbp	The QBP message to update
+	 * @param map	A map similar to that returned by ServletRequest.getParameters() 
+	 * containing the request parameters, save that arrays are lists.  NOTE: Only
+	 * patient.identifier can be repeated.  
+	 * @param isPatient True if the request is for the Patient resource
+	 * @return	The updated QPD Segment
+	 * @throws HL7Exception If an error occurs
+	 */
+	public static IzQuery addParamsToQPD(QBP_Q11 qbp, Map&lt;String, List&lt;String&gt;&gt; map, boolean isPatient) throws HL7Exception {
+<span class="fc" id="L163">		IzQuery query = new IzQuery(qbp.getQPD());</span>
+<span class="fc bfc" id="L164" title="All 2 branches covered.">		for (Map.Entry&lt;String, List&lt;String&gt;&gt; e: map.entrySet()) {</span>
+			// Modify the parameter name for patient queries so that the 
+			// keys are preceded by &quot;patient.&quot;
+<span class="pc bpc" id="L167" title="3 of 4 branches missed.">			String param = isPatient &amp;&amp; !e.getKey().startsWith(&quot;_&quot;) ? &quot;patient.&quot; + e.getKey() : e.getKey();</span>
+<span class="fc" id="L168">			query.addParameter(param, e.getValue());</span>
+<span class="fc" id="L169">		}</span>
+<span class="fc" id="L170">		query.update();</span>
+<span class="fc" id="L171">		return query;</span>
+	}
+
+
+	/**
+	 * Return the first repetition if it is empty, or create a new repetition
+	 * at the end.
+	 * 
+	 * @param segment	The segment
+	 * @param fieldNo	The field
+	 * @return	An empty repetition of the field 
+	 * @throws HL7Exception If an error occurs
+	 */
+	public static Type addRepetition(Segment segment, int fieldNo) throws HL7Exception {
+<span class="nc" id="L185">		Type[] t = segment.getField(fieldNo);</span>
+<span class="nc bnc" id="L186" title="All 4 branches missed.">		if (t.length == 1 &amp;&amp; t[0].isEmpty()) {</span>
+<span class="nc" id="L187">			return t[0];</span>
+		}
+<span class="nc" id="L189">		return addRepetition(segment, fieldNo, t.length);</span>
+	}
+
+	/**
+	 * A convenience method to get a field from a segment of a specific type
+	 * for fields with Varies content.
+	 * 
+	 * NOTE: This method works well on GenericSegments and segments that have
+	 * Varies content for the given field, -- OR -- if the type specified is 
+	 * the type that the segment model reports for the field (or a superclass of it).
+	 * 
+	 * @param &lt;T&gt;	The name of the type
+	 * @param segment	The segment to get it from
+	 * @param fieldNo	The field number
+	 * @param theClass	The type of field to get.
+	 * @return	The first field of that type in the segment.
+	 * @throws HL7Exception	If an error occurs
+	 */
+	static &lt;T extends Type&gt; T getField(Segment segment, int fieldNo, Class&lt;T&gt; theClass) throws HL7Exception {
+<span class="fc" id="L208">		Type type = segment.getField(fieldNo, 0);</span>
+<span class="pc bpc" id="L209" title="1 of 2 branches missed.">		if (theClass.isInstance(type)) {</span>
+<span class="nc" id="L210">			return theClass.cast(type);</span>
+		}
+<span class="fc" id="L212">		return convertType(theClass, type);</span>
+	}
+
+	/**
+	 * Add a repetition of the field, with the given type.
+	 * 
+	 * @param &lt;T&gt;	The type of the field
+	 * @param segment	The segment containing the field
+	 * @param fieldNo	The field number
+	 * @param theClass	The class for the type
+	 * @return	The requested field
+	 * @throws HL7Exception	If an error occurs
+	 */
+	public static &lt;T extends Type&gt; T addRepetition(Segment segment, int fieldNo, Class&lt;T&gt; theClass) throws HL7Exception {
+<span class="fc" id="L226">		Type[] t = segment.getField(fieldNo);</span>
+		Type type;
+<span class="pc bpc" id="L228" title="3 of 4 branches missed.">		if (t.length == 1 &amp;&amp; t[0].isEmpty()) {</span>
+<span class="nc" id="L229">			type = t[0];</span>
+		} else {
+<span class="fc" id="L231">			type = addRepetition(segment, fieldNo, t.length);</span>
+		}
+<span class="fc" id="L233">		return convertType(theClass, type);</span>
+	}
+	
+	private static &lt;T extends Type&gt; T convertType(Class&lt;T&gt; theClass, Type type)
+			throws ServiceConfigurationError, DataTypeException {
+<span class="pc bpc" id="L238" title="1 of 2 branches missed.">		if (theClass.isInstance(type)) {</span>
+<span class="nc" id="L239">			return theClass.cast(type);</span>
+		}
+		
+<span class="pc bpc" id="L242" title="1 of 2 branches missed.">		if (type instanceof Varies v) {</span>
+			T data;
+			try {
+<span class="fc" id="L245">				data = theClass.getDeclaredConstructor(Message.class).newInstance((Object)null);</span>
+<span class="nc" id="L246">			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException</span>
+					| InvocationTargetException | NoSuchMethodException | SecurityException e) {
+<span class="nc" id="L248">				throw new ServiceConfigurationError(&quot;HAPI V2 is not Happy creating &quot; + theClass.getName(), e);</span>
+<span class="fc" id="L249">			}</span>
+<span class="fc" id="L250">			v.setData(data);</span>
+<span class="fc" id="L251">			return data;</span>
+		}
+		
+<span class="nc" id="L254">		throw new IllegalArgumentException(&quot;Field is not an instance of Varies or of &quot; + theClass.getSimpleName());</span>
+	}
+
+	/**
+	 * Add a repetition of the field at the specified position
+	 * @param segment	The segment
+	 * @param fieldNo	The one-based field number
+	 * @param rep		The repetition number (zero-based)
+	 * @return	The new field.
+	 * @throws HL7Exception If an error occurs
+	 */
+	public static Type addRepetition(Segment segment, int fieldNo, int rep) throws HL7Exception {
+<span class="fc" id="L266">		Type[] t = segment.getField(fieldNo);</span>
+<span class="fc bfc" id="L267" title="All 2 branches covered.">		while (t.length &lt;= rep) {</span>
+<span class="fc" id="L268">			segment.getField(fieldNo, t.length);</span>
+<span class="fc" id="L269">			t = segment.getField(fieldNo);</span>
+		}
+<span class="fc" id="L271">		return t[rep];</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

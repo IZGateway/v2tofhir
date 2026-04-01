@@ -1,0 +1,431 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PathUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">com.ainq.fhir.utils</a> &gt; <span class="el_source">PathUtils.java</span></div><h1>PathUtils.java</h1><pre class="source lang-java linenums">package com.ainq.fhir.utils;
+
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.ServiceConfigurationError;
+import java.util.Set;
+import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.commons.lang3.StringUtils;
+import org.hl7.fhir.exceptions.FHIRException;
+import org.hl7.fhir.instance.model.api.IBase;
+import org.hl7.fhir.instance.model.api.IBaseExtension;
+import org.hl7.fhir.instance.model.api.IBaseHasExtensions;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * Parse a path from a FHIR Object and return the object.
+ * 
+ * Paths in this class use the Restricted FHIRPath syntax with a few minor simplifications:
+ * 
+ * extension('extension-url') can be written without the full url when the extension is
+ * a FHIR standard extension (comes from  http://hl7.org/fhir/StructureDefinition/), or from
+ * FHIR US Core (http://hl7.org/fhir/us/core/StructureDefinition/). Also, the quotes in the 
+ * extension name aren't necessary.
+ * Also, one can use the extension short name directly:
+ * 	Patient.us-core-race works as a path expression.
+ *  
+ * @author Audacious Inquiry
+ * @see &lt;a href=&quot;https://hl7.org/fhir/r4/fhirpath.html#simple&quot;&gt;FHIRPath Restricted Subset&lt;/a&gt;
+ */
+<span class="fc" id="L38">@Slf4j</span>
+public class PathUtils {
+	/** The extension prefix for standard FHIR extensions */
+	public static final String FHIR_EXT_PREFIX = &quot;http://hl7.org/fhir/StructureDefinition/&quot;;
+	/** The extension prefix for standard US Core extensions */
+	public static final String US_CORE_EXT_PREFIX = &quot;http://hl7.org/fhir/us/core/StructureDefinition/&quot;;
+
+<span class="nc" id="L45">	private PathUtils() {</span>
+<span class="nc" id="L46">		log.debug(&quot;{} loaded&quot;, PathUtils.class.getName());</span>
+<span class="nc" id="L47">	}</span>
+	/**
+	 * Controls behavior for get method, enabling new objects to be created.
+	 */
+<span class="nc" id="L51">	public enum Action {</span>
+		/** Get any existing property at the path, don't create intermediates */
+<span class="nc" id="L53">		GET_FIRST,</span>
+		/** Get the last property at the path */
+<span class="nc" id="L55">		GET_LAST,</span>
+		/** Create the property at the path if it doesn't exist (implies GET_LAST at intermediate stages) */
+<span class="nc" id="L57">		CREATE_IF_MISSING</span>
+	}
+	
+	/**
+	 * Get the values at the specified restricted FHIRPath 
+	 * @param b	The base object to get the 
+	 * @param path The FHIRPath
+	 * @return	The values
+	 */
+	public static  IBase get(IBase b, String path) {
+<span class="nc" id="L67">		return get(b, path, Action.GET_LAST);</span>
+	}
+	
+<span class="fc" id="L70">	static final String[] FHIR_TYPES = {			</span>
+			/* Primitives */
+			&quot;Boolean&quot;, &quot;Code&quot;, &quot;Id&quot;, &quot;Instant&quot;, &quot;Integer&quot;, &quot;Date&quot;, &quot;DateTime&quot;, &quot;Decimal&quot;, 
+			&quot;PositiveInt&quot;, &quot;String&quot;, &quot;Time&quot;, &quot;UnsignedInt&quot;, &quot;Uri&quot;, &quot;Url&quot;,
+			/* General Purpose */
+			&quot;Address&quot;, &quot;Age&quot;, &quot;Annotation&quot;, &quot;Attachment&quot;, &quot;Coding&quot;, &quot;CodeableConcept&quot;, &quot;ContactPoint&quot;,
+			&quot;Count&quot;, &quot;Distance&quot;, &quot;Duration&quot;, &quot;Identifier&quot;, &quot;Money&quot;, &quot;MoneyQuantity&quot;, &quot;Period&quot;, 
+			&quot;Quantity&quot;, &quot;Range&quot;, &quot;Ratio&quot;, &quot;RatioRange&quot;, &quot;Signature&quot;, &quot;SimpleQuantity&quot;, &quot;Timing&quot;,
+			/* Special Cases */
+			&quot;Expression&quot;, &quot;Reference&quot;
+		};
+
+	/** 
+	 * Endings on a property name that refine it to a specific type.  These names
+	 * are generally the name of a FHIR Type.
+	 * 
+	 * NOTE: .*? must use a reluctant qualifier to find the longest value for
+	 * type because DateTime ends with Time
+	 */
+<span class="fc" id="L89">	private static final Pattern VARIES_PATTERN = Pattern.compile(</span>
+<span class="fc" id="L90">		&quot;^.*?(&quot; + StringUtils.joinWith(&quot;|&quot;, (Object[])FHIR_TYPES) + &quot;)$&quot;</span>
+	);
+	/**
+	 * Exceptions to the above pattern.  These are few.  So far only
+	 * the following are false matches: 
+	 * Patient.birthDate, 
+	 * Immunization.doseQuantity,
+	 * Immunization.expirationDate,
+	 * ServiceRequest.locationCode,
+	 * Immunization.reasonCode 
+	 * Observation.referenceRange, 
+	 * Immunization.vaccineCode 
+	 */
+<span class="fc" id="L103">	private static final Set&lt;String&gt; VARIES_EXCEPTIONS = </span>
+<span class="fc" id="L104">		new LinkedHashSet&lt;&gt;(Arrays.asList(</span>
+			&quot;birthDate&quot;, &quot;doseQuantity&quot;, &quot;expirationDate&quot;,
+			&quot;locationCode&quot;, &quot;reasonCode&quot;, &quot;referenceRange&quot;, &quot;vaccineCode&quot;)
+		);
+	/**
+	 * Get all elements at the specified path.
+	 * @param b	The base
+	 * @param path	The path
+	 * @return	The list of elements at that location.
+	 */
+	public static List&lt;IBase&gt; getAll(IBase b, String path) {
+		
+<span class="fc" id="L116">		List&lt;IBase&gt; l = null;</span>
+		
+		// Split a restricted FHIRPath into its constituent parts.
+		// FUTURE: Handle cases like extension(&quot;http://hl7.org/ ...
+<span class="fc" id="L120">		String propertyName = StringUtils.substringBefore(path, &quot;.&quot;);</span>
+<span class="fc" id="L121">		String rest = StringUtils.substringAfter(path, &quot;.&quot;);</span>
+		do {
+			// Pass a reference to propertyName for functions which need to adjust it.
+<span class="fc" id="L124">			String[] theName = { propertyName };</span>
+<span class="fc" id="L125">			int index = getIndex(theName);</span>
+			
+<span class="fc" id="L127">			String extension = getExtension(theName);</span>
+<span class="fc" id="L128">			String type = getType(b, theName);</span>
+			
+			try {
+<span class="fc" id="L131">				l = getValues(b, theName[0], extension);</span>
+<span class="nc" id="L132">			} catch (Exception ex) {</span>
+<span class="nc" id="L133">				log.error(&quot;{} extracting {}.{}&quot;,</span>
+<span class="nc" id="L134">					ex.getClass().getSimpleName(),</span>
+<span class="nc" id="L135">					b.fhirType(),</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">					theName[0] + (StringUtils.isNotEmpty(extension) ? &quot;.&quot; + extension : &quot;&quot;),</span>
+					ex
+				);
+<span class="nc" id="L139">				throw ex;</span>
+<span class="fc" id="L140">			}</span>
+<span class="fc" id="L141">			filterListByType(type, l);</span>
+			
+<span class="fc" id="L143">			adjustListForIndex(l, index, null);</span>
+			
+<span class="fc" id="L145">			propertyName = StringUtils.substringBefore(rest, &quot;.&quot;);</span>
+<span class="fc" id="L146">			rest = StringUtils.substringAfter(rest, &quot;.&quot;);</span>
+			
+<span class="fc bfc" id="L148" title="All 2 branches covered.">			if (l.isEmpty()) {</span>
+<span class="fc" id="L149">				return Collections.emptyList();</span>
+			}
+<span class="fc" id="L151">			b = l.get(l.size() - 1); </span>
+<span class="fc bfc" id="L152" title="All 2 branches covered.">		} while (StringUtils.isNotEmpty(propertyName));</span>
+		
+<span class="fc" id="L154">		return l;</span>
+	}
+	
+	/**
+	 * Get the values at the specified restricted FHIRPath 
+	 * @param b		The context for the path
+	 * @param path	The path
+	 * @param action Which value to get or add
+	 * @return	The requested class.
+	 * @throws FHIRException when the property does not exist
+	 * @throws NumberFormatException when an index is not valid (&amp;lt; 0 or not a valid number)
+	 */
+	public static IBase get(IBase b, String path, Action action) {
+<span class="nc bnc" id="L167" title="All 2 branches missed.">		if (action == null) {</span>
+<span class="nc" id="L168">			action = Action.GET_LAST;</span>
+		}
+		
+		// Split a restricted FHIRPath into its constituent parts.
+		// FUTURE: Handle cases like extension(&quot;http://hl7.org/ ...
+<span class="nc" id="L173">		String propertyName = StringUtils.substringBefore(path, &quot;.&quot;);</span>
+<span class="nc" id="L174">		String rest = StringUtils.substringAfter(path, &quot;.&quot;);</span>
+<span class="nc" id="L175">		IBase result = b;</span>
+		do {
+			// Pass a reference to propertyName for functions which need to adjust it.
+<span class="nc" id="L178">			String[] theName = { propertyName };</span>
+<span class="nc" id="L179">			int index = getIndex(theName);</span>
+			
+<span class="nc" id="L181">			String extension = getExtension(theName);</span>
+<span class="nc" id="L182">			String type = getType(b, theName);</span>
+			
+<span class="nc" id="L184">			List&lt;IBase&gt; l = getValues(result, theName[0], extension);</span>
+	
+<span class="nc" id="L186">			filterListByType(type, l);</span>
+			
+<span class="nc" id="L188">			IBase result2 = result;</span>
+<span class="nc" id="L189">			Supplier&lt;IBase&gt; adder = () -&gt; Property.makeProperty(result2, theName[0]);</span>
+<span class="nc bnc" id="L190" title="All 4 branches missed.">			if (theName[0].length() == 0 &amp;&amp; type != null) {</span>
+				// When type is non-null and the property name is empty
+				// we just need to create a new object of the specified type.
+				// NOTE: This object won't be attached to ANYTHING b/c we don't
+				// know what list to attach it to.
+<span class="nc" id="L195">				adder = () -&gt; createElement(result2, type);</span>
+			}
+				
+<span class="nc" id="L198">			adjustListForIndex(l, index, </span>
+<span class="nc bnc" id="L199" title="All 2 branches missed.">					Action.CREATE_IF_MISSING.equals(action) ? adder : null</span>
+				);
+<span class="nc" id="L201">			propertyName = StringUtils.substringBefore(rest, &quot;.&quot;);</span>
+<span class="nc" id="L202">			rest = StringUtils.substringAfter(rest, &quot;.&quot;);</span>
+			
+<span class="nc bnc" id="L204" title="All 2 branches missed.">			if (l.isEmpty()) {</span>
+<span class="nc" id="L205">				return null;</span>
+			}
+<span class="nc bnc" id="L207" title="All 4 branches missed.">			if (Action.CREATE_IF_MISSING.equals(action) || Action.GET_FIRST.equals(action)) {</span>
+<span class="nc" id="L208">				result = l.get(0);</span>
+			} else { // Action == GET_LAST
+<span class="nc" id="L210">				result = l.get(l.size() - 1); </span>
+			}
+<span class="nc bnc" id="L212" title="All 2 branches missed.">		} while (StringUtils.isNotEmpty(propertyName));</span>
+		
+<span class="nc" id="L214">		return result;</span>
+	}
+
+	private static IBase createElement(IBase b, String type) {
+		@SuppressWarnings(&quot;unchecked&quot;)
+<span class="nc" id="L219">		Class&lt;IBase&gt; clazz = (Class&lt;IBase&gt;) b.getClass();</span>
+<span class="nc" id="L220">		String theClass = clazz.getPackageName() + &quot;.&quot; + type;</span>
+		try {
+			@SuppressWarnings(&quot;unchecked&quot;)
+<span class="nc" id="L223">			Class&lt;IBase&gt; class2 = (Class&lt;IBase&gt;)clazz.getClassLoader().loadClass(theClass);</span>
+<span class="nc" id="L224">			return class2.getDeclaredConstructor().newInstance();</span>
+<span class="nc" id="L225">		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException</span>
+				| NoSuchMethodException | SecurityException e) {
+<span class="nc" id="L227">			String msg = &quot;Cannot create &quot; + theClass;</span>
+<span class="nc" id="L228">			throw new ServiceConfigurationError(msg, e);</span>
+		} 
+	}
+
+	private static List&lt;IBase&gt; getValues(IBase b, String propertyName, String extension) {
+<span class="fc" id="L233">		List&lt;IBase&gt; l = new ArrayList&lt;&gt;();</span>
+<span class="pc bpc" id="L234" title="1 of 4 branches missed.">		if (extension != null &amp;&amp; b instanceof IBaseHasExtensions elem) {</span>
+<span class="fc bfc" id="L235" title="All 2 branches covered.">			for (IBaseExtension&lt;?, ?&gt; ext : elem.getExtension()) {</span>
+<span class="fc bfc" id="L236" title="All 2 branches covered.">				if (extension.equals(ext.getUrl())) {</span>
+<span class="fc" id="L237">					l.add(ext);</span>
+				}
+<span class="fc" id="L239">			}</span>
+<span class="pc bpc" id="L240" title="1 of 2 branches missed.">		} else if (propertyName.length() != 0) {</span>
+<span class="fc" id="L241">			l = Property.getValues(b, propertyName);</span>
+		} else {
+			// If propertName.length is zero, it's a type match on b
+<span class="nc" id="L244">			l.add(b);</span>
+		}
+<span class="fc" id="L246">		return l;</span>
+	}
+
+	private static IBase adjustListForIndex(List&lt;IBase&gt; l, int index, Supplier&lt;IBase&gt; adder) {
+<span class="fc" id="L250">		IBase result = null;</span>
+<span class="pc bpc" id="L251" title="1 of 2 branches missed.">		if (index &lt; 0) {</span>
+			// There was no index
+<span class="pc bpc" id="L253" title="3 of 4 branches missed.">			if (adder != null &amp;&amp; l.isEmpty()) {</span>
+				// a value should be created, but there are none, so create one
+<span class="nc" id="L255">				result = adder.get();</span>
+<span class="nc" id="L256">				l.add(result);</span>
+<span class="nc" id="L257">				return result;</span>
+			}
+<span class="fc" id="L259">			return null;</span>
+		}
+
+
+		// Item exists
+<span class="nc bnc" id="L264" title="All 2 branches missed.">		if (index &lt; l.size()) {</span>
+			// Get the index-th element.
+<span class="nc" id="L266">			result = l.get(index);</span>
+		} 
+		
+<span class="nc bnc" id="L269" title="All 2 branches missed.">		if (adder != null) {</span>
+			// Create the index-th element.
+<span class="nc bnc" id="L271" title="All 2 branches missed.">			while (index &gt;= l.size()) {</span>
+<span class="nc" id="L272">				result = adder.get();</span>
+<span class="nc" id="L273">				l.add(result);</span>
+			}
+		}
+		
+		// Adjust the list to contain ONLY the indexed item
+<span class="nc" id="L278">		l.clear();</span>
+<span class="nc bnc" id="L279" title="All 2 branches missed.">		if (result != null) {</span>
+<span class="nc" id="L280">			l.add(result);</span>
+		}
+<span class="nc" id="L282">		return result;</span>
+	}
+
+	private static void filterListByType(String type, List&lt;IBase&gt; l) {
+<span class="fc bfc" id="L286" title="All 2 branches covered.">		if (type != null) {</span>
+<span class="fc" id="L287">			Iterator&lt;IBase&gt; it = l.iterator();</span>
+<span class="fc bfc" id="L288" title="All 2 branches covered.">			while (it.hasNext()) {</span>
+<span class="fc" id="L289">				IBase b = it.next();</span>
+<span class="fc bfc" id="L290" title="All 2 branches covered.">				if (!isOfType(b, type)) {</span>
+<span class="fc" id="L291">					it.remove();</span>
+				}
+<span class="fc" id="L293">			}</span>
+		}
+<span class="fc" id="L295">	}</span>
+	
+<span class="fc" id="L297">	private static List&lt;String&gt; bases = Arrays.asList(&quot;DomainResource&quot;, &quot;Resource&quot;, &quot;Base&quot;, &quot;Object&quot;);</span>
+	private static boolean isOfType(IBase b, String type) {
+<span class="fc" id="L299">		Class&lt;?&gt; theClass = b.getClass();</span>
+		do {
+<span class="fc" id="L301">			String className = theClass.getSimpleName();</span>
+<span class="fc bfc" id="L302" title="All 4 branches covered.">			if (className.equals(type) || className.equals(type + &quot;Type&quot;)) {</span>
+<span class="fc" id="L303">				return true;</span>
+			}
+<span class="fc" id="L305">			theClass = theClass.getSuperclass();</span>
+<span class="fc bfc" id="L306" title="All 2 branches covered.">		} while (!bases.contains(theClass.getSimpleName()));</span>
+
+<span class="fc" id="L308">		return false;</span>
+	}
+
+	/**
+	 * Get information about a Property of a FHIR resource or element.
+	 * @param clazz	The class of the resource or element to get a property for.
+	 * @param originalPath	The path to the property
+	 * @return	The property
+	 */
+	public static Property getProperty(Class&lt;? extends IBase&gt; clazz, String originalPath) {
+<span class="nc" id="L318">		String path = originalPath;</span>
+<span class="nc" id="L319">		String propertyName = StringUtils.substringAfterLast(originalPath, &quot;.&quot;);</span>
+<span class="nc bnc" id="L320" title="All 4 branches missed.">		if (propertyName == null || propertyName.length() == 0) {</span>
+<span class="nc" id="L321">			throw new IllegalArgumentException(&quot;Path invalid &quot; + originalPath);</span>
+		}
+<span class="nc" id="L323">		path = path.substring(0, path.length() - propertyName.length() - 1);</span>
+<span class="nc" id="L324">		IBase r = null;</span>
+<span class="nc" id="L325">		IBase base = null;</span>
+		try {
+<span class="nc" id="L327">			r = clazz.getDeclaredConstructor().newInstance();</span>
+<span class="nc" id="L328">			base = get(r, path, Action.CREATE_IF_MISSING);</span>
+<span class="nc" id="L329">			return Property.getProperty(base, propertyName);</span>
+<span class="nc" id="L330">		} catch (Exception e) {</span>
+<span class="nc" id="L331">			throw new IllegalArgumentException(&quot;Error accessing propery &quot; + originalPath, e);</span>
+		}
+	}
+	
+	private static int getIndex(String[] propertyName) {
+<span class="fc" id="L336">		String index = StringUtils.substringBetween(propertyName[0], &quot;[&quot;, &quot;]&quot;);</span>
+		// Handle values with no index and special cases like value[x] 
+<span class="pc bpc" id="L338" title="1 of 4 branches missed.">		if (index == null || &quot;x&quot;.equals(index)) {</span>
+<span class="fc" id="L339">			return -1;</span>
+		}
+<span class="nc" id="L341">		propertyName[0] = StringUtils.substringBefore(propertyName[0], &quot;[&quot;);</span>
+		
+<span class="nc bnc" id="L343" title="All 2 branches missed.">		if (&quot;$last&quot;.equals(index)) {</span>
+<span class="nc" id="L344">			return Integer.MAX_VALUE;</span>
+		}
+		
+<span class="nc" id="L347">		int value = Integer.parseInt(index);</span>
+<span class="nc bnc" id="L348" title="All 2 branches missed.">		if (value &lt; 0) {</span>
+<span class="nc" id="L349">			throw new IndexOutOfBoundsException(value + &quot; is not a legal index value in &quot; + propertyName);</span>
+		}
+<span class="nc" id="L351">		return value;</span>
+	}
+	
+	private static String getExtension(String[] propertyName) {
+<span class="fc" id="L355">		String extension = null;</span>
+<span class="fc bfc" id="L356" title="All 2 branches covered.">		if (propertyName[0].startsWith(&quot;extension(&quot;)) {</span>
+<span class="fc" id="L357">			extension = StringUtils.substringBetween(propertyName[0], &quot;(&quot;, &quot;)&quot;);</span>
+<span class="fc" id="L358">			extension = StringUtils.replaceChars(extension, &quot;\&quot;'&quot;, &quot;&quot;);</span>
+<span class="pc bpc" id="L359" title="1 of 2 branches missed.">			if (extension == null) {</span>
+<span class="nc" id="L360">				throw new FHIRException(&quot;Missing extension name: &quot; + propertyName[0]);</span>
+<span class="pc bpc" id="L361" title="1 of 2 branches missed.">			} else if (StringUtils.substringAfter(extension, &quot;)&quot;).length() &gt; 0) {</span>
+<span class="nc" id="L362">				throw new FHIRException(&quot;Invalid extension function: &quot; + propertyName[0]);</span>
+			}
+			
+<span class="fc bfc" id="L365" title="All 2 branches covered.">		} else if (propertyName[0].contains(&quot;-&quot;)) {</span>
+			// save extension name
+<span class="fc" id="L367">			extension = propertyName[0];</span>
+			// Translate commonly used extension names.
+<span class="fc bfc" id="L369" title="All 2 branches covered.">			if (extension.startsWith(&quot;us-core&quot;)) {</span>
+<span class="fc" id="L370">				return US_CORE_EXT_PREFIX + extension;</span>
+			} 
+			
+<span class="pc bpc" id="L373" title="1 of 2 branches missed.">			if (!extension.startsWith(&quot;http:&quot;)) {</span>
+<span class="fc" id="L374">				return FHIR_EXT_PREFIX + extension;</span>
+			}
+		} else {
+<span class="fc" id="L377">			return null;</span>
+		}
+		
+<span class="fc" id="L380">		return extension;</span>
+	}
+	
+	/**
+	 * Get the type associated with the specified property.  
+	 * This is used to adjust property names by removing terminal type specifiers 
+	 * to correct names like eventCoding (which is actually named event[x] in 
+	 * MessageHeader).  The challenge is that some property names (e.g., Patient.birthDate)
+	 * also end in a type name, but don't follow that pattern.
+	 * 
+	 * @param b	The base fhir object having the property
+	 * @param propertyName	The name of the property.
+	 * @return
+	 */
+	static String getType(IBase b, String[] propertyName) {
+		// Deal with special cases
+<span class="pc bpc" id="L396" title="1 of 4 branches missed.">		if (&quot;Reference&quot;.equals(b.fhirType()) &amp;&amp; Character.isUpperCase(propertyName[0].charAt(0))) {</span>
+			// allow shortcut for Reference.TypeName
+<span class="fc" id="L398">			return null;</span>
+		}
+		
+<span class="fc" id="L401">		String type = null;</span>
+<span class="pc bpc" id="L402" title="1 of 2 branches missed.">		if (Character.isUpperCase(propertyName[0].charAt(0))) {</span>
+			// A property name such as Bundle, IntegerType, etc, is assumed to be a type.
+<span class="nc" id="L404">			type = propertyName[0];</span>
+<span class="nc" id="L405">			propertyName[0] = &quot;&quot;;</span>
+<span class="nc" id="L406">			return type;</span>
+		} 
+<span class="pc bpc" id="L408" title="1 of 2 branches missed.">		if (propertyName[0].startsWith(&quot;ofType(&quot;)) {</span>
+<span class="nc" id="L409">			type = StringUtils.substringBetween(&quot;ofType(&quot;, &quot;)&quot;);</span>
+<span class="nc bnc" id="L410" title="All 4 branches missed.">			if (StringUtils.substringAfter(propertyName[0], &quot;)&quot;).length() != 0 || type == null) {</span>
+<span class="nc" id="L411">				throw new FHIRException(&quot;Invalid ofType call: &quot; + propertyName);</span>
+			}
+<span class="nc" id="L413">			propertyName[0] = propertyName[0].substring(0, propertyName[0].length() - type.length());</span>
+<span class="fc bfc" id="L414" title="All 2 branches covered.">		} else if (VARIES_EXCEPTIONS.contains(propertyName[0])) {</span>
+			// This is an exception to the rule for property names ending
+			// in a type.
+<span class="fc" id="L417">			return null;</span>
+		} else {
+<span class="fc" id="L419">			Matcher m = VARIES_PATTERN.matcher(propertyName[0]);</span>
+<span class="fc bfc" id="L420" title="All 2 branches covered.">			if (m.matches()) {</span>
+<span class="fc" id="L421">				type = m.group(1);</span>
+<span class="fc" id="L422">				propertyName[0] = </span>
+<span class="fc" id="L423">					StringUtils.left(</span>
+<span class="fc" id="L424">						propertyName[0], propertyName[0].length() - type.length()</span>
+					) + &quot;[x]&quot;;
+			}
+		}
+<span class="fc" id="L428">		return type;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

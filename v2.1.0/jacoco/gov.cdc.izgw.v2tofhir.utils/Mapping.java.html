@@ -1,0 +1,935 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Mapping.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">gov.cdc.izgw.v2tofhir.utils</a> &gt; <span class="el_source">Mapping.java</span></div><h1>Mapping.java</h1><pre class="source lang-java linenums">package gov.cdc.izgw.v2tofhir.utils;
+
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.StringReader;
+import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.Collections;
+import java.util.Arrays;
+import java.util.ServiceConfigurationError;
+
+import org.apache.commons.lang3.StringUtils;
+import org.hl7.fhir.r4.model.CodeSystem;
+import org.hl7.fhir.r4.model.CodeSystem.CodeSystemContentMode;
+import org.hl7.fhir.r4.model.CodeSystem.ConceptDefinitionComponent;
+import org.hl7.fhir.r4.model.CodeSystem.ConceptPropertyComponent;
+import org.hl7.fhir.r4.model.CodeType;
+import org.hl7.fhir.r4.model.CodeableConcept;
+import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.ConceptMap;
+import org.hl7.fhir.r4.model.ConceptMap.ConceptMapGroupComponent;
+import org.hl7.fhir.r4.model.ConceptMap.ConceptMapGroupUnmappedMode;
+import org.hl7.fhir.r4.model.Enumerations.ConceptMapEquivalence;
+import org.hl7.fhir.r4.model.Enumerations.PublicationStatus;
+import org.hl7.fhir.r4.model.Identifier;
+import org.hl7.fhir.r4.model.NamingSystem;
+import org.hl7.fhir.r4.model.NamingSystem.NamingSystemType;
+import org.hl7.fhir.r4.model.StringType;
+import org.hl7.fhir.r4.model.Type;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+
+import com.opencsv.CSVParserBuilder;
+import com.opencsv.CSVReader;
+import com.opencsv.CSVReaderBuilder;
+import com.opencsv.enums.CSVReaderNullFieldIndicator;
+
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * This utility class supports mapping between coded values and system names in V2 and FHIR
+ * 
+ * @author Audacious Inquiry
+ */
+<span class="fc" id="L46">@Slf4j</span>
+public class Mapping {
+	private static final String UNEXPECTED_ERROR_READING = &quot;Unexpected {} reading {}({}): {}&quot;;
+	/** constant used to store the original system in Type.userData for types with a System */
+	public static final String ORIGINAL_SYSTEM = &quot;originalSystem&quot;;
+	/** constant used to store the original display name in Type.userData for types with a display name */
+	public static final String ORIGINAL_DISPLAY = &quot;originalDisplay&quot;;
+	/** constant used to store the original coding Coding.userData for mapped values */
+	public static final String ORIGINAL = &quot;original&quot;;
+	/** constant used to store the mapped from system in Type.userData */
+	private static final String MAPPED_SYSTEM = &quot;mappedSystem&quot;;
+	private static final String MAPPED_DISPLAY = &quot;mappedDisplay&quot;;
+	/** The prefix for V2 tables in HL7 Terminology */
+
+	public static final String V2_TABLE_PREFIX = &quot;http://terminology.hl7.org/CodeSystem/v2-&quot;;
+
+<span class="fc" id="L62">	private static final PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();</span>
+<span class="fc" id="L63">	private static final Map&lt;String, String&gt; v2TablesUsed = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L64">	private static final Map&lt;String, Mapping&gt; codeMaps = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L65">	private static final Map&lt;String, ConceptMap&gt; conceptMaps = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L66">	private static final Map&lt;String, Map&lt;String, Coding&gt;&gt; codingMaps = new LinkedHashMap&lt;&gt;();</span>
+	static {
+<span class="fc" id="L68">		initConceptMaps();</span>
+<span class="fc" id="L69">		initVocabulary();</span>
+<span class="fc" id="L70">	}</span>
+	
+	/**
+	 * Get the specified mapping
+	 * @param name	The name of the mapping
+	 * @return	The specified mapping or null if it was not found.
+	 */
+	public static Mapping getMapping(String name) {
+<span class="fc" id="L78">		return codeMaps.get(name);</span>
+	}
+
+	@Getter
+	private final String name;
+<span class="fc" id="L83">	private Map&lt;String, Coding&gt; mappingLookup = new LinkedHashMap&lt;&gt;();</span>
+
+	/**
+	 * Construct a new mapping with the given name
+	 * @param name	The name of the mapping.
+	 */
+<span class="fc" id="L89">	public Mapping(final String name) {</span>
+<span class="fc" id="L90">		this.name = name;</span>
+<span class="fc" id="L91">	}</span>
+	
+	/**
+	 * Return the mapping as a concept map
+	 * @return	The concept map.
+	 */
+	public ConceptMap asConceptMap() {
+<span class="nc" id="L98">		ConceptMap m = conceptMaps.computeIfAbsent(name, k -&gt; new ConceptMap().setName(name));</span>
+<span class="nc" id="L99">		Map&lt;String, ConceptMap.ConceptMapGroupComponent&gt; groups = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">		for (Map.Entry&lt;String, Coding&gt; e: mappingLookup.entrySet()) {</span>
+<span class="nc" id="L101">			Coding coding = e.getValue();</span>
+<span class="nc" id="L102">			String code = e.getKey();</span>
+<span class="nc" id="L103">			String system = coding.getUserString(MAPPED_SYSTEM);</span>
+<span class="nc" id="L104">			ConceptMapGroupComponent group = </span>
+<span class="nc" id="L105">				groups.computeIfAbsent(system + coding.getSystem(),</span>
+<span class="nc" id="L106">					k -&gt; m.addGroup().setSource(system).setTarget(coding.getSystem()));</span>
+<span class="nc bnc" id="L107" title="All 2 branches missed.">			if (&quot;*&quot;.equals(code)) {</span>
+<span class="nc" id="L108">				group.getUnmapped()</span>
+<span class="nc" id="L109">					.setMode(ConceptMapGroupUnmappedMode.FIXED)</span>
+<span class="nc" id="L110">					.setCode(coding.getCode())</span>
+<span class="nc" id="L111">					.setDisplay(coding.getDisplay());</span>
+			} else {
+<span class="nc" id="L113">				group.addElement()</span>
+<span class="nc" id="L114">					.setCode(code)</span>
+<span class="nc" id="L115">					.setDisplay(coding.getUserString(MAPPED_DISPLAY))</span>
+<span class="nc" id="L116">					.addTarget()</span>
+<span class="nc" id="L117">						.setCode(coding.getCode())</span>
+<span class="nc" id="L118">						.setDisplay(coding.getDisplay())</span>
+<span class="nc" id="L119">						.setEquivalence(ConceptMapEquivalence.RELATEDTO); // we don't know any more than this.</span>
+			}
+<span class="nc" id="L121">		}</span>
+<span class="nc" id="L122">		return m;</span>
+	}
+	
+	/**
+	 * Map a string using the to Coding map.
+	 * @param text	The string to map
+	 * @return	The coding or null if no match
+	 */
+	public Coding mapCode(String text) { // NOSONAR the data flow is fine
+<span class="pc bpc" id="L131" title="1 of 2 branches missed.">		if (text == null) {</span>
+<span class="nc" id="L132">			return null;</span>
+		}
+<span class="fc" id="L134">		return mapCode(new Coding(null, text, null), true, mappingLookup);</span>
+	}
+	
+	/**
+	 * Map a coding using the to Coding map.
+	 * @param coding	The coding to map
+	 * @param useAny	If there is a &quot;*&quot; mapping, use it. 
+	 * @return	The coding or null if no match, or coding cannot be mapped
+	 */
+	public Coding mapCode(Coding coding, boolean useAny) {
+<span class="fc" id="L144">		return mapCode(coding, useAny, mappingLookup);</span>
+	}
+	
+	/**
+	 * Reverse map a coding using the to Coding map.
+	 * @param coding	The coding to map
+	 * @param useAny	If there is a &quot;*&quot; mapping, use it. 
+	 * @return	The coding or null if no match, or coding cannot be mapped
+	 */
+	public Coding unMapCode(Coding coding, boolean useAny) {
+<span class="nc bnc" id="L154" title="All 2 branches missed.">		if (coding.hasUserData(ORIGINAL)) {</span>
+			// We have the original value, use it.
+<span class="nc" id="L156">			return (Coding) coding.getUserData(ORIGINAL);</span>
+		}
+		// FUTURE: Improve this to reverse walk the concept map
+<span class="nc" id="L159">		return null;</span>
+	}
+	
+	/**
+	 * Map a coding using the specified Coding map.
+	 * @param map	The map to use
+	 * @param coding	The coding to map
+	 * @param useAny	If there is a &quot;*&quot; mapping, use it. 
+	 * @return	The coding or null if no match, or coding cannot be mapped
+	 */
+	private Coding mapCode(Coding coding, boolean useAny, Map&lt;String, Coding&gt; map) {
+<span class="pc bpc" id="L170" title="2 of 6 branches missed.">		if (coding.isEmpty() || (coding.hasCode() &amp;&amp; coding.hasSystem())) {</span>
+<span class="fc" id="L171">			return null;</span>
+		}
+<span class="fc" id="L173">		Coding mapped = null;</span>
+<span class="pc bpc" id="L174" title="1 of 2 branches missed.">		if (coding.hasCode()) {</span>
+<span class="fc" id="L175">			mapped = map.get(coding.getCode());</span>
+<span class="fc bfc" id="L176" title="All 2 branches covered.">			if (mapped == null) {</span>
+<span class="fc" id="L177">				mapped = map.get(coding.getCode().toUpperCase());</span>
+			}
+<span class="fc bfc" id="L179" title="All 2 branches covered.">			if (mapped != null) {</span>
+<span class="fc" id="L180">				String mappedSystem = mapped.getUserString(MAPPED_SYSTEM);</span>
+<span class="pc bpc" id="L181" title="3 of 6 branches missed.">				if (!(&quot;*&quot;.equals(mappedSystem) || !coding.hasSystem() || StringUtils.equals(mappedSystem, coding.getSystem()))) {</span>
+<span class="nc" id="L182">					mapped = null;</span>
+				}
+<span class="pc bpc" id="L184" title="1 of 2 branches missed.">			} else if (useAny) {</span>
+<span class="fc" id="L185">				mapped = map.get(&quot;*&quot;);</span>
+			}
+		}
+		
+<span class="fc bfc" id="L189" title="All 2 branches covered.">		if (mapped != null) {</span>
+<span class="fc" id="L190">			mapped = mapped.copy();</span>
+<span class="fc" id="L191">			mapped.setUserData(ORIGINAL, coding);</span>
+		}
+<span class="fc" id="L193">		return mapped;</span>
+	}
+	
+	/**
+	 * Map a CodeableConcept using the to Coding map.
+	 * returns the first match on cc.getCoding or null if nothing matches.
+	 * Order in cc.getCoding is therefore important.
+	 * @param cc	The CodeableConcept
+	 * @return	The coding or null if no match
+	 */
+	public Coding mapCode(CodeableConcept cc) {
+<span class="nc bnc" id="L204" title="All 6 branches missed.">		if (cc.isEmpty() || (!cc.hasCoding() &amp;&amp; !cc.hasText())) {</span>
+<span class="nc" id="L205">			return null;</span>
+		}
+<span class="nc bnc" id="L207" title="All 2 branches missed.">		for (Coding coding: cc.getCoding()) {</span>
+<span class="nc" id="L208">			Coding mapped = mapCode(coding, false);</span>
+<span class="nc bnc" id="L209" title="All 2 branches missed.">			if (mapped != null) {</span>
+<span class="nc" id="L210">				return mapped;</span>
+			}
+<span class="nc" id="L212">		}</span>
+		// Check the text, if there is none, mapCode will still check
+		// the any mapping and return it.
+<span class="nc bnc" id="L215" title="All 2 branches missed.">		return mapCode(cc.hasText() ? cc.getText() : &quot;&quot;);</span>
+	}
+
+	/**
+	 * Lock the mapping values after initialization to prevent modification.
+	 */
+	void lock() {
+<span class="fc" id="L222">		mappingLookup = Collections.unmodifiableMap(mappingLookup);</span>
+<span class="fc" id="L223">	}</span>
+
+	/**
+	 * Initialize concept maps from V2-to-fhir CSV tables.
+	 */
+	private static void initConceptMaps() {
+		Resource[] conceptFiles;
+		Resource[] codeSystemFiles;
+		try {
+<span class="fc" id="L232">			conceptFiles = resolver.getResources(&quot;coding/HL7 Concept*.csv&quot;);</span>
+<span class="fc" id="L233">			codeSystemFiles = resolver.getResources(&quot;coding/HL7 CodeSystem*.csv&quot;);</span>
+<span class="nc" id="L234">		} catch (IOException e) {</span>
+<span class="nc" id="L235">			log.error(&quot;Cannot load coding resources&quot;);</span>
+<span class="nc" id="L236">			throw new ServiceConfigurationError(&quot;Cannot load coding resources&quot;, e);</span>
+<span class="fc" id="L237">		}</span>
+<span class="fc" id="L238">		int fileno = 0;</span>
+<span class="fc bfc" id="L239" title="All 2 branches covered.">		for (Resource file : conceptFiles) {</span>
+<span class="fc" id="L240">			fileno++;</span>
+<span class="fc" id="L241">			Mapping m = loadConceptFile(fileno, file);</span>
+<span class="fc" id="L242">			m.lock();</span>
+		}
+<span class="pc bpc" id="L244" title="1 of 2 branches missed.">		for (Resource file : codeSystemFiles) {</span>
+<span class="nc" id="L245">			fileno++;</span>
+<span class="nc" id="L246">			loadCodeSystemFile(fileno, file);</span>
+		}
+<span class="fc" id="L248">	}</span>
+
+	private static Mapping loadConceptFile(int fileno, Resource file) {
+<span class="fc" id="L251">		String name = file.getFilename().split(&quot;_ &quot;)[1].split(&quot; &quot;)[0];</span>
+
+<span class="fc" id="L253">		try (InputStreamReader sr = new InputStreamReader(file.getInputStream())) {</span>
+<span class="fc" id="L254">			StringBuilder sb = new StringBuilder();</span>
+<span class="fc" id="L255">			char[] buffer = new char[8192];</span>
+			int read;
+<span class="fc bfc" id="L257" title="All 2 branches covered.">			while ((read = sr.read(buffer)) != -1) {</span>
+<span class="fc" id="L258">				sb.append(buffer, 0, read);</span>
+			}
+<span class="fc" id="L260">			String csvContent = sb.toString();</span>
+<span class="fc" id="L261">			Mapping m = parseConceptMapCsv(csvContent, name);</span>
+<span class="fc" id="L262">			codeMaps.put(name, m);</span>
+<span class="fc" id="L263">			log.debug(&quot;{}: Loaded from {}&quot;, fileno, name);</span>
+<span class="fc" id="L264">			return m;</span>
+<span class="nc" id="L265">		} catch (Exception e) {</span>
+<span class="nc" id="L266">			warn(UNEXPECTED_ERROR_READING, e.getClass().getSimpleName(), file.getFilename(), 0,</span>
+<span class="nc" id="L267">					e.getMessage(), e);</span>
+<span class="nc" id="L268">			return new Mapping(name); // Return empty mapping on error</span>
+		}
+	}
+	
+	private static void loadCodeSystemFile(int fileno, Resource file) {
+<span class="nc" id="L273">		try (InputStreamReader sr = new InputStreamReader(file.getInputStream())) {</span>
+<span class="nc" id="L274">			StringBuilder sb = new StringBuilder();</span>
+<span class="nc" id="L275">			char[] buffer = new char[8192];</span>
+			int read;
+<span class="nc bnc" id="L277" title="All 2 branches missed.">			while ((read = sr.read(buffer)) != -1) {</span>
+<span class="nc" id="L278">				sb.append(buffer, 0, read);</span>
+			}
+<span class="nc" id="L280">			String csvContent = sb.toString();</span>
+<span class="nc" id="L281">			parseCodeSystemCsv(csvContent);</span>
+<span class="nc" id="L282">			log.debug(&quot;{}: Loaded from {}&quot;, fileno, file.getFilename());</span>
+<span class="nc" id="L283">		} catch (Exception e) {</span>
+<span class="nc" id="L284">			warn(UNEXPECTED_ERROR_READING, e.getClass().getSimpleName(), file.getFilename(), 0,</span>
+<span class="nc" id="L285">					e.getMessage(), e);</span>
+<span class="nc" id="L286">		}</span>
+<span class="nc" id="L287">	}</span>
+
+	/**
+	 * Add the codes in fields to the specified CodeSystem
+	 * 
+	 * Field data is expected to appear in this order:
+	 * Code,Display,Definition,V2 Concept Comment,V2 Concept Comment As Published,HL7 Concept Usage Notes
+	 * 
+	 * @param cs	The code System
+	 * @param fields	The field data, in the order code, display, definition, comment, comment as published, usage notes
+	 */
+	public static void addCodes(CodeSystem cs, String[] fields) {
+<span class="nc bnc" id="L299" title="All 2 branches missed.">		if (fields == null) {</span>
+<span class="nc" id="L300">			return;</span>
+		}
+<span class="nc" id="L302">		Coding coding = new Coding();</span>
+<span class="nc" id="L303">		coding.setSystem(cs.getUrl());</span>
+<span class="nc" id="L304">		ConceptDefinitionComponent concept = cs.addConcept();</span>
+<span class="nc bnc" id="L305" title="All 4 branches missed.">		if (fields.length &gt; 0 &amp;&amp; StringUtils.isNotEmpty(fields[0])) {</span>
+<span class="nc" id="L306">			concept.setCode(fields[0]);</span>
+<span class="nc" id="L307">			coding.setCode(fields[0]);</span>
+		}
+<span class="nc bnc" id="L309" title="All 4 branches missed.">		if (fields.length &gt; 1 &amp;&amp; StringUtils.isNotEmpty(fields[1])) {</span>
+<span class="nc" id="L310">			concept.setDisplay(fields[1]);</span>
+<span class="nc" id="L311">			coding.setDisplay(fields[1]);</span>
+		}
+<span class="nc" id="L313">		Mapping.updateCodeLookup(coding);</span>
+<span class="nc bnc" id="L314" title="All 4 branches missed.">		if (fields.length &gt; 2 &amp;&amp; StringUtils.isNotEmpty(fields[2])) {</span>
+<span class="nc" id="L315">			concept.setDefinition(fields[2]);</span>
+		}
+<span class="nc bnc" id="L317" title="All 4 branches missed.">		if (fields.length &gt; 3 &amp;&amp; StringUtils.isNotEmpty(fields[3])) {</span>
+<span class="nc" id="L318">			concept.addProperty(new ConceptPropertyComponent(new CodeType(&quot;v2-concComment&quot;), new StringType(fields[3])));</span>
+		}
+<span class="nc bnc" id="L320" title="All 4 branches missed.">		if (fields.length &gt; 4 &amp;&amp; StringUtils.isNotEmpty(fields[4])) {</span>
+<span class="nc" id="L321">			concept.addProperty(new ConceptPropertyComponent(new CodeType(&quot;v2-concCommentAsPub&quot;), new StringType(fields[4])));</span>
+		}
+<span class="nc bnc" id="L323" title="All 4 branches missed.">		if (fields.length &gt; 5 &amp;&amp; StringUtils.isNotEmpty(fields[5])) {</span>
+<span class="nc" id="L324">			concept.addProperty(new ConceptPropertyComponent(new CodeType(&quot;HL7usageNotes&quot;), new StringType(fields[5])));</span>
+		}
+<span class="nc" id="L326">	}</span>
+
+	/**
+	 * Create a NamingSystem for the given CodeSystem
+	 * @param cs	The CodeSystem to create a NamingSystem for
+	 * @return	The created NamingSystem
+	 */
+	public static NamingSystem createNamingSystem(CodeSystem cs) {
+<span class="fc" id="L334">		NamingSystem ns = new NamingSystem();</span>
+<span class="fc" id="L335">		ns.setName(cs.getName());</span>
+<span class="fc" id="L336">		ns.setUrl(cs.getUrl());</span>
+<span class="fc" id="L337">		ns.setTitle(cs.getTitle());</span>
+<span class="fc" id="L338">		ns.setText(cs.getText());</span>
+<span class="fc" id="L339">		ns.setKind(NamingSystemType.CODESYSTEM);</span>
+<span class="fc" id="L340">		ns.setLanguage(cs.getLanguage());</span>
+<span class="fc" id="L341">		ns.setStatus(cs.getStatus());</span>
+		
+		// Link NamingSystem to CodeSystem
+<span class="fc" id="L344">		ns.setUserData(CodeSystem.class.getName(), cs);</span>
+		// Link CodeSystem to NamingSystem
+<span class="fc" id="L346">		cs.setUserData(NamingSystem.class.getName(), ns);</span>
+<span class="fc" id="L347">		return ns;</span>
+	}
+
+	/**
+	 * Update mapping tables to go from here to there
+	 * @param m	The mapping table to update
+	 * @param here	The code to go from
+	 * @param there	The code to code to
+	 * @param altLookupName	An alternative name for this mapping table.
+	 */
+	private static void updateMaps(Mapping m, Coding here, Coding there, String altLookupName) {
+<span class="fc bfc" id="L358" title="All 4 branches covered.">		if (here != null &amp;&amp; here.hasCode()) {</span>
+<span class="fc" id="L359">			m.mappingLookup.put(here.getCode(), there);</span>
+<span class="fc bfc" id="L360" title="All 2 branches covered.">			if (here.hasSystem()) {</span>
+				// Enable lookup of any from codes by system and code
+<span class="fc" id="L362">				Map&lt;String, Coding&gt; cm = updateCodeLookup(here); </span>
+				// Enable lookup also by HL7 table number.
+<span class="fc" id="L364">				codingMaps.computeIfAbsent(altLookupName, k -&gt; cm);</span>
+			}
+		}
+<span class="fc" id="L367">	}</span>
+	
+	/**
+	 * Updates display name resolution table for a coding.
+	 * @param coding	A coding with code, display and system all populated
+	 * @return	The updated code lookup map where the given coding is stored.
+	 */
+	public static Map&lt;String, Coding&gt; updateCodeLookup(Coding coding) {
+<span class="fc" id="L375">		Map&lt;String, Coding&gt; cm = codingMaps.computeIfAbsent(coding.getSystem(), k -&gt; new LinkedHashMap&lt;&gt;());</span>
+<span class="fc" id="L376">		cm.put(coding.getCode(), coding);</span>
+<span class="fc" id="L377">		return cm;</span>
+	}
+
+	private static void addMapping(String name, Mapping m, int line, int[] indices, String[] fields) {
+<span class="fc" id="L381">		String table = get(fields, indices[2]);</span>
+<span class="fc bfc" id="L382" title="All 2 branches covered.">		if (table == null) {</span>
+<span class="fc" id="L383">			log.trace(&quot;Missing table reading {}({}): {}&quot;, name, line, Arrays.asList(fields));</span>
+		}
+<span class="fc" id="L385">		Coding from = new Coding(toFhirUri(table), get(fields, indices[0]), get(fields, indices[1]));</span>
+<span class="fc bfc" id="L386" title="All 2 branches covered.">		if (from.isEmpty()) {</span>
+<span class="fc" id="L387">			from = null;</span>
+		}
+<span class="fc" id="L389">		Coding to = new Coding(get(fields, indices[5]), get(fields, indices[3]), get(fields, indices[4]));</span>
+<span class="fc bfc" id="L390" title="All 2 branches covered.">		if (to.isEmpty()) {</span>
+<span class="fc" id="L391">			to = null;</span>
+		}
+
+<span class="fc bfc" id="L394" title="All 2 branches covered.">		if (from != null) {</span>
+<span class="fc" id="L395">			from.setUserData(MAPPED_SYSTEM, get(fields, indices[5]));</span>
+<span class="fc" id="L396">			from.setUserData(MAPPED_DISPLAY, get(fields, indices[4]));</span>
+		}
+<span class="fc bfc" id="L398" title="All 2 branches covered.">		if (to != null) {</span>
+<span class="fc" id="L399">			to.setUserData(MAPPED_SYSTEM, toFhirUri(table));</span>
+<span class="fc" id="L400">			to.setUserData(MAPPED_DISPLAY, get(fields, indices[1]));</span>
+		}
+
+<span class="fc" id="L403">		updateMaps(m, from, to, table);</span>
+<span class="fc" id="L404">	}</span>
+
+	private static void checkAllHeadersPresent(String[] headers, String[] headerStrings, int[] headerIndices)
+			throws IOException {
+<span class="fc bfc" id="L408" title="All 2 branches covered.">		for (int i = 0; i &lt; headerIndices.length - 1; i++) {</span>
+<span class="pc bpc" id="L409" title="1 of 2 branches missed.">			if (headerIndices[i] &gt;= headerIndices[i + 1]) {</span>
+<span class="nc" id="L410">				log.error(&quot;Missing headers, expcected {} but found {}&quot;, Arrays.asList(headerStrings),</span>
+<span class="nc" id="L411">						Arrays.asList(headers));</span>
+<span class="nc" id="L412">				throw new IOException(&quot;Missing Headers&quot;);</span>
+			}
+		}
+<span class="fc" id="L415">	}</span>
+
+	private static String get(String[] fields, int i) {
+<span class="fc bfc" id="L418" title="All 4 branches covered.">		if (i &lt; fields.length &amp;&amp; StringUtils.isNotBlank(fields[i])) {</span>
+<span class="fc" id="L419">			return fields[i].trim();</span>
+		}
+<span class="fc" id="L421">		return null;</span>
+	}
+
+	private static int[] getHeaderIndices(String[] headers) throws IOException {
+<span class="fc" id="L425">		String[] headerStrings = { &quot;Code&quot;, &quot;Text&quot;, &quot;Code System&quot;, &quot;Code&quot;, &quot;Display&quot;, &quot;Code System&quot; };</span>
+<span class="fc" id="L426">		int[] headerIndices = new int[headerStrings.length];</span>
+<span class="fc" id="L427">		int startLoc = 0;</span>
+<span class="fc bfc" id="L428" title="All 2 branches covered.">		for (int i = 0; i &lt; headerStrings.length; i++) {</span>
+<span class="pc bpc" id="L429" title="1 of 2 branches missed.">			for (int j = startLoc; j &lt; headers.length; j++) {</span>
+<span class="fc bfc" id="L430" title="All 2 branches covered.">				if (headerStrings[i].equalsIgnoreCase(headers[j])) {</span>
+<span class="fc" id="L431">					headerIndices[i] = j;</span>
+<span class="fc" id="L432">					startLoc = j + 1;</span>
+<span class="fc" id="L433">					break;</span>
+				}
+			}
+		}
+<span class="fc" id="L437">		checkAllHeadersPresent(headers, headerStrings, headerIndices);</span>
+<span class="fc" id="L438">		return headerIndices;</span>
+	}
+
+	private static void initVocabulary() {
+<span class="fc" id="L442">		initCVX();</span>
+<span class="fc" id="L443">		initMVX();</span>
+<span class="fc" id="L444">	}</span>
+	private static void initCVX() {
+<span class="fc" id="L446">		CodeSystem cs = new CodeSystem();</span>
+<span class="fc" id="L447">		cs.setUrl(&quot;http://hl7.org/fhir/sid/cvx&quot;);</span>
+<span class="fc" id="L448">		cs.setTitle(&quot;Vaccines Administered&quot;);</span>
+<span class="fc" id="L449">		cs.setName(&quot;CVX&quot;);</span>
+<span class="fc" id="L450">		Identifier identifier = new Identifier();</span>
+<span class="fc" id="L451">		identifier.setSystem(Systems.IETF);</span>
+<span class="fc" id="L452">		identifier.setValue(&quot;urn:oid:2.16.840.1.113883.12.292&quot;);</span>
+<span class="fc" id="L453">		cs.addIdentifier(identifier);</span>
+<span class="fc" id="L454">		createNamingSystem(cs);</span>
+<span class="fc" id="L455">		loadData(resolver.getResource(&quot;/coding/cvx.txt&quot;), cs, true);</span>
+<span class="fc" id="L456">	}</span>
+
+	private static void initMVX() {
+<span class="fc" id="L459">		CodeSystem cs = new CodeSystem();</span>
+<span class="fc" id="L460">		cs.setUrl(&quot;http://hl7.org/fhir/sid/mvx&quot;);</span>
+<span class="fc" id="L461">		cs.setTitle(&quot;Manufacturers of Vaccines&quot;);</span>
+<span class="fc" id="L462">		cs.setName(&quot;MVX&quot;);</span>
+<span class="fc" id="L463">		Identifier identifier = new Identifier();</span>
+<span class="fc" id="L464">		identifier.setSystem(Systems.IETF);</span>
+<span class="fc" id="L465">		identifier.setValue(&quot;urn:oid:2.16.840.1.113883.12.227&quot;);</span>
+<span class="fc" id="L466">		cs.addIdentifier(identifier);</span>
+<span class="fc" id="L467">		createNamingSystem(cs);</span>
+<span class="fc" id="L468">		loadData(resolver.getResource(&quot;/coding/mvx.txt&quot;), cs, false);</span>
+<span class="fc" id="L469">	}</span>
+
+	private static void loadData(Resource file, CodeSystem cs, boolean hasComment) {
+<span class="fc" id="L472">		int line = 0;</span>
+<span class="fc" id="L473">		try (InputStreamReader sr = new InputStreamReader(file.getInputStream());</span>
+<span class="fc" id="L474">			 CSVReader reader = new CSVReaderBuilder(sr).withCSVParser(</span>
+					new CSVParserBuilder()
+<span class="fc" id="L476">						.withSeparator('|')</span>
+<span class="fc" id="L477">						.withFieldAsNull(CSVReaderNullFieldIndicator.EMPTY_SEPARATORS)</span>
+<span class="fc" id="L478">						.withIgnoreQuotations(false).build()).build();</span>
+		) {
+<span class="fc" id="L480">			String[] fields = null;</span>
+<span class="fc bfc" id="L481" title="All 2 branches covered.">			int expectedLength = hasComment ? 5 : 4;</span>
+<span class="fc bfc" id="L482" title="All 2 branches covered.">			while ((fields = reader.readNext()) != null) {</span>
+<span class="pc bpc" id="L483" title="1 of 2 branches missed.">				if (fields.length &lt; expectedLength) {</span>
+<span class="nc" id="L484">					fields = Arrays.copyOf(fields, expectedLength);</span>
+				}
+<span class="fc" id="L486">				line++;</span>
+<span class="fc" id="L487">				ConceptDefinitionComponent concept = cs.addConcept();</span>
+<span class="fc" id="L488">				concept.setCode(StringUtils.trim(fields[0]));</span>
+<span class="fc" id="L489">				concept.setDisplay(StringUtils.trim(fields[1]));</span>
+<span class="fc" id="L490">				concept.setDefinition(StringUtils.trim(fields[2]));</span>
+<span class="fc" id="L491">				ConceptPropertyComponent property = concept.addProperty();</span>
+<span class="fc" id="L492">				property.setCode(&quot;Active&quot;);</span>
+<span class="fc" id="L493">				property.setValue(new StringType(StringUtils.trim(fields[3])));</span>
+<span class="fc bfc" id="L494" title="All 2 branches covered.">				if (hasComment) {</span>
+<span class="fc" id="L495">					property.setCode(&quot;Comment&quot;);</span>
+<span class="fc" id="L496">					property.setValue(new StringType(StringUtils.trim(fields[4])));</span>
+				}
+<span class="fc" id="L498">				Coding coding = new Coding(cs.getUrl(), concept.getCode(), concept.getDisplay());</span>
+<span class="fc" id="L499">				concept.setUserData(coding.getClass().getName(), coding);</span>
+<span class="fc" id="L500">				updateCodeLookup(coding);</span>
+<span class="fc" id="L501">			}</span>
+<span class="nc" id="L502">		} catch (Exception e) {</span>
+<span class="nc" id="L503">			warn(UNEXPECTED_ERROR_READING, e.getClass().getSimpleName(), file.getFilename(), line,</span>
+<span class="nc" id="L504">					e.getMessage(), e);</span>
+<span class="fc" id="L505">		}</span>
+		
+<span class="fc" id="L507">		Systems.getNamingSystem(cs.getUrl()).setUserData(cs.getClass().getName(), cs);</span>
+<span class="fc" id="L508">	}</span>
+	
+
+	private static String toFhirUri(String string) {
+<span class="fc bfc" id="L512" title="All 2 branches covered.">		if (StringUtils.isEmpty(string)) {</span>
+<span class="fc" id="L513">			return null;</span>
+		}
+<span class="pc bpc" id="L515" title="1 of 4 branches missed.">		if (string.startsWith(&quot;HL7&quot;) || StringUtils.isNumeric(string)) {</span>
+<span class="fc" id="L516">			return v2Table(string);</span>
+		}
+<span class="fc" id="L518">		return string;</span>
+	}
+
+	/**
+	 * Parse ConceptMap CSV content into a Mapping object
+	 * @param csvContent The CSV content
+	 * @param name The mapping name
+	 * @return The parsed Mapping
+	 * @throws IOException if parsing fails
+	 */
+	private static Mapping parseConceptMapCsv(String csvContent, String name) throws Exception {
+<span class="fc" id="L529">		Mapping m = new Mapping(name);</span>
+<span class="fc" id="L530">		int line = 0;</span>
+
+<span class="fc" id="L532">		try (StringReader sr = new StringReader(csvContent);</span>
+<span class="fc" id="L533">			 CSVReader reader = new CSVReader(sr)) {</span>
+
+<span class="fc" id="L535">			reader.readNext(); // Skip first line header</span>
+<span class="fc" id="L536">			line++;</span>
+
+<span class="fc" id="L538">			String[] headers = reader.readNext();</span>
+<span class="pc bpc" id="L539" title="1 of 2 branches missed.">			if (headers == null) {</span>
+<span class="nc" id="L540">				throw new IOException(&quot;Missing headers in CSV&quot;);</span>
+			}
+<span class="fc" id="L542">			int[] indices = getHeaderIndices(headers);</span>
+<span class="fc" id="L543">			line++;</span>
+
+<span class="fc" id="L545">			String[] fields = null;</span>
+<span class="fc bfc" id="L546" title="All 2 branches covered.">			while ((fields = reader.readNext()) != null) {</span>
+<span class="fc" id="L547">				line++;</span>
+				try {
+<span class="fc" id="L549">					addMapping(name, m, line, indices, fields);</span>
+<span class="nc" id="L550">				} catch (Exception e) {</span>
+<span class="nc" id="L551">					log.warn(&quot;Skipping invalid row in {}({}): {}&quot;, name, line, e.getMessage());</span>
+<span class="pc" id="L552">				}</span>
+			}
+
+<span class="fc" id="L555">			log.debug(&quot;Loaded {} lines from {}&quot;, line, name);</span>
+<span class="nc" id="L556">		} catch (IOException e) {</span>
+<span class="nc" id="L557">			throw new IOException(&quot;Error reading CSV at line &quot; + line, e);</span>
+<span class="fc" id="L558">		}</span>
+
+<span class="fc" id="L560">		return m;</span>
+	}
+
+	/**
+	 * Parse CodeSystem CSV content and add to coding maps
+	 * @param csvContent The CSV content
+	 * @throws Exception if parsing fails
+	 */
+	private static void parseCodeSystemCsv(String csvContent) throws Exception {
+<span class="nc" id="L569">		int line = 0;</span>
+
+<span class="nc" id="L571">		try (StringReader sr = new StringReader(csvContent);</span>
+<span class="nc" id="L572">			 CSVReader reader = new CSVReader(sr)) {</span>
+
+<span class="nc" id="L574">			String[] metadata = reader.readNext();</span>
+<span class="nc bnc" id="L575" title="All 4 branches missed.">			if (metadata == null || metadata.length &lt; 1) {</span>
+<span class="nc" id="L576">				throw new IOException(&quot;Missing metadata row in CSV&quot;);</span>
+			}
+<span class="nc" id="L578">			line++;</span>
+
+<span class="nc" id="L580">			CodeSystem cs = new CodeSystem();</span>
+<span class="nc bnc" id="L581" title="All 2 branches missed.">			cs.setUrl(metadata.length &gt; 0 ? metadata[0] : null);</span>
+<span class="nc bnc" id="L582" title="All 2 branches missed.">			cs.setName(metadata.length &gt; 2 ? metadata[2] : null);</span>
+<span class="nc" id="L583">			cs.setContent(CodeSystemContentMode.COMPLETE);</span>
+<span class="nc" id="L584">			cs.setCaseSensitive(false);</span>
+<span class="nc" id="L585">			cs.setLanguage(&quot;en-US&quot;);</span>
+<span class="nc" id="L586">			cs.setStatus(PublicationStatus.ACTIVE);</span>
+
+<span class="nc" id="L588">			createNamingSystem(cs);</span>
+
+<span class="nc" id="L590">			String[] headers = reader.readNext();</span>
+<span class="nc bnc" id="L591" title="All 2 branches missed.">			if (headers == null) {</span>
+<span class="nc" id="L592">				throw new IOException(&quot;Missing headers in CSV&quot;);</span>
+			}
+<span class="nc" id="L594">			getHeaderIndices(headers);</span>
+<span class="nc" id="L595">			line++;</span>
+
+<span class="nc" id="L597">			String[] fields = null;</span>
+<span class="nc bnc" id="L598" title="All 2 branches missed.">			while ((fields = reader.readNext()) != null) {</span>
+<span class="nc" id="L599">				line++;</span>
+				try {
+<span class="nc" id="L601">					addCodes(cs, fields);</span>
+<span class="nc" id="L602">					cs.setCount(cs.getCount() + 1);</span>
+<span class="nc" id="L603">				} catch (Exception e) {</span>
+<span class="nc" id="L604">					log.warn(&quot;Skipping invalid code at line {}: {}&quot;, line, e.getMessage());</span>
+<span class="nc" id="L605">				}</span>
+			}
+
+<span class="nc" id="L608">			log.debug(&quot;Loaded {} codes from CodeSystem '{}'&quot;, cs.getCount(), cs.getName());</span>
+
+<span class="nc" id="L610">		} catch (IOException e) {</span>
+<span class="nc" id="L611">			throw new IOException(&quot;Error reading CSV at line &quot; + line, e);</span>
+<span class="nc" id="L612">		}</span>
+<span class="nc" id="L613">	}</span>
+
+	/**
+	 * Given a coding with code and system set, get the associated display name for
+	 * the code if known.
+	 * 
+	 * @param coding The coding to search for.
+	 * @return The display name for the code.
+	 */
+	public static String getDisplay(Coding coding) {
+<span class="fc" id="L623">		return getDisplay(coding.getCode(), coding.getSystem());</span>
+	}
+	
+	
+	/**
+	 * Indicates if a display name is known for coding with given code and table or system name
+	 * 
+	 * @param code The code to search for.
+	 * @param table The HL7 V2 table or FHIR System uri to look for.
+	 * @return true if a display name is know for this code and table
+	 */
+	public static boolean hasDisplay(String code, String table) {
+<span class="nc bnc" id="L635" title="All 2 branches missed.">		return getDisplay(code, table) != null;</span>
+	}
+
+	/**
+	 * The the display name for coding with given code and table or system name
+	 * 
+	 * @param code The code to search for.
+	 * @param table The HL7 V2 table or FHIR System uri to look for.
+	 * @return The display name this code and table, or null if not found.
+	 */
+	public static String getDisplay(String code, String table) {
+<span class="fc bfc" id="L646" title="All 2 branches covered.">		if (StringUtils.isBlank(table)) {</span>
+<span class="fc" id="L647">			return null;</span>
+		}
+		
+<span class="pc bpc" id="L650" title="1 of 2 branches missed.">		if (Systems.UNIVERSAL_ID_TYPE.equals(table)) {</span>
+<span class="nc" id="L651">			return Systems.idTypeToDisplayMap.get(code);</span>
+		}
+		
+<span class="fc" id="L654">		table = Mapping.mapTableNameToSystem(table);</span>
+<span class="pc bpc" id="L655" title="1 of 2 branches missed.">		if (table == null) {</span>
+<span class="nc" id="L656">			return null;</span>
+		}
+		
+<span class="fc" id="L659">		Coding coding = null;</span>
+<span class="fc bfc" id="L660" title="All 2 branches covered.">		if (Systems.UCUM.equals(table)) {</span>
+<span class="fc" id="L661">			coding = Units.toUcum(code);</span>
+		} else {
+<span class="fc" id="L663">			String system = Mapping.mapTableNameToSystem(table.trim());</span>
+<span class="fc" id="L664">			Map&lt;String, Coding&gt; cm = codingMaps.get(system);</span>
+<span class="fc bfc" id="L665" title="All 2 branches covered.">			if (cm == null) {</span>
+<span class="fc bfc" id="L666" title="All 2 branches covered.">				if (!codingMaps.containsKey(system)) {</span>
+<span class="fc" id="L667">					log.debug(&quot;Unknown code system: {}&quot;, table);</span>
+<span class="fc" id="L668">					codingMaps.put(system, null);</span>
+				}
+<span class="fc" id="L670">				return null;</span>
+			}
+<span class="fc" id="L672">			coding = cm.get(code);</span>
+		}
+<span class="fc bfc" id="L674" title="All 2 branches covered.">		return coding != null ? coding.getDisplay() : null;</span>
+	}
+
+	/**
+	 * Given a coding with code and system set, set the associated display name for
+	 * the code if known.
+	 * 
+	 * @param coding The coding to search for and potentially adjust. If no display
+	 *               name is set, then the coding is unchanged. Thus, a default
+	 *               display name can be provided before making this call.
+	 */
+	public static void setDisplay(Coding coding) {
+<span class="fc" id="L686">		String display = getDisplay(coding);</span>
+<span class="fc bfc" id="L687" title="All 2 branches covered.">		if (display != null) {</span>
+<span class="fc" id="L688">			coding.setUserData(ORIGINAL_DISPLAY, coding.getDisplay());</span>
+<span class="fc" id="L689">			coding.setDisplay(display);</span>
+		}
+<span class="fc" id="L691">	}</span>
+	
+	/**
+	 * The converter adds some extra data that it knows about codes
+	 * for better interoperability, e.g., display names, code system URLs
+	 * et cetera.  This may be why the strings are different.  Reset those
+	 * changes (the original supplied values are in user data under
+	 * the string &quot;original{FieldName}&quot;
+	 * 
+	 * @param type The type to reset to original values.
+	 */
+	public static void reset(Type type) {
+<span class="pc bpc" id="L703" title="1 of 2 branches missed.">		if (type instanceof Coding c) {</span>
+<span class="nc" id="L704">			reset(c);</span>
+<span class="pc bpc" id="L705" title="1 of 2 branches missed.">		} else if (type instanceof CodeableConcept cc) {</span>
+<span class="fc" id="L706">			reset(cc);</span>
+		}
+<span class="fc" id="L708">	}</span>
+	
+	/**
+	 * Reset a Coding produced during conversion to its original, unmapped values for display and system
+	 * 
+	 * During the conversion process, the V2 to FHIR converter will store the original values in the 
+	 * message in user data found in the datatypes.  The reset method restores those values to the
+	 * data type.
+	 * 
+	 * @param coding A coding produced by DatatypeConverter to reset
+	 */
+	public static void reset(Coding coding) {
+<span class="pc bpc" id="L720" title="1 of 2 branches missed.">		if (coding == null) {</span>
+<span class="nc" id="L721">			return;</span>
+		}
+<span class="fc bfc" id="L723" title="All 2 branches covered.">		if (coding.hasUserData(ORIGINAL_DISPLAY)) {</span>
+<span class="fc" id="L724">			coding.setDisplay((String)coding.getUserData(ORIGINAL_DISPLAY));</span>
+		}
+<span class="fc bfc" id="L726" title="All 2 branches covered.">		if (coding.hasUserData(ORIGINAL_SYSTEM)) {</span>
+<span class="fc" id="L727">			coding.setSystem((String)coding.getUserData(ORIGINAL_SYSTEM));</span>
+		}
+<span class="fc" id="L729">	}</span>
+	
+	/**
+	 * Reset a CodeableConcept produced during conversion to its original, unmapped values for display and system
+	 * 
+	 * During the conversion process, the V2 to FHIR converter will store the original values in the 
+	 * message in user data found in the datatypes.  The reset method restores those values to the
+	 * datatype.
+	 * 
+	 * @param cc A CodeableConcept produced by DatatypeConverter to reset
+	 */
+	public static void reset(CodeableConcept cc) {
+<span class="pc bpc" id="L741" title="1 of 2 branches missed.">		if (cc == null) {</span>
+<span class="nc" id="L742">			return;</span>
+		}
+<span class="pc bpc" id="L744" title="1 of 2 branches missed.">		if (cc.hasUserData(&quot;originalText&quot;)) {</span>
+<span class="nc" id="L745">			cc.setText((String)cc.getUserData(&quot;originalText&quot;));</span>
+		}
+<span class="fc" id="L747">		cc.getCoding().forEach(Mapping::reset);</span>
+<span class="fc" id="L748">	}</span>
+	
+	private static void warn(String msg, Object ...args) {
+<span class="nc" id="L751">		log.warn(msg, args);</span>
+<span class="nc" id="L752">	}</span>
+	
+	/**
+	 * Map the V2 system value found in coding.system to the system URI expected in FHIR.
+	 * 
+	 * If the system is changed, the original value will be stored and can later be retrieved by calling
+	 * coding.getUserData(Mapping.ORIGINAL_SYSTEM)
+	 *
+	 * @see #map(Coding)
+	 * @param coding	The coding to adjust the system for
+	 * @return	The updated coding
+	 */
+	private static Coding mapSystem(Coding coding) {
+<span class="pc bpc" id="L765" title="1 of 2 branches missed.">		if (coding == null) {</span>
+<span class="nc" id="L766">			return null;</span>
+		}
+<span class="fc bfc" id="L768" title="All 2 branches covered.">		if (!coding.hasSystem()) {</span>
+<span class="fc" id="L769">			return coding;</span>
+		}
+<span class="fc" id="L771">		String system = coding.getSystem();</span>
+<span class="fc" id="L772">		coding.setSystem(Mapping.mapTableNameToSystem(system));</span>
+<span class="pc bpc" id="L773" title="1 of 4 branches missed.">		if (!system.equals(coding.getSystem()) &amp;&amp; !coding.hasUserData(ORIGINAL_SYSTEM)) {</span>
+<span class="fc" id="L774">			coding.setUserData(ORIGINAL_SYSTEM, system);</span>
+		}
+<span class="fc" id="L776">		return coding;</span>
+	}
+	
+	/**
+	 * Given a coding and system, set the system and display values
+	 * to expected values in FHIR.
+	 * 
+	 * @param coding	The coding to adjust
+	 * @return	The mapped coding.
+	 */
+	public static Coding map(Coding coding) {
+<span class="fc" id="L787">		mapSystem(coding);</span>
+<span class="fc" id="L788">		setDisplay(coding);</span>
+<span class="fc" id="L789">		return coding;</span>
+	}
+
+
+	/**
+	 * Map the V2 system value found in ident.system to the system URI expected in FHIR.
+	 * 
+	 * If the system is changed, the original value will be stored and can later be retrieved by calling
+	 * ident.getUserData(Mapping.ORIGINAL_SYSTEM)
+	 *  
+	 * @param ident The coding to adjust the system for
+	 * @return	The updated Identifier
+	 */
+	public static Identifier mapSystem(Identifier ident) {
+<span class="pc bpc" id="L803" title="1 of 2 branches missed.">		if (!ident.hasSystem()) {</span>
+<span class="nc" id="L804">			return ident;</span>
+		}
+<span class="fc" id="L806">		String system = ident.getSystem();</span>
+<span class="fc" id="L807">		ident.setSystem(Mapping.getPreferredIdSystem(system));</span>
+<span class="pc bpc" id="L808" title="1 of 4 branches missed.">		if (!system.equals(ident.getSystem()) &amp;&amp; !ident.hasUserData(ORIGINAL_SYSTEM)) {</span>
+<span class="fc" id="L809">			ident.setUserData(ORIGINAL_SYSTEM, system);</span>
+		}
+<span class="fc" id="L811">		return ident;</span>
+	}
+
+	/**
+	 * Given a coding system name or URL, get the preferred CodeSystem
+	 * url for FHIR. 
+	 * @param value	A coding system name or URL
+	 * @return The preferred name as a URL.
+	 */
+	public static String mapTableNameToSystem(String value) {
+<span class="fc" id="L821">		String system = Mapping.getPreferredIdSystem(value);</span>
+<span class="pc bpc" id="L822" title="1 of 2 branches missed.">		if (system == null) {</span>
+<span class="nc" id="L823">			return null;</span>
+		}
+		
+		// Handle mapping for HL7 V2 tables
+<span class="fc bfc" id="L827" title="All 2 branches covered.">		if (&quot;HL7&quot;.equalsIgnoreCase(system)) {</span>
+<span class="fc" id="L828">			return &quot;http://terminology.hl7.org/CodeSystem/v2-0003&quot;;</span>
+<span class="pc bpc" id="L829" title="1 of 4 branches missed.">		} else if (system.startsWith(&quot;HL7&quot;) || system.startsWith(&quot;hl7&quot;)) {</span>
+<span class="fc" id="L830">			system = system.substring(3);</span>
+<span class="pc bpc" id="L831" title="1 of 2 branches missed.">			if (system.startsWith(&quot;-&quot;)) {</span>
+<span class="nc" id="L832">				system = system.substring(1);</span>
+			}
+<span class="fc" id="L834">			return v2Table(system);</span>
+<span class="fc bfc" id="L835" title="All 2 branches covered.">		} else if (StringUtils.isNumeric(system)) {</span>
+<span class="fc" id="L836">			return v2Table(system);</span>
+		}
+<span class="fc" id="L838">		return system;</span>
+	}
+
+	private static String getPreferredIdSystem(String value) {
+<span class="pc bpc" id="L842" title="1 of 2 branches missed.">		if (StringUtils.isBlank(value)) {</span>
+<span class="nc" id="L843">			return null;</span>
+		}
+<span class="fc" id="L845">		NamingSystem ns = Systems.getNamingSystem(value);</span>
+<span class="fc bfc" id="L846" title="All 2 branches covered.">		if (ns != null) {</span>
+<span class="fc" id="L847">			return ns.getUrl();</span>
+		}
+		
+<span class="fc bfc" id="L850" title="All 2 branches covered.">		if (value.startsWith(&quot;urn:oid:&quot;)) {</span>
+<span class="fc" id="L851">			return value.substring(8);</span>
+<span class="pc bpc" id="L852" title="1 of 2 branches missed.">		} else if (value.startsWith(&quot;urn:uuid:&quot;)) {</span>
+<span class="nc" id="L853">			return value.substring(9);</span>
+		} 
+<span class="fc" id="L855">		return value;</span>
+	}
+
+	/**
+	 * Return the V2 system name for the given table
+	 * @param table	The table name.
+	 * @return	The normalized FHIR System Name for that table.
+	 */
+	public static String v2Table(String table) {
+<span class="fc bfc" id="L864" title="All 2 branches covered.">		if (table.startsWith(&quot;HL7&quot;)) {</span>
+<span class="fc" id="L865">			table = table.substring(3);</span>
+		}
+<span class="pc bpc" id="L867" title="2 of 4 branches missed.">		if (table.startsWith(&quot;-&quot;) || table.startsWith(&quot;_&quot;)) {</span>
+<span class="nc" id="L868">			table = table.substring(1);</span>
+		}
+<span class="fc" id="L870">		String key = StringUtils.right(&quot;000&quot; + table, 4);</span>
+<span class="fc" id="L871">		return v2TablesUsed.computeIfAbsent(key, k -&gt; Mapping.V2_TABLE_PREFIX + key);</span>
+	}
+
+	/**
+	 * Load a ConceptMap from CSV content.
+	 * CSV format expected:
+	 *   Line 1: Header row (ignored)
+	 *   Line 2: Column headers
+	 *   All Other Lines: Mapping data rows
+	 * The ConceptMap is parsed and added to the mapping lookup tables.
+	 * If a mapping with the same name already exists, it will be overwritten.
+	 * Invalid rows are logged and skipped.
+	 *
+	 * @param csvContent The CSV content as a string
+	 * @param name The name for this mapping (used as the map identifier)
+	 * @throws IllegalArgumentException if csvContent or name is null/blank
+	 */
+	public static synchronized void loadConceptMapFromCsv(String csvContent, String name) {
+<span class="nc bnc" id="L889" title="All 2 branches missed.">		if (StringUtils.isBlank(csvContent)) {</span>
+<span class="nc" id="L890">			throw new IllegalArgumentException(&quot;CSV content cannot be null or blank&quot;);</span>
+		}
+<span class="nc bnc" id="L892" title="All 2 branches missed.">		if (StringUtils.isBlank(name)) {</span>
+<span class="nc" id="L893">			throw new IllegalArgumentException(&quot;Mapping name cannot be null or blank&quot;);</span>
+		}
+
+		try {
+<span class="nc" id="L897">			Mapping m = parseConceptMapCsv(csvContent, name);</span>
+<span class="nc" id="L898">			m.lock();</span>
+<span class="nc" id="L899">			codeMaps.put(name, m); // Overwrites if exists</span>
+<span class="nc" id="L900">			log.info(&quot;Loaded concept map: {}&quot;, name);</span>
+<span class="nc" id="L901">		} catch (Exception e) {</span>
+<span class="nc" id="L902">			log.error(&quot;Failed to load concept map '{}': {}&quot;, name, e.getMessage(), e);</span>
+<span class="nc" id="L903">			throw new IllegalArgumentException(&quot;Failed to parse concept map CSV&quot;, e);</span>
+<span class="nc" id="L904">		}</span>
+<span class="nc" id="L905">	}</span>
+
+	/**
+	 * Load a CodeSystem from CSV content.
+	 * CSV format expected:
+	 *   Line 1: Metadata (url, oid, name)
+	 *   Line 2: Column headers (Code, Display, Definition, V2 Concept Comment, ...)
+	 *   All Other Lines: Code definition rows
+	 * The CodeSystem is parsed and added to the coding lookup tables.
+	 * If a CodeSystem with the same name already exists, it will be overwritten.
+	 * Invalid rows are logged and skipped.
+	 *
+	 * @param csvContent The CSV content as a string
+	 * @throws IllegalArgumentException if csvContent is null/blank or format is invalid
+	 */
+	public static synchronized void loadCodeSystemFromCsv(String csvContent) {
+<span class="nc bnc" id="L921" title="All 2 branches missed.">		if (StringUtils.isBlank(csvContent)) {</span>
+<span class="nc" id="L922">			throw new IllegalArgumentException(&quot;CSV content cannot be null or blank&quot;);</span>
+		}
+
+		try {
+<span class="nc" id="L926">			parseCodeSystemCsv(csvContent);</span>
+<span class="nc" id="L927">			log.info(&quot;Loaded code system from CSV&quot;);</span>
+<span class="nc" id="L928">		} catch (Exception e) {</span>
+<span class="nc" id="L929">			log.error(&quot;Failed to load code system: {}&quot;, e.getMessage(), e);</span>
+<span class="nc" id="L930">			throw new IllegalArgumentException(&quot;Failed to parse code system CSV&quot;, e);</span>
+<span class="nc" id="L931">		}</span>
+<span class="nc" id="L932">	}</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

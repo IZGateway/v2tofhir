@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>QAKParser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">gov.cdc.izgw.v2tofhir.segment</a> &gt; <span class="el_source">QAKParser.java</span></div><h1>QAKParser.java</h1><pre class="source lang-java linenums">package gov.cdc.izgw.v2tofhir.segment;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.hl7.fhir.instance.model.api.IBaseResource;
+import org.hl7.fhir.r4.model.CodeableConcept;
+import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.OperationOutcome;
+import org.hl7.fhir.r4.model.OperationOutcome.IssueSeverity;
+import org.hl7.fhir.r4.model.OperationOutcome.IssueType;
+import org.hl7.fhir.r4.model.OperationOutcome.OperationOutcomeIssueComponent;
+import org.hl7.fhir.r4.model.StringType;
+
+import gov.cdc.izgw.v2tofhir.annotation.ComesFrom;
+import gov.cdc.izgw.v2tofhir.annotation.Produces;
+import gov.cdc.izgw.v2tofhir.converter.MessageParser;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * Parser for QAK Segments
+ * 
+ * The QAK segment populates OperationOutcome.issue referenced by any generated MessageHeader.response.details
+ * with the code from QAK-2 field.
+ * 
+ * @author Audacious Inquiry
+ */
+@Produces(segment=&quot;QAK&quot;, resource=OperationOutcome.class)
+<span class="fc" id="L29">@Slf4j</span>
+public class QAKParser extends AbstractSegmentParser {
+	private OperationOutcome oo;
+	
+<span class="fc" id="L33">	private static List&lt;FieldHandler&gt; fieldHandlers = new ArrayList&lt;&gt;();</span>
+	/** The coding system to use for query tags in metadata */
+	public static final String QUERY_TAG_SYSTEM = &quot;QueryTag&quot;;
+
+	static {
+<span class="fc" id="L38">		log.debug(&quot;{} loaded&quot;, QAKParser.class.getName());</span>
+<span class="fc" id="L39">	}</span>
+	/**
+	 * Construct a new QAKParser
+	 * 
+	 * @param messageParser	The messageParser to construct this parser for.
+	 */
+	public QAKParser(MessageParser messageParser) {
+<span class="fc" id="L46">		super(messageParser, &quot;QAK&quot;);</span>
+<span class="fc bfc" id="L47" title="All 2 branches covered.">		if (fieldHandlers.isEmpty()) {</span>
+<span class="fc" id="L48">			FieldHandler.initFieldHandlers(this, fieldHandlers);</span>
+		}
+<span class="fc" id="L50">	}</span>
+
+	
+	@Override
+	public List&lt;FieldHandler&gt; getFieldHandlers() {
+<span class="fc" id="L55">		return fieldHandlers;</span>
+	}
+	
+	@Override
+	public IBaseResource setup() {
+		// QAK Creates its own OperationOutcome resource.
+<span class="fc" id="L61">		oo = createResource(OperationOutcome.class);</span>
+<span class="fc" id="L62">		return oo;</span>
+	}
+	
+	/**
+	 * Sets OperationOutcome[1].meta.tag to the Query Tag in QAK-1
+	 * @param queryTag	The query tag
+	 */
+	@ComesFrom(path=&quot;OperationOutcome[1].meta.tag&quot;, field = 1, comment=&quot;Sets meta.tag.system to QueryTag, and code to value of QAK-1&quot;)
+	public void setMetaTag(StringType queryTag) {
+<span class="fc" id="L71">		oo.getMeta().addTag(new Coding(QUERY_TAG_SYSTEM, queryTag.getValue(), null));</span>
+<span class="fc" id="L72">	}</span>
+	
+	/**
+	 * Set OperationOutcome.issue.details, issue.code, and issue.severity
+	 * 
+	 * Sets issue.details to details
+	 * Maps issue.code and issue.severity from details
+	 * 
+	 * @param details	The coding found in QAK-2 from table 0208
+	 */
+	@ComesFrom(path=&quot;OperationOutcome[1].issue.details&quot;, field = 2, table = &quot;0208&quot;, 
+			   also={ &quot;OperationOutcome[1].issue.code&quot;, 
+					  &quot;OperationOutcome[1].issue.severity&quot;})
+	public void setIssueDetails(Coding details) {
+<span class="fc" id="L86">		OperationOutcomeIssueComponent issue = oo.addIssue().setDetails(new CodeableConcept().addCoding(details));</span>
+
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">		if (details.hasCode()) {</span>
+<span class="pc bpc" id="L89" title="1 of 3 branches missed.">			switch (details.getCode().toUpperCase()) {</span>
+			case &quot;AE&quot;:
+<span class="fc" id="L91">				issue.setCode(IssueType.INVALID);</span>
+<span class="fc" id="L92">				issue.setSeverity(IssueSeverity.ERROR);</span>
+<span class="fc" id="L93">				break;</span>
+			case &quot;AR&quot;:
+<span class="nc" id="L95">				issue.setCode(IssueType.PROCESSING);</span>
+<span class="nc" id="L96">				issue.setSeverity(IssueSeverity.FATAL);</span>
+<span class="nc" id="L97">				break;</span>
+			case &quot;NF&quot;, &quot;OK&quot;:
+			default:
+<span class="fc" id="L100">				issue.setCode(IssueType.INFORMATIONAL);</span>
+<span class="fc" id="L101">				issue.setSeverity(IssueSeverity.INFORMATION);</span>
+				break;
+<span class="fc" id="L103">			}</span>
+		} else {
+<span class="nc" id="L105">			issue.setCode(IssueType.UNKNOWN);</span>
+<span class="nc" id="L106">			issue.setSeverity(IssueSeverity.INFORMATION);</span>
+		}
+<span class="fc" id="L108">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
