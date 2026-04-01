@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MessageParser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">gov.cdc.izgw.v2tofhir.converter</a> &gt; <span class="el_source">MessageParser.java</span></div><h1>MessageParser.java</h1><pre class="source lang-java linenums">package gov.cdc.izgw.v2tofhir.converter;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import org.apache.commons.lang3.StringUtils;
+import org.hl7.fhir.r4.model.Attachment;
+import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.DocumentReference;
+import org.hl7.fhir.r4.model.Enumerations.DocumentReferenceStatus;
+import org.hl7.fhir.r4.model.StringType;
+
+import ca.uhn.hl7v2.HL7Exception;
+import ca.uhn.hl7v2.model.GenericSegment;
+import ca.uhn.hl7v2.model.Message;
+import ca.uhn.hl7v2.model.Segment;
+import ca.uhn.hl7v2.model.Structure;
+import ca.uhn.hl7v2.model.Type;
+import ca.uhn.hl7v2.parser.EncodingCharacters;
+import ca.uhn.hl7v2.parser.PipeParser;
+import gov.cdc.izgw.v2tofhir.segment.ERRParser;
+import gov.cdc.izgw.v2tofhir.utils.ErrorReporter;
+import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * MessageParser provide the necessary methods to convert messages and segments into FHIR Bundles and Resources
+ * respectively.
+ * 
+ * The methods in any instance this class are not thread safe, but multiple threads can perform conversions
+ * on different messages by using different instances of the MessageParser. The MessageParser class is 
+ * intentionally cheap to create.
+ * 
+ * Parsers and Converters in this package follow as best as possible the mapping advice provided
+ * in the HL7 V2 to FHIR Implementation Guide.
+ * 
+ * @see &lt;a href=&quot;https://hl7.org/fhir/uv/v2mappings/2024Jan/&quot;&gt;V2toFHIR Jan-2024&lt;/a&gt;
+ * 
+ * @author Audacious Inquiry
+ */
+<span class="fc" id="L42">@Slf4j</span>
+public class MessageParser extends BaseParser&lt;Message,Structure&gt; implements Parser&lt;Message,Structure&gt; {
+	static {
+
+        // Add configured parser packages first
+        // Custom parsers will be found first, and so will be used.
+        // For example, if you have an OBXParser that will be used over the OBXParser here in v2tofhir
+<span class="fc" id="L49">		String packages = System.getenv(&quot;V2TOFHIR_PARSER_PACKAGES&quot;);</span>
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">		if (StringUtils.isNotEmpty(packages)) {</span>
+<span class="nc" id="L51">			Arrays.asList(packages.split(&quot;[,;\s]+&quot;)).forEach(p -&gt; BaseParser.packageSources.add(p));</span>
+		}
+        // Load this project's parsers as package source
+<span class="fc" id="L54">        BaseParser.packageSources.add(ERRParser.class.getPackageName());</span>
+<span class="fc" id="L55">	}</span>
+	
+	/**
+	 * Default constructor which sets this instance as the ErrorReporter for any static methods
+	 */
+<span class="fc" id="L60">	public MessageParser() {</span>
+<span class="fc" id="L61">		ErrorReporter.set(this);</span>
+<span class="fc" id="L62">	}</span>
+	
+	/**
+	 * Get a PipeParser for parsing HL7 V2 messages.
+	 * Override this method to provide a custom parser (e.g., with custom validation).
+	 * @return A PipeParser
+	 */
+	public PipeParser getParser() {
+<span class="nc" id="L70">		return new PipeParser();</span>
+	}
+	
+	/**
+	 * Convert the hl7Message to a new Message using a PipeParser and then convert it.
+	 * @param hl7Message	The HL7 Message
+	 * @return The converted bundle
+	 * @throws HL7Exception if an error occurred while parsing.
+	 */
+	@Override
+	public Bundle convert(String hl7Message) throws HL7Exception {
+<span class="nc" id="L81">    	return convert(getParser().parse(hl7Message)); </span>
+	}
+	
+	/**
+	 * Convert an HL7 V2 message into a Bundle of FHIR Resources.
+	 * 
+	 * The message is iterated over to the segment level, and each segment is then converted
+	 * into one or more resources, possibly combining information from multiple segments (e.g., PID, PD1 and PV1)
+	 * in any of the returned resource.
+	 * 
+	 * The bundle will also contain provenance resources which show the linkage between the converted segments and
+	 * their resulting resources, where each provenance record ties the data in a converted segment to the resource.
+	 * 
+	 * @param msg The message to convert.
+	 * @return A FHIR Bundle containing the relevant resources. 
+	 */
+	public Bundle convert(Message msg) {
+<span class="fc" id="L98">		reset();</span>
+		try {
+<span class="fc" id="L100">			initContext((Segment) msg.get(&quot;MSH&quot;));</span>
+<span class="nc" id="L101">		} catch (HL7Exception e) {</span>
+<span class="nc" id="L102">			warn(&quot;Cannot retrieve MSH segment from message&quot;);</span>
+<span class="fc" id="L103">		}</span>
+<span class="fc" id="L104">		String encoded = null;</span>
+<span class="fc" id="L105">		byte[] data = null;</span>
+		try {
+<span class="fc" id="L107">			encoded = msg.encode();</span>
+<span class="fc" id="L108">			data = encoded.getBytes(StandardCharsets.UTF_8);</span>
+<span class="nc" id="L109">		} catch (HL7Exception e) {</span>
+<span class="nc" id="L110">			warn(&quot;Could not encode the message: {}&quot;, e.getMessage(), e);</span>
+<span class="fc" id="L111">		}</span>
+<span class="fc" id="L112">		DocumentReference dr = createResource(DocumentReference.class);</span>
+<span class="fc" id="L113">		dr.setUserData(Parser.SOURCE, MessageParser.class.getName()); // Mark infrastructure created resources</span>
+<span class="fc" id="L114">		dr.setStatus(DocumentReferenceStatus.CURRENT);</span>
+		// See https://confluence.hl7.org/display/V2MG/HL7+locally+registered+V2+Media+Types
+<span class="fc" id="L116">		Attachment att = dr.addContent().getAttachment().setContentType(&quot;text/hl7v2; charset=utf-8&quot;);</span>
+<span class="fc" id="L117">		att.setData(data);</span>
+
+		// Add the encoded message as the original text for the content in both the binary
+		// and document reference resources.
+<span class="pc bpc" id="L121" title="1 of 2 branches missed.">		if (encoded != null) {</span>
+<span class="fc" id="L122">			StringType e = new StringType(encoded);</span>
+<span class="fc" id="L123">			dr.getContentFirstRep().addExtension(BaseParser.ORIGINAL_TEXT, e);</span>
+		}
+
+<span class="fc" id="L126">		return createBundle(msg);</span>
+	}
+	
+	private void initContext(Segment msh) {
+<span class="fc" id="L130">		getContext().clear();</span>
+<span class="fc" id="L131">		getBundle();</span>
+<span class="pc bpc" id="L132" title="1 of 2 branches missed.">		if (msh != null) {</span>
+			try {
+<span class="fc" id="L134">				getContext().setEventCode(ParserUtils.toString(msh.getField(9, 0)));</span>
+<span class="nc" id="L135">			} catch (HL7Exception e) {</span>
+<span class="nc" id="L136">				warn(&quot;Unexpected HL7Exception parsing MSH-9: {}&quot;, e.getMessage());</span>
+<span class="fc" id="L137">			}</span>
+			try {
+<span class="fc bfc" id="L139" title="All 2 branches covered.">				for (Type profile : msh.getField(21)) {</span>
+<span class="fc" id="L140">					getContext().addProfileId(ParserUtils.toString(profile));</span>
+				}
+<span class="nc" id="L142">			} catch (HL7Exception e) {</span>
+<span class="nc" id="L143">				warn(&quot;Unexpected HL7Exception parsing MSH-21: {}&quot;, e.getMessage());</span>
+<span class="fc" id="L144">			}</span>
+		}
+<span class="fc" id="L146">	}</span>
+	
+	@Override
+	protected Iterable&lt;Structure&gt; getParts(Message msg) {
+<span class="fc" id="L150">		Set&lt;Structure&gt; segments = new LinkedHashSet&lt;&gt;();</span>
+<span class="fc" id="L151">		ParserUtils.iterateStructures(msg, segments);</span>
+<span class="fc" id="L152">		return segments;</span>
+	}
+	
+	
+
+	@Override
+	public String encodeUnit(Message unit) {
+		try {
+<span class="nc" id="L160">			return unit.encode();</span>
+<span class="nc" id="L161">		} catch (HL7Exception e) {</span>
+<span class="nc" id="L162">			log.warn(&quot;Unexpected HL7Exception encoding message: {}&quot;, e.getMessage(), e);</span>
+<span class="nc" id="L163">			return &quot;&quot;;</span>
+		}
+	}
+
+	@Override
+	public String encode(Structure subunit) {
+<span class="pc bpc" id="L169" title="1 of 2 branches missed.">		if (subunit instanceof GenericSegment generic) {</span>
+<span class="nc" id="L170">			PipeParser parser = PipeParser.getInstanceWithNoValidation();</span>
+<span class="nc" id="L171">			return parser.doEncode(generic, EncodingCharacters.defaultInstance());</span>
+<span class="pc bpc" id="L172" title="1 of 2 branches missed.">		} else if (subunit instanceof Segment segment) {</span>
+			try {
+<span class="fc" id="L174">				return segment.encode();</span>
+<span class="nc" id="L175">			} catch (HL7Exception e) {</span>
+<span class="nc" id="L176">				log.warn(&quot;Unexpected HL7Exception encoding message: {}&quot;, e.getMessage(), e);</span>
+<span class="nc" id="L177">				return &quot;&quot;;</span>
+			}
+		}
+<span class="nc" id="L180">		return &quot;&quot;;</span>
+	}
+	
+	@Override
+	protected String getName(Structure structure) {
+<span class="fc" id="L185">		return structure.getName();</span>
+	}
+
+	@Override
+	public void warn(String message, Object... args) {
+<span class="fc" id="L190">		DefaultErrorReporter.INSTANCE.warn(message, args);</span>
+<span class="fc" id="L191">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

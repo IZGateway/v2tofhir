@@ -1,0 +1,809 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OBXParser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">gov.cdc.izgw.v2tofhir.segment</a> &gt; <span class="el_source">OBXParser.java</span></div><h1>OBXParser.java</h1><pre class="source lang-java linenums">package gov.cdc.izgw.v2tofhir.segment;
+
+import java.util.List;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+
+import org.apache.commons.lang3.StringUtils;
+import org.hl7.fhir.instance.model.api.IBase;
+import org.hl7.fhir.instance.model.api.IBaseResource;
+import org.hl7.fhir.r4.model.Address;
+import org.hl7.fhir.r4.model.Attachment;
+import org.hl7.fhir.r4.model.BaseDateTimeType;
+import org.hl7.fhir.r4.model.CodeType;
+import org.hl7.fhir.r4.model.CodeableConcept;
+import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.ContactPoint;
+import org.hl7.fhir.r4.model.DateTimeType;
+import org.hl7.fhir.r4.model.Device;
+import org.hl7.fhir.r4.model.DocumentReference;
+import org.hl7.fhir.r4.model.DocumentReference.ReferredDocumentStatus;
+import org.hl7.fhir.r4.model.Enumerations.DocumentReferenceStatus;
+import org.hl7.fhir.r4.model.HumanName;
+import org.hl7.fhir.r4.model.ImmunizationRecommendation;
+import org.hl7.fhir.r4.model.ImmunizationRecommendation.ImmunizationRecommendationRecommendationComponent;
+import org.hl7.fhir.r4.model.ImmunizationRecommendation.ImmunizationRecommendationRecommendationDateCriterionComponent;
+import org.hl7.fhir.r4.model.Identifier;
+import org.hl7.fhir.r4.model.Immunization;
+import org.hl7.fhir.r4.model.Immunization.ImmunizationEducationComponent;
+import org.hl7.fhir.r4.model.Location;
+import org.hl7.fhir.r4.model.Observation;
+import org.hl7.fhir.r4.model.Observation.ObservationStatus;
+import org.hl7.fhir.r4.model.Organization;
+import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.PositiveIntType;
+import org.hl7.fhir.r4.model.Practitioner;
+import org.hl7.fhir.r4.model.PractitionerRole;
+import org.hl7.fhir.r4.model.Quantity;
+import org.hl7.fhir.r4.model.Range;
+import org.hl7.fhir.r4.model.Reference;
+import org.hl7.fhir.r4.model.RelatedPerson;
+import org.hl7.fhir.r4.model.Resource;
+import org.hl7.fhir.r4.model.StringType;
+import org.hl7.fhir.r4.model.TimeType;
+
+import ca.uhn.hl7v2.model.Composite;
+import ca.uhn.hl7v2.model.Type;
+import gov.cdc.izgw.v2tofhir.annotation.ComesFrom;
+import gov.cdc.izgw.v2tofhir.annotation.Produces;
+import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
+import gov.cdc.izgw.v2tofhir.converter.MessageParser;
+import gov.cdc.izgw.v2tofhir.utils.Codes;
+import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
+import gov.cdc.izgw.v2tofhir.utils.Systems;
+import gov.cdc.izgw.v2tofhir.utils.TextUtils;
+import gov.cdc.izgw.v2tofhir.utils.Units;
+
+/**
+ * OBXParser parses any OBX segments in a message to an Immunization if the message is a VXU or an 
+ * response to an immunization query.
+ * 
+ * It merges OBX information into the Immunization or ImmunizationRecommendation resource where 
+ * appropriate, otherwise it creates new Observation resources.
+ * 
+ * @author Audacious Inquiry
+ *
+ * @see &lt;a href=&quot;https://hl7.org/fhir/uv/v2mappings/2024Jan/ConceptMap-segment-rxr-to-immunization.html&quot;&gt;V2 to FHIR: RXR to Immunization&lt;/a&gt;
+ */
+@Produces(segment = &quot;OBX&quot;, resource=Observation.class,
+		  extra = { Immunization.class, ImmunizationRecommendation.class })
+public class OBXParser extends AbstractSegmentParser {
+	private static final String PERFORMER = &quot;performer&quot;;
+<span class="fc" id="L72">	private static List&lt;FieldHandler&gt; fieldHandlers = new ArrayList&lt;&gt;();</span>
+	private IzDetail izDetail;
+<span class="fc" id="L74">	private VisCode redirect = null;</span>
+	private ImmunizationRecommendationRecommendationComponent recommendation;
+<span class="fc" id="L76">	private String type = null;</span>
+<span class="fc" id="L77">	private Observation observation = null;</span>
+	/** The media associated with the observation if any */
+<span class="fc" id="L79">	private DocumentReference docRef = null;</span>
+	private PractitionerRole performer;  // NOSONAR performer and PERFORMER are fine
+	
+	/**
+	 * Create an RXA Parser for the specified MessageParser
+	 * @param p	The message parser.
+	 */
+	public OBXParser(MessageParser p) {
+<span class="fc" id="L87">		super(p, &quot;OBX&quot;);</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">		if (fieldHandlers.isEmpty()) {</span>
+<span class="fc" id="L89">			FieldHandler.initFieldHandlers(this, fieldHandlers);</span>
+		}
+<span class="fc" id="L91">	}</span>
+
+	@Override
+	protected List&lt;FieldHandler&gt; getFieldHandlers() {
+<span class="fc" id="L95">		return fieldHandlers;</span>
+	}
+
+	@Override
+	public IBaseResource setup() {
+<span class="fc" id="L100">		izDetail = IzDetail.get(getMessageParser());</span>
+<span class="fc bfc" id="L101" title="All 2 branches covered.">		if (izDetail.hasRecommendation()) {</span>
+<span class="fc" id="L102">			recommendation = izDetail.getRecommendation();</span>
+		}
+			
+<span class="fc" id="L105">		observation = createResource(Observation.class);</span>
+<span class="fc" id="L106">		return observation;</span>
+	}
+	
+<span class="fc" id="L109">	private enum VisCode {</span>
+		// Used with Immunization
+<span class="fc" id="L111">		VACCINE_ELIGIBILITY_CODE(&quot;64994-7&quot;),</span>
+<span class="fc" id="L112">		VIS_DOCUMENT_TYPE_CODE(&quot;69764-9&quot;),</span>
+<span class="fc" id="L113">		VIS_VERSION_DATE_CODE(&quot;29768-9&quot;),</span>
+<span class="fc" id="L114">		VIS_DELIVERY_DATE_CODE(&quot;29769-7&quot;),</span>
+<span class="fc" id="L115">		VIS_VACCINE_TYPE_CODE(&quot;30956-7&quot;),</span>
+		// Used with ImmunizationRecommendation
+<span class="fc" id="L117">		FORECAST_SCHEDULE(&quot;59779-9&quot;),</span>
+<span class="fc" id="L118">		FORECAST_VACCINE_CODE(&quot;30956-7&quot;),</span>
+<span class="fc" id="L119">		FORECAST_SERIES_NAME(&quot;59780-7&quot;),</span>
+<span class="fc" id="L120">		FORECAST_DOSE_NUMBER(&quot;30973-2&quot;),</span>
+<span class="fc" id="L121">		DOSE_VALIDITY(&quot;59781-5&quot;),</span>
+<span class="fc" id="L122">		FORECAST_NUMBER_DOSES(&quot;59782-3&quot;),</span>
+<span class="fc" id="L123">		SERIES_STATUS(&quot;59783-1&quot;),</span>
+<span class="fc" id="L124">		NEXT_DOSE_EARLIEST(&quot;30981-5&quot;, &quot;Earliest date to give&quot;),</span>
+<span class="fc" id="L125">		NEXT_DOSE_RECOMMENDED(&quot;30980-7&quot;, &quot;Date vaccine due&quot;),</span>
+<span class="fc" id="L126">		NEXT_DOSE_LATEST(&quot;59777-3&quot;, &quot;Latest date to give immunization&quot;),</span>
+<span class="fc" id="L127">		NEXT_DOSE_OVERDUE(&quot;59778-1&quot;, &quot;Date when overdue for immunization&quot;),</span>
+<span class="fc" id="L128">		WHY_INVALID(&quot;30982-3&quot;),</span>
+		// None of the above
+<span class="fc" id="L130">		OTHER(&quot;&quot;);</span>
+		private final String loincCode;
+		private final String display;
+<span class="fc" id="L133">		private VisCode(String loincCode) {</span>
+<span class="fc" id="L134">			this.loincCode = loincCode;</span>
+<span class="fc" id="L135">			this.display = null;</span>
+<span class="fc" id="L136">		}</span>
+<span class="fc" id="L137">		private VisCode(String loincCode, String display) {</span>
+<span class="fc" id="L138">			this.loincCode = loincCode;</span>
+<span class="fc" id="L139">			this.display = display;</span>
+<span class="fc" id="L140">		}</span>
+		public String getCode() {
+<span class="fc" id="L142">			return loincCode;</span>
+		}
+		private static VisCode match(CodeableConcept cc) {
+<span class="fc bfc" id="L145" title="All 2 branches covered.">			for (Coding coding: cc.getCoding()) {</span>
+<span class="fc" id="L146">				VisCode v = match(coding);</span>
+<span class="fc bfc" id="L147" title="All 2 branches covered.">				if (!VisCode.OTHER.equals(v)) {</span>
+<span class="fc" id="L148">					return v;</span>
+				}
+<span class="fc" id="L150">			}</span>
+<span class="fc" id="L151">			return OTHER;</span>
+		}
+		private static VisCode match(Coding coding) {
+<span class="pc bpc" id="L154" title="1 of 2 branches missed.">			if (Systems.LOINC.equals(coding.getSystem())) {</span>
+<span class="fc bfc" id="L155" title="All 2 branches covered.">				for (VisCode v: VisCode.values()) {</span>
+<span class="pc bpc" id="L156" title="1 of 4 branches missed.">					if (coding.hasCode() &amp;&amp; coding.getCode().equals(v.loincCode)) {</span>
+<span class="fc" id="L157">						return v;</span>
+					}
+				}
+			}
+<span class="fc" id="L161">			return OTHER;</span>
+		}
+		boolean isPresent(ImmunizationEducationComponent education) {
+<span class="pc bpc" id="L164" title="3 of 5 branches missed.">			switch (this) {</span>
+			case VIS_DELIVERY_DATE_CODE:
+<span class="fc" id="L166">				return education.hasPresentationDate();</span>
+			case VIS_DOCUMENT_TYPE_CODE:
+<span class="fc" id="L168">				return education.getDocumentTypeElement().hasValue();</span>
+			case VIS_VACCINE_TYPE_CODE:
+<span class="nc" id="L170">				return education.getDocumentTypeElement().hasExtension();</span>
+			case VIS_VERSION_DATE_CODE:
+<span class="nc" id="L172">				return education.hasPublicationDateElement();</span>
+			default:
+<span class="nc" id="L174">				return false;</span>
+			}
+		}
+		String getDisplay() {
+<span class="fc" id="L178">			return display;</span>
+		}
+	}
+	
+	
+	/**
+	 * Save the type of value in OBX-5
+	 * @param type the type of value in OBX-5
+	 */
+	@ComesFrom(path = &quot;&quot;, field = 2, comment = &quot;Observation Type&quot;) 
+	public void setType(StringType type) {
+<span class="fc" id="L189">		this.type = type.getValueAsString(); </span>
+<span class="fc" id="L190">	}</span>
+	
+	/**
+	 * Figure out where to redirect OBX-5 information for VIS OBX types 
+	 * @param observationCode the observation code in OBX-3
+	 */
+	@ComesFrom(path = &quot;Observation.code&quot;, field = 3, comment = &quot;Observation Identifier&quot;) 
+	public void redirectTo(CodeableConcept observationCode) {
+<span class="fc" id="L198">		observation.setCode(observationCode);</span>
+<span class="fc bfc" id="L199" title="All 4 branches covered.">		if (izDetail.hasImmunization() || izDetail.hasRecommendation()) {</span>
+<span class="fc" id="L200">			redirect = VisCode.match(observationCode);</span>
+		} else {
+<span class="fc" id="L202">			redirect = null;</span>
+		}
+<span class="fc" id="L204">	}</span>
+	
+	/**
+	 * Set the value
+	 * @param v2Type	The v2 data type to convert.
+	 */
+	@ComesFrom(path = &quot;Observation.value[x]&quot;, field = 5, comment = &quot;Observation Value&quot;)
+	public void setValue(Type v2Type) {  // NOSONAR -- Yes, it's a big switch statement
+<span class="fc" id="L212">		v2Type = DatatypeConverter.adjustIfVaries(v2Type);</span>
+<span class="pc bpc" id="L213" title="1 of 2 branches missed.">		if (type == null) {</span>
+<span class="nc" id="L214">			getParser().warn(&quot;Type is unknown for OBX-5&quot;);</span>
+<span class="nc" id="L215">			return;</span>
+		}
+<span class="fc" id="L217">		Class&lt;? extends IBase&gt; target = null;</span>
+<span class="pc bpc" id="L218" title="24 of 28 branches missed.">		switch (type) {</span>
+<span class="nc" id="L219">		case &quot;AD&quot;:	target = Address.class; break;	//	Address	</span>
+		case &quot;CE&quot;, 
+			 &quot;CF&quot;,  		
+			 &quot;CNE&quot;,		
+			 &quot;CWE&quot;:	
+				 // Coded Element (With Formatted Values)
+				 //	Coded with No Exceptions
+				 // Coded Entry
+<span class="fc" id="L227">				 target = CodeableConcept.class; break;		</span>
+<span class="nc" id="L228">		case &quot;CK&quot;:	target = Identifier.class; break;	//	Composite ID With Check Digit	</span>
+<span class="nc" id="L229">		case &quot;CX&quot;:	target = Identifier.class; break;	//	Extended Composite ID With Check Digit	</span>
+<span class="fc" id="L230">		case &quot;DT&quot;:	target = DateTimeType.class; break;	//	Observation doesn't like DateType	</span>
+<span class="nc" id="L231">		case &quot;DTM&quot;:	target = DateTimeType.class; break;	//	Time Stamp (Date &amp; Time)</span>
+<span class="nc" id="L232">		case &quot;ED&quot;:  target = Attachment.class; break;	//	Encapsulated Data	</span>
+<span class="nc" id="L233">		case &quot;FT&quot;:	target = StringType.class; break; //	Formatted Text (Display)	</span>
+<span class="nc" id="L234">		case &quot;HD&quot;:	target = Identifier.class; break; //	Hierarchic Designator</span>
+<span class="nc" id="L235">		case &quot;ID&quot;:	target = CodeType.class; break; //	Coded Value for HL7 Defined Tables	</span>
+<span class="nc" id="L236">		case &quot;IS&quot;:	target = CodeType.class; break; //	Coded Value for User-Defined Tables	</span>
+<span class="fc" id="L237">		case &quot;NM&quot;:	target = Quantity.class; break; //	Numeric	(Observation only accepts Quantity)</span>
+<span class="nc" id="L238">		case &quot;PL&quot;:	target = Location.class; break; //	Person Location</span>
+<span class="nc" id="L239">		case &quot;PN&quot;:	target = HumanName.class; break; //	Person Name</span>
+<span class="nc" id="L240">		case &quot;RP&quot;:	target = Attachment.class; break; //	Reference Pointer</span>
+		case &quot;SN&quot;:	
+<span class="nc bnc" id="L242" title="All 4 branches missed.">			if (v2Type instanceof Composite comp &amp;&amp; comp.getComponents().length &gt; 3) {</span>
+<span class="nc" id="L243">				target = Range.class; 	</span>
+			} else {
+<span class="nc" id="L245">				target = Quantity.class;</span>
+			}
+<span class="nc" id="L247">			break;</span>
+<span class="nc" id="L248">		case &quot;ST&quot;:	target = StringType.class; break; //	String Data.	</span>
+<span class="nc" id="L249">		case &quot;TM&quot;:	target = TimeType.class; break; //	Time	</span>
+<span class="nc" id="L250">		case &quot;TN&quot;:	target = ContactPoint.class; break; //	Telephone Number	</span>
+<span class="fc" id="L251">		case &quot;TS&quot;:	target = DateTimeType.class; break; //	TimeStamp	 (OBX requires DateTimeType)</span>
+<span class="nc" id="L252">		case &quot;TX&quot;:	target = StringType.class; break; //	Text Data (Display)	</span>
+<span class="nc" id="L253">		case &quot;XAD&quot;:	target = Address.class; break; //	Extended Address	</span>
+<span class="nc" id="L254">		case &quot;CN&quot;:	target = RelatedPerson.class; break;	//	Composite ID And Name	</span>
+<span class="nc" id="L255">		case &quot;XCN&quot;:	target = RelatedPerson.class; break; //	Extended Composite Name And Number For Persons	</span>
+<span class="nc" id="L256">		case &quot;XON&quot;:	target = Organization.class; break; //	Extended Composite Name And Number For Organizations	</span>
+<span class="nc" id="L257">		case &quot;XPN&quot;:	target = HumanName.class; break; //	Extended Person Name	</span>
+<span class="nc" id="L258">		case &quot;XTN&quot;:	target = ContactPoint.class; break; //	Extended Telecommunications Number</span>
+		case &quot;CP&quot;,	//	Composite Price	
+			 &quot;DR&quot;,	//	Date/Time Range	
+			 &quot;MA&quot;,	//	Multiplexed Array	
+			 &quot;MO&quot;,	//	Money	
+			 &quot;NA&quot;:	//	Reference Pointer	
+		default:
+			break;
+		}
+		
+<span class="pc bpc" id="L268" title="1 of 2 branches missed.">		if (target == null) {</span>
+<span class="nc" id="L269">			getParser().warn(&quot;Cannot convert V2 {}&quot;, type);</span>
+<span class="nc" id="L270">			return;</span>
+		}
+		
+<span class="fc" id="L273">		IBase converted = DatatypeConverter.convert(target, v2Type, null);</span>
+<span class="pc bpc" id="L274" title="1 of 2 branches missed.">		if (converted instanceof Organization org) {</span>
+<span class="nc" id="L275">			observation.setValue(org.getNameElement());</span>
+<span class="pc bpc" id="L276" title="1 of 2 branches missed.">		} else if (converted instanceof RelatedPerson rp) {</span>
+<span class="nc" id="L277">			observation.setValue(new StringType(TextUtils.toString(rp.getNameFirstRep())));</span>
+<span class="pc bpc" id="L278" title="1 of 2 branches missed.">		} else if (converted instanceof Practitioner pr) {</span>
+<span class="nc" id="L279">			observation.setValue(new StringType(TextUtils.toString(pr.getNameFirstRep())));</span>
+<span class="pc bpc" id="L280" title="1 of 2 branches missed.">		} else if (converted instanceof Location loc) {</span>
+<span class="nc" id="L281">			observation.setValue(new StringType(TextUtils.toString(loc.getNameElement())));</span>
+<span class="pc bpc" id="L282" title="1 of 2 branches missed.">		} else if (converted instanceof Address addr) {</span>
+<span class="nc" id="L283">			observation.setValue(new StringType(TextUtils.toString(addr)));</span>
+<span class="pc bpc" id="L284" title="1 of 2 branches missed.">		} else if (converted instanceof Identifier identifier) {</span>
+			// You cannot set an identifier value directly into Observation.value
+<span class="nc bnc" id="L286" title="All 4 branches missed.">			if (identifier.hasSystem() &amp;&amp; identifier.hasValue()) {</span>
+<span class="nc" id="L287">				observation.setValue(new StringType(identifier.getSystem() + &quot;#&quot; + identifier.getValue()));</span>
+<span class="nc bnc" id="L288" title="All 2 branches missed.">			} else if (identifier.hasValue()) {</span>
+<span class="nc" id="L289">				observation.setValue(identifier.getValueElement());</span>
+<span class="nc bnc" id="L290" title="All 2 branches missed.">			} else if (identifier.hasSystem()) {</span>
+<span class="nc" id="L291">				observation.setValue(new StringType(identifier.getSystem()));</span>
+			}
+			// Save the identifier as an external identifier for the observation
+<span class="nc" id="L294">			observation.addIdentifier(identifier);</span>
+<span class="pc bpc" id="L295" title="1 of 2 branches missed.">		} else if (converted instanceof Attachment attachment) {</span>
+<span class="nc" id="L296">			docRef = createDocRef(attachment);</span>
+<span class="nc" id="L297">			observation.getDerivedFrom().add(ParserUtils.toReference(docRef, observation, &quot;derivedFrom&quot;));</span>
+<span class="pc bpc" id="L298" title="1 of 2 branches missed.">		} else if (converted instanceof org.hl7.fhir.r4.model.Type t){</span>
+<span class="fc" id="L299">			observation.setValue(t);</span>
+		}
+		
+<span class="fc bfc" id="L302" title="All 4 branches covered.">		if (redirect == null || VisCode.OTHER.equals(redirect)) {</span>
+<span class="fc" id="L303">			return;</span>
+		}
+		
+		// This observation applies to either a created Immunization or an ImmunizationRecommendation,
+		// link it via Observation.partOf.
+<span class="fc" id="L308">		linkObservation();</span>
+
+<span class="fc bfc" id="L310" title="All 2 branches covered.">		if (izDetail.hasImmunization()) {</span>
+<span class="fc" id="L311">			handleVisObservations(converted);</span>
+<span class="pc bpc" id="L312" title="1 of 2 branches missed.">		} else if (izDetail.hasRecommendation()) {</span>
+<span class="fc" id="L313">			handleRecommendationObservations(converted);</span>
+		}
+<span class="fc" id="L315">	}</span>
+
+	private DocumentReference createDocRef(Attachment attachment) {
+<span class="nc" id="L318">		docRef = createResource(DocumentReference.class);</span>
+<span class="nc" id="L319">		docRef.setStatus(DocumentReferenceStatus.CURRENT);</span>
+<span class="nc" id="L320">		docRef.addContent().setAttachment(attachment);</span>
+		// Backlink the document reference to the observation
+<span class="nc" id="L322">		docRef.getContext().getRelated().add(ParserUtils.toReference(observation, docRef, &quot;relatedContext&quot;));</span>
+<span class="nc" id="L323">		return docRef;</span>
+	}
+	
+	@Override
+	/**
+	 * Finish populating the docRef resource if present from the observation 
+	 */
+	public void finish() {
+<span class="pc bpc" id="L331" title="3 of 4 branches missed.">		if (docRef == null || docRef.isEmpty()) {</span>
+<span class="fc" id="L332">			return;</span>
+		}
+<span class="nc" id="L334">		docRef.setDate(observation.getEffectiveDateTimeType().getValue());</span>
+		// The authors of the document reference are the performers of the observation.
+<span class="nc bnc" id="L336" title="All 2 branches missed.">		for (Reference r: observation.getPerformer()) {</span>
+<span class="nc" id="L337">			Resource res = (Resource) r.getResource();</span>
+<span class="nc bnc" id="L338" title="All 2 branches missed.">			if (res != null) {</span>
+<span class="nc" id="L339">				docRef.getAuthor().add(ParserUtils.toReference(res, docRef, &quot;author&quot;));</span>
+			}
+<span class="nc" id="L341">		}</span>
+		
+		// Update status and docStatus based on observation status
+<span class="nc" id="L344">		ObservationStatus status = observation.getStatus();</span>
+<span class="nc bnc" id="L345" title="All 2 branches missed.">		if (status != null) {</span>
+<span class="nc bnc" id="L346" title="All 8 branches missed.">			switch (status) {</span>
+			case AMENDED, CORRECTED:
+<span class="nc" id="L348">				docRef.setStatus(DocumentReferenceStatus.CURRENT);</span>
+<span class="nc" id="L349">				docRef.setDocStatus(ReferredDocumentStatus.AMENDED);</span>
+<span class="nc" id="L350">				break;</span>
+			case CANCELLED:
+<span class="nc" id="L352">				docRef.setStatus(DocumentReferenceStatus.SUPERSEDED);</span>
+<span class="nc" id="L353">				docRef.setDocStatus(ReferredDocumentStatus.ENTEREDINERROR);</span>
+<span class="nc" id="L354">				break;</span>
+			case ENTEREDINERROR:
+<span class="nc" id="L356">				docRef.setStatus(DocumentReferenceStatus.ENTEREDINERROR);</span>
+<span class="nc" id="L357">				docRef.setDocStatus(ReferredDocumentStatus.ENTEREDINERROR);</span>
+<span class="nc" id="L358">				break;</span>
+			case FINAL:
+<span class="nc" id="L360">				docRef.setStatus(DocumentReferenceStatus.CURRENT);</span>
+<span class="nc" id="L361">				docRef.setDocStatus(ReferredDocumentStatus.FINAL);</span>
+<span class="nc" id="L362">				break;</span>
+			case NULL:
+<span class="nc" id="L364">				docRef.setStatus(DocumentReferenceStatus.NULL);</span>
+<span class="nc" id="L365">				docRef.setDocStatus(ReferredDocumentStatus.NULL);</span>
+<span class="nc" id="L366">				break;</span>
+			case PRELIMINARY, REGISTERED:
+<span class="nc" id="L368">				docRef.setStatus(DocumentReferenceStatus.CURRENT);</span>
+<span class="nc" id="L369">				docRef.setDocStatus(ReferredDocumentStatus.PRELIMINARY);</span>
+<span class="nc" id="L370">				break;</span>
+			case UNKNOWN:
+<span class="nc" id="L372">				docRef.setStatus(null);</span>
+<span class="nc" id="L373">				docRef.setDocStatus(null);</span>
+<span class="nc" id="L374">				break;</span>
+			default:
+				break;
+			}
+		}
+		// The subject (and sourcePatientInfo) of the DocumentReference is the subject of the observation.
+<span class="nc" id="L380">		Resource subject = getResource(observation.getSubject());</span>
+<span class="nc bnc" id="L381" title="All 2 branches missed.">		if (subject != null) {</span>
+<span class="nc" id="L382">			docRef.setSubject(ParserUtils.toReference(subject, docRef, &quot;subject&quot;));</span>
+<span class="nc bnc" id="L383" title="All 2 branches missed.">			if (subject instanceof Patient) {</span>
+<span class="nc" id="L384">				docRef.getContext().setSourcePatientInfo(ParserUtils.toReference(subject, docRef, &quot;sourcePatientInfo&quot;));</span>
+			}
+		}
+		
+		// The encounter of the DocumentReference is the encounter of the observation.
+<span class="nc" id="L389">		Resource encounter = getResource(observation.getEncounter());</span>
+<span class="nc bnc" id="L390" title="All 2 branches missed.">		if (encounter != null) {</span>
+<span class="nc" id="L391">			docRef.getContext().getEncounter().add(ParserUtils.toReference(encounter, docRef, &quot;encounter&quot;));</span>
+		}
+		
+<span class="nc" id="L394">	}</span>
+
+	private Resource getResource(Reference ref) {
+<span class="nc bnc" id="L397" title="All 2 branches missed.">		if (ref == null) {</span>
+<span class="nc" id="L398">			return null;</span>
+		}
+<span class="nc" id="L400">		return (Resource) ref.getResource();</span>
+	}
+
+	/**
+	 * Set the units of the Observation 
+	 * @param units the units of the Observation 
+	 */
+	@ComesFrom(path = &quot;Observation.valueQuantity.unit&quot;, field = 6, comment = &quot;Observation Units&quot;)
+	public void setUnits(CodeableConcept units) {
+<span class="nc" id="L409">		org.hl7.fhir.r4.model.Type value = observation.getValue();</span>
+<span class="nc bnc" id="L410" title="All 2 branches missed.">		if (value instanceof org.hl7.fhir.r4.model.PrimitiveType&lt;?&gt; t) {</span>
+<span class="nc" id="L411">			String v = t.asStringValue();</span>
+<span class="nc" id="L412">			value = new Quantity().setValue(new BigDecimal(v));</span>
+		}
+<span class="nc bnc" id="L414" title="All 2 branches missed.">		if (value instanceof Quantity qty) {</span>
+<span class="nc" id="L415">			String code = units.getCodingFirstRep().getCode();</span>
+<span class="nc" id="L416">			Coding unit = Units.toUcum(code);</span>
+<span class="nc bnc" id="L417" title="All 2 branches missed.">			if (unit != null) {</span>
+<span class="nc bnc" id="L418" title="All 2 branches missed.">				if (unit.hasDisplay()) {</span>
+<span class="nc" id="L419">					qty.setUnit(unit.getDisplay());</span>
+				} else {
+<span class="nc" id="L421">					qty.setUnit(code);</span>
+				}
+<span class="nc" id="L423">				qty.setCode(unit.getCode());</span>
+<span class="nc" id="L424">				qty.setSystem(unit.getSystem());</span>
+			} else {
+<span class="nc" id="L426">				qty.setUnit(units.getCodingFirstRep().getCode());</span>
+			}
+		}
+<span class="nc" id="L429">	}</span>
+	
+	private void handleVisObservations(IBase converted) {
+<span class="fc bfc" id="L432" title="All 2 branches covered.">		if (VisCode.VACCINE_ELIGIBILITY_CODE.equals(redirect)) {</span>
+<span class="fc" id="L433">			izDetail.immunization.addProgramEligibility((CodeableConcept) converted);</span>
+<span class="fc" id="L434">			observation.addPartOf(ParserUtils.toReference(izDetail.immunization, observation, &quot;partOf&quot;));</span>
+<span class="fc" id="L435">			return;</span>
+		} 
+<span class="fc" id="L437">		ImmunizationEducationComponent education = getLastEducation(izDetail.immunization);</span>
+		// If the observation is already present in education
+<span class="pc bpc" id="L439" title="1 of 2 branches missed.">		if (redirect.isPresent(education)) {</span>
+			// Create a new education element.
+<span class="nc" id="L441">			education = izDetail.immunization.addEducation();</span>
+		}
+<span class="pc bpc" id="L443" title="3 of 5 branches missed.">		switch (redirect) {</span>
+		case VIS_DELIVERY_DATE_CODE:
+<span class="pc bpc" id="L445" title="1 of 2 branches missed.">			if (converted instanceof BaseDateTimeType bt) {</span>
+<span class="fc" id="L446">				education.setPresentationDateElement(DatatypeConverter.castInto(bt, new DateTimeType()));</span>
+<span class="fc" id="L447">				return;</span>
+			} 
+<span class="nc" id="L449">			getParser().warn(&quot;Cannot convert {} to DateTimeType for VIS Delivery Date&quot;, converted.fhirType());</span>
+<span class="nc" id="L450">			return;</span>
+		case VIS_DOCUMENT_TYPE_CODE:
+<span class="pc bpc" id="L452" title="1 of 2 branches missed.">			if (converted instanceof StringType sv) {</span>
+<span class="nc" id="L453">				education.setDocumentTypeElement(sv);</span>
+<span class="nc" id="L454">				return;</span>
+			} 
+<span class="pc bpc" id="L456" title="1 of 2 branches missed.">			if (converted instanceof CodeableConcept cc) {</span>
+<span class="fc" id="L457">				education.setDocumentType(TextUtils.toString(cc));</span>
+<span class="fc" id="L458">				return;</span>
+			} 
+<span class="nc" id="L460">			getParser().warn(&quot;Cannot convert {} to StringType for VIS Document Type&quot;, converted.fhirType());</span>
+<span class="nc" id="L461">			return;</span>
+		case VIS_VACCINE_TYPE_CODE:
+<span class="nc bnc" id="L463" title="All 2 branches missed.">			if (converted instanceof CodeableConcept cc) {</span>
+<span class="nc" id="L464">				education.getDocumentTypeElement()</span>
+<span class="nc" id="L465">					.addExtension()</span>
+<span class="nc" id="L466">						.setUrl(&quot;http://hl7.org/fhir/StructureDefinition/iso21090-SC-coding&quot;)</span>
+<span class="nc" id="L467">						.setValue(cc.getCodingFirstRep());</span>
+<span class="nc" id="L468">				return;</span>
+			} 
+<span class="nc" id="L470">			getParser().warn(&quot;Cannot convert {} to CodeableConcept for VIS Vaccine Type&quot;, converted.fhirType());</span>
+<span class="nc" id="L471">			return;</span>
+		case VIS_VERSION_DATE_CODE:
+<span class="nc bnc" id="L473" title="All 2 branches missed.">			if (converted instanceof BaseDateTimeType bt) {</span>
+<span class="nc" id="L474">				education.setPublicationDateElement(DatatypeConverter.castInto(bt, new DateTimeType()));</span>
+<span class="nc" id="L475">				return;</span>
+			} 
+<span class="nc" id="L477">			getParser().warn(&quot;Cannot convert {} to DateTimeType for VIS Version Date&quot;, converted.fhirType());</span>
+<span class="nc" id="L478">			return;</span>
+		default:
+<span class="nc" id="L480">			return;</span>
+		}
+	}
+
+	/**
+	 * Link the Observation to the Immunization or ImmunizationRecommendation to
+	 * which it applies.
+	 */
+	private void linkObservation() {
+<span class="pc bpc" id="L489" title="1 of 2 branches missed.">		if (!VisCode.OTHER.equals(redirect)) {</span>
+<span class="fc" id="L490">			Reference ref = null;</span>
+<span class="fc bfc" id="L491" title="All 2 branches covered.">			if (izDetail.hasImmunization()) {</span>
+<span class="fc" id="L492">				ref = ParserUtils.toReference(izDetail.immunization, observation, &quot;partof&quot;);</span>
+<span class="pc bpc" id="L493" title="1 of 2 branches missed.">			} else if (izDetail.hasRecommendation()) {</span>
+<span class="fc" id="L494">				ref = ParserUtils.toReference(izDetail.immunizationRecommendation, observation, &quot;partof&quot;);</span>
+			}
+<span class="pc bpc" id="L496" title="2 of 4 branches missed.">			if (ref != null &amp;&amp; !observation.getPartOf().contains(ref)) {</span>
+<span class="fc" id="L497">				observation.addPartOf(ref);</span>
+			}
+		}
+<span class="fc" id="L500">	}</span>
+
+	private void handleRecommendationObservations(IBase converted) {
+<span class="pc bpc" id="L503" title="1 of 2 branches missed.">		if (redirect == null) {</span>
+<span class="nc" id="L504">			return;</span>
+		}
+		
+<span class="fc" id="L507">		ImmunizationRecommendationRecommendationDateCriterionComponent criterion = null;</span>
+<span class="fc" id="L508">		int value = 0;</span>
+<span class="pc bpc" id="L509" title="5 of 10 branches missed.">		switch (redirect) {</span>
+		case DOSE_VALIDITY:
+<span class="nc" id="L511">			break;</span>
+		case FORECAST_DOSE_NUMBER:
+<span class="fc" id="L513">			value = ((Quantity)converted).getValue().intValue(); </span>
+<span class="fc" id="L514">			recommendation.setDoseNumber(new PositiveIntType(value));</span>
+<span class="fc" id="L515">			break;</span>
+		case FORECAST_NUMBER_DOSES:
+<span class="fc" id="L517">			value = ((Quantity)converted).getValue().intValue(); </span>
+<span class="fc" id="L518">			recommendation.setSeriesDoses(new PositiveIntType(value));</span>
+<span class="fc" id="L519">			break;</span>
+		case FORECAST_SCHEDULE:
+<span class="fc" id="L521">			break;</span>
+		case FORECAST_SERIES_NAME:
+<span class="nc" id="L523">			recommendation.setSeriesElement((StringType)converted);</span>
+<span class="nc" id="L524">			break;</span>
+		case FORECAST_VACCINE_CODE:
+<span class="nc" id="L526">			recommendation.addVaccineCode((CodeableConcept)converted);</span>
+<span class="nc" id="L527">			break;</span>
+		case NEXT_DOSE_OVERDUE,
+			 NEXT_DOSE_EARLIEST,
+			 NEXT_DOSE_LATEST,
+			 NEXT_DOSE_RECOMMENDED:
+<span class="fc" id="L532">			criterion = recommendation.addDateCriterion();</span>
+<span class="fc" id="L533">			criterion.setCode(new CodeableConcept().addCoding(new Coding(Systems.LOINC, redirect.getCode(), redirect.getDisplay())));</span>
+<span class="fc" id="L534">			criterion.setValueElement(DatatypeConverter.castInto((BaseDateTimeType)converted, new DateTimeType()));</span>
+<span class="fc" id="L535">			break;</span>
+		case SERIES_STATUS:
+<span class="nc" id="L537">			recommendation.setForecastStatus((CodeableConcept)converted);</span>
+<span class="nc" id="L538">			break;</span>
+		case WHY_INVALID:
+<span class="nc" id="L540">			break;</span>
+		default:
+			break;
+		}
+<span class="fc" id="L544">	}</span>
+		
+	private ImmunizationEducationComponent getLastEducation(Immunization immunization) {
+<span class="fc bfc" id="L547" title="All 2 branches covered.">		if (!immunization.hasEducation()) {</span>
+<span class="fc" id="L548">			return immunization.getEducationFirstRep();</span>
+		}
+<span class="fc" id="L550">		List&lt;ImmunizationEducationComponent&gt; l = immunization.getEducation();</span>
+<span class="fc" id="L551">		return l.get(l.size() - 1);</span>
+	}
+	
+	/**
+	 * Set the reference range
+	 * @param referenceRange	the reference range
+	 */
+	@ComesFrom(path = &quot;Observation.referenceRange.text&quot;, field = 7, comment = &quot;Reference Range&quot;)	
+	public void setReferenceRange(StringType referenceRange) {
+<span class="nc" id="L560">		observation.addReferenceRange().setTextElement(referenceRange); </span>
+<span class="nc" id="L561">	}</span>
+	
+	/**
+	 * Set the interpretation
+	 * @param interpretationCode the interpretation
+	 */
+	@ComesFrom(path = &quot;Observation.interpretation&quot;, field = 8, table=&quot;0078&quot;, comment = &quot;Interpretation Code&quot;)	
+	public void setInterpretationCodes(CodeableConcept interpretationCode) {
+<span class="nc bnc" id="L569" title="All 2 branches missed.">		for (Coding coding: interpretationCode.getCoding()) {</span>
+<span class="nc bnc" id="L570" title="All 4 branches missed.">			if (coding.hasSystem() &amp;&amp; StringUtils.endsWith(coding.getSystem(), &quot;0078&quot;)) {</span>
+<span class="nc" id="L571">				coding.setSystem(&quot;http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation&quot;);</span>
+			}
+<span class="nc" id="L573">		}</span>
+<span class="nc" id="L574">		observation.addInterpretation(interpretationCode); </span>
+<span class="nc" id="L575">	}</span>
+		
+	/**
+	 * Set the abnormal test code
+	 * @param natureofAbnormalTest the abnormal test code
+	 */
+	@ComesFrom(path = &quot;Observation.observation-nature-of-abnormal-test&quot;, table = &quot;0080&quot;, field = 10, comment = &quot;Nature of Abnormal Test&quot;)	
+	public void setNatureofAbnormalTest(CodeType natureofAbnormalTest) 
+<span class="nc" id="L583">	{	observation.addExtension()</span>
+<span class="nc" id="L584">			.setUrl(&quot;http://hl7.org/fhir/StructureDefinition/observation-nature-of-abnormal-test&quot;)</span>
+<span class="nc" id="L585">			.setValue(natureofAbnormalTest);</span>
+<span class="nc" id="L586">	}</span>
+	
+	/**
+	 * Set the status code from V2 Table 0085
+	 * @param observationResultStatus the status code from V2 Table 0085
+	 */
+	@ComesFrom(path = &quot;Observation.status&quot;, field = 11, table = &quot;0085&quot;, comment = &quot;Observation Result Status&quot;)	
+	public void setObservationResultStatus(CodeType observationResultStatus) 
+	{
+<span class="fc" id="L595">		observation.setStatus(toObservationStatus(observationResultStatus)); </span>
+<span class="fc" id="L596">	}</span>
+		
+	/**
+	 * Convert from table 0085 to ObservationStatus
+	 * @param observationResultStatus a code from table 0085 
+	 * @return the converted ObservationStatus value
+	 */
+	private ObservationStatus toObservationStatus(CodeType observationResultStatus) {
+<span class="pc bpc" id="L604" title="1 of 2 branches missed.">		if (!observationResultStatus.hasCode()) {</span>
+<span class="nc" id="L605">			return null;</span>
+		}
+<span class="pc bpc" id="L607" title="10 of 11 branches missed.">		switch (observationResultStatus.getCode()) {</span>
+<span class="nc" id="L608">		case &quot;C&quot;:	return ObservationStatus.CORRECTED;</span>
+<span class="nc" id="L609">		case &quot;D&quot;:	return ObservationStatus.ENTEREDINERROR;</span>
+<span class="fc" id="L610">		case &quot;F&quot;:	return ObservationStatus.FINAL;</span>
+<span class="nc" id="L611">		case &quot;I&quot;:	return ObservationStatus.REGISTERED;</span>
+<span class="nc" id="L612">		case &quot;P&quot;:	return ObservationStatus.PRELIMINARY;</span>
+<span class="nc" id="L613">		case &quot;R&quot;:	return ObservationStatus.PRELIMINARY;</span>
+<span class="nc" id="L614">		case &quot;S&quot;:	return ObservationStatus.PRELIMINARY;</span>
+<span class="nc" id="L615">		case &quot;U&quot;:	return ObservationStatus.FINAL;</span>
+<span class="nc" id="L616">		case &quot;W&quot;:	return ObservationStatus.ENTEREDINERROR;</span>
+<span class="nc" id="L617">		case &quot;X&quot;:	return ObservationStatus.CANCELLED;</span>
+<span class="nc" id="L618">		default:	return null;</span>
+		}
+	}
+
+	/**
+	 * Set the effectiveTime
+	 * @param dateTimeoftheObservation the effectiveTime
+	 */
+	@ComesFrom(path = &quot;Observation.effectiveDateTime&quot;, field = 14, comment = &quot;Date/Time of the Observation&quot;)
+	public void setDateTimeoftheObservation(DateTimeType dateTimeoftheObservation) {
+<span class="fc" id="L628">		observation.setEffective(dateTimeoftheObservation); </span>
+<span class="fc" id="L629">	}</span>
+	
+	
+	/**
+	 * Set the producing organization identifier
+	 * @param producersId	The producer organization's identifier
+	 */
+	@ComesFrom(path = &quot;Observation.performer.PractitionerRole.organization.Organization.identifier&quot;, field = 15, comment = &quot;Producer's ID&quot;)
+	public void setProducersID(Identifier producersId) 
+	{
+<span class="fc" id="L639">		Organization producer = null;</span>
+<span class="pc bpc" id="L640" title="1 of 2 branches missed.">		if (!getPerformer().hasOrganization()) {</span>
+<span class="fc" id="L641">			producer = createResource(Organization.class);</span>
+<span class="fc" id="L642">			producer.addIdentifier(producersId);</span>
+<span class="fc" id="L643">			performer.setOrganization(ParserUtils.toReference(producer, performer, PERFORMER));</span>
+		} else {
+<span class="nc" id="L645">			producer = ParserUtils.getResource(Organization.class, performer.getOrganization()); </span>
+<span class="nc" id="L646">			producer.addIdentifier(producersId);</span>
+<span class="nc" id="L647">			ParserUtils.toReference(producer, performer, PERFORMER);  // Force reference update with identifier</span>
+		}
+<span class="fc" id="L649">	}</span>
+	
+	/**
+	 * Get or create if necessary the performer of the observation.
+	 * Attaches the reference to the performer to Observation.performer.
+	 * @return the performer of the observation.
+	 */
+	private PractitionerRole getPerformer() {
+<span class="pc bpc" id="L657" title="1 of 2 branches missed.">		if (performer == null) {</span>
+<span class="fc" id="L658">			performer = createResource(PractitionerRole.class);</span>
+<span class="fc" id="L659">			performer.getCodeFirstRep()</span>
+<span class="fc" id="L660">				.getCodingFirstRep()</span>
+<span class="fc" id="L661">					.setSystem(&quot;http://terminology.hl7.org/CodeSystem/practitioner-role&quot;)</span>
+<span class="fc" id="L662">					.setCode(&quot;responsibleObserver&quot;)</span>
+<span class="fc" id="L663">					.setDisplay(&quot;Responsible Observer&quot;);</span>
+<span class="fc" id="L664">			observation.addPerformer(ParserUtils.toReference(performer, observation, PERFORMER));</span>
+		}
+<span class="fc" id="L666">		return performer;</span>
+	}
+
+	/**
+	 * Set the responsible observer
+	 * @param responsibleObserver the responsible observer
+	 */
+	@ComesFrom(path = &quot;Observation.performer.PractitionerRole.practitioner&quot;, field = 16, comment = &quot;Responsible Observer&quot;)
+	public void setResponsibleObserver(Practitioner responsibleObserver) 
+	{
+<span class="nc" id="L676">		addResource(responsibleObserver);</span>
+<span class="nc" id="L677">		getPerformer();</span>
+<span class="nc" id="L678">		performer.setPractitioner(ParserUtils.toReference(responsibleObserver, performer, PERFORMER));</span>
+<span class="nc" id="L679">	}</span>
+	
+	/**
+	 * Set the method of observation
+	 * @param observationMethod the method of observation
+	 */
+	@ComesFrom(path = &quot;Observation.method&quot;, field = 17, comment = &quot;Observation Method&quot;)
+	public void setObservationMethod(CodeableConcept observationMethod) 
+	{
+<span class="fc" id="L688">		observation.setMethod(observationMethod);</span>
+<span class="fc" id="L689">	}</span>
+	
+	/**
+	 * Set the device identifier
+	 * @param equipmentInstanceIdentifier the device identifier
+	 */
+	@ComesFrom(path = &quot;Observation.device.Device.identifier&quot;, field = 18, comment = &quot;Equipment Instance Identifier&quot;)
+	public void setEquipmentInstanceIdentifier(Identifier equipmentInstanceIdentifier) 
+	{
+<span class="nc" id="L698">		Device device = createResource(Device.class);</span>
+<span class="nc" id="L699">		device.addIdentifier(equipmentInstanceIdentifier);</span>
+<span class="nc" id="L700">		observation.setDevice(ParserUtils.toReference(device, observation, &quot;device&quot;));</span>
+<span class="nc" id="L701">	}</span>
+	
+	/**
+	 * Set the date time of the analysis
+	 * @param dateTimeoftheAnalysis the date time of the analysis
+	 */
+	@ComesFrom(path = &quot;Observation.observation-analysis-date-time&quot;, field = 19, comment = &quot;Date/Time of the Analysis&quot;)
+	public void setDateTimeoftheAnalysis(DateTimeType dateTimeoftheAnalysis) 
+	{
+<span class="nc" id="L710">		observation.addExtension()</span>
+<span class="nc" id="L711">			.setUrl(&quot;http://hl7.org/fhir/StructureDefinition/observation-analysis-date-time&quot;)</span>
+<span class="nc" id="L712">			.setValue(dateTimeoftheAnalysis);</span>
+<span class="nc" id="L713">	}</span>
+	
+	/**
+	 * Set the body site
+	 * @param observationSite the body site
+	 */
+	@ComesFrom(path = &quot;Observation.bodySite&quot;, field = 20, comment = &quot;Observation Site&quot;)
+	public void setObservationSite(CodeableConcept observationSite) 
+	{
+<span class="nc" id="L722">		observation.setBodySite(observationSite);</span>
+<span class="nc" id="L723">	}</span>
+	
+	/**
+	 * Set the observation identifier
+	 * @param observationInstanceIdentifier	the observation identifier
+	 */
+	@ComesFrom(path = &quot;Observation.identifier&quot;, field = 21, comment = &quot;Observation Instance Identifier&quot;)
+	public void setObservationInstanceIdentifier(Identifier observationInstanceIdentifier) {
+<span class="nc bnc" id="L731" title="All 2 branches missed.">		if (!observationInstanceIdentifier.hasType()) {</span>
+<span class="nc" id="L732">			observationInstanceIdentifier.setType(Codes.FILLER_ORDER_IDENTIFIER_TYPE);</span>
+		}
+<span class="nc" id="L734">		observation.addIdentifier(observationInstanceIdentifier);</span>
+<span class="nc" id="L735">	}</span>
+	
+	
+	/**
+	 * Set the performing organization
+	 * @param performingOrganization the performing organization
+	 */
+	@ComesFrom(path = &quot;Observation.performer&quot;, field = 23, comment = &quot;Performing Organization Name&quot;)
+	public void setPerformingOrganizationName(Organization performingOrganization) 
+<span class="nc" id="L744">	{	Organization org = null;</span>
+<span class="nc bnc" id="L745" title="All 2 branches missed.">		if (getPerformer().hasOrganization()) {</span>
+<span class="nc" id="L746">			org = ParserUtils.getResource(Organization.class, performer.getOrganization());</span>
+<span class="nc bnc" id="L747" title="All 2 branches missed.">			if (performingOrganization.hasName()) {</span>
+<span class="nc" id="L748">				org.setName(performingOrganization.getName());</span>
+			}
+<span class="nc bnc" id="L750" title="All 2 branches missed.">			if (performingOrganization.hasIdentifier()) {</span>
+<span class="nc bnc" id="L751" title="All 2 branches missed.">				for (Identifier ident: performingOrganization.getIdentifier()) {</span>
+<span class="nc" id="L752">					org.addIdentifier(ident);</span>
+<span class="nc" id="L753">				}</span>
+			}
+		} else {
+<span class="nc" id="L756">			addResource(performingOrganization);</span>
+<span class="nc" id="L757">			org = performingOrganization;</span>
+<span class="nc" id="L758">			performer.setOrganization(ParserUtils.toReference(org, performer, PERFORMER));</span>
+		}
+<span class="nc" id="L760">	}</span>
+	
+	/**
+	 * Set the address of the performing organization
+	 * @param performingOrganizationAddress the address of the performing organization
+	 */
+	@ComesFrom(path = &quot;Observation.performer.Organization.address&quot;, field = 24, comment = &quot;Performing Organization Address&quot;)
+	public void setPerformingOrganizationAddress(Address performingOrganizationAddress) {	
+<span class="nc" id="L768">		Organization org = null;</span>
+<span class="nc bnc" id="L769" title="All 2 branches missed.">		if (!getPerformer().hasOrganization()) {</span>
+<span class="nc" id="L770">			org = createResource(Organization.class);</span>
+<span class="nc" id="L771">			performer.setOrganization(ParserUtils.toReference(org, performer, PERFORMER));</span>
+		} else {
+<span class="nc" id="L773">			org = ParserUtils.getResource(Organization.class, performer.getOrganization());</span>
+		}
+<span class="nc" id="L775">		org.addAddress(performingOrganizationAddress);</span>
+<span class="nc" id="L776">	}</span>
+	
+	/**
+	 * Create a performer identifying the medical director of the performing organization
+	 * @param performingOrganizationMedicalDirector the medical director 
+	 */
+	@ComesFrom(path = &quot;Observation.performer.PractitionerRole.practitioner&quot;, field = 25, comment = &quot;Performing Organization Medical Director&quot;)
+	public void setPerformingOrganizationMedicalDirector(Practitioner performingOrganizationMedicalDirector) {
+		// NOTE: The performingOrganizationMedicalDirector is a separate performer from the default performer
+		// returned by getPerformer.
+<span class="nc" id="L786">		getPerformer();</span>
+<span class="nc bnc" id="L787" title="All 2 branches missed.">		if (performer.hasPractitioner()) {</span>
+			// If there is already a practitioner in the performer, add a new one.
+<span class="nc" id="L789">			performer = createResource(PractitionerRole.class);</span>
+<span class="nc" id="L790">			observation.addPerformer(ParserUtils.toReference(performer, observation, PERFORMER));</span>
+		}
+<span class="nc" id="L792">		addResource(performingOrganizationMedicalDirector);</span>
+<span class="nc" id="L793">		performer.addCode(Codes.MEDICAL_DIRECTOR_ROLE_CODE);</span>
+<span class="nc" id="L794">		performer.setPractitioner(ParserUtils.toReference(performingOrganizationMedicalDirector, performer, PERFORMER));</span>
+<span class="nc" id="L795">	}</span>
+
+	/**
+	 * Set the specific identifier
+	 * NOTE: Not present until HL7 2.9, and not widely in use
+	 * @param specimenIdentifier the specific identifier
+	 */
+	@ComesFrom(path = &quot;Observation.specimen.Specimen.identifier&quot;, field = 33, comment = &quot;Observation Related Specimen Identifier&quot;)
+	public void setSpecimenIdentifier(Identifier specimenIdentifier) {
+		// A degenerate reference instead of one of the usual ones.  The SPM segment if present
+		// will create the Specimen resource rather than creating it here.
+<span class="nc" id="L806">		observation.setSpecimen(new Reference().setIdentifier(specimenIdentifier));</span>
+<span class="nc" id="L807">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
