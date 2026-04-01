@@ -1,0 +1,367 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ORCParser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">gov.cdc.izgw.v2tofhir.segment</a> &gt; <span class="el_source">ORCParser.java</span></div><h1>ORCParser.java</h1><pre class="source lang-java linenums">package gov.cdc.izgw.v2tofhir.segment;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.hl7.fhir.instance.model.api.IBaseResource;
+import org.hl7.fhir.r4.model.Address;
+import org.hl7.fhir.r4.model.CodeableConcept;
+import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.ContactPoint;
+import org.hl7.fhir.r4.model.DateTimeType;
+import org.hl7.fhir.r4.model.Encounter;
+import org.hl7.fhir.r4.model.Identifier;
+import org.hl7.fhir.r4.model.Immunization;
+import org.hl7.fhir.r4.model.Immunization.ImmunizationPerformerComponent;
+import org.hl7.fhir.r4.model.Organization;
+import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.Practitioner;
+import org.hl7.fhir.r4.model.PractitionerRole;
+import org.hl7.fhir.r4.model.Reference;
+import org.hl7.fhir.r4.model.ServiceRequest;
+import org.hl7.fhir.r4.model.ServiceRequest.ServiceRequestIntent;
+import org.hl7.fhir.r4.model.ServiceRequest.ServiceRequestStatus;
+
+import gov.cdc.izgw.v2tofhir.annotation.ComesFrom;
+import gov.cdc.izgw.v2tofhir.annotation.Produces;
+import gov.cdc.izgw.v2tofhir.converter.MessageParser;
+import gov.cdc.izgw.v2tofhir.utils.Codes;
+import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
+
+/**
+ * ORCParser parses any ORC segments in a message to a ServiceRequest
+ * If the message is a VXU or an response to an immunization query, it also produces an Immunization resource.
+ * 
+ * @author Audacious Inquiry
+ *
+ * @see &lt;a href=&quot;https://hl7.org/fhir/uv/v2mappings/2024Jan/ConceptMap-segment-orc-to-servicerequest.html&quot;&gt;V2 to FHIR: ORC to ServiceRequest&lt;/a&gt;
+ * @see &lt;a href=&quot;https://hl7.org/fhir/uv/v2mappings/2024Jan/ConceptMap-segment-orc-to-immunization.html&quot;&gt;V2 to FHIR: ORC to Immunization&lt;/a&gt;
+ */
+@Produces(segment = &quot;ORC&quot;, resource=ServiceRequest.class, 
+	extra = { Practitioner.class, Organization.class, Immunization.class }
+)
+public class ORCParser extends AbstractSegmentParser {
+	private static final String REQUESTER = &quot;requester&quot;;
+<span class="fc" id="L45">	private static List&lt;FieldHandler&gt; fieldHandlers = new ArrayList&lt;&gt;();</span>
+	private ServiceRequest order;
+	private PractitionerRole requester;
+	private Reference requesterRef;
+	private IzDetail izDetail;
+	
+	/**
+	 * Create an ORC Parser for the specified MessageParser
+	 * @param p	The message parser.
+	 */
+	public ORCParser(MessageParser p) {
+<span class="fc" id="L56">		super(p, &quot;ORC&quot;);</span>
+<span class="fc bfc" id="L57" title="All 2 branches covered.">		if (fieldHandlers.isEmpty()) {</span>
+<span class="fc" id="L58">			FieldHandler.initFieldHandlers(this, fieldHandlers);</span>
+		}
+<span class="fc" id="L60">	}</span>
+
+	@Override
+	protected List&lt;FieldHandler&gt; getFieldHandlers() {
+<span class="fc" id="L64">		return fieldHandlers;</span>
+	}
+
+	@Override
+	public IBaseResource setup() {
+<span class="fc" id="L69">		izDetail = IzDetail.get(getMessageParser());</span>
+<span class="fc" id="L70">		izDetail.initializeResources(true, getSegment());</span>
+<span class="fc" id="L71">		order = createResource(ServiceRequest.class);</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">		if (izDetail.hasImmunization()) {</span>
+			// Reports an Immunization performed, and reported by filler, so this is a filler order 
+<span class="fc" id="L74">			order.setIntent(ServiceRequestIntent.FILLERORDER);</span>
+		}
+<span class="fc" id="L76">		Patient patient = this.getLastResource(Patient.class);</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">		if (patient != null) {</span>
+<span class="fc" id="L78">			order.setSubject(ParserUtils.toReference(patient, order, &quot;patient&quot;, &quot;subject&quot;));</span>
+		}
+<span class="fc" id="L80">		Encounter encounter = this.getLastResource(Encounter.class);</span>
+<span class="pc bpc" id="L81" title="1 of 2 branches missed.">		if (encounter != null) {</span>
+<span class="nc" id="L82">			order.setEncounter(ParserUtils.toReference(encounter, order, &quot;encounter&quot;));</span>
+		}
+<span class="fc" id="L84">		order.setIntent(ServiceRequestIntent.ORDER);</span>
+<span class="fc" id="L85">		return order;</span>
+	}
+	
+	/**
+	 * Set Order control code from ORC-1
+	 * 
+	 * Also determines if this ORC is part of a VXU, or RSP_K11 response to an Immunization Query, and if so,
+	 * creates the Immunization resource.
+	 * 
+	 * @param orderControl	The order control code from Table HL7-0119
+	 */
+	@ComesFrom(path = &quot;ServiceRequest.status&quot;, field = 1, table = &quot;0119&quot;, map = &quot;OrderControlCode[ServiceRequest.status]&quot;,
+			   also = { &quot;ServiceRequest.intent = 'order'&quot;,
+					    &quot;ServiceRequest.subject = Patient&quot;,
+					    &quot;ServiceRequest.encounter = Encounter&quot;
+			   }, priority = 10)
+	public void setOrderControl(Coding orderControl) {
+		// ORC-1 is required, so this method should always be called
+		
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">		if (order.hasStatus()) {</span>
+			// Status was already set by ORC-5
+<span class="nc" id="L106">			return;</span>
+		}
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">		if (orderControl.hasCode()) {</span>
+<span class="pc bpc" id="L109" title="5 of 6 branches missed.">			switch (orderControl.getCode()) {</span>
+			// For immunization messages, we are only expecting RE.
+			case &quot;RE&quot;, &quot;CN&quot;, &quot;OE&quot;, &quot;OF&quot;, &quot;OR&quot;:
+<span class="fc" id="L112">				order.setStatus(ServiceRequestStatus.COMPLETED);</span>
+<span class="fc" id="L113">				break;</span>
+			case &quot;AF&quot;, &quot;CH&quot;, &quot;FU&quot;, &quot;NW&quot;, &quot;OK&quot;, &quot;PA&quot;, &quot;RL&quot;, &quot;RO&quot;, &quot;RP&quot;, 
+				 &quot;RQ&quot;, &quot;RR&quot;, &quot;RU&quot;:
+<span class="nc" id="L116">				order.setStatus(ServiceRequestStatus.ACTIVE);</span>
+<span class="nc" id="L117">				break;</span>
+			case &quot;CA&quot;, &quot;CR&quot;, &quot;DC&quot;, &quot;DF&quot;, &quot;DR&quot;, &quot;OC&quot;, &quot;OD&quot;, &quot;UA&quot;:
+<span class="nc" id="L119">				order.setStatus(ServiceRequestStatus.REVOKED);</span>
+<span class="nc" id="L120">				break;</span>
+			case &quot;DE&quot;:
+<span class="nc" id="L122">				order.setStatus(ServiceRequestStatus.ENTEREDINERROR);</span>
+<span class="nc" id="L123">				break;</span>
+			case &quot;HD&quot;, &quot;HR&quot;, &quot;OH&quot;:
+<span class="nc" id="L125">				order.setStatus(ServiceRequestStatus.ONHOLD);</span>
+<span class="nc" id="L126">				break;</span>
+			default:
+<span class="nc" id="L128">				order.setStatus(ServiceRequestStatus.UNKNOWN);</span>
+				break;
+			}
+		}
+<span class="fc" id="L132">	}</span>
+	
+	private void addOrderIdentifier(Identifier ident, CodeableConcept type) {
+<span class="fc bfc" id="L135" title="All 2 branches covered.">		if (ident.getType() != type) {</span>
+<span class="fc" id="L136">			ident = ident.copy();</span>
+<span class="fc" id="L137">			ident.setType(type);</span>
+		}
+<span class="fc" id="L139">		order.addIdentifier(ident);</span>
+<span class="fc bfc" id="L140" title="All 2 branches covered.">		if (izDetail.hasImmunization()) {</span>
+<span class="fc" id="L141">			izDetail.immunization.addIdentifier(ident);</span>
+		}
+<span class="fc" id="L143">	}</span>
+	/**
+	 * Set ServiceRequest.identifier from ORC-2 and ORC-33
+	 * @param ident	The identifier
+	 */
+	@ComesFrom(path = &quot;ServiceRequest.identifier&quot;, field = 2)
+	@ComesFrom(path = &quot;ServiceRequest.identifier&quot;, field = 33)
+	public void setOrderPlacerIdentifier(Identifier ident) {
+<span class="pc bpc" id="L151" title="1 of 2 branches missed.">		if (ident.hasType()) {</span>
+<span class="fc" id="L152">			addOrderIdentifier(ident, ident.getType());</span>
+		}
+<span class="fc" id="L154">		addOrderIdentifier(ident, Codes.PLACER_ORDER_IDENTIFIER_TYPE);</span>
+<span class="fc" id="L155">	}</span>
+	
+	/**
+	 * Set ServiceRequest.identifier from ORC-3
+	 * @param ident	The identifier
+	 */
+	@ComesFrom(path = &quot;ServiceRequest.identifier&quot;, field = 3)
+	public void setOrderFillerIdentifier(Identifier ident) {
+<span class="pc bpc" id="L163" title="1 of 2 branches missed.">		if (ident.hasType()) {</span>
+<span class="fc" id="L164">			addOrderIdentifier(ident, ident.getType());</span>
+		}
+<span class="fc" id="L166">		addOrderIdentifier(ident, Codes.FILLER_ORDER_IDENTIFIER_TYPE);</span>
+<span class="fc" id="L167">	}</span>
+	
+	/**
+	 * Set ServiceRequest.identifier from ORC-4
+	 * @param ident	The identifier
+	 */
+	@ComesFrom(path = &quot;ServiceRequest.identifier&quot;, field = 4)
+	public void setOrderPlacerGroupIdentifier(Identifier ident) {
+<span class="nc" id="L175">		addOrderIdentifier(ident, Codes.PLACER_ORDER_GROUP_TYPE);</span>
+<span class="nc" id="L176">	}</span>
+	
+
+	/**
+	 * Set the orderStatus from ORC-5
+	 * @param orderStatus	The orderStatus from table 0038
+	 */
+	@ComesFrom(path = &quot;ServiceRequest.status&quot;, field = 5, table=&quot;0038&quot;, priority = 5)
+	public void setOrderStatus(Coding orderStatus) {
+<span class="nc bnc" id="L185" title="All 2 branches missed.">		if (orderStatus.hasCode()) {</span>
+<span class="nc bnc" id="L186" title="All 5 branches missed.">			switch (orderStatus.getCode()) {</span>
+			case &quot;A&quot;, &quot;IP&quot;, &quot;SC&quot;:
+<span class="nc" id="L188">				order.setStatus(ServiceRequestStatus.ACTIVE);</span>
+<span class="nc" id="L189">				break;</span>
+			case &quot;CA&quot;, &quot;DC&quot;:
+<span class="nc" id="L191">				order.setStatus(ServiceRequestStatus.REVOKED);</span>
+<span class="nc" id="L192">				break;</span>
+			case &quot;CM&quot;:
+<span class="nc" id="L194">				order.setStatus(ServiceRequestStatus.COMPLETED);</span>
+<span class="nc" id="L195">				break;</span>
+			case &quot;HD&quot;:
+<span class="nc" id="L197">				order.setStatus(ServiceRequestStatus.ONHOLD);</span>
+<span class="nc" id="L198">				break;</span>
+			case &quot;ER&quot;, &quot;RP&quot;:
+			default:
+				break;
+			}
+		}
+<span class="nc" id="L204">	}</span>
+	
+	/**
+	 * Add the Placer parent identifier
+	 * @param ident The identifier
+	 */
+	@ComesFrom(path = &quot;ServiceRequest.identifier&quot;, field = 8, component = 1)
+	public void setOrderPlacerParentIdentifier(Identifier ident) { 
+<span class="nc" id="L212">		addOrderIdentifier(ident, Codes.PLACER_ORDER_GROUP_TYPE);</span>
+<span class="nc" id="L213">	}</span>
+
+	/**
+	 * Add the Filler parent identifier
+	 * @param ident The identifier
+	 */
+	@ComesFrom(path = &quot;ServiceRequest.identifier&quot;, field = 8, component = 2)
+	public void setOrderFillerParentIdentifier(Identifier ident) { 
+<span class="nc" id="L221">		addOrderIdentifier(ident, Codes.FILLER_ORDER_GROUP_TYPE);</span>
+<span class="nc" id="L222">	}</span>
+	
+	/**
+	 * Set the order creation date time
+	 * @param orderDateTime the creation date time.
+	 */
+	@ComesFrom(path = &quot;ServiceRequest.authoredOn&quot;, field = 9)
+	public void setOrderCreationTime(DateTimeType orderDateTime) {
+<span class="fc" id="L230">		order.setAuthoredOnElement(orderDateTime);</span>
+<span class="fc bfc" id="L231" title="All 2 branches covered.">		if (izDetail.hasImmunization()) {</span>
+<span class="fc" id="L232">			izDetail.immunization.setRecordedElement(orderDateTime);</span>
+		}
+<span class="fc" id="L234">	}</span>
+	
+	/**
+	 * Set the ordering provider
+	 * @param orderingProvider the ordering provider
+	 */
+	@ComesFrom(path = &quot;ServiceRequest.requester.PractitionerRole.practitioner&quot;, field = 12) 
+	public void setOrderingProvider(Practitioner orderingProvider) {
+<span class="fc" id="L242">		Reference providerReference = ParserUtils.toReference(addResource(orderingProvider), requester, &quot;practitioner&quot;);</span>
+<span class="fc" id="L243">		getRequester().setPractitioner(providerReference);</span>
+<span class="fc" id="L244">		updateRequesterName();</span>
+<span class="fc" id="L245">	}</span>
+	
+	/**
+	 * Get the ordering PractitionerRole or create one if it
+	 * does not already exist.
+	 * @return the ordering PractitionerRole 
+	 */
+	private PractitionerRole getRequester() {
+<span class="fc bfc" id="L253" title="All 2 branches covered.">		if (requester == null) {</span>
+<span class="fc" id="L254">			requester = createResource(PractitionerRole.class);</span>
+<span class="fc" id="L255">			requesterRef = ParserUtils.toReference(requester, order, REQUESTER);</span>
+<span class="fc" id="L256">			order.setRequester(requesterRef);</span>
+<span class="fc bfc" id="L257" title="All 2 branches covered.">			if (izDetail.hasImmunization()) {</span>
+<span class="fc" id="L258">				requesterRef = ParserUtils.toReference(requester, izDetail.immunization, &quot;performer&quot;, &quot;practitioner&quot;);</span>
+<span class="fc" id="L259">				ImmunizationPerformerComponent perf = izDetail.immunization.addPerformer().setActor(requesterRef);</span>
+<span class="fc" id="L260">				perf.setFunction(Codes.ORDERING_PROVIDER_FUNCTION_CODE);</span>
+			}
+		}
+<span class="fc" id="L263">		return requester;</span>
+	}
+	
+	private void updateRequesterName() {
+		// NOTE: This violates the rule about first name in wins
+		// for PractitionerRole, but that's because their name
+		// has to dynamically change to account for the fact that
+		// they are built in pieces.
+<span class="fc" id="L271">		StringBuilder b = new StringBuilder();</span>
+<span class="pc bpc" id="L272" title="1 of 2 branches missed.">		if (requester.hasPractitioner()) {</span>
+<span class="fc" id="L273">			b.append(requester.getPractitioner().getDisplay());</span>
+<span class="fc bfc" id="L274" title="All 2 branches covered.">			if (requester.hasOrganization()) {</span>
+<span class="fc" id="L275">				b.append(&quot; @ &quot;);</span>
+			}
+		}
+<span class="fc bfc" id="L278" title="All 2 branches covered.">		if (requester.hasOrganization()) {</span>
+<span class="fc" id="L279">			b.append(requester.getOrganization().getDisplay());</span>
+		}
+<span class="fc" id="L281">		requesterRef.setDisplay(b.toString());</span>
+<span class="fc" id="L282">	}</span>
+	
+	/**
+	 * Set the order effective date time
+	 * @param effectiveDateTime The effective date and time
+	 */
+	@ComesFrom(path = &quot;ServiceRequest.occurrenceDateTime&quot;, field = 15)
+	public void setOrderDateTime(DateTimeType effectiveDateTime) {
+<span class="nc" id="L290">		order.setOccurrence(effectiveDateTime);</span>
+<span class="nc" id="L291">	}</span>
+	
+	/**
+	 * Set the ordering organization
+	 * @param organization the ordering organization
+	 */
+	@ComesFrom(path = &quot;ServiceRequest.requester.PractitionerRole.organization&quot;, field = 21) 
+	public void setOrderingOrganization(Organization organization) {
+<span class="fc bfc" id="L299" title="All 2 branches covered.">		if (izDetail.requestingOrganization != null) {</span>
+			// If organization already exists, just copy name and identifier from XON
+<span class="fc" id="L301">			izDetail.requestingOrganization.setNameElement(organization.getNameElement());</span>
+<span class="fc" id="L302">			izDetail.requestingOrganization.setIdentifier(organization.getIdentifier());</span>
+		} else {
+<span class="fc" id="L304">			izDetail.requestingOrganization = addResource(organization);</span>
+		}
+<span class="fc" id="L306">		getRequester();</span>
+<span class="fc" id="L307">		Reference orgReference = ParserUtils.toReference(izDetail.requestingOrganization, requester, REQUESTER);</span>
+<span class="fc" id="L308">		requester.setOrganization(orgReference);</span>
+<span class="fc" id="L309">		updateRequesterName();</span>
+<span class="fc" id="L310">	}</span>
+	
+	/**
+	 * Set the ordering organization address
+	 * @param orderingProviderAddress the ordering organization address
+	 */
+	@ComesFrom(
+		path = &quot;ServiceRequest.requester.PractitionerRole&quot;
+		        + &quot;.organization.Organization.address&quot;, field = 22
+	) 
+	public void setOrderingOrganizationAddress(Address orderingProviderAddress) {
+<span class="nc bnc" id="L321" title="All 2 branches missed.">		if (izDetail.requestingOrganization == null) {</span>
+<span class="nc" id="L322">			izDetail.requestingOrganization = createResource(Organization.class);</span>
+<span class="nc" id="L323">			getRequester().setOrganization(ParserUtils.toReference(izDetail.requestingOrganization, requester, REQUESTER));</span>
+		}
+<span class="nc" id="L325">		izDetail.requestingOrganization.addAddress(orderingProviderAddress);</span>
+<span class="nc" id="L326">	}</span>
+	
+	/**
+	 * Set the ordering organization phone number
+	 * @param orderingProviderContact the ordering organization phone number
+	 */
+	@ComesFrom(path = &quot;ServiceRequest.requester.PractitionerRole.organization.Organization.telecom&quot;, field = 23) 
+	public void setOrderingOrganizationTelecom(ContactPoint orderingProviderContact) {
+<span class="nc bnc" id="L334" title="All 2 branches missed.">		if (izDetail.requestingOrganization == null) {</span>
+<span class="nc" id="L335">			izDetail.requestingOrganization = createResource(Organization.class);</span>
+<span class="nc" id="L336">			getRequester().setOrganization(ParserUtils.toReference(izDetail.requestingOrganization, requester, REQUESTER));</span>
+		}
+<span class="nc" id="L338">		izDetail.requestingOrganization.addTelecom(orderingProviderContact);</span>
+<span class="nc" id="L339">	}</span>
+	
+	/**
+	 * Set the confidentiality code for the order
+	 * @param confidentiality the confidentiality code for the order
+	 */
+	@ComesFrom(path = &quot;ServiceRequest.meta.security&quot;, field = 28) 
+	public void setOrderConfidentiality(CodeableConcept confidentiality) {
+<span class="nc bnc" id="L347" title="All 2 branches missed.">		for (Coding securityCode: confidentiality.getCoding()) {</span>
+<span class="nc" id="L348">			order.getMeta().addSecurity(securityCode);</span>
+<span class="nc bnc" id="L349" title="All 2 branches missed.">			if (izDetail.hasImmunization()) {</span>
+<span class="nc" id="L350">				izDetail.immunization.getMeta().addSecurity(securityCode);</span>
+			}
+<span class="nc" id="L352">		}</span>
+<span class="nc" id="L353">	}</span>
+	
+	/**
+	 * Set the order location type
+	 * @param locationCode the order location type
+	 */
+	@ComesFrom(path = &quot;ServiceRequest.locationCode&quot;, field = 29, table = &quot;0482&quot;) 
+	public void setOrderLocationCode(CodeableConcept locationCode) {
+<span class="nc" id="L361">		order.addLocationCode(locationCode);</span>
+<span class="nc" id="L362">	}</span>
+	
+	
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ERRParser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">gov.cdc.izgw.v2tofhir.segment</a> &gt; <span class="el_source">ERRParser.java</span></div><h1>ERRParser.java</h1><pre class="source lang-java linenums">package gov.cdc.izgw.v2tofhir.segment;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+
+import org.hl7.fhir.exceptions.FHIRException;
+import org.hl7.fhir.instance.model.api.IBaseResource;
+import org.hl7.fhir.r4.model.CodeableConcept;
+import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.MessageHeader;
+import org.hl7.fhir.r4.model.OperationOutcome;
+import org.hl7.fhir.r4.model.StringType;
+
+import org.hl7.fhir.r4.model.OperationOutcome.IssueSeverity;
+import org.hl7.fhir.r4.model.OperationOutcome.IssueType;
+import org.hl7.fhir.r4.model.OperationOutcome.OperationOutcomeIssueComponent;
+
+import gov.cdc.izgw.v2tofhir.annotation.ComesFrom;
+import gov.cdc.izgw.v2tofhir.annotation.Produces;
+import gov.cdc.izgw.v2tofhir.converter.MessageParser;
+import gov.cdc.izgw.v2tofhir.utils.Mapping;
+import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * Parser for an ERR segment.
+ * 
+ * @author Audacious Inquiry
+ */
+
+/**
+ * Parse an ERR segment into an OperationOutcome resource.
+ * 
+ * If no OperationOutcome already exists for this message, a new one is created.
+ * One OperationOutcome.issue is created for each ERR segment.
+ * 
+ * OperationOutcome.issue.location is set from ERR-2
+ * OperationOutcome.issue.code is set from ERR-3
+ * OperationOutcome.issue.severity is set from ERR-4
+ * OperationOutcome.issue.detail is set from ERR-3 and ERR-5
+ * OperationOutcome.issue.diagnostics is set from ERR-7 and ERR-8 if present.
+ *  
+ */
+@Produces(segment=&quot;ERR&quot;, resource = OperationOutcome.class, extra = MessageHeader.class)
+<span class="fc" id="L46">@Slf4j</span>
+public class ERRParser extends AbstractSegmentParser {
+	private static final String SUCCESS = &quot;success&quot;;
+	private OperationOutcomeIssueComponent issue;
+	
+	static {
+<span class="fc" id="L52">		log.debug(&quot;{} loaded&quot;, ERRParser.class.getName());</span>
+	}
+<span class="fc" id="L54">	private static final LinkedHashMap&lt;String, String[]&gt; errorCodeMap = new LinkedHashMap&lt;&gt;();</span>
+	private static final String NOT_SUPPORTED = &quot;not-supported&quot;;
+<span class="fc" id="L56">	private static final String[][] errorCodeMapping = {</span>
+			{ SUCCESS, &quot;0&quot;, &quot;Message accepted&quot;, &quot;Success. Optional, as the AA conveys success. Used for systems that must always return a status code.&quot; },
+			{ &quot;structure&quot;, &quot;100&quot;, &quot;Segment sequence error&quot;, &quot;Error: The message segments were not in the proper order, or required segments are missing.&quot; },
+			{ &quot;required&quot;, &quot;101&quot;, &quot;Required field missing&quot;, &quot;Error: A required field is missing from a segment&quot; },
+			{ &quot;value&quot;, &quot;102&quot;, &quot;Data type error&quot;, &quot;Error: The field contained data of the wrong data type, e.g. an NM field contained&quot; },
+			{ &quot;code-invalid&quot;, &quot;103&quot;, &quot;Table value not found&quot;, &quot;Error: A field of data type ID or IS was compared against the corresponding table, and no match was found.&quot; },
+			{ NOT_SUPPORTED, &quot;200&quot;, &quot;Unsupported message type&quot;, &quot;Rejection: The Message Type is not supported.&quot; },
+			{ NOT_SUPPORTED, &quot;201&quot;, &quot;Unsupported event code&quot;, &quot;Rejection: The Event Code is not supported.&quot; },
+			{ NOT_SUPPORTED, &quot;202&quot;, &quot;Unsupported processing id&quot;, &quot;Rejection: The Processing ID is not supported.&quot; },
+			{ NOT_SUPPORTED, &quot;203&quot;, &quot;Unsupported version id&quot;, &quot;Rejection:  The Version ID is not supported.&quot; },
+			{ &quot;not-found&quot;, &quot;204&quot;, &quot;Unknown key identifier&quot;, &quot;Rejection: The ID of the patient, order, etc., was not found. Used for transactions other than additions, e.g. transfer of a non-existent patient.&quot; },
+			{ &quot;conflict&quot;, &quot;205&quot;, &quot;Duplicate key identifier&quot;, &quot;Rejection: The ID of the patient, order, etc., already exists. Used in response to addition transactions (Admit, New Order, etc.).&quot; },
+			{ &quot;lock-error&quot;, &quot;206&quot;, &quot;Application record locked&quot;, &quot;Rejection: The transaction could not be performed at the application storage level, e.g., database locked.&quot; },
+			{ &quot;exception&quot;, &quot;207&quot;, &quot;Application internal error&quot;, &quot;Rejection: A catchall for internal errors not explicitly covered by other codes.&quot; }
+	};
+<span class="fc" id="L71">	private static final List&lt;FieldHandler&gt; fieldHandlers = new ArrayList&lt;&gt;();</span>
+	static {
+<span class="fc bfc" id="L73" title="All 2 branches covered.">		for (String[] mapping : errorCodeMapping) {</span>
+<span class="fc" id="L74">			errorCodeMap.put(mapping[1], mapping);</span>
+		}
+<span class="fc" id="L76">	}</span>
+	
+	/**
+	 * Construct the ERR Segment parser for the given MessageParser
+	 * 
+	 * @param messageParser	The messageParser that is using this segment parser.
+	 */
+	public ERRParser(MessageParser messageParser) {
+<span class="fc" id="L84">		super(messageParser, &quot;ERR&quot;);</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">		if (fieldHandlers.isEmpty()) {</span>
+<span class="fc" id="L86">			FieldHandler.initFieldHandlers(this, fieldHandlers);</span>
+		}
+<span class="fc" id="L88">	}</span>
+	
+	@Override
+	public List&lt;FieldHandler&gt; getFieldHandlers() {
+<span class="fc" id="L92">		return fieldHandlers;</span>
+	}
+	
+	@Override 
+	public IBaseResource setup() {
+		OperationOutcome oo;
+		// Create a new OperationOutcome.issue for each ERR resource
+<span class="fc" id="L99">		oo = getFirstResource(OperationOutcome.class);</span>
+<span class="fc bfc" id="L100" title="All 2 branches covered.">		if (oo == null) {</span>
+<span class="fc" id="L101">			oo = createResource(OperationOutcome.class);</span>
+<span class="fc" id="L102">			MessageHeader mh = getFirstResource(MessageHeader.class);</span>
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">			if (mh == null) {</span>
+<span class="fc" id="L104">				mh = createResource(MessageHeader.class);</span>
+			}
+			// If MessageHeader or OperationOutcome has to be created, 
+			// link them in MessageHeader.response.details
+			// Normally this is already done in MSAParser, but if processing
+			// an incomplete message (e.g., ERR segment but w/o MSA), this ensures 
+			// that the parser has the expected objects to work with.
+<span class="fc" id="L111">			mh.getResponse().setDetails(ParserUtils.toReference(oo, mh, &quot;details&quot;));</span>
+		}
+<span class="fc" id="L113">		issue = oo.addIssue();</span>
+<span class="fc" id="L114">		return oo;</span>
+	}
+	
+	/**
+	 * Add the error location to the operation outcome.
+	 * @param location	The location
+	 */
+	@ComesFrom(path = &quot;OperationOutcome.issue.location&quot;, field = 2)
+	public void setLocation(StringType location) {
+<span class="fc" id="L123">		issue.getLocation().add(location);</span>
+<span class="fc" id="L124">	}</span>
+	
+	/**
+	 * Set the details on an operation outcome
+	 * @param errorCode	The error code
+	 */
+	@ComesFrom(path=&quot;OperationOutcome.issue.details&quot;, table=&quot;0357&quot;, field=3, comment=&quot;Also sets issue.code&quot;)
+	@ComesFrom(path=&quot;OperationOutcome.issue.details&quot;, table=&quot;0533&quot;, field=5)
+	public void setDetails(CodeableConcept errorCode) {
+<span class="pc bpc" id="L133" title="1 of 2 branches missed.">		if (errorCode == null) {</span>
+<span class="nc" id="L134">			return;</span>
+		}
+<span class="fc bfc" id="L136" title="All 2 branches covered.">		for (Coding coding: errorCode.getCoding()) {</span>
+<span class="fc" id="L137">			issue.getDetails().addCoding(coding);</span>
+<span class="fc" id="L138">		}</span>
+<span class="fc bfc" id="L139" title="All 2 branches covered.">		for (Coding c: errorCode.getCoding()) {</span>
+			// If from table 0357
+<span class="fc bfc" id="L141" title="All 2 branches covered.">			if (!Mapping.v2Table(&quot;0357&quot;).equals(c.getSystem())) {  // Check the system.</span>
+<span class="fc" id="L142">				continue;</span>
+			}
+<span class="fc" id="L144">			String[] map = errorCodeMap.get(c.getCode());</span>
+<span class="fc bfc" id="L145" title="All 2 branches covered.">			if (map == null) {</span>
+<span class="fc" id="L146">				issue.setCode(IssueType.PROCESSING);</span>
+<span class="fc" id="L147">				continue;</span>
+			}
+			try {
+<span class="fc bfc" id="L150" title="All 2 branches covered.">				if (SUCCESS.equals(map[0])) {</span>
+					// Some versions of FHIR support &quot;success&quot;, others don't.
+<span class="fc" id="L152">					issue.setCode(IssueType.INFORMATIONAL);</span>
+				} else {
+<span class="fc" id="L154">					IssueType type = IssueType.fromCode(map[0]); </span>
+<span class="fc" id="L155">					issue.setCode(type);</span>
+				}
+<span class="nc" id="L157">			} catch (FHIRException fex) {</span>
+<span class="nc" id="L158">				getParser().warn(&quot;Unexpected FHIRException: {}&quot;, fex.getMessage(), fex);</span>
+<span class="fc" id="L159">			}</span>
+<span class="fc" id="L160">		}</span>
+<span class="fc" id="L161">	}</span>
+	
+	/**
+	 * Set the severity
+	 * @param severity	Severity
+	 */
+	@ComesFrom(path=&quot;OperationOutcome.issue.severity&quot;, field = 4, table = &quot;0516&quot;, map = &quot;ErrorSeverity&quot;)
+	public void setSeverity(CodeableConcept severity) {
+<span class="fc bfc" id="L169" title="All 2 branches covered.">		for (Coding coding: severity.getCoding()) {</span>
+<span class="fc" id="L170">			issue.getDetails().addCoding(coding);</span>
+<span class="fc" id="L171">		}</span>
+<span class="fc bfc" id="L172" title="All 2 branches covered.">		for (Coding sev : severity.getCoding()) {</span>
+<span class="pc bpc" id="L173" title="2 of 4 branches missed.">			if (sev == null || !sev.hasCode()) {</span>
+<span class="nc" id="L174">				continue;</span>
+			}
+<span class="pc bpc" id="L176" title="1 of 4 branches missed.">			switch (sev.getCode().toUpperCase()) {</span>
+			// F is not really a code in table 0516, but if it shows up, treat it as if it meant fatal.
+<span class="nc" id="L178">			case &quot;F&quot;:	issue.setSeverity(IssueSeverity.FATAL); break;</span>
+			// These are the legit codes.
+<span class="fc" id="L180">			case &quot;I&quot;:	issue.setSeverity(IssueSeverity.INFORMATION); break;</span>
+<span class="fc" id="L181">			case &quot;W&quot;:	issue.setSeverity(IssueSeverity.WARNING); break;</span>
+			case &quot;E&quot;:	// Fall through
+			// Everything else maps to error
+<span class="fc" id="L184">			default: 	issue.setSeverity(IssueSeverity.ERROR); break;</span>
+			}
+<span class="fc" id="L186">		}</span>
+<span class="fc" id="L187">	}</span>
+	
+	/**
+	 * Set the diagnostic messages in MSA-7 and MSA-8 in the OperationOutcome
+	 * @param diagnostics	The diagnostics to report
+	 */
+	@ComesFrom(path=&quot;OperationOutcome.issue.diagnostics&quot;, field=7, comment=&quot;Diagnostics&quot;)
+	@ComesFrom(path=&quot;OperationOutcome.issue.diagnostics&quot;, field=8, comment=&quot;User Message&quot;)
+	public void setDiagnostics(StringType diagnostics) {
+<span class="pc bpc" id="L196" title="1 of 2 branches missed.">		if (issue.hasDiagnostics()) {</span>
+<span class="nc" id="L197">			issue.setDiagnostics(issue.getDiagnostics() + &quot;\n&quot; + diagnostics);</span>
+		} else {
+<span class="fc" id="L199">			issue.setDiagnosticsElement(diagnostics);</span>
+		}
+<span class="fc" id="L201">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>YamlUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">com.ainq.fhir.utils</a> &gt; <span class="el_source">YamlUtils.java</span></div><h1>YamlUtils.java</h1><pre class="source lang-java linenums">package com.ainq.fhir.utils;
+
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Reader;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.util.Locale;
+
+import org.apache.commons.lang3.StringUtils;
+import org.hl7.fhir.r4.model.Resource;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+
+import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.fhir.parser.DataFormatException;
+import ca.uhn.fhir.parser.IParser;
+
+/**
+ * This is a cleaned up implementation from the original blog post that supports converting
+ * FHIR to and from YAML format.  Yaml is a simpler format for viewing FHIR resources
+ * 
+ * This is principally used for testing V2 to FHIR conversions.
+ * 
+ * @see &lt;a href=&quot;https://motorcycleguy.blogspot.com/2021/08/yaml-as-fhir-format.html&quot;&gt;YAML as a FHIR Format&lt;/a&gt;
+ * @author Audacious Inquiry
+ *
+ */
+<span class="nc" id="L36">public class YamlUtils {</span>
+
+    /**
+     * Create Json from a Yaml String
+     * @param yaml	The Yaml to convert
+     * @return	The JSON format string
+     * @throws IOException If a processing exception occurred
+     */
+    public static String fromYaml(String yaml) throws IOException {
+<span class="nc" id="L45">        ObjectMapper yamlReader = newYAMLMapper();</span>
+<span class="nc" id="L46">        Object obj = yamlReader.readValue(yaml, Object.class);</span>
+
+<span class="nc" id="L48">        ObjectMapper jsonWriter = new ObjectMapper();</span>
+<span class="nc" id="L49">        return jsonWriter.writeValueAsString(obj);</span>
+    }
+
+    /**
+     * Create JSON from a Yaml input stream
+     * @param in	The input stream to convert
+     * @return	The JSON output
+     * @throws IOException	If an IO error occured while reading.
+     */
+    public static String fromYaml(InputStream in) throws IOException {
+<span class="nc" id="L59">        ObjectMapper yamlReader = newYAMLMapper();</span>
+<span class="nc" id="L60">        Object obj = yamlReader.readValue(in, Object.class);</span>
+
+<span class="nc" id="L62">        ObjectMapper jsonWriter = new ObjectMapper();</span>
+<span class="nc" id="L63">        return jsonWriter.writeValueAsString(obj);</span>
+    }
+
+    /**
+     * Convert to JSON from YAML 
+     * @param r	The reader to convert from
+     * @return	The JSON string
+     * @throws IOException	If an error occurred while reading.
+     */
+    public static String fromYaml(Reader r) throws IOException {
+<span class="nc" id="L73">        ObjectMapper yamlReader = newYAMLMapper();</span>
+<span class="nc" id="L74">        Object obj = yamlReader.readValue(r, Object.class);</span>
+
+<span class="nc" id="L76">        ObjectMapper jsonWriter = new ObjectMapper();</span>
+<span class="nc" id="L77">        return jsonWriter.writeValueAsString(obj);</span>
+    }
+
+    /**
+     * Convert a JSON string to Yaml
+     * @param jsonString	The JSON string to convert
+     * @return	The YAML output
+     * @throws IOException if an IO error occured during mapping
+     */
+    public static String toYaml(String jsonString) throws IOException {
+        // parse JSON
+<span class="fc" id="L88">        JsonNode jsonNodeTree = new ObjectMapper().readTree(jsonString);</span>
+        // save it as YAML
+<span class="fc" id="L90">        return newYAMLMapper().writeValueAsString(jsonNodeTree);</span>
+    }
+
+    /**
+     * Write Yaml to a Writer from a JSON string
+     * @param jsonString	The JSON string
+     * @param w	The writer
+     * @throws IOException	If an IO error occurred while writing.
+     */
+    public static void toYaml(String jsonString, Writer w) throws IOException {
+        // parse JSON
+<span class="nc" id="L101">        JsonNode jsonNodeTree = new ObjectMapper().readTree(jsonString);</span>
+<span class="nc" id="L102">        newYAMLMapper().writeValue(w, jsonNodeTree);</span>
+<span class="nc" id="L103">    }</span>
+
+    /**
+     * Write Yaml to an OutputStream from a JSON string
+     * @param jsonString	The JSON string
+     * @param os The OutputStream
+     * @throws IOException	If an IO error occurred while writing.
+     */
+    public static void toYaml(String jsonString, OutputStream os) throws IOException {
+        // parse JSON
+<span class="nc" id="L113">        JsonNode jsonNodeTree = new ObjectMapper().readTree(jsonString);</span>
+        // save it as YAML
+<span class="nc" id="L115">        newYAMLMapper().writeValue(os, jsonNodeTree);</span>
+<span class="nc" id="L116">    }</span>
+
+
+    /**
+     * Construct a new YAML Mapper for YAML and JSON conversion
+     * @return A new YAML Mapper
+     */
+    public static YAMLMapper newYAMLMapper() {
+<span class="fc" id="L124">        YAMLMapper m = new YAMLMapper();</span>
+<span class="fc" id="L125">        return m.enable(YAMLGenerator.Feature.LITERAL_BLOCK_STYLE)</span>
+<span class="fc" id="L126">        .disable(YAMLGenerator.Feature.MINIMIZE_QUOTES)</span>
+<span class="fc" id="L127">        .disable(YAMLGenerator.Feature.USE_PLATFORM_LINE_BREAKS)</span>
+<span class="fc" id="L128">        .disable(YAMLGenerator.Feature.SPLIT_LINES);</span>
+    }
+
+    /**
+     * Create a new Yaml Parser that implements the HAPI FHIR IParser interface
+     * @param context	The FHIR Context to use to create the parser
+     * @return	The YamlParser
+     */
+    public static YamlParser newYamlParser(FhirContext context) {
+<span class="nc" id="L137">        return new YamlParser(context);</span>
+    }
+
+    /**
+     * This class takes the names of two files and
+     * converts the first existing file to the second (non-existing) file.
+     * It uses the extensions of the file to determine which parser to
+     * use.
+     * @param args  Names of files for conversion operation.
+     */
+    public static void main(String ... args) {
+<span class="nc" id="L148">        FhirContext r4 = FhirContext.forR4();</span>
+        IParser p;
+<span class="nc bnc" id="L150" title="All 2 branches missed.">        if (args.length != 2) {</span>
+<span class="nc" id="L151">            System.err.printf(&quot;Usage: java %s inputfile outputfile%n&quot;, YamlUtils.class.getName()); // NOSONAR</span>
+<span class="nc" id="L152">            System.exit(5);</span>
+        }
+<span class="nc" id="L154">        File inputFile = new File(args[0]);</span>
+<span class="nc" id="L155">        File outputFile = new File(args[1]);</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">        if (!inputFile.exists()) {</span>
+<span class="nc" id="L157">            System.err.printf(&quot;File %s does not exist.%n&quot;, inputFile); // NOSONAR</span>
+        }
+<span class="nc" id="L159">        String ext = StringUtils.substringAfterLast(inputFile.getName(), &quot;.&quot;);</span>
+<span class="nc" id="L160">        p = getParser(ext, r4);</span>
+<span class="nc" id="L161">        Resource r = null;</span>
+<span class="nc" id="L162">        try (FileReader fr = new FileReader(inputFile, StandardCharsets.UTF_8)) {</span>
+<span class="nc" id="L163">            r = (Resource) p.parseResource(fr);</span>
+<span class="nc" id="L164">        } catch (IOException e) {</span>
+<span class="nc" id="L165">            System.err.printf(&quot;Cannot read %s.%n&quot;, inputFile); // NOSONAR</span>
+<span class="nc" id="L166">            System.exit(1);</span>
+<span class="nc" id="L167">        } catch (DataFormatException e) {</span>
+<span class="nc" id="L168">            System.err.printf(&quot;Cannot parse %s.%n&quot;, inputFile); // NOSONAR</span>
+<span class="nc" id="L169">            System.exit(2);</span>
+<span class="nc" id="L170">        }</span>
+
+<span class="nc" id="L172">        ext = StringUtils.substringAfterLast(outputFile.getName(), &quot;.&quot;);</span>
+<span class="nc" id="L173">        p = getParser(ext, r4);</span>
+
+<span class="nc" id="L175">        try (FileWriter fw = new FileWriter(outputFile, StandardCharsets.UTF_8)) {</span>
+<span class="nc" id="L176">            p.encodeResourceToWriter(r, fw);</span>
+<span class="nc" id="L177">        } catch (IOException e) {</span>
+<span class="nc" id="L178">            System.err.printf(&quot;Cannot write %s.%n&quot;, outputFile);   // NOSONAR</span>
+<span class="nc" id="L179">            System.exit(3);</span>
+<span class="nc" id="L180">        } catch (DataFormatException e) {</span>
+<span class="nc" id="L181">            System.err.printf(&quot;Cannot convert %s.%n&quot;, outputFile); // NOSONAR</span>
+<span class="nc" id="L182">            System.exit(4);</span>
+<span class="nc" id="L183">        }</span>
+<span class="nc" id="L184">    }</span>
+
+    private static IParser getParser(String ext, FhirContext r4) {
+<span class="nc bnc" id="L187" title="All 5 branches missed.">        switch (ext.toLowerCase(Locale.ENGLISH)) {</span>
+        case &quot;yaml&quot;:
+<span class="nc" id="L189">            return newYamlParser(r4);</span>
+        case &quot;xml&quot;:
+<span class="nc" id="L191">            return r4.newXmlParser();</span>
+        case &quot;json&quot;:
+<span class="nc" id="L193">            return r4.newJsonParser();</span>
+        case &quot;rdf&quot;:
+<span class="nc" id="L195">            throw new IllegalArgumentException(&quot;RDF parser implementation is not yet complete&quot;);</span>
+        default:
+<span class="nc" id="L197">            throw new IllegalArgumentException(&quot;Unrecognized format: &quot; + ext);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

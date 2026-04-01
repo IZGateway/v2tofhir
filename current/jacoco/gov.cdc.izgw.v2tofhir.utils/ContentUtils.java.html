@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ContentUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">gov.cdc.izgw.v2tofhir.utils</a> &gt; <span class="el_source">ContentUtils.java</span></div><h1>ContentUtils.java</h1><pre class="source lang-java linenums">package gov.cdc.izgw.v2tofhir.utils;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.List;
+
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+
+import com.ainq.fhir.utils.YamlParser;
+
+import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.fhir.parser.IParser;
+import jakarta.servlet.http.HttpServletRequest;
+
+/**
+ * Utilities for Content Negotiation of FHIR Responses
+ * @author Audacious Inquiry
+ */
+public class ContentUtils {
+	static final boolean PRETTY = true;
+	/** Unicode Byte Order Mark is NOT considered to be whitespace */
+	public static final char BOM = '\uFEFF';
+	/** Fhir Context for R4 */
+<span class="nc" id="L27">	public static final FhirContext R4 = FhirContext.forR4();</span>
+	/** FHIR R4 Parser for JSON Content */
+<span class="nc" id="L29">	public static final IParser FHIR_JSON_PARSER = ContentUtils.R4.newJsonParser().setPrettyPrint(ContentUtils.PRETTY);</span>
+	/** Mime Type for FHIR in JSON format */
+	public static final String FHIR_PLUS_JSON_VALUE = &quot;application/fhir+json&quot;;
+	/** Mime Type for FHIR in XML format */
+	public static final String FHIR_PLUS_XML_VALUE = &quot;application/fhir+xml&quot;;
+	/** Mime Type for FHIR in YAML format */
+	public static final String FHIR_PLUS_YAML_VALUE = &quot;application/fhir+yaml&quot;;
+	/** Mime Type for YAML format */
+	public static final String YAML_VALUE = &quot;application/yaml&quot;;
+	
+	/** Media Type for FHIR in JSON format */
+<span class="nc" id="L40">	public static final MediaType FHIR_PLUS_JSON = parseMediaType(FHIR_PLUS_JSON_VALUE);</span>
+	/** Media Type for FHIR in XML format */
+<span class="nc" id="L42">	public static final MediaType FHIR_PLUS_XML = parseMediaType(FHIR_PLUS_XML_VALUE);</span>
+	/** Media Type for FHIR in YAML format */
+<span class="nc" id="L44">	public static final MediaType FHIR_PLUS_YAML = parseMediaType(FHIR_PLUS_YAML_VALUE);</span>
+	/** Media Type for YAML format */
+<span class="nc" id="L46">	public static final MediaType YAML = parseMediaType(YAML_VALUE);</span>
+	/** Media Type for CDA Format */
+	public static final String CDA_VALUE = &quot;application/cda+xml&quot;;
+	/** Media Type for HL7 V2 ER7 Format */
+	public static final String HL7V2_TEXT_VALUE = &quot;text/hl7v2&quot;;
+	/** Media Type for HL7 V2 XML Format */
+	public static final String HL7V2_XML_VALUE = &quot;application/hl7v2+xml&quot;;
+	
+	/** FHIR R4 Parser for XML Content */
+<span class="nc" id="L55">	public static final IParser FHIR_XML_PARSER = ContentUtils.R4.newXmlParser().setPrettyPrint(ContentUtils.PRETTY);</span>
+	/** FHIR R4 Parser for YAML Content */
+<span class="nc" id="L57">	public static final IParser FHIR_YAML_PARSER = new YamlParser(ContentUtils.R4).setPrettyPrint(ContentUtils.PRETTY);</span>
+	/** Supported FHIR Media Types */
+<span class="nc" id="L59">	protected static final List&lt;MediaType&gt; FHIR_MEDIA_TYPES = Arrays.asList(</span>
+		new MediaType(&quot;application&quot;, &quot;fhir&quot;),
+		new MediaType(&quot;text&quot;, &quot;fhir&quot;),
+		FHIR_PLUS_JSON,
+		FHIR_PLUS_XML,
+		FHIR_PLUS_YAML,
+		YAML,
+		MediaType.APPLICATION_JSON,
+		MediaType.APPLICATION_XML,
+		MediaType.TEXT_XML
+	);
+<span class="nc" id="L70">	protected static final List&lt;MediaType&gt; HL7_MEDIA_TYPES = Arrays.asList(</span>
+		new MediaType(&quot;application&quot;, &quot;fhir&quot;),
+		new MediaType(&quot;text&quot;, &quot;fhir&quot;),
+		FHIR_PLUS_JSON,
+		FHIR_PLUS_XML,
+		FHIR_PLUS_YAML,
+		YAML,
+		MediaType.APPLICATION_JSON,
+		MediaType.APPLICATION_XML,
+		MediaType.TEXT_XML,
+		new MediaType(&quot;text&quot;, &quot;hl7v2&quot;),
+<span class="nc" id="L81">		MediaType.valueOf(HL7V2_TEXT_VALUE),</span>
+		new MediaType(&quot;application&quot;, &quot;hl7v2&quot;),
+<span class="nc" id="L83">		MediaType.valueOf(HL7V2_XML_VALUE),</span>
+		new MediaType(&quot;text&quot;, &quot;cda&quot;),
+		new MediaType(&quot;application&quot;, &quot;cda&quot;),
+<span class="nc" id="L86">		MediaType.valueOf(CDA_VALUE)</span>
+	);
+
+	private ContentUtils() {}
+
+	/**
+	 * Compare two mime types by Quality
+	 * @param m1	First Mime Type
+	 * @param m2	Second Mime Type
+	 * @return The comparison result
+	 */
+	public static int compareByQvalue(String m1, String m2) {
+<span class="nc" id="L98">		String q1 = StringUtils.defaultIfEmpty(StringUtils.substringAfter(m1, &quot;q=&quot;),&quot;1&quot;);</span>
+<span class="nc" id="L99">		String q2 = StringUtils.defaultIfEmpty(StringUtils.substringAfter(m2, &quot;q=&quot;),&quot;1&quot;);</span>
+<span class="nc" id="L100">		return q2.compareTo(q1);</span>
+	}
+
+	/**
+	 * This enables content negotiation for the ModernizationController
+	 * @param req	The HttpServletRequest used to determine acceptable content types
+	 * @return	An HttpHeaders with the Content-Type header set appropriately.
+	 */
+	public static HttpHeaders getHeaders(HttpServletRequest req) {
+<span class="nc" id="L109">		HttpHeaders h = new HttpHeaders();</span>
+<span class="nc" id="L110">		String accept = req.getParameter(&quot;_format&quot;);</span>
+<span class="nc bnc" id="L111" title="All 2 branches missed.">		if (accept == null) {</span>
+<span class="nc" id="L112">			accept = req.getHeader(HttpHeaders.ACCEPT);</span>
+		}
+<span class="nc bnc" id="L114" title="All 2 branches missed.">		if (accept != null) {</span>
+<span class="nc" id="L115">			accept = accept.toLowerCase();</span>
+		}
+<span class="nc" id="L117">		String contentType = null;</span>
+<span class="nc bnc" id="L118" title="All 6 branches missed.">		if (accept == null || accept.isBlank() || accept.contains(&quot;json&quot;)) {</span>
+<span class="nc" id="L119">			contentType = ContentUtils.FHIR_PLUS_JSON_VALUE;</span>
+<span class="nc bnc" id="L120" title="All 4 branches missed.">		} else if ((accept.contains(&quot;hl7&quot;) || accept.contains(&quot;v2&quot;))) {  // Second option addresses inadvertent use of + in URL parameter</span>
+<span class="nc bnc" id="L121" title="All 2 branches missed.">			 if (accept.contains(&quot;xml&quot;)) {</span>
+<span class="nc" id="L122">				 contentType = ContentUtils.HL7V2_XML_VALUE;</span>
+			 } else {
+<span class="nc" id="L124">				 contentType = ContentUtils.HL7V2_TEXT_VALUE;</span>
+			 }
+<span class="nc bnc" id="L126" title="All 2 branches missed.">		} else if (accept.contains(&quot;cda&quot;)) {</span>
+<span class="nc" id="L127">			contentType = ContentUtils.CDA_VALUE;</span>
+<span class="nc bnc" id="L128" title="All 2 branches missed.">		} else if (accept.contains(&quot;xml&quot;)) {	</span>
+<span class="nc" id="L129">			contentType = ContentUtils.FHIR_PLUS_XML_VALUE;</span>
+<span class="nc bnc" id="L130" title="All 2 branches missed.">		} else if (accept.contains(&quot;yaml&quot;)) {	</span>
+<span class="nc" id="L131">			contentType = ContentUtils.FHIR_PLUS_YAML_VALUE;</span>
+		} else {
+<span class="nc" id="L133">			String[] types = accept.toLowerCase().split(&quot;,&quot;);</span>
+<span class="nc" id="L134">			Arrays.sort(types, ContentUtils::compareByQvalue);</span>
+<span class="nc bnc" id="L135" title="All 2 branches missed.">			for (String type: types) {</span>
+<span class="nc" id="L136">				String t = StringUtils.substringBefore(type, &quot;;&quot;);</span>
+<span class="nc" id="L137">				MediaType match = </span>
+						FHIR_MEDIA_TYPES
+<span class="nc" id="L139">							.stream()</span>
+<span class="nc" id="L140">							.filter(m -&gt; t.startsWith(m.toString()))</span>
+<span class="nc" id="L141">							.findFirst().orElse(null);</span>
+<span class="nc bnc" id="L142" title="All 2 branches missed.">				if (match != null) {</span>
+<span class="nc" id="L143">					contentType = match.toString();</span>
+<span class="nc" id="L144">					break;</span>
+				}
+			}
+<span class="nc bnc" id="L147" title="All 2 branches missed.">			if (contentType == null) {</span>
+<span class="nc" id="L148">				contentType = ContentUtils.FHIR_PLUS_JSON_VALUE;</span>
+			}
+		}
+<span class="nc" id="L151">		h.add(HttpHeaders.CONTENT_TYPE, contentType);</span>
+<span class="nc" id="L152">		return h;</span>
+	}
+	
+	/**
+	 * Guess the media type of an input stream and return it.
+	 * @param inputStream	The input stream (must be a buffered input stream 
+	 * to address the issue of read-ahead.
+	 * @return	The best guess at the media type for this resource.
+	 * @throws IOException	If an IO Error occurs.
+	 */
+	public static MediaType guessMediaType(InputStream inputStream) throws IOException {
+<span class="nc" id="L163">		inputStream.mark(512);</span>
+		try {
+<span class="nc bnc" id="L165" title="All 2 branches missed.">			for (int i = 0; i &lt; 512; i++) {</span>
+<span class="nc" id="L166">				int c = inputStream.read();</span>
+<span class="nc bnc" id="L167" title="All 2 branches missed.">				if (c &lt; 0) {</span>
+<span class="nc" id="L168">					break;</span>
+				} 
+<span class="nc bnc" id="L170" title="All 2 branches missed.">				if (c == '&lt;') {</span>
+<span class="nc" id="L171">					return FHIR_PLUS_XML;</span>
+				} 
+<span class="nc bnc" id="L173" title="All 2 branches missed.">				if (c == '{') {</span>
+<span class="nc" id="L174">					return FHIR_PLUS_JSON;</span>
+				} 
+<span class="nc bnc" id="L176" title="All 2 branches missed.">				if (c == '-') {</span>
+<span class="nc" id="L177">					return FHIR_PLUS_YAML;</span>
+				} 
+<span class="nc bnc" id="L179" title="All 4 branches missed.">				if (!Character.isWhitespace(c) &amp;&amp; c != ContentUtils.BOM) {</span>
+					// It's a good guess.
+<span class="nc" id="L181">					return FHIR_PLUS_YAML;</span>
+				}
+			}
+		} finally {
+<span class="nc" id="L185">			inputStream.reset();</span>
+		}
+<span class="nc" id="L187">		return FHIR_PLUS_JSON;</span>
+	}
+
+	/**
+	 * Given a media type, return the appropriate parser for reading and generating it
+	 * @param mediaType	The media type
+	 * @return	A parser for reading and generating FHIR from th specified media type
+	 */
+	public static IParser selectParser(MediaType mediaType) {
+		// Simplify the media type.
+<span class="nc" id="L197">		mediaType = new MediaType(mediaType.getType(), mediaType.getSubtype());</span>
+		// Convert to string for switch
+<span class="nc" id="L199">		String mimeType = StringUtils.defaultString(mediaType.toString());</span>
+<span class="nc bnc" id="L200" title="All 3 branches missed.">		switch (mimeType) {</span>
+		case FHIR_PLUS_XML_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.TEXT_XML_VALUE:
+<span class="nc" id="L202">			return FHIR_XML_PARSER;</span>
+			
+		case FHIR_PLUS_YAML_VALUE, YAML_VALUE:
+<span class="nc" id="L205">			return FHIR_YAML_PARSER;</span>
+			
+		case FHIR_PLUS_JSON_VALUE, MediaType.APPLICATION_JSON_VALUE:
+		default:
+<span class="nc" id="L209">			return FHIR_JSON_PARSER;</span>
+		}
+	}
+
+	private static MediaType parseMediaType(String contentType) {
+<span class="nc" id="L214">		String[] parts = contentType.split(&quot;/&quot;);</span>
+<span class="nc" id="L215">		return new MediaType(parts[0], parts[1]);</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -1,0 +1,369 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BaseParser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">gov.cdc.izgw.v2tofhir.converter</a> &gt; <span class="el_source">BaseParser.java</span></div><h1>BaseParser.java</h1><pre class="source lang-java linenums">package gov.cdc.izgw.v2tofhir.converter;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.function.Supplier;
+
+import org.hl7.fhir.instance.model.api.IBase;
+import org.hl7.fhir.instance.model.api.IBaseMetaType;
+import org.hl7.fhir.instance.model.api.IBaseResource;
+import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.IdType;
+import org.hl7.fhir.r4.model.Meta;
+import org.hl7.fhir.r4.model.Provenance;
+import org.hl7.fhir.r4.model.Provenance.ProvenanceEntityComponent;
+import org.hl7.fhir.r4.model.StringType;
+
+import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
+import org.hl7.fhir.r4.model.Bundle.BundleType;
+import org.apache.commons.text.WordUtils;
+
+import gov.cdc.izgw.v2tofhir.segment.Processor;
+import io.azam.ulidj.ULID;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * The base parser class for V2toFHIR conversion. Abstracts the parsing from the message and message component detail.
+ * 
+ * @author Audacious Inquiry
+ *
+ * @param &lt;U&gt;	The message unit for conversion.
+ * @param &lt;S&gt;	The subunits that get converted.
+ */
+<span class="fc" id="L41">@Slf4j</span>
+public abstract class BaseParser&lt;U,S&gt; implements Parser&lt;U,S&gt; {
+
+<span class="fc" id="L44">	static final Context&lt;Parser&lt;?, ?&gt;&gt; defaultContext = new Context&lt;&gt;(null);</span>
+	/** The originalText extension */
+	public static final String ORIGINAL_TEXT = &quot;http://hl7.org/fhir/StructureDefinition/originalText&quot;;
+	/** Locations to look for parser packages */
+<span class="fc" id="L48">	protected static List&lt;String&gt; packageSources = new ArrayList&lt;&gt;();</span>
+	/**
+	 * Enable or disable storing of Provenance information for created resources.
+	 * 
+	 * When enabled, the MessageParser will create Provenance resources for each created resource
+	 * that document the sources of information used to create resources in the generated bundle.
+	 * These provenance records tie the information in the resource back to the specific segments
+	 * or groups within the message that sourced the data in the generated resource. 
+	 * 
+	 * @param storingProvidence	Set to true to enable generation of Provenance resources, or false to disable them.
+	 */
+	public static void setStoringProvenance(boolean storingProvidence) {
+<span class="nc" id="L60">		defaultContext.setStoringProvenance(storingProvidence);</span>
+<span class="nc" id="L61">	}</span>
+	/**
+	 * Returns true if Provenance resources are to be created, false otherwise.
+	 * @return true if Provenance resources are to be created, false otherwise.
+	 */
+	public static boolean isStoringProvenance() {
+<span class="nc" id="L67">		return defaultContext.isStoringProvenance();</span>
+	}
+	@Getter
+	/** The shared context for parse of this message 
+	 */
+	private final Context&lt;Parser&lt;U,S&gt;&gt; context;
+<span class="fc" id="L73">	protected final Set&lt;IBaseResource&gt; updated = new LinkedHashSet&lt;&gt;();</span>
+<span class="fc" id="L74">	protected final Set&lt;IBaseResource&gt; resourcesNeedingProvenance = new LinkedHashSet&lt;&gt;();</span>
+	
+<span class="fc" id="L76">	@Getter</span>
+	private Supplier&lt;String&gt; idGenerator = ULID::random;
+<span class="fc" id="L78">	protected final Map&lt;String, Class&lt;Processor&lt;U, S&gt;&gt;&gt; parsers = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L79">	protected final Map&lt;S, String&gt; processed = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L80">	protected Processor&lt;U, S&gt; processor = null;</span>
+	
+	/**
+	 * Construct a new parser with a freshly initialized context.
+	 */
+<span class="fc" id="L85">	protected BaseParser() {</span>
+<span class="fc" id="L86">		context = new Context&lt;&gt;(this);</span>
+		// Copy default values to context on creation.
+<span class="fc" id="L88">		context.setStoringProvenance(BaseParser.defaultContext.isStoringProvenance());</span>
+<span class="fc" id="L89">	}</span>
+	
+	/**
+	 * Reset this message parser for a new parsing session.
+	 */
+	public void reset() {
+<span class="fc" id="L95">		getContext().clear();</span>
+<span class="fc" id="L96">		updated.clear();</span>
+<span class="fc" id="L97">		processed.clear();</span>
+<span class="fc" id="L98">		processor = null;</span>
+<span class="fc" id="L99">	}</span>
+	
+	/**
+	 * Set the ID Generator for this MessageParser.
+	 * 
+	 * This is used during testing to get uniform ID Generation during tests
+	 * to enable comparison against a baseline.  If not set, ULID.random() is
+	 * used to generate identifiers for the resources created by this 
+	 * MessageParser. 
+	 * 
+	 * @param idGenerator	The idGenerator to use, or null to use the standard one.
+	 */
+	public void setIdGenerator(Supplier&lt;String&gt; idGenerator) {
+<span class="pc bpc" id="L112" title="1 of 2 branches missed.">		if (idGenerator == null) {</span>
+<span class="nc" id="L113">			this.idGenerator = ULID::random;</span>
+		} else {
+<span class="fc" id="L115">			this.idGenerator = idGenerator;</span>
+		}
+<span class="fc" id="L117">	}</span>
+	
+	/**
+	 * Get the bundle being constructed.
+	 * @return The bundle being constructed, or a new bundle if none exists
+	 */
+	public Bundle getBundle() {
+<span class="fc" id="L124">		Bundle b = getContext().getBundle();</span>
+<span class="fc bfc" id="L125" title="All 2 branches covered.">		if (b == null) {</span>
+<span class="fc" id="L126">			b = new Bundle();</span>
+<span class="fc" id="L127">			b.setId(new IdType(b.fhirType() + &quot;/&quot; + idGenerator.get()));</span>
+<span class="fc" id="L128">			b.setType(BundleType.MESSAGE);</span>
+<span class="fc" id="L129">			getContext().setBundle(b);</span>
+		}
+<span class="fc" id="L131">		return b;</span>
+	}
+
+	/**
+	 * Create a Bundle by parsing a given message
+	 * @param unit	The given message
+	 * @return	The generated Bundle resource
+	 */
+	protected Bundle createBundle(U unit) {
+<span class="fc" id="L140">		return createBundle(getParts(unit));</span>
+	}
+	
+	/**
+	 * Break the unit into parts convertible to FHIR.
+	 * @param unit	The unit to break up
+	 * @return	An iterable containing the parts.
+	 */
+	protected abstract Iterable&lt;S&gt; getParts(U unit);
+	
+	/**
+	 * Create a Bundle by parsing a group of structures
+	 * @param structures	The structures to parse.
+	 * @return	The generated Bundle
+	 */
+	public Bundle createBundle(Iterable&lt;S&gt; structures) {
+<span class="fc" id="L156">		Bundle b = getBundle();</span>
+<span class="fc" id="L157">		processed.clear();</span>
+<span class="fc bfc" id="L158" title="All 2 branches covered.">		for (S structure: structures) {</span>
+<span class="fc" id="L159">			updated.clear();</span>
+<span class="fc" id="L160">			processUnit(structure);</span>
+<span class="fc" id="L161">		}</span>
+<span class="fc" id="L162">		Normalizer.normalizeResources(b);</span>
+<span class="fc" id="L163">		return sortProvenance(b);</span>
+	}
+	
+	/**
+	 * Process the content of a unit
+	 * @param structure The structure to parse
+	 * @return the constructed FHIR Resource or type
+	 */
+	public IBase processUnit(S structure) {
+<span class="pc bpc" id="L172" title="1 of 2 branches missed.">		if (processed.containsKey(structure)) {</span>
+			// This structure was already processed
+<span class="nc" id="L174">			log.info(&quot;{} processed by {}&quot;, getName(structure), processed.get(structure));</span>
+<span class="nc" id="L175">			return null;</span>
+		}
+		
+<span class="fc" id="L178">		processor = getParser(getName(structure));</span>
+<span class="fc bfc" id="L179" title="All 2 branches covered.">		if (processor == null) {</span>
+<span class="fc" id="L180">			return null;</span>
+		} 
+		
+<span class="fc" id="L183">		IBase b = null;</span>
+		try {
+<span class="fc" id="L185">			beforeParsing(structure);</span>
+<span class="fc" id="L186">			b = processor.parse(structure);</span>
+<span class="nc" id="L187">		} catch (Exception e) {</span>
+<span class="nc" id="L188">			warn(&quot;Unexpected {} parsing {}: {}&quot;, e.getClass().getSimpleName(), getName(structure), e.getMessage(), e);</span>
+		} finally {
+<span class="fc" id="L190">			afterParsing(structure);</span>
+<span class="fc" id="L191">			addProcessed(structure);</span>
+<span class="fc" id="L192">			processor.finish();</span>
+		}
+
+<span class="pc bpc" id="L195" title="1 of 2 branches missed.">		if (getContext().isStoringProvenance()) {</span>
+			// Provenance is updated by segments when we did work and are storing provenance
+<span class="fc" id="L197">			updateProvenance(structure);</span>
+		}
+<span class="fc" id="L199">		return b;</span>
+	}
+	
+	protected void beforeParsing(S structure) {
+		// Do Nothing
+<span class="fc" id="L204">	}</span>
+	
+	protected void afterParsing(S structure) {
+		// Do nothing
+<span class="fc" id="L208">	}</span>
+	/**
+	 * Get the name of a structure
+	 * @param structure	The structure
+	 * @return	The name of it.
+	 */
+	protected abstract String getName(S structure);
+	
+	/**
+	 * StructureParsers which process contained substructures (segments and groups)
+	 * should call this method to avoid reprocessing the contents.
+	 * 
+	 * @param structure	The structure that was processed.
+	 */
+	public void addProcessed(S structure) {
+<span class="pc bpc" id="L223" title="1 of 2 branches missed.">		if (structure != null) {</span>
+<span class="fc" id="L224">			processed.put(structure, processor.getClass().getSimpleName());</span>
+		}
+<span class="fc" id="L226">	}	</span>
+	
+	/**
+	 * Update the provenance of a component 
+	 * @param segment The component whose provenance needs to be updated
+	 */
+	protected void updateProvenance(S segment) {
+<span class="fc bfc" id="L233" title="All 2 branches covered.">		for (IBaseResource r: resourcesNeedingProvenance) {</span>
+<span class="fc" id="L234">			Provenance p = (Provenance) r.getUserData(Provenance.class.getName());</span>
+<span class="fc bfc" id="L235" title="All 2 branches covered.">			if (p == null) {</span>
+<span class="fc" id="L236">				continue;</span>
+			}
+<span class="fc" id="L238">			ProvenanceEntityComponent entity = p.getEntityFirstRep();</span>
+			try {
+<span class="fc" id="L240">				String encodedSegment = encode(segment);</span>
+<span class="fc" id="L241">				StringType originalText = new StringType(encode(segment)); // Was new StringType(context.getHl7DataId()+&quot;#&quot;+PathUtils.getTerserPath(segment))</span>
+<span class="fc" id="L242">				if (entity.getExtension().stream()</span>
+<span class="pc bpc" id="L243" title="1 of 2 branches missed.">						.noneMatch(ext -&gt; </span>
+<span class="nc bnc" id="L244" title="All 2 branches missed.">							BaseParser.ORIGINAL_TEXT.equals(ext.getUrl()) &amp;&amp; </span>
+<span class="nc bnc" id="L245" title="All 2 branches missed.">							encodedSegment.equals(ext.getValue().toString())</span>
+						)
+				) {
+<span class="fc" id="L248">					entity.addExtension().setUrl(BaseParser.ORIGINAL_TEXT).setValue(originalText);</span>
+<span class="fc" id="L249">					IBaseMetaType meta = r.getMeta();</span>
+<span class="pc bpc" id="L250" title="1 of 2 branches missed.">					if (meta instanceof Meta m4) {</span>
+<span class="fc" id="L251">						m4.getSourceElement().addExtension().setUrl(BaseParser.ORIGINAL_TEXT).setValue(originalText);</span>
+					} 
+				}
+<span class="nc" id="L254">			} catch (Exception e) {</span>
+<span class="nc" id="L255">				warn(&quot;Unexpected {} updating provenance for {} segment: {}&quot;, e.getClass().getSimpleName(), getName(segment), e.getMessage());</span>
+<span class="fc" id="L256">			}</span>
+<span class="fc" id="L257">		}</span>
+<span class="fc" id="L258">		resourcesNeedingProvenance.clear();</span>
+<span class="fc" id="L259">	}</span>
+	
+	/**
+	 * This method sorts Provenance resources to the end.
+	 * @param b	The bundle to sort
+	 * @return	The sorted bundle
+	 */
+	public Bundle sortProvenance(Bundle b) {
+<span class="pc bpc" id="L267" title="1 of 2 branches missed.">		if (getContext().isStoringProvenance()) {</span>
+<span class="fc" id="L268">			List&lt;BundleEntryComponent&gt; list = b.getEntry();</span>
+<span class="fc" id="L269">			int len = list.size();</span>
+<span class="fc bfc" id="L270" title="All 2 branches covered.">			for (int i = 0; i &lt; len; ++i) {</span>
+<span class="fc" id="L271">				BundleEntryComponent c = list.get(i);</span>
+<span class="pc bpc" id="L272" title="2 of 4 branches missed.">				if (c == null || !c.hasResource()) {</span>
+<span class="nc" id="L273">					continue;</span>
+				}
+<span class="fc bfc" id="L275" title="All 2 branches covered.">				if (&quot;Provenance&quot;.equals(c.getResource().fhirType())) {</span>
+<span class="fc" id="L276">					list.add(c);	// Add this provenance to the end</span>
+<span class="fc" id="L277">					list.remove(i);	// And remove it from the current position</span>
+<span class="fc" id="L278">					--i;			// NOSONAR: Backup a step to reprocess the new resource in this position.</span>
+<span class="fc" id="L279">					--len;			// We don't need to look at entries we just shuffled around to the end</span>
+				}
+			}
+		}
+<span class="fc" id="L283">		return b;</span>
+	}
+	/**
+	 * Load a parser for a specified segment type.
+	 * @param segment The segment to get a parser for
+	 * @return The parser for that segment.
+	 */
+	public Processor&lt;U, S&gt; getParser(String segment) {
+<span class="fc" id="L291">		Class&lt;Processor&lt;U, S&gt;&gt; p = parsers.get(segment);</span>
+		@SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L293">		Class&lt;Processor&lt;U, S&gt;&gt; safeNull = (Class&lt;Processor&lt;U,S&gt;&gt;) Processor.NULL_PROCESSOR.getClass();</span>
+<span class="fc bfc" id="L294" title="All 2 branches covered.">		if (p == null) {</span>
+<span class="fc" id="L295">			p = loadParser(segment);</span>
+<span class="fc bfc" id="L296" title="All 2 branches covered.">			if (p == null) {</span>
+				// Report inability to load ONCE if context says to.
+<span class="pc bpc" id="L298" title="1 of 2 branches missed.">				if (getContext().isWarnOnFailedLoad()) {</span>
+<span class="nc" id="L299">					log.warn(&quot;Cannot load parser for {}&quot;, segment);</span>
+				}
+				// Save the fact that there is no parser for this segment, have to do this dynamically
+				// to store a do-nothing marker class.
+<span class="fc" id="L303">				parsers.put(segment, safeNull);</span>
+<span class="fc" id="L304">				return null;</span>
+			}
+<span class="fc" id="L306">			parsers.put(segment, p);</span>
+<span class="fc bfc" id="L307" title="All 2 branches covered.">		} else if (Processor.NULL_PROCESSOR_CLASS.equals(p)) {</span>
+<span class="fc" id="L308">			return null;</span>
+		}
+		
+		try {
+<span class="fc" id="L312">			Constructor&lt;?&gt;[] ctors = p.getDeclaredConstructors();</span>
+<span class="pc bpc" id="L313" title="1 of 2 branches missed.">			for (Constructor&lt;?&gt; ctor : ctors) {</span>
+<span class="pc bpc" id="L314" title="2 of 4 branches missed.">				if (ctor.getParameterCount() == 1 &amp;&amp; ctor.getParameterTypes()[0].isInstance(this)) {</span>
+<span class="fc" id="L315">					Object x = ctor.newInstance(this);</span>
+					@SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L317">					Processor&lt;U,S&gt; instance = (Processor&lt;U,S&gt;)x;</span>
+<span class="fc" id="L318">					return instance;</span>
+				}
+			}
+<span class="nc" id="L321">			log.error(&quot;No constructor found using {} while creating {} for {}&quot;, this.getClass().getSimpleName(), p.getName(), segment);</span>
+<span class="nc" id="L322">			parsers.put(segment, safeNull);</span>
+<span class="nc" id="L323">			return null;</span>
+<span class="nc" id="L324">		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException</span>
+				| InvocationTargetException | SecurityException | ClassCastException e) {
+<span class="nc" id="L326">			log.error(&quot;Unexpected {} while creating {} for {}&quot;, e.getClass().getSimpleName(), p.getName(), segment, e);</span>
+<span class="nc" id="L327">			return null;</span>
+		}
+	}
+	
+	/** A cache of loaded parser classes */
+<span class="fc" id="L332">	private Map&lt;String, Class&lt;Processor&lt;U,S&gt;&gt;&gt; parserClasses = new TreeMap&lt;&gt;();</span>
+
+	/**
+	 * Load a parser for the specified segment or group
+	 * @param name	The name of the segment or group to find a parser for
+	 * @return	A StructureParser for the segment or group, or null if none found. 
+	 */
+	public Class&lt;Processor&lt;U,S&gt;&gt; loadParser(String name) {
+<span class="fc" id="L340">		name = WordUtils.capitalize(name);</span>
+<span class="fc" id="L341">		Class&lt;Processor&lt;U,S&gt;&gt; clazz = parserClasses.get(name);</span>
+<span class="fc bfc" id="L342" title="All 2 branches covered.">		if (clazz != null) {</span>
+<span class="fc" id="L343">			return clazz;</span>
+		}
+		
+<span class="fc" id="L346">		ClassLoader loader = MessageParser.class.getClassLoader();</span>
+<span class="fc bfc" id="L347" title="All 2 branches covered.">		for (String packageName : BaseParser.packageSources) {</span>
+			try {
+				@SuppressWarnings(&quot;unchecked&quot;) 
+<span class="fc" id="L350">				Class&lt;Processor&lt;U,S&gt;&gt; clazz2 = (Class&lt;Processor&lt;U,S&gt;&gt;) loader.loadClass(packageName + &quot;.&quot; + name + &quot;Parser&quot;);</span>
+<span class="fc" id="L351">				parserClasses.put(name, clazz2);</span>
+<span class="fc" id="L352">				return clazz2;</span>
+<span class="fc" id="L353">			} catch (ClassNotFoundException ex) {</span>
+				// Keep looking
+<span class="nc" id="L355">			} catch (Exception ex) {</span>
+<span class="nc" id="L356">				log.error(&quot;{}.{} cannot be loaded: {}&quot;, packageName, name, ex.getMessage(), ex);</span>
+<span class="fc" id="L357">			}</span>
+<span class="fc" id="L358">		}</span>
+<span class="fc" id="L359">		return null;</span>
+	}
+	
+
+	@Override
+	public void update(IBaseResource r) {
+<span class="fc" id="L365">		updated.add(r);	</span>
+<span class="fc" id="L366">		resourcesNeedingProvenance.add(r);</span>
+<span class="fc" id="L367">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

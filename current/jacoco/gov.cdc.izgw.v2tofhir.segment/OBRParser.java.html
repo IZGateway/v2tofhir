@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OBRParser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">gov.cdc.izgw.v2tofhir.segment</a> &gt; <span class="el_source">OBRParser.java</span></div><h1>OBRParser.java</h1><pre class="source lang-java linenums">package gov.cdc.izgw.v2tofhir.segment;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.commons.lang3.StringUtils;
+import org.hl7.fhir.instance.model.api.IBaseResource;
+import org.hl7.fhir.r4.model.CodeType;
+import org.hl7.fhir.r4.model.CodeableConcept;
+import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.ContactPoint;
+import org.hl7.fhir.r4.model.DateTimeType;
+import org.hl7.fhir.r4.model.Identifier;
+import org.hl7.fhir.r4.model.Immunization;
+import org.hl7.fhir.r4.model.Organization;
+import org.hl7.fhir.r4.model.Period;
+import org.hl7.fhir.r4.model.Practitioner;
+import org.hl7.fhir.r4.model.Reference;
+import org.hl7.fhir.r4.model.ServiceRequest;
+import org.hl7.fhir.r4.model.ServiceRequest.ServiceRequestPriority;
+import gov.cdc.izgw.v2tofhir.annotation.ComesFrom;
+import gov.cdc.izgw.v2tofhir.annotation.Produces;
+import gov.cdc.izgw.v2tofhir.converter.MessageParser;
+import gov.cdc.izgw.v2tofhir.utils.Codes;
+import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
+
+/**
+ * ORCParser parses any ORC segments in a message to a ServiceRequest If the
+ * message is a VXU or an response to an immunization query, it also produces an
+ * Immunization resource.
+ * 
+ * @author Audacious Inquiry
+ *
+ * @see &lt;a href=
+ *      &quot;https://hl7.org/fhir/uv/v2mappings/2024Jan/ConceptMap-segment-orc-to-servicerequest.html&quot;&gt;V2
+ *      to FHIR: ORC to ServiceRequest&lt;/a&gt;
+ * @see &lt;a href=
+ *      &quot;https://hl7.org/fhir/uv/v2mappings/2024Jan/ConceptMap-segment-orc-to-immunization.html&quot;&gt;V2
+ *      to FHIR: ORC to Immunization&lt;/a&gt;
+ */
+@Produces(segment = &quot;ORC&quot;, resource = ServiceRequest.class, extra = { Practitioner.class, Organization.class,
+		Immunization.class })
+public class OBRParser extends AbstractSegmentParser {
+	private static final String REQUESTER = &quot;requester&quot;;
+<span class="nc" id="L45">	private static List&lt;FieldHandler&gt; fieldHandlers = new ArrayList&lt;&gt;();</span>
+	private ServiceRequest order;
+	private Practitioner orderingProvider;
+	/**
+	 * Create an ORC Parser for the specified MessageParser
+	 * 
+	 * @param p The message parser.
+	 */
+	public OBRParser(MessageParser p) {
+<span class="nc" id="L54">		super(p, &quot;OBR&quot;);</span>
+<span class="nc bnc" id="L55" title="All 2 branches missed.">		if (fieldHandlers.isEmpty()) {</span>
+<span class="nc" id="L56">			FieldHandler.initFieldHandlers(this, fieldHandlers);</span>
+		}
+<span class="nc" id="L58">	}</span>
+
+	@Override
+	protected List&lt;FieldHandler&gt; getFieldHandlers() {
+<span class="nc" id="L62">		return fieldHandlers;</span>
+	}
+
+	@Override
+	public IBaseResource setup() {
+<span class="nc" id="L67">		order = this.getLastResource(ServiceRequest.class);</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">		if (order == null) {</span>
+<span class="nc" id="L69">			order = createResource(ServiceRequest.class);</span>
+		}
+<span class="nc" id="L71">		return order;</span>
+	}
+
+	/**
+	 * Add the place order number for the service request
+	 * @param orderNumber	the order number 
+	 */
+	@ComesFrom(path = &quot;ServiceRequest.identifier&quot;, field = 2, comment = &quot;Placer Order Number&quot;)
+	@ComesFrom(path = &quot;ServiceRequest.identifier&quot;, field = 53, comment = &quot;Alternate Placer Order Number&quot;)
+	public void addPlacerOrderNumber(Identifier orderNumber) {
+<span class="nc" id="L81">		addOrderIdentifier(orderNumber, Codes.PLACER_ORDER_IDENTIFIER_TYPE);</span>
+<span class="nc" id="L82">	}</span>
+	
+	/**
+	 * Add the filler order number for the service request
+	 * @param orderNumber	the order number 
+	 */
+	@ComesFrom(path = &quot;ServiceRequest.identifier&quot;, field = 3, comment = &quot;Filler Order Number&quot;)
+	public void addFillerOrderNumber(Identifier orderNumber) {
+<span class="nc" id="L90">		addOrderIdentifier(orderNumber, Codes.FILLER_ORDER_IDENTIFIER_TYPE);</span>
+<span class="nc" id="L91">	}</span>
+	
+	private void addOrderIdentifier(Identifier ident, CodeableConcept type) {
+		// It already exists, don't add it again.
+<span class="nc bnc" id="L95" title="All 2 branches missed.">		if (order.getIdentifier().stream().anyMatch(id -&gt; equals(id, ident))) {</span>
+<span class="nc" id="L96">			return;</span>
+		}
+		// Ensures ident above is effectively final
+<span class="nc" id="L99">		Identifier ident2 = ident;</span>
+<span class="nc bnc" id="L100" title="All 4 branches missed.">		if (ident.getType() != type &amp;&amp; ident.hasType()) {</span>
+<span class="nc" id="L101">			order.addIdentifier(ident);</span>
+<span class="nc" id="L102">			ident2 = ident.copy();</span>
+		}
+<span class="nc bnc" id="L104" title="All 4 branches missed.">		if (type != null &amp;&amp; !type.isEmpty()) {</span>
+<span class="nc" id="L105">			ident2.setType(type);</span>
+<span class="nc" id="L106">			order.addIdentifier(ident2);</span>
+		}
+<span class="nc" id="L108">	}</span>
+	
+	private boolean equals(Identifier id1, Identifier id2) {
+<span class="nc" id="L111">		return</span>
+<span class="nc bnc" id="L112" title="All 2 branches missed.">			StringUtils.equals(id1.getSystem(), id2.getSystem()) &amp;&amp;</span>
+<span class="nc bnc" id="L113" title="All 2 branches missed.">			StringUtils.equals(id1.getValue(), id2.getValue());</span>
+	}
+
+	/**
+	 * Set the code for the Service Request
+	 * @param code	The code to set
+	 */
+	@ComesFrom(path = &quot;ServiceRequest.code&quot;, field = 4, comment = &quot;Universal Service Identifier&quot;)
+	@ComesFrom(path = &quot;ServiceRequest.code&quot;, field = 44, comment = &quot;Procedure Code&quot;)
+	public void setCode(CodeableConcept code) {
+<span class="nc bnc" id="L123" title="All 2 branches missed.">		for (Coding coding : code.getCoding()) {</span>
+<span class="nc bnc" id="L124" title="All 6 branches missed.">			if (!coding.hasSystem() &amp;&amp; coding.hasCode() &amp;&amp; coding.getCode().matches(&quot;[1-9]\\d{4}&quot;)) {</span>
+<span class="nc" id="L125">				coding.setSystem(&quot;http://www.ama-assn.org/go/cpt&quot;);</span>
+			}
+<span class="nc" id="L127">		}</span>
+<span class="nc" id="L128">		order.setCode(code);</span>
+<span class="nc" id="L129">	}</span>
+
+	/**
+	 * Set the priority of the order
+	 * @param priority the priority
+	 */
+	@ComesFrom(path = &quot;ServiceRequest.priority&quot;, field = 5, comment = &quot;Priority&quot;)
+	public void setPriority(CodeType priority) {
+<span class="nc bnc" id="L137" title="All 2 branches missed.">		if (priority.hasCode()) {</span>
+<span class="nc bnc" id="L138" title="All 4 branches missed.">			switch (priority.getCode()) {</span>
+			case &quot;S&quot;: // Stat With highest priority
+<span class="nc" id="L140">				order.setPriority(ServiceRequestPriority.STAT);</span>
+<span class="nc" id="L141">				break;</span>
+			case &quot;A&quot;: // ASAP Fill after S orders
+<span class="nc" id="L143">				order.setPriority(ServiceRequestPriority.ASAP);</span>
+<span class="nc" id="L144">				break;</span>
+			case &quot;R&quot;: // Routine Default
+<span class="nc" id="L146">				order.setPriority(ServiceRequestPriority.ROUTINE);</span>
+<span class="nc" id="L147">				break;</span>
+			case &quot;P&quot;, // Preop
+				&quot;C&quot;, // Callback
+				&quot;T&quot;, // Timing critical A request implying that it is critical to come as close as possible to the requested time, e.g., for a trough antimicrobial level.
+				&quot;PRN&quot;: // As needed
+			default:
+				break;
+			}
+		}
+<span class="nc" id="L156">	}</span>
+
+	/**
+	 * Set the time the order was placed 
+	 * @param requestedDateTime the time the order was placed
+	 */
+	@ComesFrom(path = &quot;ServiceRequest.occurrenceDateTime&quot;, field = 6, comment = &quot;Requested Date/Time&quot;)
+	public void setRequestedDateTime(DateTimeType requestedDateTime) {
+<span class="nc" id="L164">		order.setOccurrence(requestedDateTime);</span>
+<span class="nc" id="L165">	}</span>
+
+	/**
+	 * The the action code on the specimen
+	 * @param specimenActionCode	The action code
+	 */
+	@ComesFrom(path = &quot;ServiceRequest.intent&quot;, field = 11, comment = &quot;Specimen Action Code&quot;)
+	public void setSpecimenActionCode(CodeType specimenActionCode) {
+		// TODO: Figure this out
+<span class="nc" id="L174">	}</span>
+
+	/**
+	 * The the ordering provider 
+	 * @param orderingProvider the ordering provider
+	 */
+	@ComesFrom(path = &quot;ServiceRequest.requester(ServiceRequest.Practitioner)&quot;, field = 16, comment = &quot;Ordering Provider&quot;)
+	public void setOrderingProvider(Practitioner orderingProvider) {
+<span class="nc" id="L182">		this.orderingProvider = orderingProvider;</span>
+<span class="nc" id="L183">		Reference ref = ParserUtils.toReference(orderingProvider, order, REQUESTER);</span>
+<span class="nc" id="L184">		order.setRequester(ref);</span>
+<span class="nc" id="L185">	}</span>
+
+	/**
+	 * Set the phone number to call to reach the ordering provider 
+	 * @param orderCallbackPhoneNumber the phone number to call to reach the ordering provider 
+	 */
+	@ComesFrom(path = &quot;ServiceRequest.requester.telecom&quot;, field = 17, comment = &quot;Order Callback Phone Number&quot;)
+	public void setOrderCallbackPhoneNumber(ContactPoint orderCallbackPhoneNumber) {
+<span class="nc bnc" id="L193" title="All 2 branches missed.">		if (orderingProvider != null) {</span>
+<span class="nc" id="L194">			orderingProvider.getTelecom().add(orderCallbackPhoneNumber);</span>
+		}
+<span class="nc" id="L196">	}</span>
+
+	/**
+	 * Set the quantity and timing for a repeating order
+	 * @param quantityTiming the quantity and timing 
+	 */
+	@ComesFrom(path = &quot;ServiceRequest.occurence&quot;, field = 27, comment = &quot;Quantity/Timing&quot;)
+	public void setQuantityTiming(Period quantityTiming) {
+<span class="nc" id="L204">		order.setOccurrence(quantityTiming);</span>
+<span class="nc" id="L205">	}</span>
+
+	/**
+	 * Set the identifier of the result the result is based on.
+	 * @param parentResultsObservationIdentifier the identifier of the parent result 
+	 */
+	@ComesFrom(path = &quot;ServiceRequest.basedOn.identifier&quot;, field = 29, comment = &quot;ParentResults Observation Identifier&quot;)
+	public void setParentResultsObservationIdentifier(Identifier parentResultsObservationIdentifier) {
+<span class="nc" id="L213">		order.addBasedOn().setIdentifier(parentResultsObservationIdentifier);</span>
+<span class="nc" id="L214">	}</span>
+
+	/**
+	 * Set the reason for the order
+	 * @param reasonforStudy the reason for the order
+	 */
+	@ComesFrom(path = &quot;ServiceRequest.reasonCode&quot;, field = 31, comment = &quot;Reason for Study&quot;)
+	public void setReasonforStudy(CodeableConcept reasonforStudy) {
+<span class="nc" id="L222">		order.addReasonCode(reasonforStudy);</span>
+<span class="nc" id="L223">	}</span>
+
+	/**
+	 * Set placer supplemental information
+	 * @param placerSupplementalServiceInformation placer supplemental information
+	 */
+	@ComesFrom(path = &quot;ServiceRequest.orderDetail&quot;, field = 46, comment = &quot;Placer Supplemental Service Information&quot;)
+	public void setPlacerSupplementalServiceInformation(CodeableConcept placerSupplementalServiceInformation) {
+		// TODO: Figure this out.
+<span class="nc" id="L232">	}</span>
+
+	/**
+	 * Set filler supplemental information
+	 * @param fillerSupplementalServiceInformation filler supplemental information
+	 */
+	@ComesFrom(path = &quot;ServiceRequest.orderDetail&quot;, field = 47, comment = &quot;Filler Supplemental Service Information&quot;)
+	public void setFillerSupplementalServiceInformation(CodeableConcept fillerSupplementalServiceInformation) {
+		// TODO: Figure this out.
+<span class="nc" id="L241">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
