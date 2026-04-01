@@ -3,10 +3,10 @@
 	<parent>
 		<groupId>gov.cdc.izgw</groupId>
         <artifactId>izgw-bom</artifactId>
-        <version>1.2.0</version>
+        <version>1.4.0</version>
 	</parent>
 	<artifactId>v2tofhir</artifactId>
-	<version>2.0.0</version>
+	<version>2.1.0</version>
 	<name>HL7 Version 2 to FHIR Conversion</name>
 	<description>This is the v2tofhir Converter core code for the IZ Gateway Transformation Service</description>
 	<url>http://github.com/IZGateway/v2tofhir</url>
@@ -34,10 +34,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.java.package>${project.groupId}</project.java.package>
 		<timestamp>${maven.build.timestamp}</timestamp>
-		<hapi.v2.version>2.5.1</hapi.v2.version>
-    <hapi.fhir.version>8.0.0</hapi.fhir.version>
-		<tomcat.version>10.1.42</tomcat.version>
-		
+
 		<!-- JaCoCo Configuration -->
 		<jacoco.version>0.8.13</jacoco.version>
 		<jacoco.jar>${user.home}/.m2/repository/org/jacoco/org.jacoco.agent/${jacoco.version}/org.jacoco.agent-${jacoco.version}.jar</jacoco.jar>
@@ -172,6 +169,13 @@
 		<dependency>
 			<groupId>ca.uhn.hapi.fhir</groupId>
 			<artifactId>hapi-fhir-validation</artifactId>
+			<exclusions>
+				<!-- sqlite-jdbc is pulled in transitively via hapi-fhir-converter → org.hl7.fhir.convertors but is unused -->
+				<exclusion>
+					<groupId>org.xerial</groupId>
+					<artifactId>sqlite-jdbc</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<!-- Needed for FHIRPath -->
 		<dependency>
@@ -343,7 +347,7 @@
 					<groupId>org.owasp</groupId>
 					<artifactId>dependency-check-maven</artifactId>
 					<!-- 9.0 line uses NVD API and requires a key, which has flakey response right now -->
-					<version>8.4.3</version>
+					<version>12.1.1</version>
 					<configuration>
 						<!--nvdApiKey>${env.NVDAPIKEY}</nvdApiKey-->
 						<formats>
@@ -441,7 +445,7 @@
     		<plugin>
 				<groupId>org.owasp</groupId>
 				<artifactId>dependency-check-maven</artifactId>
-				<version>8.4.3</version>
+				<version>12.1.1</version>
 				<configuration>
                     <!--nvdApiKey>${env.NVDAPIKEY}</nvdApiKey-->
 					<formats>

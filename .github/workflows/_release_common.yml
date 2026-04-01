@@ -32,10 +32,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Generate Release Automation App Token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.RELEASE_AUTOMATION_APP_ID }}
+          private-key: ${{ secrets.RELEASE_AUTOMATION_APP_KEY }}
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ssh-key: ${{ secrets.ACTIONS_KEY }}
+          token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0  # Full history for release notes generation
 
       - name: Set up JDK 21
@@ -101,8 +108,8 @@ jobs:
 
       - name: Configure Git
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "izg-release-automation[bot]"
+          git config user.email "${{ secrets.RELEASE_AUTOMATION_APP_ID }}+izg-release-automation[bot]@users.noreply.github.com"
 
       - name: Validate prerequisites
         id: validate
@@ -423,14 +430,14 @@ jobs:
       - name: Publish Site (Current)
         uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ steps.app-token.outputs.token }}
           publish_dir: ./target/site
           destination_dir: current
 
       - name: Publish Site (Versioned)
         uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ steps.app-token.outputs.token }}
           publish_dir: ./target/site
           destination_dir: v${{ inputs.release-version }}
 
@@ -618,7 +625,7 @@ jobs:
           prerelease: false
           generate_release_notes: false
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
 
       - name: Summary
         run: |
@@ -649,7 +656,7 @@ jobs:
       - name: Cleanup on failure
         if: failure()
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           echo "=========================================="
           echo "Starting cleanup of failed release..."

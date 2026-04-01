@@ -1,0 +1,39 @@
+schema: spec-driven
+
+# Project context
+# This is shown to AI when creating artifacts.
+context: |
+  See openspec/project.md for comprehensive project documentation.
+
+  Tech stack: Java 21, Maven, Spring Boot, HAPI FHIR R4, Lombok
+
+  Domain: Healthcare interoperability - HL7 V2 to FHIR R4 conversion
+
+  Key conventions:
+  - Segment parsers extend AbstractSegmentParser
+  - Datatype parsers implement DatatypeParser<T>
+  - Use static utility classes (Systems, Mapping, Units, Codes) for terminology
+  - Use @Slf4j for logging, @Data for data classes
+  - Document classes with @author Audacious Inquiry
+  - All terminology lookups go through Systems and Mapping utility classes
+
+  Code style:
+  - Meaningful names, minimal comments needed with good naming
+  - Use HAPI FHIR fluent API patterns
+  - Leverage HL7 V2 table references for code system mapping
+  - Support standard vocabularies (LOINC, SNOMED, RxNorm, CVX, etc.)
+
+# Per-artifact rules
+rules:
+  proposal:
+    - Consider healthcare data standards (HL7, FHIR)
+    - Reference existing terminology utility classes (Systems, Mapping, Units)
+    - Minimize breaking changes to existing callers
+  tasks:
+    - Break tasks into testable units
+    - Consider backward compatibility carefully
+    - Update all callers of replaced static utilities
+  spec:
+    - Reference HL7 specifications where relevant
+    - Document interface contracts precisely
+    - Consider existing static utility method signatures when designing interface

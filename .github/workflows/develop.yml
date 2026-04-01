@@ -4,10 +4,16 @@ on:
   push:
     branches:
       - develop
+    paths-ignore:
+      - '.github/workflows/*'
+      - '!.github/workflows/develop.yml'
 
   pull_request:
     branches:
       - develop
+    paths-ignore:
+      - '.github/workflows/*'
+      - '!.github/workflows/develop.yml'
 
   # Scheduled build: Monday-Friday at 6:00 AM UTC from develop branch
   schedule:
@@ -19,7 +25,7 @@ on:
       runSiteBuild:
         description: 'Run Site Build?'
         required: false
-        default: 'false'
+        default: false
         type: boolean
 
 # Ensure only one build changes dev environment at the same time    
