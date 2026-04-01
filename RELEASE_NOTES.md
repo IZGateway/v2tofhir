@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-04-01
+
+### Changes
+- chore: Update to use release version of 1.4.0 izgw-bom ([#40](https://github.com/IZGateway/v2tofhir/pull/40))
+- Initialize openspec and copilot, start CR for terminology mapping ([#39](https://github.com/IZGateway/v2tofhir/pull/39))
+- Update release workflow to use GitHub application ([#37](https://github.com/IZGateway/v2tofhir/pull/37))
+- chore: Bump izgw-bom to 1.4.0-SNAPSHOT to pickup some dependency updates ([#38](https://github.com/IZGateway/v2tofhir/pull/38))
+
 ## [2.0.0] - 2026-02-19
 
 ### Changes
