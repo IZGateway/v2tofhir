@@ -120,16 +120,17 @@ public class TextUtils {
 	 */
 
 	public static String codingToText(String text, String ... parts) {
-		StringBuilder b = new StringBuilder();
-	
-		if (parts.length > 0) {
-			appendIfNonBlank(b, text, null);
+		if (parts.length == 0) {
+			return "";
 		}
 		
+		StringBuilder b = new StringBuilder();
+		appendIfNonBlank(b, text, null);
+		
 		for (int i = 0; i < parts.length; i += 3) {
-			String code = parts[i];	// guaranteed by loop termination.
-			String display = parts.length > (i+1) ? parts[i+1] : ""; 
-			String system = parts.length > (i+2) ? parts[i+2] : "";
+			String code = getPart(parts, i);
+			String display = getPart(parts, i + 1); 
+			String system = getPart(parts, i + 2);
 			if (StringUtils.isAllEmpty(code, display, system)) {
 				continue;
 			}
@@ -140,17 +141,7 @@ public class TextUtils {
 			if (StringUtils.isNotBlank(code) && StringUtils.isNotBlank(system)) {
 				// For converting to Strings, if system is a URL, make it 
 				// a more human readable name like people would expect.
-				if (StringUtils.contains(system, ":")) {
-					List<String> l = Systems.getSystemNames(system);
-					// First name is always preferred name, second is the V2 common name
-					if (!l.isEmpty()) {
-						system = l.get(0);
-						if (l.size() > 1) {
-							// If there is a V2 name, use that.
-							system = l.get(1);
-						}
-					}
-				}
+				system = getHumanReadableSystemName(system);
 				b.append(" (").append(system).append(" ").append(code).append(")");
 			} else if (StringUtils.isNotBlank(code)) {
 				// The space after ( makes it easily parsed as a code with an empty system
@@ -163,7 +154,27 @@ public class TextUtils {
 		}
 		return value;
 	}
+
+	private static String getHumanReadableSystemName(String system) {
+		if (!StringUtils.contains(system, ":")) {
+			return system;
+		}
+		List<String> l = Systems.getSystemNames(system);
+		// First name is always preferred name, second is the V2 common name
+		if (!l.isEmpty()) {
+			system = l.get(0);
+			if (l.size() > 1) {
+				// If there is a V2 name, use that.
+				system = l.get(1);
+			}
+		}
+		return system;
+	}
 	
+	private static String getPart(String[] parts, int i) {
+		return parts.length > i ? parts[i] : "";
+	}
+
 	/**
 	 * Convert a human name to text in the form {prefix} {givens} {family} suffix
 	 * 
@@ -518,7 +529,7 @@ public class TextUtils {
 			
 			if (type != null &&
 				// If type is an OID
-				type.matches("\\d+(\\.\\d+)*$") &&
+				isOID(type) &&
 				// and there's an assigner with a display name
 				identifier.hasAssigner() && identifier.getAssigner().hasDisplay()
 			) {
@@ -529,6 +540,24 @@ public class TextUtils {
 		return identifierToText(type, identifier.getValue(), null);
 	}
 	
+	private static boolean isOID(String type) {
+		boolean dotSeen = false;
+		for (int i = 0; i < type.length(); ++i) {
+			char c = type.charAt(i);
+			if (c == '.') {
+				if (dotSeen || i == 0) {
+					return false;
+				}
+				dotSeen = true;
+			} else if (!Character.isDigit(c)) {
+				return false;
+			} else {
+				dotSeen = false;
+			}
+		}
+		return true;
+	}
+
 	/**
 	 * Convert a Quantity to text. 
 	 * @param quantity The quantity to convert

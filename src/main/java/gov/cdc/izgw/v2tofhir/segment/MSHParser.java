@@ -15,6 +15,7 @@ import org.hl7.fhir.r4.model.OperationOutcome;
 import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.Provenance;
 import org.hl7.fhir.r4.model.Reference;
+
 import gov.cdc.izgw.v2tofhir.annotation.ComesFrom;
 import gov.cdc.izgw.v2tofhir.annotation.Produces;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
@@ -22,7 +23,7 @@ import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * The MSH Parser creates a MessageHeader Resource for MSH segements.
+ * The MSH Parser creates a MessageHeader Resource for MSH segments.
  * 
  * @see <a href="https://hl7.org/fhir/uv/v2mappings/2024Jan/ConceptMap-segment-msh-to-bundle.html">V2-to-FHIR: MSH to Bundle</a>
  * @see <a href="https://hl7.org/fhir/uv/v2mappings/2024Jan/ConceptMap-segment-msh-to-messageheader.html">V2-to-FHIR: MSH to MessageHeader</a>

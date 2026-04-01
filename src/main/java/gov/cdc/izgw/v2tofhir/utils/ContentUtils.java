@@ -23,7 +23,8 @@ public class ContentUtils {
 	static final boolean PRETTY = true;
 	/** Unicode Byte Order Mark is NOT considered to be whitespace */
 	public static final char BOM = '\uFEFF';
-	static final FhirContext R4 = FhirContext.forR4();
+	/** Fhir Context for R4 */
+	public static final FhirContext R4 = FhirContext.forR4();
 	/** FHIR R4 Parser for JSON Content */
 	public static final IParser FHIR_JSON_PARSER = ContentUtils.R4.newJsonParser().setPrettyPrint(ContentUtils.PRETTY);
 	/** Mime Type for FHIR in JSON format */
@@ -114,7 +115,7 @@ public class ContentUtils {
 			accept = accept.toLowerCase();
 		}
 		String contentType = null;
-		if (accept == null || accept.contains("json")) {
+		if (accept == null || accept.isBlank() || accept.contains("json")) {
 			contentType = ContentUtils.FHIR_PLUS_JSON_VALUE;
 		} else if ((accept.contains("hl7") || accept.contains("v2"))) {  // Second option addresses inadvertent use of + in URL parameter
 			 if (accept.contains("xml")) {

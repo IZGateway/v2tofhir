@@ -1,0 +1,188 @@
+name: Java CI with Maven
+
+on:
+  push:
+    branches:
+      - develop
+
+  pull_request:
+    branches:
+      - develop
+
+  # Scheduled build: Monday-Friday at 6:00 AM UTC from develop branch
+  schedule:
+    - cron: '0 6 * * 1-5'
+  
+  # Manual trigger for on-demand builds
+  workflow_dispatch:
+    inputs:
+      runSiteBuild:
+        description: 'Run Site Build?'
+        required: false
+        default: 'false'
+        type: boolean
+
+# Ensure only one build changes dev environment at the same time    
+concurrency: v2tofhir
+# GITHUB_REF=refs/heads/testmain
+#   
+jobs:
+  build:
+
+    runs-on: ubuntu-latest 
+
+    steps:
+    
+    - name: Checkout the software  
+      uses: actions/checkout@v4
+      # Necessary to enable push to protected branch
+      with:
+        ssh-key: ${{secrets.ACTIONS_KEY}}
+        fetch-depth: 0  # Shallow clones should be disabled for better SonarCloud analysis
+        
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: maven
+        
+    - name: Set up Maven
+      uses: stCarolas/setup-maven@v5
+      with:
+        maven-version: 3.9.0
+        
+    - name: Set up Toolchain
+      shell: bash
+      run: |
+          echo COMPUTERNAME=`hostname` >> $GITHUB_ENV
+          mkdir -p ~/.m2 \
+          && cat << EOF > ~/.m2/toolchains.xml
+          <?xml version="1.0" encoding="UTF-8"?>
+          <toolchains>
+            <toolchain>
+              <type>jdk</type>
+                <provides>
+                  <version>21</version>
+                  <vendor>sun</vendor>
+                </provides>
+                <configuration>
+                  <jdkHome>$JAVA_HOME_21_X64</jdkHome>
+                </configuration>
+            </toolchain>            
+          </toolchains>
+          EOF
+          
+          cat << EOF > ~/.m2/settings.xml
+          <?xml version="1.0" encoding="UTF-8"?>
+          <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+            https://maven.apache.org/xsd/settings-1.0.0.xsd">
+            <localRepository>~/.m2/repository</localRepository>
+            <interactiveMode />
+            <usePluginRegistry />
+            <offline />
+            <servers>
+              <server>
+                <id>github</id>
+                <username>${{ env.GITHUB_ACTOR }}</username>
+                <password>${{ secrets.GITHUB_TOKEN }}</password>
+              </server>
+              <server>
+                <id>github-bom</id>
+                <username>${{ env.GITHUB_ACTOR }}</username>
+                <password>${{ secrets.GITHUB_TOKEN }}</password>
+              </server>
+              <server>
+                <id>v2tofhir</id>
+                <username>${{ env.GITHUB_ACTOR }}</username>
+                <password>${{ secrets.GITHUB_TOKEN }}</password>
+              </server>
+            </servers>
+            <mirrors />
+            <proxies />
+            <profiles />
+            <activeProfiles />
+          </settings>
+          EOF
+          echo BASE_TAG=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout` >> $GITHUB_ENV
+          
+    - name: Sets env vars for push or pull request to release branch (default behavior)
+      run: |
+        echo IMAGE_TAG=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout | sed "s/-SNAPSHOT$/-SNAPSHOT-${{github.run_number}}/"` >> $GITHUB_ENV
+        echo IMAGE_BRANCH_TAG=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout` >> $GITHUB_ENV
+        # default to force a revision check unless releasing
+        echo DO_REVISION_CHECK=true >> $GITHUB_ENV
+
+    - name: List Environment variables
+      shell: bash
+      run: |
+        # Display data for DX
+        echo BASE_REF: ${{ github.base_ref }}
+        echo HEAD_REF: ${{ github.head_ref }}
+        echo REF_NAME: ${{ github.ref_name }}
+        echo REF: ${{ github.ref }}
+        echo EVENT_NAME ${{ github.event_name }}
+        echo TAG: $BASE_TAG
+        echo DO_REVISION_CHECK: $DO_REVISION_CHECK 
+        echo IMAGE_TAG: $IMAGE_TAG 
+        echo IMAGE_BRANCH_TAG: $IMAGE_BRANCH_TAG 
+        cd ~/.m2
+
+    - name: Maven Install
+      env:
+        COMMON_PASS: ${{ secrets.COMMON_PASS }}
+        ELASTIC_API_KEY: ${{ secrets.ELASTIC_API_KEY }}
+
+      run: |
+        env && mvn -B clean package install deploy site -Dbuildno=${{github.run_number}} \
+            -DdoRevisionCheck=${{env.DO_REVISION_CHECK}} \
+            -DskipDependencyCheck=true \
+            -Dimage.tag=$IMAGE_BRANCH_TAG 
+
+# Use GitHub Action to speed up and improve dependency checking
+# NOTE: Disable automatic dependency checking in the build, this replaces it          
+    - name: Dependency Check
+      env:  
+        # Per https://github.com/marketplace/actions/dependency-check, fix JAVA_HOME location for action
+        JAVA_HOME: /opt/jdk
+      uses: dependency-check/Dependency-Check_Action@main
+      with:
+        project: V2 to FHIR
+        path: target/v2tofhir-${{env.IMAGE_BRANCH_TAG}}.jar
+        format: 'HTML'
+        out: 'target/site'
+        args: >
+          --ossIndexUsername ${{ secrets.OSS_INDEX_USERNAME }}
+          --ossIndexPassword ${{ secrets.OSS_INDEX_PASSWORD }}        
+          --failOnCVSS 7
+          --suppression ./dependency-suppression.xml
+          --disableNuspec    
+          --disableNugetconf  
+          --disableAssembly            
+            
+    - name: Publish Site
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./target/site
+        destination_dir: current
+
+    - name: List M2
+      if: ${{ failure() }}
+      run: ls -lR ~/.m2 > ./m2-listing.txt
+
+    - name: Upload build environment as artifact for failed build
+      uses: actions/upload-artifact@v4
+      if: ${{ failure() }}
+      with:
+        name: build-failure
+        path: .
+
+    - name: Upload dependency check log
+      uses: actions/upload-artifact@v4
+      if: ${{ always() }}
+      with:
+        name: DependencyCheck
+        path: ./target/site/dependency-check-report.html
