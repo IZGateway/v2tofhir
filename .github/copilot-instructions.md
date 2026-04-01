@@ -330,6 +330,92 @@ src/
 
 **Concept Maps:** 100+ CSV files in `src/main/resources/coding/` map V2 codes to FHIR codes. Reference them by filename (without extension) in the `map` attribute of `@ComesFrom`. The `Mapping` utility loads and caches these at startup.
 
+## com.ainq.fhir.utils
+
+Project-internal package (authored by Audacious Inquiry) that provides FHIR resource navigation and serialization utilities. It is separate from the V2 utilities in `gov.cdc.izgw.v2tofhir.utils`.
+
+**`PathUtils`** — simplified FHIRPath navigation over HAPI FHIR objects. Three entry points:
+
+```java
+PathUtils.get(IBase b, String path)                     // get last value at path
+PathUtils.get(IBase b, String path, Action action)      // controlled access/creation
+PathUtils.getAll(IBase b, String path)                  // get all values at path
+```
+
+`Action` enum controls creation behaviour:
+- `GET_FIRST` / `GET_LAST` — read-only; returns existing values
+- `CREATE_IF_MISSING` — auto-creates intermediate objects along the path
+
+Extension shorthand: standard FHIR and US Core extensions can be referenced by short name instead of full URL:
+
+```java
+// These are equivalent:
+PathUtils.get(patient, "extension('http://hl7.org/fhir/us/core/StructureDefinition/us-core-race')")
+PathUtils.get(patient, "us-core-race")
+```
+
+**`Property`** — version-agnostic facade over HAPI FHIR's version-specific `Property` objects (R4/R4B/R5/DSTU3/DSTU2). Used internally by `PathUtils`; call `Property.getProperty(IBase, String)` for introspection and `Property.makeProperty(IBase, String)` to add a new child element.
+
+**`YamlParser` / `YamlUtils`** — YAML serialization for FHIR resources. `YamlParser` implements HAPI's `IParser` interface (wraps the JSON parser internally). Use it anywhere an `IParser` is expected to produce human-readable YAML output. `YamlUtils` provides static `toYaml()`/`fromYaml()` methods for string/stream conversion.
+
+```java
+YamlParser yamlParser = YamlUtils.newYamlParser(fhirContext);
+String yaml = yamlParser.encodeResourceToString(bundle);  // readable FHIR output
+```
+
+## Writing a New DatatypeParser
+
+Implement `DatatypeParser<T>` where `T` extends `org.hl7.fhir.r4.model.Type`.
+
+**Standard `convert(Type)` skeleton** — every existing parser follows this pattern:
+
+```java
+@Override
+public MyFhirType convert(Type v2Type) {
+    v2Type = DatatypeConverter.adjustIfVaries(v2Type);  // unwrap Varies wrapper first
+    if (v2Type == null || ParserUtils.isEmpty(v2Type)) return null;
+
+    if (v2Type instanceof Primitive pt) {
+        if (DatatypeConverter.isDeleted(pt)) {
+            return DatatypeConverter.markDeleted(new MyFhirType());
+        }
+        return fromString(ParserUtils.toString(pt));    // delegate text to fromString()
+    }
+
+    if (v2Type instanceof Composite comp) {
+        Type[] parts = comp.getComponents();
+        MyFhirType result = new MyFhirType();
+        // extract from known component positions, e.g.:
+        result.setValue(ParserUtils.toString(DatatypeConverter.adjustIfVaries(parts, 0)));
+        return result.isEmpty() ? null : result;
+    }
+    return null;
+}
+```
+
+**`fromString()` vs `convert(Type)` contract:**
+- `fromString()` — heuristic/regex parsing of *unstructured text*; lower confidence, returns `null` gracefully on no match
+- `convert(Type)` — extracts from *known V2 component positions* in a Composite; delegates to `fromString()` when the input is a Primitive
+
+The FHIR→V2 direction (`convert(T fhirType)`) is not required and typically returns `null`.
+
+**Registering the parser in `DatatypeConverter`** — discovery is hardcoded, so three changes are required:
+
+```java
+// 1. Add a static instance
+private static final MyDatatypeParser myParser = new MyDatatypeParser();
+
+// 2. Add a delegation method
+public static MyFhirType toMyFhirType(Type t) {
+    return myParser.convert(t);
+}
+
+// 3. Add a case to the generic convert() dispatcher
+case "MyFhirType": return clazz.cast(toMyFhirType(t));
+```
+
+Without all three steps the parser will never be invoked by `FieldHandler`.
+
 ## License
 
 MIT License - See LICENSE file for details

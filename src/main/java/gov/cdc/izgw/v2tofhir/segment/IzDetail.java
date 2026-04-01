@@ -14,7 +14,7 @@ import org.hl7.fhir.r4.model.Patient;
 
 import ca.uhn.hl7v2.model.Segment;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
-import gov.cdc.izgw.v2tofhir.utils.Mapping;
+import gov.cdc.izgw.v2tofhir.terminology.TerminologyMapperFactory;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 
 /**
@@ -124,7 +124,7 @@ public class IzDetail {
 		}
 		
 		for (Coding tag: mh.getMeta().getTag()) {
-			if (Mapping.v2Table("0076").equals(tag.getSystem()) && "VXU".equals(tag.getCode())) {
+			if (TerminologyMapperFactory.get().v2TableUri("0076").equals(tag.getSystem()) && "VXU".equals(tag.getCode())) {
 				// VXU, so must be an Immunization
 				hasImmunization = Boolean.TRUE;
 				hasImmunizationRecommendation = Boolean.FALSE;

@@ -60,7 +60,7 @@ public class MessageParser extends BaseParser<Message,Structure> implements Pars
 	public MessageParser() {
 		ErrorReporter.set(this);
 	}
-	
+
 	/**
 	 * Get a PipeParser for parsing HL7 V2 messages.
 	 * Override this method to provide a custom parser (e.g., with custom validation).

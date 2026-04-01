@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.hl7.fhir.r4.model.HumanName;
 import org.hl7.fhir.r4.model.HumanName.NameUse;
 import org.hl7.fhir.r4.model.StringType;
@@ -317,7 +318,7 @@ public class HumanNameParser implements DatatypeParser<HumanName> {
 	 * @return	True if it is an prefix to the name.
 	 */
 	public static boolean isPrefix(String part) {
-		return PREFIXES.contains(StringUtils.replace(StringUtils.lowerCase(part), ".", ""));
+		return PREFIXES.contains(Strings.CS.replace(StringUtils.lowerCase(part), ".", ""));
 	}
 
 	/**
@@ -326,7 +327,7 @@ public class HumanNameParser implements DatatypeParser<HumanName> {
 	 * @return	True if it is an suffix to the name.
 	 */
 	public static boolean isSuffix(String part) {
-		return SUFFIXES.contains(StringUtils.replace(StringUtils.lowerCase(part), ".", ""));
+		return SUFFIXES.contains(Strings.CS.replace(StringUtils.lowerCase(part), ".", ""));
 	}
 
 	/**
@@ -335,7 +336,7 @@ public class HumanNameParser implements DatatypeParser<HumanName> {
 	 * @return	True if it is a degree following the name
 	 */
 	public static boolean isDegree(String part) {
-		return DEGREES.contains(StringUtils.replace(StringUtils.lowerCase(part), ".", ""));
+		return DEGREES.contains(Strings.CS.replace(StringUtils.lowerCase(part), ".", ""));
 	}
 
 }

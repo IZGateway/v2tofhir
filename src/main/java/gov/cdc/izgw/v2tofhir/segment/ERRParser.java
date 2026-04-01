@@ -19,7 +19,7 @@ import org.hl7.fhir.r4.model.OperationOutcome.OperationOutcomeIssueComponent;
 import gov.cdc.izgw.v2tofhir.annotation.ComesFrom;
 import gov.cdc.izgw.v2tofhir.annotation.Produces;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
-import gov.cdc.izgw.v2tofhir.utils.Mapping;
+import gov.cdc.izgw.v2tofhir.terminology.TerminologyMapperFactory;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -138,7 +138,7 @@ public class ERRParser extends AbstractSegmentParser {
 		}
 		for (Coding c: errorCode.getCoding()) {
 			// If from table 0357
-			if (!Mapping.v2Table("0357").equals(c.getSystem())) {  // Check the system.
+			if (!TerminologyMapperFactory.get().v2TableUri("0357").equals(c.getSystem())) {  // Check the system.
 				continue;
 			}
 			String[] map = errorCodeMap.get(c.getCode());

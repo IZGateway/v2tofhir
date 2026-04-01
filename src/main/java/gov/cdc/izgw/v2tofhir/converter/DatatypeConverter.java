@@ -76,11 +76,11 @@ import gov.cdc.izgw.v2tofhir.datatype.AddressParser;
 import gov.cdc.izgw.v2tofhir.datatype.ContactPointParser;
 import gov.cdc.izgw.v2tofhir.datatype.HumanNameParser;
 import gov.cdc.izgw.v2tofhir.utils.ErrorReporter;
-import gov.cdc.izgw.v2tofhir.utils.Mapping;
+import gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper;
+import gov.cdc.izgw.v2tofhir.terminology.TerminologyMapperFactory;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
-import gov.cdc.izgw.v2tofhir.utils.PathUtils;
+import gov.cdc.izgw.v2tofhir.utils.TerserPathUtils;
 import gov.cdc.izgw.v2tofhir.utils.Systems;
-import gov.cdc.izgw.v2tofhir.utils.Units;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -146,6 +146,75 @@ public class DatatypeConverter {
 	 * The V2 value that indicates a field has been deleted (set to the empty value).
 	 */
 	public static final String V2_DELETED = "\"\"";
+
+	/** userData key for the original system URI before normalization. */
+	static final String ORIGINAL_SYSTEM = "originalSystem";
+
+	/** userData key for the original display text before override. */
+	static final String ORIGINAL_DISPLAY = "originalDisplay";
+
+	/**
+	 * Resets a FHIR type produced during conversion to its original unmapped system and display
+	 * values, as stored in userData by {@link #mapCoding(Coding)}.
+	 *
+	 * @param type the FHIR type to reset; silently ignored if {@code null} or not a
+	 *             {@link Coding} or {@link CodeableConcept}
+	 */
+	public static void reset(org.hl7.fhir.r4.model.Type type) {
+		if (type instanceof Coding c) {
+			reset(c);
+		} else if (type instanceof CodeableConcept cc) {
+			cc.getCoding().forEach(DatatypeConverter::reset);
+			if (cc.hasUserData("originalText")) {
+				cc.setText((String) cc.getUserData("originalText"));
+			}
+		}
+	}
+
+	private static void reset(Coding coding) {
+		if (coding == null) {
+			return;
+		}
+		if (coding.hasUserData(ORIGINAL_DISPLAY)) {
+			coding.setDisplay((String) coding.getUserData(ORIGINAL_DISPLAY));
+		}
+		if (coding.hasUserData(ORIGINAL_SYSTEM)) {
+			coding.setSystem((String) coding.getUserData(ORIGINAL_SYSTEM));
+		}
+	}
+
+	/**
+	 * Normalizes a {@link Coding} in place using the application-wide {@link TerminologyMapper}:
+	 * maps the system string from a V2 table name or alias to its canonical URI, then sets
+	 * the display name if one is available. Stores the original system and display values in
+	 * the coding's user data under {@link #ORIGINAL_SYSTEM} and
+	 * {@link #ORIGINAL_DISPLAY} when they change.
+	 *
+	 * @param coding the coding to normalize; may be {@code null}
+	 * @return the same coding instance (mutated in place), or {@code null} if input was {@code null}
+	 */
+	private static Coding mapCoding(Coding coding) {
+		if (coding == null || coding.isEmpty()) {
+			return coding;
+		}
+		TerminologyMapper mapper = TerminologyMapperFactory.get();
+		if (coding.hasSystem()) {
+			String originalSystem = coding.getSystem();
+			String normalized = mapper.v2TableUri(originalSystem);
+			if (normalized != null && !normalized.equals(originalSystem)
+					&& !coding.hasUserData(ORIGINAL_SYSTEM)) {
+				coding.setUserData(ORIGINAL_SYSTEM, originalSystem);
+				coding.setSystem(normalized);
+			}
+		}
+		if (coding.hasCode()) {
+			mapper.getDisplay(coding.getSystem(), coding.getCode()).ifPresent(display -> {
+				coding.setUserData(ORIGINAL_DISPLAY, coding.getDisplay());
+				coding.setDisplay(display);
+			});
+		}
+		return coding;
+	}
 			
 	/**
 	 * A functional interface for FHIR datatype conversion from HAPI V2 datatypes
@@ -545,7 +614,7 @@ public class DatatypeConverter {
 			break;
 		case "ID", "IS", "ST":
 			st = (Primitive) codedElement;
-			addIfNotEmpty(cc::addCoding, Mapping.map(new Coding(table, st.getValue(), null)));
+			addIfNotEmpty(cc::addCoding, mapCoding(new Coding(table, st.getValue(), null)));
 			break;
 
 		default:
@@ -647,7 +716,7 @@ public class DatatypeConverter {
 		Type type = adjustIfVaries(types, idTypeLoc);
 		if (type instanceof Primitive pt && !ParserUtils.isEmpty(pt)) {
 			Coding coding = new Coding(Systems.ID_TYPE, pt.getValue(), null);
-			Mapping.setDisplay(coding);
+			TerminologyMapperFactory.get().getDisplay(coding.getSystem(), coding.getCode()).ifPresent(coding::setDisplay);
 			CodeableConcept cc = new CodeableConcept();
 			cc.addCoding(coding);
 			id.setType(cc);
@@ -671,7 +740,12 @@ public class DatatypeConverter {
 		}
 
 		id.setSystem(system.get(0));
-		Mapping.mapSystem(id);
+		String raw = id.getSystem();
+		String normalized = TerminologyMapperFactory.get().normalizeSystem(raw);
+		if (normalized != null && !normalized.equals(raw) && !id.hasUserData(ORIGINAL_SYSTEM)) {
+			id.setUserData(ORIGINAL_SYSTEM, raw);
+			id.setSystem(normalized);
+		}
 		if (system.size() > 1) {
 			// Save the system name as the display name of the assigner organization
 			// but don't create a real reference to an organization.
@@ -681,7 +755,7 @@ public class DatatypeConverter {
 			id.setAssigner(ref);
 		}
 		
-		return id.getUserData("originalSystem") == null;
+		return id.getUserData(ORIGINAL_SYSTEM) == null;
 	}
 
 	private static List<String> getSystemsOfIdentifier(Type type) {
@@ -775,7 +849,7 @@ public class DatatypeConverter {
 			}
 		}
 		if (code != null && table != null) {
-			code.setSystem(Mapping.mapTableNameToSystem(table));
+			code.setSystem(TerminologyMapperFactory.get().v2TableUri(table));
 		}
 		return code;
 	}
@@ -814,7 +888,7 @@ public class DatatypeConverter {
 		}
 		if (table != null && !coding.hasSystem()) {
 			coding.setSystem(table);
-			Mapping.map(coding);
+			mapCoding(coding);
 		}
 		return coding;
 	}
@@ -872,7 +946,7 @@ public class DatatypeConverter {
 			if (field < types.length) {
 				String code = ParserUtils.toString(types[field]);
 				if (StringUtils.isNotBlank(code)) {
-					return Mapping.map(new Coding(table, code, null));
+					return mapCoding(new Coding(table, code, null));
 				}
 			}
 		}
@@ -1388,10 +1462,10 @@ public class DatatypeConverter {
 					c.setSystem(Systems.IETF); // Type is a URI, so code gets to be IETF
 				} else if (Systems.ID_TYPES.contains(type)) {
 					c.setSystem(Systems.ID_TYPE);
-					Mapping.setDisplay(c);
+					TerminologyMapperFactory.get().getDisplay(Systems.ID_TYPE, c.getCode()).ifPresent(c::setDisplay);
 				} else if (Systems.IDENTIFIER_TYPES.contains(type)) {
 					c.setSystem(Systems.UNIVERSAL_ID_TYPE);
-					Mapping.setDisplay(c);
+					TerminologyMapperFactory.get().getDisplay(Systems.UNIVERSAL_ID_TYPE, c.getCode()).ifPresent(c::setDisplay);
 				}
 				id.setType(new CodeableConcept().addCoding(c));
 			}
@@ -1813,7 +1887,7 @@ public class DatatypeConverter {
 		if ("ERL".equals(type.getName())) {
 			try {
 				return new Expression().setLanguage("text/fhirpath")
-						.setExpression(PathUtils.v2ToFHIRPath(type.encode()));
+						.setExpression(TerserPathUtils.v2ToFHIRPath(type.encode()));
 			} catch (HL7Exception e) {
 				warn(UNEXPECTED_HL7_EXCEPTION, e.getMessage(), e);
 			}
@@ -2086,11 +2160,7 @@ public class DatatypeConverter {
 			setValue(coding::setVersion, types, versionIndex);
 			setValue(coding::setSystem, types, codeSystemOID);
 
-			Mapping.map(coding);
-			if (!coding.hasDisplay() || coding.getDisplay().equals(coding.getCode())) {
-				// See if we can do better for display names
-				Mapping.setDisplay(coding);
-			}
+			mapCoding(coding);
 			return coding;
 		} catch (Exception e) {
 			warn("Unexpected {} converting {}[{}] to Coding: {}", e.getClass().getName(), composite.toString(),
@@ -2115,12 +2185,11 @@ public class DatatypeConverter {
 			return null;
 		}
 		if (valueParts.length > 1) {
-			Coding coding = Units.toUcum(valueParts[1]);
-			if (coding != null) {
+			TerminologyMapperFactory.get().mapUnit(valueParts[1]).ifPresent(coding -> {
 				qt.setCode(coding.getCode());
 				qt.setUnit(coding.getDisplay());
 				qt.setSystem(coding.getSystem());
-			}
+			});
 		}
 		if (qt.isEmpty()) {
 			return null;
@@ -2145,16 +2214,18 @@ public class DatatypeConverter {
 			List<Coding> codingList = cc.getCoding();
 			Collections.sort(codingList, DatatypeConverter::compareUnitsBySystem);
 			Coding coding = codingList.get(0);
-			Coding units = Units.toUcum(coding.getCode());
-			if (units != null) {
-				qt.setCode(units.getCode());
-				qt.setSystem(Systems.UCUM);
-				qt.setUnit(units.getDisplay());
-			} else {
-				qt.setUnit(coding.hasDisplay() ? coding.getDisplay() : coding.getCode());
-				qt.setSystem(coding.getSystem());
-				qt.setCode(coding.getCode());
-			}
+			TerminologyMapperFactory.get().mapUnit(coding.getCode()).ifPresentOrElse(
+				units -> {
+					qt.setCode(units.getCode());
+					qt.setSystem(Systems.UCUM);
+					qt.setUnit(units.getDisplay());
+				},
+				() -> {
+					qt.setUnit(coding.hasDisplay() ? coding.getDisplay() : coding.getCode());
+					qt.setSystem(coding.getSystem());
+					qt.setCode(coding.getCode());
+				}
+			);
 		}
 	}
 

@@ -13,8 +13,8 @@ import ca.uhn.hl7v2.model.Type;
  * This utility class contains methods for manipulating and converting between
  * HAPI V2 Terser and FhirPath paths (as applied over V2 models). 
  */
-public class PathUtils {
-	private PathUtils() {}
+public class TerserPathUtils {
+	private TerserPathUtils() {}
 	/**
 	 * Convert a FhirPath to a TerserPath
 	 * @param path	The FhirPath expression to convert

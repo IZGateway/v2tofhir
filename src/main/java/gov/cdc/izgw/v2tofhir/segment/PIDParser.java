@@ -35,7 +35,7 @@ import gov.cdc.izgw.v2tofhir.converter.MessageParser;
 import gov.cdc.izgw.v2tofhir.utils.Codes;
 import gov.cdc.izgw.v2tofhir.utils.FhirUtils;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
-import gov.cdc.izgw.v2tofhir.utils.RaceAndEthnicity;
+import gov.cdc.izgw.v2tofhir.terminology.TerminologyMapperFactory;
 import gov.cdc.izgw.v2tofhir.utils.Systems;
 import lombok.extern.slf4j.Slf4j;
 
@@ -260,9 +260,13 @@ public class PIDParser extends AbstractSegmentParser {
 			return;
 		}
 		
-		Extension raceExtension = patient.addExtension().setUrl(RaceAndEthnicity.US_CORE_RACE);
-		getParser().getContext().setProperty(raceExtension.getUrl(), raceExtension);
-		RaceAndEthnicity.setRaceCode(race, raceExtension);
+		Coding firstRaceCoding = race.getCodingFirstRep();
+		TerminologyMapperFactory.get()
+			.mapRace(firstRaceCoding.getCode(), firstRaceCoding.getSystem())
+			.ifPresent(ext -> {
+				patient.addExtension(ext);
+				getParser().getContext().setProperty(ext.getUrl(), ext);
+			});
 		
 	}
 
@@ -310,9 +314,13 @@ public class PIDParser extends AbstractSegmentParser {
 			return;
 		}
 		
-		Extension ethnicityExtension = patient.addExtension().setUrl(RaceAndEthnicity.US_CORE_ETHNICITY);
-		getParser().getContext().setProperty(ethnicityExtension.getUrl(), ethnicityExtension);
-		RaceAndEthnicity.setEthnicityCode(ethnicity, ethnicityExtension);
+		Coding firstEthnicityCoding = ethnicity.getCodingFirstRep();
+		TerminologyMapperFactory.get()
+			.mapEthnicity(firstEthnicityCoding.getCode(), firstEthnicityCoding.getSystem())
+			.ifPresent(ext -> {
+				patient.addExtension(ext);
+				getParser().getContext().setProperty(ext.getUrl(), ext);
+			});
 
 	}
 
