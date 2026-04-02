@@ -1,0 +1,351 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DefaultTerminologyMapper.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">gov.cdc.izgw.v2tofhir.terminology</a> &gt; <span class="el_source">DefaultTerminologyMapper.java</span></div><h1>DefaultTerminologyMapper.java</h1><pre class="source lang-java linenums">package gov.cdc.izgw.v2tofhir.terminology;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import org.hl7.fhir.r4.model.CodeSystem;
+import org.hl7.fhir.r4.model.CodeableConcept;
+import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.ConceptMap;
+import org.hl7.fhir.r4.model.Extension;
+import org.hl7.fhir.r4.model.NamingSystem;
+import org.hl7.fhir.r4.model.Resource;
+import org.hl7.fhir.r4.model.ValueSet;
+
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * Default implementation of {@link TerminologyMapper} that delegates every method to the
+ * existing static utility classes ({@link Systems}, {@link Mapping}, {@link Units},
+ * {@link ISO3166}, {@link RaceAndEthnicity}).
+ *
+ * &lt;p&gt;The result of every call through {@code DefaultTerminologyMapper} is identical to calling
+ * the equivalent static method directly. This class acts as the bridge between the new
+ * injectable {@link TerminologyMapper} interface and the legacy static utilities.&lt;/p&gt;
+ *
+ * &lt;p&gt;Dynamically loaded resources (via {@link #load(Resource)}) are stored in per-instance
+ * maps and do not affect the shared static caches.&lt;/p&gt;
+ *
+ * @author Audacious Inquiry
+ * @see TerminologyMapper
+ * @see TerminologyMapperFactory
+ */
+<span class="fc" id="L36">@Slf4j</span>
+<span class="fc" id="L37">public class DefaultTerminologyMapper implements TerminologyMapper {</span>
+
+<span class="fc" id="L39">    private final Map&lt;String, ConceptMap&gt; loadedConceptMaps = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L40">    private final Map&lt;String, CodeSystem&gt; loadedCodeSystems = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L41">    private final Map&lt;String, ValueSet&gt; loadedValueSets = new LinkedHashMap&lt;&gt;();</span>
+
+    // -------------------------------------------------------------------------
+    // NamingSystemResolver
+    // -------------------------------------------------------------------------
+
+    /**
+     * {@inheritDoc}
+     * &lt;p&gt;Delegates to {@link Systems#toUri(String)}.&lt;/p&gt;
+     */
+    @Override
+    public Optional&lt;String&gt; toUri(String oid) {
+<span class="fc" id="L53">        return Optional.ofNullable(Systems.toUri(oid));</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     * &lt;p&gt;Delegates to {@link Systems#toOid(String)}.&lt;/p&gt;
+     */
+    @Override
+    public Optional&lt;String&gt; toOid(String uri) {
+<span class="fc" id="L62">        return Optional.ofNullable(Systems.toOid(uri));</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     * &lt;p&gt;Delegates to {@link Systems#getNamingSystem(String)}.&lt;/p&gt;
+     */
+    @Override
+    public Optional&lt;NamingSystem&gt; getNamingSystem(String oidOrUriOrId) {
+<span class="fc" id="L71">        return Optional.ofNullable(Systems.getNamingSystem(oidOrUriOrId));</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     * &lt;p&gt;Delegates to {@link Mapping#mapTableNameToSystem(String)}, which resolves V2 table
+     * names, numeric table numbers, OIDs, and aliased URIs to their canonical FHIR system
+     * URI. Already-canonical URIs are returned unchanged. Returns {@code null} for blank
+     * input.&lt;/p&gt;
+     */
+    @Override
+    public String v2TableUri(String tableNameOrNumber) {
+<span class="fc" id="L83">        return Mapping.mapTableNameToSystem(tableNameOrNumber);</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * &lt;p&gt;Delegates to {@link Mapping#mapSystem(org.hl7.fhir.r4.model.Identifier)} via a
+     * temporary {@link org.hl7.fhir.r4.model.Identifier}, which resolves V2 assigning
+     * authority names and OID-based system identifiers to their preferred FHIR Identifier
+     * system URIs. Returns the input unchanged if no mapping is known.&lt;/p&gt;
+     */
+    @Override
+    public String normalizeSystem(String system) {
+<span class="pc bpc" id="L96" title="1 of 2 branches missed.">        if (system == null) {</span>
+<span class="nc" id="L97">            return null;</span>
+        }
+<span class="fc" id="L99">        org.hl7.fhir.r4.model.Identifier temp = new org.hl7.fhir.r4.model.Identifier().setSystem(system);</span>
+<span class="fc" id="L100">        Mapping.mapSystem(temp);</span>
+<span class="fc" id="L101">        return temp.getSystem();</span>
+    }
+
+    // -------------------------------------------------------------------------
+    // ConceptTranslator
+    // -------------------------------------------------------------------------
+
+    /**
+     * {@inheritDoc}
+     *
+     * &lt;p&gt;Delegates to {@link Mapping#getMapping(String)} then {@link Mapping#mapCode(Coding, boolean)}.
+     * Returns {@link Optional#empty()} if the mapping name is unknown or no mapping exists
+     * for the source code.&lt;/p&gt;
+     */
+    @Override
+    public Optional&lt;TranslationResult&gt; mapCode(String mappingName, Coding source) {
+<span class="fc" id="L117">        Mapping m = Mapping.getMapping(mappingName);</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">        if (m == null) {</span>
+<span class="fc" id="L119">            return Optional.empty();</span>
+        }
+<span class="fc" id="L121">        Coding result = m.mapCode(source, true);</span>
+<span class="fc" id="L122">        return Optional.ofNullable(result)</span>
+<span class="fc" id="L123">                .map(c -&gt; TranslationResult.exact(source, c, mappingName));</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * &lt;p&gt;Translation by source/target system pair is not directly supported by the current
+     * static mapping tables; this implementation always returns {@link Optional#empty()}.
+     * Override in a subclass or custom {@link TerminologyMapper} to provide real translation.&lt;/p&gt;
+     */
+    @Override
+    public Optional&lt;TranslationResult&gt; translate(Coding source, String targetSystem) {
+<span class="fc" id="L135">        return Optional.empty();</span>
+    }
+
+    // -------------------------------------------------------------------------
+    // DisplayNameResolver
+    // -------------------------------------------------------------------------
+
+    /**
+     * {@inheritDoc}
+     * &lt;p&gt;Delegates to {@link Mapping#getDisplay(String, String)}.&lt;/p&gt;
+     */
+    @Override
+    public Optional&lt;String&gt; getDisplay(String system, String code) {
+<span class="fc" id="L148">        return Optional.ofNullable(Mapping.getDisplay(code, system));</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     * &lt;p&gt;Delegates to {@link Mapping#hasDisplay(String, String)}.&lt;/p&gt;
+     */
+    @Override
+    public boolean hasDisplay(String system, String code) {
+<span class="fc" id="L157">        return Mapping.hasDisplay(code, system);</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     * &lt;p&gt;Registers the display by calling {@link Mapping#updateCodeLookup(Coding)}.&lt;/p&gt;
+     */
+    @Override
+    public void setDisplay(String system, String code, String display) {
+<span class="fc" id="L166">        Mapping.updateCodeLookup(new Coding(system, code, display));</span>
+<span class="fc" id="L167">    }</span>
+
+    // -------------------------------------------------------------------------
+    // CodeValidator
+    // -------------------------------------------------------------------------
+
+    /**
+     * {@inheritDoc}
+     *
+     * &lt;p&gt;Value-set membership validation is not supported by the current static utilities;
+     * this implementation always returns {@code false}. Override in a custom
+     * {@link TerminologyMapper} to provide real validation.&lt;/p&gt;
+     */
+    @Override
+    public boolean validateCode(String valueSetUri, String system, String code) {
+<span class="fc" id="L182">        return false;</span>
+    }
+
+    // -------------------------------------------------------------------------
+    // UnitMapper
+    // -------------------------------------------------------------------------
+
+    /**
+     * {@inheritDoc}
+     * &lt;p&gt;Delegates to {@link Units#toUcum(String)}.&lt;/p&gt;
+     */
+    @Override
+    public Optional&lt;Coding&gt; mapUnit(String unitCode) {
+<span class="fc" id="L195">        return Optional.ofNullable(Units.toUcum(unitCode));</span>
+    }
+
+    // -------------------------------------------------------------------------
+    // DemographicsMapper
+    // -------------------------------------------------------------------------
+
+    /**
+     * {@inheritDoc}
+     *
+     * &lt;p&gt;Constructs a {@link CodeableConcept} from the supplied code and system, delegates
+     * to {@link RaceAndEthnicity#setRaceCode(CodeableConcept, Extension)}, and returns the
+     * populated extension. Returns {@link Optional#empty()} if the code is not recognised.&lt;/p&gt;
+     */
+    @Override
+    public Optional&lt;Extension&gt; mapRace(String code, String codeSystem) {
+<span class="fc" id="L211">        CodeableConcept race = new CodeableConcept().addCoding(new Coding(codeSystem, code, null));</span>
+<span class="fc" id="L212">        Extension ext = new Extension().setUrl(RaceAndEthnicity.US_CORE_RACE);</span>
+<span class="fc" id="L213">        RaceAndEthnicity.setRaceCode(race, ext);</span>
+<span class="pc bpc" id="L214" title="1 of 2 branches missed.">        return ext.hasExtension() ? Optional.of(ext) : Optional.empty();</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * &lt;p&gt;Constructs a {@link CodeableConcept} from the supplied code and system, delegates
+     * to {@link RaceAndEthnicity#setEthnicityCode(CodeableConcept, Extension)}, and returns
+     * the populated extension. Returns {@link Optional#empty()} if the code is not recognised.&lt;/p&gt;
+     */
+    @Override
+    public Optional&lt;Extension&gt; mapEthnicity(String code, String codeSystem) {
+<span class="fc" id="L226">        CodeableConcept ethnicity = new CodeableConcept().addCoding(new Coding(codeSystem, code, null));</span>
+<span class="fc" id="L227">        Extension ext = new Extension().setUrl(RaceAndEthnicity.US_CORE_ETHNICITY);</span>
+<span class="fc" id="L228">        RaceAndEthnicity.setEthnicityCode(ethnicity, ext);</span>
+<span class="pc bpc" id="L229" title="1 of 2 branches missed.">        return ext.hasExtension() ? Optional.of(ext) : Optional.empty();</span>
+    }
+
+    // -------------------------------------------------------------------------
+    // GeoMapper
+    // -------------------------------------------------------------------------
+
+    /**
+     * {@inheritDoc}
+     *
+     * &lt;p&gt;Delegates to {@link ISO3166#twoLetterCode(String)} and {@link ISO3166#name(String)}.
+     * Returns {@link Optional#empty()} if the code is not recognised.&lt;/p&gt;
+     */
+    @Override
+    public Optional&lt;Coding&gt; lookupCountry(String code, String codeSystem) {
+<span class="fc" id="L244">        String name = ISO3166.name(code);</span>
+<span class="fc bfc" id="L245" title="All 2 branches covered.">        if (name == null) {</span>
+<span class="fc" id="L246">            return Optional.empty();</span>
+        }
+<span class="fc" id="L248">        String alpha2 = ISO3166.twoLetterCode(code);</span>
+<span class="pc bpc" id="L249" title="1 of 2 branches missed.">        return Optional.of(new Coding(codeSystem, alpha2 != null ? alpha2 : code, name));</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     * &lt;p&gt;Delegates to {@link ISO3166#twoLetterCode(String)}.&lt;/p&gt;
+     */
+    @Override
+    public Optional&lt;String&gt; normalizeCountry(String nameOrCode) {
+<span class="fc" id="L258">        return Optional.ofNullable(ISO3166.twoLetterCode(nameOrCode));</span>
+    }
+
+    // -------------------------------------------------------------------------
+    // TerminologyLoader
+    // -------------------------------------------------------------------------
+
+    /**
+     * {@inheritDoc}
+     *
+     * &lt;p&gt;Supported resource types and their handling:&lt;/p&gt;
+     * &lt;ul&gt;
+     *   &lt;li&gt;{@link NamingSystem} — registered in the shared {@link Systems} naming system registry&lt;/li&gt;
+     *   &lt;li&gt;{@link ConceptMap} — stored in a per-instance map; retrievable via {@link #getConceptMap(String)}&lt;/li&gt;
+     *   &lt;li&gt;{@link CodeSystem} — stored in a per-instance map; retrievable via {@link #getCodeSystem(String)}&lt;/li&gt;
+     *   &lt;li&gt;{@link ValueSet} — stored in a per-instance map; retrievable via {@link #getValueSet(String)}&lt;/li&gt;
+     * &lt;/ul&gt;
+     *
+     * @throws TerminologyException if {@code resource} is {@code null} or an unsupported type
+     */
+    @Override
+    public void load(Resource resource) {
+<span class="fc bfc" id="L280" title="All 2 branches covered.">        if (resource == null) {</span>
+<span class="fc" id="L281">            throw new TerminologyException(&quot;Cannot load a null resource&quot;);</span>
+        }
+<span class="fc bfc" id="L283" title="All 2 branches covered.">        if (resource instanceof NamingSystem ns) {</span>
+<span class="fc" id="L284">            List&lt;String&gt; identifiers = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L285">            ns.getUniqueId().forEach(uid -&gt; identifiers.add(uid.getValue()));</span>
+<span class="pc bpc" id="L286" title="1 of 2 branches missed.">            if (!identifiers.isEmpty()) {</span>
+<span class="fc" id="L287">                Systems.addNamingSystem(ns.getName(), identifiers.toArray(new String[0]));</span>
+            } else {
+<span class="nc" id="L289">                log.warn(&quot;NamingSystem '{}' has no unique identifiers; skipping registration&quot;, ns.getName());</span>
+            }
+<span class="fc bfc" id="L291" title="All 2 branches covered.">        } else if (resource instanceof ConceptMap cm) {</span>
+<span class="fc" id="L292">            loadedConceptMaps.put(cm.getId(), cm);</span>
+<span class="fc bfc" id="L293" title="All 2 branches covered.">        } else if (resource instanceof CodeSystem cs) {</span>
+<span class="fc" id="L294">            loadedCodeSystems.put(cs.getId(), cs);</span>
+<span class="fc bfc" id="L295" title="All 2 branches covered.">        } else if (resource instanceof ValueSet vs) {</span>
+<span class="fc" id="L296">            loadedValueSets.put(vs.getId(), vs);</span>
+        } else {
+<span class="fc" id="L298">            throw new TerminologyException(</span>
+<span class="fc" id="L299">                &quot;Unsupported resource type for load(): &quot; + resource.getResourceType());</span>
+        }
+<span class="fc" id="L301">    }</span>
+
+    /**
+     * {@inheritDoc}
+     *
+     * &lt;p&gt;Checks the per-instance loaded map first, then falls back to the static
+     * {@link Mapping} registry via {@link Mapping#getMapping(String)} and
+     * {@link Mapping#asConceptMap()}.&lt;/p&gt;
+     */
+    @Override
+    public Optional&lt;ConceptMap&gt; getConceptMap(String id) {
+<span class="fc" id="L312">        ConceptMap cm = loadedConceptMaps.get(id);</span>
+<span class="fc bfc" id="L313" title="All 2 branches covered.">        if (cm != null) {</span>
+<span class="fc" id="L314">            return Optional.of(cm);</span>
+        }
+<span class="fc" id="L316">        return Optional.ofNullable(Mapping.getMapping(id))</span>
+<span class="fc" id="L317">                .map(Mapping::asConceptMap);</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * &lt;p&gt;Checks the per-instance loaded map first, then attempts to retrieve via the
+     * {@link NamingSystem} user-data cache in {@link Systems}.&lt;/p&gt;
+     */
+    @Override
+    public Optional&lt;CodeSystem&gt; getCodeSystem(String id) {
+<span class="fc" id="L328">        CodeSystem cs = loadedCodeSystems.get(id);</span>
+<span class="fc bfc" id="L329" title="All 2 branches covered.">        if (cs != null) {</span>
+<span class="fc" id="L330">            return Optional.of(cs);</span>
+        }
+<span class="fc" id="L332">        NamingSystem ns = Systems.getNamingSystem(id);</span>
+<span class="pc bpc" id="L333" title="1 of 2 branches missed.">        if (ns != null) {</span>
+<span class="nc" id="L334">            Object userData = ns.getUserData(CodeSystem.class.getName());</span>
+<span class="nc bnc" id="L335" title="All 2 branches missed.">            if (userData instanceof CodeSystem cachedCs) {</span>
+<span class="nc" id="L336">                return Optional.of(cachedCs);</span>
+            }
+        }
+<span class="fc" id="L339">        return Optional.empty();</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     * &lt;p&gt;Returns from the per-instance loaded map.&lt;/p&gt;
+     */
+    @Override
+    public Optional&lt;ValueSet&gt; getValueSet(String id) {
+<span class="fc" id="L348">        return Optional.ofNullable(loadedValueSets.get(id));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

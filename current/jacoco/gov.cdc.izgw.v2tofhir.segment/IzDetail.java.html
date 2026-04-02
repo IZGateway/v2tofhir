@@ -14,7 +14,7 @@ import org.hl7.fhir.r4.model.Patient;
 
 import ca.uhn.hl7v2.model.Segment;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
-import gov.cdc.izgw.v2tofhir.utils.Mapping;
+import gov.cdc.izgw.v2tofhir.terminology.TerminologyMapperFactory;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 
 /**
@@ -124,7 +124,7 @@ public class IzDetail {
 		}
 		
 <span class="nc bnc" id="L126" title="All 2 branches missed.">		for (Coding tag: mh.getMeta().getTag()) {</span>
-<span class="nc bnc" id="L127" title="All 4 branches missed.">			if (Mapping.v2Table(&quot;0076&quot;).equals(tag.getSystem()) &amp;&amp; &quot;VXU&quot;.equals(tag.getCode())) {</span>
+<span class="nc bnc" id="L127" title="All 4 branches missed.">			if (TerminologyMapperFactory.get().v2TableUri(&quot;0076&quot;).equals(tag.getSystem()) &amp;&amp; &quot;VXU&quot;.equals(tag.getCode())) {</span>
 				// VXU, so must be an Immunization
 <span class="nc" id="L129">				hasImmunization = Boolean.TRUE;</span>
 <span class="nc" id="L130">				hasImmunizationRecommendation = Boolean.FALSE;</span>

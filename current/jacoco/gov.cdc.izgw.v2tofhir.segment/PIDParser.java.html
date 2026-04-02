@@ -35,7 +35,7 @@ import gov.cdc.izgw.v2tofhir.converter.MessageParser;
 import gov.cdc.izgw.v2tofhir.utils.Codes;
 import gov.cdc.izgw.v2tofhir.utils.FhirUtils;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
-import gov.cdc.izgw.v2tofhir.utils.RaceAndEthnicity;
+import gov.cdc.izgw.v2tofhir.terminology.TerminologyMapperFactory;
 import gov.cdc.izgw.v2tofhir.utils.Systems;
 import lombok.extern.slf4j.Slf4j;
 
@@ -260,11 +260,15 @@ public class PIDParser extends AbstractSegmentParser {
 <span class="nc" id="L260">			return;</span>
 		}
 		
-<span class="fc" id="L263">		Extension raceExtension = patient.addExtension().setUrl(RaceAndEthnicity.US_CORE_RACE);</span>
-<span class="fc" id="L264">		getParser().getContext().setProperty(raceExtension.getUrl(), raceExtension);</span>
-<span class="fc" id="L265">		RaceAndEthnicity.setRaceCode(race, raceExtension);</span>
+<span class="fc" id="L263">		Coding firstRaceCoding = race.getCodingFirstRep();</span>
+<span class="fc" id="L264">		TerminologyMapperFactory.get()</span>
+<span class="fc" id="L265">			.mapRace(firstRaceCoding.getCode(), firstRaceCoding.getSystem())</span>
+<span class="fc" id="L266">			.ifPresent(ext -&gt; {</span>
+<span class="fc" id="L267">				patient.addExtension(ext);</span>
+<span class="fc" id="L268">				getParser().getContext().setProperty(ext.getUrl(), ext);</span>
+<span class="fc" id="L269">			});</span>
 		
-<span class="fc" id="L267">	}</span>
+<span class="fc" id="L271">	}</span>
 
 	/**
 	 * Add an address to the patient
@@ -272,8 +276,8 @@ public class PIDParser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path=&quot;Patient.address&quot;, field = 11)
 	public void addAddress(Address address) {
-<span class="fc" id="L275">		patient.addAddress(address);</span>
-<span class="fc" id="L276">	}</span>
+<span class="fc" id="L279">		patient.addAddress(address);</span>
+<span class="fc" id="L280">	}</span>
 	
 	/**
 	 * Add the county name to the patient address
@@ -282,18 +286,18 @@ public class PIDParser extends AbstractSegmentParser {
 	
 	@ComesFrom(path=&quot;Patient.address.district&quot;, field = 12)
 	public void addCounty(StringType countyName) {
-<span class="nc bnc" id="L285" title="All 2 branches missed.">		if (patient.hasAddress()) {</span>
-<span class="nc bnc" id="L286" title="All 2 branches missed.">			if (!patient.getAddressFirstRep().hasDistrict()) {</span>
+<span class="nc bnc" id="L289" title="All 2 branches missed.">		if (patient.hasAddress()) {</span>
+<span class="nc bnc" id="L290" title="All 2 branches missed.">			if (!patient.getAddressFirstRep().hasDistrict()) {</span>
 				// Set county on first address
-<span class="nc" id="L288">				patient.getAddressFirstRep().setDistrictElement(countyName);</span>
-<span class="nc bnc" id="L289" title="All 2 branches missed.">			} else if (!patient.getAddressFirstRep().getDistrict().equals(countyName.getValue()) ) {</span>
+<span class="nc" id="L292">				patient.getAddressFirstRep().setDistrictElement(countyName);</span>
+<span class="nc bnc" id="L293" title="All 2 branches missed.">			} else if (!patient.getAddressFirstRep().getDistrict().equals(countyName.getValue()) ) {</span>
 				// The county doesn't match district of first address, add a new address containing only the county
-<span class="nc" id="L291">				patient.addAddress().setDistrictElement(countyName);</span>
+<span class="nc" id="L295">				patient.addAddress().setDistrictElement(countyName);</span>
 			} else {
 				// They match so we can ignore this case.
 			}
 		}
-<span class="nc" id="L296">	}</span>
+<span class="nc" id="L300">	}</span>
 	
 	/**
 	 * Add an ethnicity code to the patient using the US Core Ethnicity extension
@@ -306,15 +310,19 @@ public class PIDParser extends AbstractSegmentParser {
 			}
 	)
 	public void addEthnicity(CodeableConcept ethnicity) {
-<span class="pc bpc" id="L309" title="1 of 2 branches missed.">		if (FhirUtils.isEmpty(ethnicity)) {</span>
-<span class="nc" id="L310">			return;</span>
+<span class="pc bpc" id="L313" title="1 of 2 branches missed.">		if (FhirUtils.isEmpty(ethnicity)) {</span>
+<span class="nc" id="L314">			return;</span>
 		}
 		
-<span class="fc" id="L313">		Extension ethnicityExtension = patient.addExtension().setUrl(RaceAndEthnicity.US_CORE_ETHNICITY);</span>
-<span class="fc" id="L314">		getParser().getContext().setProperty(ethnicityExtension.getUrl(), ethnicityExtension);</span>
-<span class="fc" id="L315">		RaceAndEthnicity.setEthnicityCode(ethnicity, ethnicityExtension);</span>
+<span class="fc" id="L317">		Coding firstEthnicityCoding = ethnicity.getCodingFirstRep();</span>
+<span class="fc" id="L318">		TerminologyMapperFactory.get()</span>
+<span class="fc" id="L319">			.mapEthnicity(firstEthnicityCoding.getCode(), firstEthnicityCoding.getSystem())</span>
+<span class="fc" id="L320">			.ifPresent(ext -&gt; {</span>
+<span class="fc" id="L321">				patient.addExtension(ext);</span>
+<span class="fc" id="L322">				getParser().getContext().setProperty(ext.getUrl(), ext);</span>
+<span class="fc" id="L323">			});</span>
 
-<span class="fc" id="L317">	}</span>
+<span class="fc" id="L325">	}</span>
 
 	/**
 	 * Add a phone number to a patient
@@ -322,11 +330,11 @@ public class PIDParser extends AbstractSegmentParser {
 	 * @param use	The use if unspecified
 	 */
 	public void addPhone(ContactPoint phone, ContactPointUse use) {
-<span class="pc bpc" id="L325" title="1 of 4 branches missed.">		if (!phone.hasUse() &amp;&amp; use != null) {</span>
-<span class="fc" id="L326">			phone.setUse(use);</span>
+<span class="pc bpc" id="L333" title="1 of 4 branches missed.">		if (!phone.hasUse() &amp;&amp; use != null) {</span>
+<span class="fc" id="L334">			phone.setUse(use);</span>
 		}
-<span class="fc" id="L328">		patient.addTelecom(phone);</span>
-<span class="fc" id="L329">	}</span>
+<span class="fc" id="L336">		patient.addTelecom(phone);</span>
+<span class="fc" id="L337">	}</span>
 	
 	/**
 	 * Add a Home contact point to the patient
@@ -334,16 +342,16 @@ public class PIDParser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path=&quot;Patient.telecom&quot;, field = 13, comment = &quot;Home Phone&quot;)
 	public void addHomePhone(ContactPoint homePhone) {
-<span class="fc" id="L337">		addPhone(homePhone, ContactPointUse.HOME);</span>
-<span class="fc" id="L338">	}</span>
+<span class="fc" id="L345">		addPhone(homePhone, ContactPointUse.HOME);</span>
+<span class="fc" id="L346">	}</span>
 	/**
 	 * Add a Work contact point to the patient
 	 * @param workPhone		The contact point
 	 */
 	@ComesFrom(path=&quot;Patient.telecom&quot;, field = 14, comment = &quot;Work Phone&quot;)
 	public void addWorkPhone(ContactPoint workPhone) {
-<span class="nc" id="L345">		addPhone(workPhone, ContactPointUse.WORK);</span>
-<span class="nc" id="L346">	}</span>
+<span class="nc" id="L353">		addPhone(workPhone, ContactPointUse.WORK);</span>
+<span class="nc" id="L354">	}</span>
 	
 	/**
 	 * Add a contact point to the patient
@@ -351,8 +359,8 @@ public class PIDParser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path=&quot;Patient.telecom&quot;, field = 40, comment=&quot;Patient Telecommunication Information&quot;)
 	public void addTelecom(ContactPoint telecom) {
-<span class="nc" id="L354">		addPhone(telecom, null);</span>
-<span class="nc" id="L355">	}</span>
+<span class="nc" id="L362">		addPhone(telecom, null);</span>
+<span class="nc" id="L363">	}</span>
 
 	
 	/**
@@ -361,8 +369,8 @@ public class PIDParser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path=&quot;Patient.communication.language&quot;, field = 15)
 	public void addLanguage(CodeableConcept language) {
-<span class="nc" id="L364">		patient.addCommunication().setLanguage(language);</span>
-<span class="nc" id="L365">	}</span>
+<span class="nc" id="L372">		patient.addCommunication().setLanguage(language);</span>
+<span class="nc" id="L373">	}</span>
 
 	
 	/**
@@ -371,8 +379,8 @@ public class PIDParser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path=&quot;Patient.maritalStatus&quot;, field = 16)
 	public void setMaritalStatus(CodeableConcept maritalStatus) {
-<span class="nc" id="L374">		patient.setMaritalStatus(maritalStatus);</span>
-<span class="nc" id="L375">	}</span>
+<span class="nc" id="L382">		patient.setMaritalStatus(maritalStatus);</span>
+<span class="nc" id="L383">	}</span>
 	
 	/**
 	 * Add a religion to the patient
@@ -380,8 +388,8 @@ public class PIDParser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path=&quot;Patient.patient-religion&quot;, field = 17)
 	public void addReligion(CodeableConcept religion) {
-<span class="nc" id="L383">		patient.addExtension(RELIGION, religion);</span>
-<span class="nc" id="L384">	}</span>
+<span class="nc" id="L391">		patient.addExtension(RELIGION, religion);</span>
+<span class="nc" id="L392">	}</span>
 	
 	/**
 	 * Add a patient account
@@ -393,16 +401,16 @@ public class PIDParser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path=&quot;Account.identifier&quot;, field = 18, comment = &quot;Patient Account&quot;)
 	public void addAccount(Identifier accountId) {
-<span class="nc bnc" id="L396" title="All 2 branches missed.">		if (FhirUtils.isEmpty(accountId)) {</span>
-<span class="nc" id="L397">			return;</span>
+<span class="nc bnc" id="L404" title="All 2 branches missed.">		if (FhirUtils.isEmpty(accountId)) {</span>
+<span class="nc" id="L405">			return;</span>
 		}
-<span class="nc" id="L399">		Account account = createResource(Account.class);</span>
-<span class="nc" id="L400">		account.addIdentifier(accountId);</span>
-<span class="nc bnc" id="L401" title="All 2 branches missed.">		if (!FhirUtils.isEmpty(patient)) {</span>
-<span class="nc" id="L402">			account.setStatus(AccountStatus.ACTIVE);</span>
-<span class="nc" id="L403">			account.addSubject(ParserUtils.toReference(patient, account, &quot;patient&quot;, &quot;subject&quot;));</span>
+<span class="nc" id="L407">		Account account = createResource(Account.class);</span>
+<span class="nc" id="L408">		account.addIdentifier(accountId);</span>
+<span class="nc bnc" id="L409" title="All 2 branches missed.">		if (!FhirUtils.isEmpty(patient)) {</span>
+<span class="nc" id="L410">			account.setStatus(AccountStatus.ACTIVE);</span>
+<span class="nc" id="L411">			account.addSubject(ParserUtils.toReference(patient, account, &quot;patient&quot;, &quot;subject&quot;));</span>
 		}
-<span class="nc" id="L405">	}</span>
+<span class="nc" id="L413">	}</span>
 
 	/**
 	 * Add a social security number to a patient.
@@ -410,17 +418,17 @@ public class PIDParser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path=&quot;Patient.identifier&quot;, field = 19, comment = &quot;Social Security Number&quot;)
 	public void addSSN(Identifier ssn) {
-<span class="nc bnc" id="L413" title="All 4 branches missed.">		if (FhirUtils.isEmpty(patient) || FhirUtils.isEmpty(ssn)) {</span>
-<span class="nc" id="L414">			return;</span>
+<span class="nc bnc" id="L421" title="All 4 branches missed.">		if (FhirUtils.isEmpty(patient) || FhirUtils.isEmpty(ssn)) {</span>
+<span class="nc" id="L422">			return;</span>
 		}
-<span class="nc bnc" id="L416" title="All 2 branches missed.">		if (!ssn.hasType()) {</span>
-<span class="nc" id="L417">			ssn.setType(Codes.SSN_TYPE);</span>
+<span class="nc bnc" id="L424" title="All 2 branches missed.">		if (!ssn.hasType()) {</span>
+<span class="nc" id="L425">			ssn.setType(Codes.SSN_TYPE);</span>
 		}
-<span class="nc bnc" id="L419" title="All 2 branches missed.">		if (!ssn.hasSystem()) {</span>
-<span class="nc" id="L420">			ssn.setSystem(Systems.SSN);</span>
+<span class="nc bnc" id="L427" title="All 2 branches missed.">		if (!ssn.hasSystem()) {</span>
+<span class="nc" id="L428">			ssn.setSystem(Systems.SSN);</span>
 		}
-<span class="nc" id="L422">		patient.addIdentifier(ssn);</span>
-<span class="nc" id="L423">	}</span>
+<span class="nc" id="L430">		patient.addIdentifier(ssn);</span>
+<span class="nc" id="L431">	}</span>
 	
 	/**
 	 * Add the mothers identifier to a RelatedPerson for this patient.
@@ -428,18 +436,18 @@ public class PIDParser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path=&quot;RelatedPerson.identifier&quot;, field = 21, comment=&quot;Mother's identifier&quot;)
 	public void addMother(Identifier mother) {
-<span class="nc bnc" id="L431" title="All 4 branches missed.">		if (FhirUtils.isEmpty(patient) || FhirUtils.isEmpty(mother)) {</span>
-<span class="nc" id="L432">			return;</span>
+<span class="nc bnc" id="L439" title="All 4 branches missed.">		if (FhirUtils.isEmpty(patient) || FhirUtils.isEmpty(mother)) {</span>
+<span class="nc" id="L440">			return;</span>
 		}
-<span class="nc" id="L434">		RelatedPerson rp = (RelatedPerson) patient.getUserData(&quot;mother&quot;);</span>
-<span class="nc bnc" id="L435" title="All 2 branches missed.">		if (rp == null) {</span>
-<span class="nc" id="L436">			rp = createResource(RelatedPerson.class);</span>
-<span class="nc" id="L437">			patient.setUserData(&quot;mother&quot;, rp);</span>
+<span class="nc" id="L442">		RelatedPerson rp = (RelatedPerson) patient.getUserData(&quot;mother&quot;);</span>
+<span class="nc bnc" id="L443" title="All 2 branches missed.">		if (rp == null) {</span>
+<span class="nc" id="L444">			rp = createResource(RelatedPerson.class);</span>
+<span class="nc" id="L445">			patient.setUserData(&quot;mother&quot;, rp);</span>
 		}
-<span class="nc" id="L439">		rp.addIdentifier(mother);</span>
-<span class="nc" id="L440">		rp.setPatient(ParserUtils.toReference(patient, rp, &quot;patient&quot;));</span>
-<span class="nc" id="L441">		rp.addRelationship(Codes.MOTHER);</span>
-<span class="nc" id="L442">	}</span>
+<span class="nc" id="L447">		rp.addIdentifier(mother);</span>
+<span class="nc" id="L448">		rp.setPatient(ParserUtils.toReference(patient, rp, &quot;patient&quot;));</span>
+<span class="nc" id="L449">		rp.addRelationship(Codes.MOTHER);</span>
+<span class="nc" id="L450">	}</span>
 	
 	/**
 	 * Add the patient's birth place
@@ -447,11 +455,11 @@ public class PIDParser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path=&quot;Patient.patient-birthPlace&quot;, field = 23)
 	public void addBirthPlace(StringType birthPlace) {
-<span class="nc bnc" id="L450" title="All 4 branches missed.">		if (FhirUtils.isEmpty(patient) || FhirUtils.isEmpty(birthPlace)) {</span>
-<span class="nc" id="L451">			return;</span>
+<span class="nc bnc" id="L458" title="All 4 branches missed.">		if (FhirUtils.isEmpty(patient) || FhirUtils.isEmpty(birthPlace)) {</span>
+<span class="nc" id="L459">			return;</span>
 		}
-<span class="nc" id="L453">		patient.addExtension(PATIENT_BIRTH_PLACE, birthPlace);</span>
-<span class="nc" id="L454">	}</span>
+<span class="nc" id="L461">		patient.addExtension(PATIENT_BIRTH_PLACE, birthPlace);</span>
+<span class="nc" id="L462">	}</span>
 
 	/**
 	 * Add the patient's multiple birth indicator
@@ -459,8 +467,8 @@ public class PIDParser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path=&quot;Patient.multipleBirthBoolean&quot;, field = 24, comment=&quot;Multiple Birth Indicator&quot;)
 	public void setMultipleBirthIndicator(BooleanType indicator) {
-<span class="nc" id="L462">		patient.setMultipleBirth(indicator);</span>
-<span class="nc" id="L463">	}</span>
+<span class="nc" id="L470">		patient.setMultipleBirth(indicator);</span>
+<span class="nc" id="L471">	}</span>
 	
 	/**
 	 * Add the patient's multiple birth order
@@ -468,8 +476,8 @@ public class PIDParser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path=&quot;Patient.multipleBirthInteger&quot;, field = 25, comment=&quot;Multiple Birth Order&quot;)
 	public void setMultipleBirthOrder(IntegerType order) {
-<span class="nc" id="L471">		patient.setMultipleBirth(order);</span>
-<span class="nc" id="L472">	}</span>
+<span class="nc" id="L479">		patient.setMultipleBirth(order);</span>
+<span class="nc" id="L480">	}</span>
 	
 	/**
 	 * Add the patient's citizenship
@@ -478,16 +486,16 @@ public class PIDParser extends AbstractSegmentParser {
 	@ComesFrom(path=&quot;Patient.patient-citizenship&quot;, field = 26, comment=&quot;Citizenship&quot;)
 	@ComesFrom(path=&quot;Patient.patient-citizenship&quot;, field = 39, comment=&quot;Tribal Citizenship&quot;)
 	public void addCitizenship(CodeableConcept cc) {
-<span class="nc" id="L481">		patient.addExtension(PATIENT_CITIZENSHIP, new Extension(&quot;code&quot;, cc));</span>
-<span class="nc" id="L482">	}</span>
+<span class="nc" id="L489">		patient.addExtension(PATIENT_CITIZENSHIP, new Extension(&quot;code&quot;, cc));</span>
+<span class="nc" id="L490">	}</span>
 	/**
 	 * Add the patient's nationality
 	 * @param cc	The nationality
 	 */
 	@ComesFrom(path=&quot;Patient.patient-nationality&quot;, field = 28, comment=&quot;Nationality&quot;)
 	public void addNationality(CodeableConcept cc) {
-<span class="nc" id="L489">		patient.addExtension(PATIENT_NATIONALITY, new Extension(&quot;code&quot;, cc));</span>
-<span class="nc" id="L490">	}</span>
+<span class="nc" id="L497">		patient.addExtension(PATIENT_NATIONALITY, new Extension(&quot;code&quot;, cc));</span>
+<span class="nc" id="L498">	}</span>
 
 	/**
 	 * Add the patient's deceased indicator
@@ -495,8 +503,8 @@ public class PIDParser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path=&quot;Patient.deceasedBoolean&quot;, field = 30, comment=&quot;Deceased Indicator&quot;)
 	public void setDeceasedIndicator(BooleanType indicator) {
-<span class="nc" id="L498">		patient.setDeceased(indicator);</span>
-<span class="nc" id="L499">	}</span>
+<span class="nc" id="L506">		patient.setDeceased(indicator);</span>
+<span class="nc" id="L507">	}</span>
 	
 	/**
 	 * Add the patient's deceased date
@@ -504,26 +512,26 @@ public class PIDParser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path=&quot;Patient.deceasedDateTime&quot;, field = 29, comment=&quot;Deceased Date Time&quot;)
 	public void setDeceasedDateTime(DateTimeType dateTime) {
-<span class="nc" id="L507">		patient.setDeceased(dateTime);</span>
-<span class="nc" id="L508">	}</span>
+<span class="nc" id="L515">		patient.setDeceased(dateTime);</span>
+<span class="nc" id="L516">	}</span>
 	/**
 	 * Set the patient's last updated tyime
 	 * @param instant	The last updated time
 	 */
 	@ComesFrom(path=&quot;Patient.meta.lastUpdated&quot;, field = 33)
 	public void setLastUpdated(InstantType instant) {
-<span class="nc" id="L515">		patient.getMeta().setLastUpdatedElement(instant);</span>
-<span class="nc" id="L516">	}</span>
+<span class="nc" id="L523">		patient.getMeta().setLastUpdatedElement(instant);</span>
+<span class="nc" id="L524">	}</span>
 	/**
 	 * Add the last updated facility and date time to provenance information
 	 * @param ident	The last updated facility identifier
 	 */
 	public void addLastUpdatedFacility(Identifier ident) {
-<span class="nc" id="L522">		Provenance p = (Provenance) patient.getUserData(Provenance.class.getName());</span>
-<span class="nc bnc" id="L523" title="All 2 branches missed.">		if (p == null) {</span>
-<span class="nc" id="L524">			return;</span>
+<span class="nc" id="L530">		Provenance p = (Provenance) patient.getUserData(Provenance.class.getName());</span>
+<span class="nc bnc" id="L531" title="All 2 branches missed.">		if (p == null) {</span>
+<span class="nc" id="L532">			return;</span>
 		}
 		// TODO: Figure this out
-<span class="nc" id="L527">	}</span>
+<span class="nc" id="L535">	}</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

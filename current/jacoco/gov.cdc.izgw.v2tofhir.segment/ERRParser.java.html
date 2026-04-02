@@ -19,7 +19,7 @@ import org.hl7.fhir.r4.model.OperationOutcome.OperationOutcomeIssueComponent;
 import gov.cdc.izgw.v2tofhir.annotation.ComesFrom;
 import gov.cdc.izgw.v2tofhir.annotation.Produces;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
-import gov.cdc.izgw.v2tofhir.utils.Mapping;
+import gov.cdc.izgw.v2tofhir.terminology.TerminologyMapperFactory;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -138,7 +138,7 @@ public class ERRParser extends AbstractSegmentParser {
 <span class="fc" id="L138">		}</span>
 <span class="fc bfc" id="L139" title="All 2 branches covered.">		for (Coding c: errorCode.getCoding()) {</span>
 			// If from table 0357
-<span class="fc bfc" id="L141" title="All 2 branches covered.">			if (!Mapping.v2Table(&quot;0357&quot;).equals(c.getSystem())) {  // Check the system.</span>
+<span class="fc bfc" id="L141" title="All 2 branches covered.">			if (!TerminologyMapperFactory.get().v2TableUri(&quot;0357&quot;).equals(c.getSystem())) {  // Check the system.</span>
 <span class="fc" id="L142">				continue;</span>
 			}
 <span class="fc" id="L144">			String[] map = errorCodeMap.get(c.getCode());</span>

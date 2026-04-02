@@ -20,7 +20,8 @@ import org.hl7.fhir.r4.model.StringType;
 import gov.cdc.izgw.v2tofhir.annotation.ComesFrom;
 import gov.cdc.izgw.v2tofhir.annotation.Produces;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
-import gov.cdc.izgw.v2tofhir.utils.Mapping;
+import gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper;
+import gov.cdc.izgw.v2tofhir.terminology.TerminologyMapperFactory;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 import gov.cdc.izgw.v2tofhir.utils.Systems;
 import lombok.extern.slf4j.Slf4j;
@@ -36,14 +37,14 @@ import lombok.extern.slf4j.Slf4j;
  * @author Audacious Inquiry
  */
 @Produces(segment = &quot;NK1&quot;, resource = RelatedPerson.class, extra = { Patient.class })
-<span class="fc" id="L39">@Slf4j</span>
+<span class="fc" id="L40">@Slf4j</span>
 public class NK1Parser extends AbstractSegmentParser {
 	private RelatedPerson relatedPerson;
-<span class="fc" id="L42">	private static List&lt;FieldHandler&gt; fieldHandlers = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L43">	private static List&lt;FieldHandler&gt; fieldHandlers = new ArrayList&lt;&gt;();</span>
 
 	static {
-<span class="fc" id="L45">		log.debug(&quot;{} loaded&quot;, MRGParser.class.getName());</span>
-<span class="fc" id="L46">	}</span>
+<span class="fc" id="L46">		log.debug(&quot;{} loaded&quot;, MRGParser.class.getName());</span>
+<span class="fc" id="L47">	}</span>
 
 	/**
 	 * Construct a new PV1Parser
@@ -51,28 +52,28 @@ public class NK1Parser extends AbstractSegmentParser {
 	 * @param messageParser The messageParser to construct this parser for.
 	 */
 	public NK1Parser(MessageParser messageParser) {
-<span class="fc" id="L54">		super(messageParser, &quot;NK1&quot;);</span>
-<span class="fc bfc" id="L55" title="All 2 branches covered.">		if (fieldHandlers.isEmpty()) {</span>
-<span class="fc" id="L56">			FieldHandler.initFieldHandlers(this, fieldHandlers);</span>
+<span class="fc" id="L55">		super(messageParser, &quot;NK1&quot;);</span>
+<span class="fc bfc" id="L56" title="All 2 branches covered.">		if (fieldHandlers.isEmpty()) {</span>
+<span class="fc" id="L57">			FieldHandler.initFieldHandlers(this, fieldHandlers);</span>
 		}
-<span class="fc" id="L58">	}</span>
+<span class="fc" id="L59">	}</span>
 
 	@Override
 	public List&lt;FieldHandler&gt; getFieldHandlers() {
-<span class="fc" id="L62">		return fieldHandlers;</span>
+<span class="fc" id="L63">		return fieldHandlers;</span>
 	}
 
 	@Override
 	public IBaseResource setup() {
-<span class="fc" id="L67">		relatedPerson = createResource(RelatedPerson.class);</span>
-<span class="fc" id="L68">		Patient patient = getLastResource(Patient.class);</span>
-<span class="fc bfc" id="L69" title="All 2 branches covered.">		if (patient == null) {</span>
+<span class="fc" id="L68">		relatedPerson = createResource(RelatedPerson.class);</span>
+<span class="fc" id="L69">		Patient patient = getLastResource(Patient.class);</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">		if (patient == null) {</span>
 			// patient may not exist if PID somehow failed or wasn't parsed.
 			// so create one so that it can be referenced.
-<span class="fc" id="L72">			patient = createResource(Patient.class);</span>
+<span class="fc" id="L73">			patient = createResource(Patient.class);</span>
 		}
-<span class="fc" id="L74">		relatedPerson.setPatient(ParserUtils.toReference(patient, relatedPerson, &quot;patient&quot;));</span>
-<span class="fc" id="L75">		return relatedPerson;</span>
+<span class="fc" id="L75">		relatedPerson.setPatient(ParserUtils.toReference(patient, relatedPerson, &quot;patient&quot;));</span>
+<span class="fc" id="L76">		return relatedPerson;</span>
 	}
 
 	/**
@@ -82,8 +83,8 @@ public class NK1Parser extends AbstractSegmentParser {
 	@ComesFrom(path = &quot;RelatedPerson.name&quot;, field = 2, comment = &quot;Name&quot;)
 	@ComesFrom(path = &quot;RelatedPerson.name&quot;, field = 30, comment = &quot;Contact Person's Name&quot;)
 	public void setName(HumanName name) {
-<span class="fc" id="L85">		relatedPerson.addName(name);</span>
-<span class="fc" id="L86">	}</span>
+<span class="fc" id="L86">		relatedPerson.addName(name);</span>
+<span class="fc" id="L87">	}</span>
 
 	/**
 	 * Set the relationship
@@ -92,30 +93,31 @@ public class NK1Parser extends AbstractSegmentParser {
 	@ComesFrom(path = &quot;RelatedPerson.relationship&quot;, field = 3, table = &quot;0063&quot;, map = &quot;Relationship&quot;, comment = &quot;Relationship&quot;)
 	@ComesFrom(path = &quot;RelatedPerson.relationship&quot;, field = 7, table = &quot;0131&quot;, map = &quot;ContactRole&quot;, comment = &quot;Contact Role&quot;)
 	public void setRelationship(CodeableConcept relationship) {
-<span class="fc" id="L95">		CodeableConcept mappedConcept = new CodeableConcept(); </span>
-<span class="fc bfc" id="L96" title="All 2 branches covered.">		for (Coding coding: relationship.getCoding()) {</span>
-<span class="pc bpc" id="L97" title="2 of 4 branches missed.">			if (!coding.hasSystem() || !coding.hasCode()) {</span>
-<span class="nc" id="L98">				continue;</span>
+<span class="fc" id="L96">		CodeableConcept mappedConcept = new CodeableConcept(); </span>
+<span class="fc" id="L97">		TerminologyMapper mapper = TerminologyMapperFactory.get();</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">		for (Coding coding: relationship.getCoding()) {</span>
+<span class="pc bpc" id="L99" title="2 of 4 branches missed.">			if (!coding.hasSystem() || !coding.hasCode()) {</span>
+<span class="nc" id="L100">				continue;</span>
 			}
-<span class="fc" id="L100">			Mapping m = null;</span>
-<span class="pc bpc" id="L101" title="1 of 2 branches missed.">			if (coding.getSystem().endsWith(&quot;0063&quot;)) {</span>
-<span class="fc" id="L102">				m = Mapping.getMapping(&quot;Relationship&quot;);</span>
-<span class="nc bnc" id="L103" title="All 2 branches missed.">			} else if (coding.getSystem().endsWith(&quot;0131&quot;)) {</span>
-<span class="nc" id="L104">				m = Mapping.getMapping(&quot;ContactRole&quot;);</span>
+			String mappingName;
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">			if (coding.getSystem().endsWith(&quot;0063&quot;)) {</span>
+<span class="fc" id="L104">				mappingName = &quot;Relationship&quot;;</span>
+<span class="nc bnc" id="L105" title="All 2 branches missed.">			} else if (coding.getSystem().endsWith(&quot;0131&quot;)) {</span>
+<span class="nc" id="L106">				mappingName = &quot;ContactRole&quot;;</span>
 			} else {
 				continue;
 			}
 			
-<span class="fc" id="L109">			Coding mappedCode = m.mapCode(coding, true);</span>
-<span class="fc" id="L110">			mappedConcept.addCoding(mappedCode);</span>
-<span class="fc" id="L111">		}</span>
+<span class="fc" id="L111">			mapper.mapCode(mappingName, coding)</span>
+<span class="pc" id="L112">				.ifPresent(result -&gt; mappedConcept.addCoding(result.resultCoding()));</span>
+<span class="fc" id="L113">		}</span>
 		// Add the mapped codes first, since they are the preferred concepts.
-<span class="pc bpc" id="L113" title="1 of 2 branches missed.">		if (!mappedConcept.isEmpty()) {</span>
-<span class="nc" id="L114">			relatedPerson.addRelationship(mappedConcept);</span>
+<span class="pc bpc" id="L115" title="1 of 2 branches missed.">		if (!mappedConcept.isEmpty()) {</span>
+<span class="nc" id="L116">			relatedPerson.addRelationship(mappedConcept);</span>
 		}
 		// Also add the original codes.
-<span class="fc" id="L117">		relatedPerson.addRelationship(relationship);</span>
-<span class="fc" id="L118">	}</span>
+<span class="fc" id="L119">		relatedPerson.addRelationship(relationship);</span>
+<span class="fc" id="L120">	}</span>
 
 	/**
 	 * Set the address
@@ -124,8 +126,8 @@ public class NK1Parser extends AbstractSegmentParser {
 	@ComesFrom(path = &quot;RelatedPerson.address&quot;, field = 4, comment = &quot;Address&quot;)
 	@ComesFrom(path = &quot;RelatedPerson.address&quot;, field = 32, comment = &quot;Contact Person's Address&quot;)
 	public void setAddress(Address address) {
-<span class="fc" id="L127">		relatedPerson.addAddress(address);</span>
-<span class="fc" id="L128">	}</span>
+<span class="fc" id="L129">		relatedPerson.addAddress(address);</span>
+<span class="fc" id="L130">	}</span>
 
 	/**
 	 * Set the phone number
@@ -136,8 +138,8 @@ public class NK1Parser extends AbstractSegmentParser {
 	@ComesFrom(path = &quot;RelatedPerson.telecom&quot;, field = 40, comment = &quot;Next of Kin Telecommunication Information&quot;)
 	@ComesFrom(path = &quot;RelatedPerson.telecom&quot;, field = 41, comment = &quot;Contact Person's Telecommunication Information&quot;)
 	public void setPhoneNumber(ContactPoint phoneNumber) {
-<span class="nc" id="L139">		relatedPerson.addTelecom(phoneNumber);</span>
-<span class="nc" id="L140">	}</span>
+<span class="nc" id="L141">		relatedPerson.addTelecom(phoneNumber);</span>
+<span class="nc" id="L142">	}</span>
 
 	/**
 	 * Set the business phone number
@@ -145,9 +147,9 @@ public class NK1Parser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path = &quot;RelatedPerson.telecom&quot;, field = 6, comment = &quot;Business Phone Number&quot;)
 	public void setBusinessPhoneNumber(ContactPoint businessPhoneNumber) {
-<span class="nc" id="L148">		businessPhoneNumber.setUse(ContactPointUse.WORK);</span>
-<span class="nc" id="L149">		relatedPerson.addTelecom(businessPhoneNumber);</span>
-<span class="nc" id="L150">	}</span>
+<span class="nc" id="L150">		businessPhoneNumber.setUse(ContactPointUse.WORK);</span>
+<span class="nc" id="L151">		relatedPerson.addTelecom(businessPhoneNumber);</span>
+<span class="nc" id="L152">	}</span>
 
 	/**
 	 * Set the start date
@@ -155,8 +157,8 @@ public class NK1Parser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path = &quot;RelatedPerson.period.start&quot;, field = 8, comment = &quot;Start Date&quot;)
 	public void setStartDate(DateType startDate) {
-<span class="nc" id="L158">		relatedPerson.getPeriod().setStart(startDate.getValue());</span>
-<span class="nc" id="L159">	}</span>
+<span class="nc" id="L160">		relatedPerson.getPeriod().setStart(startDate.getValue());</span>
+<span class="nc" id="L161">	}</span>
 
 	/**
 	 * Set the end date
@@ -164,8 +166,8 @@ public class NK1Parser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path = &quot;RelatedPerson.period.end&quot;, field = 9, comment = &quot;End Date&quot;)
 	public void setEndDate(DateType endDate) {
-<span class="nc" id="L167">		relatedPerson.getPeriod().setEnd(endDate.getValue());</span>
-<span class="nc" id="L168">	}</span>
+<span class="nc" id="L169">		relatedPerson.getPeriod().setEnd(endDate.getValue());</span>
+<span class="nc" id="L170">	}</span>
 
 	/**
 	 * Set the identifier
@@ -174,8 +176,8 @@ public class NK1Parser extends AbstractSegmentParser {
 	@ComesFrom(path = &quot;RelatedPerson.identifier&quot;, field = 12, comment = &quot;Next of Kin / Associated Parties Employee Number&quot;)
 	@ComesFrom(path = &quot;RelatedPerson.identifier&quot;, field = 33, comment = &quot;Next of Kin/Associated Party's Identifiers&quot;)
 	public void setNextofKinAssociatedPartiesEmployeeNumber(Identifier nextofKinAssociatedPartiesEmployeeNumber) {
-<span class="nc" id="L177">		relatedPerson.addIdentifier(nextofKinAssociatedPartiesEmployeeNumber);</span>
-<span class="nc" id="L178">	}</span>
+<span class="nc" id="L179">		relatedPerson.addIdentifier(nextofKinAssociatedPartiesEmployeeNumber);</span>
+<span class="nc" id="L180">	}</span>
 
 	/**
 	 * Map gender from table 0001
@@ -183,8 +185,8 @@ public class NK1Parser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path = &quot;RelatedPerson.gender&quot;, field = 15, table = &quot;&quot;, comment = &quot;Administrative Sex&quot;)
 	public void setAdministrativeSex(Coding administrativeSex) {
-<span class="nc" id="L186">		PIDParser.setGenderFromTable0001(relatedPerson.getGenderElement(), administrativeSex);</span>
-<span class="nc" id="L187">	}</span>
+<span class="nc" id="L188">		PIDParser.setGenderFromTable0001(relatedPerson.getGenderElement(), administrativeSex);</span>
+<span class="nc" id="L189">	}</span>
 
 	/**
 	 * Set the birthDate
@@ -192,8 +194,8 @@ public class NK1Parser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path = &quot;RelatedPerson.birthDate&quot;, field = 16, comment = &quot;Date/Time of Birth&quot;)
 	public void setDateTimeofBirth(DateTimeType dateTimeofBirth) {
-<span class="nc" id="L195">		relatedPerson.setBirthDate(dateTimeofBirth.getValue());</span>
-<span class="nc" id="L196">	}</span>
+<span class="nc" id="L197">		relatedPerson.setBirthDate(dateTimeofBirth.getValue());</span>
+<span class="nc" id="L198">	}</span>
 
 	/**
 	 * Set the language
@@ -201,8 +203,8 @@ public class NK1Parser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path = &quot;RelatedPerson.communication.language&quot;, field = 20, comment = &quot;Primary Language&quot;)
 	public void setPrimaryLanguage(CodeableConcept primaryLanguage) {
-<span class="nc" id="L204">		relatedPerson.addCommunication().setLanguage(primaryLanguage);</span>
-<span class="nc" id="L205">	}</span>
+<span class="nc" id="L206">		relatedPerson.addCommunication().setLanguage(primaryLanguage);</span>
+<span class="nc" id="L207">	}</span>
 
 	/**
 	 * Set the ssn
@@ -210,8 +212,8 @@ public class NK1Parser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path = &quot;RelatedPerson.identifier.value&quot;, field = 37, comment = &quot;Contact Person Social Security Number&quot;)
 	public void setContactPersonSocialSecurityNumber(StringType contactPersonSocialSecurityNumber) {
-<span class="nc" id="L213">		Identifier ssn = new Identifier().setSystem(Systems.SSN).setValueElement(contactPersonSocialSecurityNumber);</span>
-<span class="nc" id="L214">		relatedPerson.addIdentifier(ssn);</span>
-<span class="nc" id="L215">	}</span>
+<span class="nc" id="L215">		Identifier ssn = new Identifier().setSystem(Systems.SSN).setValueElement(contactPersonSocialSecurityNumber);</span>
+<span class="nc" id="L216">		relatedPerson.addIdentifier(ssn);</span>
+<span class="nc" id="L217">	}</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
