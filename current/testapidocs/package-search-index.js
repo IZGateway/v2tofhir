@@ -1,1 +1,1 @@
-packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"gov.cdc.izgw.v2tofhir.terminology"},{"l":"test.gov.cdc.izgateway"},{"l":"test.gov.cdc.izgateway.v2tofhir"}];updateSearchResults();
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"test.gov.cdc.izgateway"},{"l":"test.gov.cdc.izgateway.v2tofhir"}];updateSearchResults();
