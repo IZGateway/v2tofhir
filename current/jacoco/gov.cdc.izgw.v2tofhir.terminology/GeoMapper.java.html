@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GeoMapper.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">gov.cdc.izgw.v2tofhir.terminology</a> &gt; <span class="el_source">GeoMapper.java</span></div><h1>GeoMapper.java</h1><pre class="source lang-java linenums">package gov.cdc.izgw.v2tofhir.terminology;
+
+import java.util.Optional;
+
+import org.hl7.fhir.r4.model.Coding;
+
+/**
+ * Resolves and normalizes geographic codes, primarily ISO 3166 country codes.
+ *
+ * &lt;p&gt;All default implementations return empty results; override to provide real resolution.&lt;/p&gt;
+ *
+ * @author Audacious Inquiry
+ * @see TerminologyMapper
+ */
+public interface GeoMapper {
+
+    /**
+     * Returns an ISO 3166 country {@link Coding} for the given code and code system.
+     *
+     * @param code       the country code (e.g., {@code &quot;US&quot;})
+     * @param codeSystem the code system (e.g., {@code &quot;urn:iso:std:iso:3166&quot;})
+     * @return a country coding, or {@link Optional#empty()} if not found
+     */
+    default Optional&lt;Coding&gt; lookupCountry(String code, String codeSystem) {
+<span class="nc" id="L25">        return Optional.empty();</span>
+    }
+
+    /**
+     * Normalizes a country name or variant spelling to an ISO 3166 alpha-2 code.
+     *
+     * @param nameOrCode the country name or code variant (e.g., {@code &quot;United States&quot;})
+     * @return the ISO 3166 alpha-2 code (e.g., {@code &quot;US&quot;}), or {@link Optional#empty()} if not found
+     */
+    default Optional&lt;String&gt; normalizeCountry(String nameOrCode) {
+<span class="nc" id="L35">        return Optional.empty();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

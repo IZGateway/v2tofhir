@@ -238,7 +238,7 @@ public abstract class BaseParser&lt;U,S&gt; implements Parser&lt;U,S&gt; {
 <span class="fc" id="L238">			ProvenanceEntityComponent entity = p.getEntityFirstRep();</span>
 			try {
 <span class="fc" id="L240">				String encodedSegment = encode(segment);</span>
-<span class="fc" id="L241">				StringType originalText = new StringType(encode(segment)); // Was new StringType(context.getHl7DataId()+&quot;#&quot;+PathUtils.getTerserPath(segment))</span>
+<span class="fc" id="L241">				StringType originalText = new StringType(encode(segment)); // Was new StringType(context.getHl7DataId()+&quot;#&quot;+TerserPathUtils.getTerserPath(segment))</span>
 <span class="fc" id="L242">				if (entity.getExtension().stream()</span>
 <span class="pc bpc" id="L243" title="1 of 2 branches missed.">						.noneMatch(ext -&gt; </span>
 <span class="nc bnc" id="L244" title="All 2 branches missed.">							BaseParser.ORIGINAL_TEXT.equals(ext.getUrl()) &amp;&amp; </span>
