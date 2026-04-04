@@ -35,6 +35,7 @@ import gov.cdc.izgw.v2tofhir.converter.MessageParser;
 import gov.cdc.izgw.v2tofhir.utils.Codes;
 import gov.cdc.izgw.v2tofhir.utils.FhirUtils;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
+import gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper;
 import gov.cdc.izgw.v2tofhir.terminology.TerminologyMapperFactory;
 import gov.cdc.izgw.v2tofhir.utils.Systems;
 import lombok.extern.slf4j.Slf4j;
@@ -72,6 +73,8 @@ public class PIDParser extends AbstractSegmentParser {
 	/** Extension for Nationality */
 	public static final String PATIENT_NATIONALITY = "http://hl7.org/fhir/StructureDefinition/patient-nationality";
 	private static List<FieldHandler> fieldHandlers = new ArrayList<>();
+	private static TerminologyMapper mapper = TerminologyMapperFactory.get();
+
 	/**
 	 * Create a PID parser for the specified message parser
 	 * @param p The message parser to create this PID parser for
@@ -172,9 +175,9 @@ public class PIDParser extends AbstractSegmentParser {
 				String system = coding.getSystem();
 				if (system.endsWith("0001")) {
 					setGenderFromTable0001(patient.getGenderElement(), coding);
-				} else if (Systems.getSystemNames(system).contains(Systems.DATA_ABSENT)) {
+				} else if (Systems.DATA_ABSENT.equals(mapper.normalizeSystem(system))) {
 					setDataAbsentReasonFromDataAbsent(patient.getGenderElement(), coding.getCode());
-				} else if (Systems.getSystemNames(system).contains(Systems.NULL_FLAVOR)) {
+				} else if (Systems.NULL_FLAVOR.equals(mapper.normalizeSystem(system))) {
 					setDataAbsentFromNullFlavor(patient.getGenderElement(), coding.getCode());
 				}
 			}

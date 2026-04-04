@@ -314,11 +314,11 @@ public class Systems {
 		NamingSystemUniqueIdComponent uniqueId = ns.addUniqueId();
 		uniqueId.setValue(uid);
 		uniqueId.setPreferred(false);
-		if (uid.matches("^([\\-a-z0-9]+):.*$")) {
+		if (uid.matches("^([\\-a-z0-9]++):.*$")) {
 			uniqueId.setType(NamingSystemIdentifierType.URI);
-		} else if (uid.matches("^\\d+(.\\d+)+$")) {
+		} else if (uid.matches("^\\d++(.\\d++)++$")) {
 			uniqueId.setType(NamingSystemIdentifierType.OID);
-		} else if (uid.matches("^[0-9A-Fa-f]+(-[0-9A-Fa-f]+)+$")) {
+		} else if (uid.matches("^\\p{XDigit}++(-\\p{XDigit}++)++$")) {
 			uniqueId.setType(NamingSystemIdentifierType.UUID);
 		} else {
 			uniqueId.setType(NamingSystemIdentifierType.OTHER);

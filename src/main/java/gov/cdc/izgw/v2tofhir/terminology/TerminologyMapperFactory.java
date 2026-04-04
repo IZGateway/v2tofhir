@@ -29,7 +29,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public final class TerminologyMapperFactory {
 
-    /** Environment variable that names the {@link TerminologyMapper} implementation to use. */
+    private static final String FALLING_BACK = "falling back to DefaultTerminologyMapper";
+
+	/** Environment variable that names the {@link TerminologyMapper} implementation to use. */
     public static final String ENV_VAR = "V2TOFHIR_TERMINOLOGY_MAPPER";
 
     private static final AtomicReference<TerminologyMapper> INSTANCE = new AtomicReference<>();
@@ -106,8 +108,7 @@ public final class TerminologyMapperFactory {
         try {
             Class<?> clazz = Class.forName(className);
             if (!TerminologyMapper.class.isAssignableFrom(clazz)) {
-                log.warn("{} = '{}': class does not implement TerminologyMapper — "
-                        + "falling back to DefaultTerminologyMapper", ENV_VAR, className);
+                log.warn("{} = '{}': class does not implement TerminologyMapper — " + FALLING_BACK, ENV_VAR, className);
                 return new DefaultTerminologyMapper();
             }
             TerminologyMapper mapper = (TerminologyMapper) clazz.getDeclaredConstructor()
@@ -115,19 +116,15 @@ public final class TerminologyMapperFactory {
             log.info("Loaded custom TerminologyMapper: {}", className);
             return mapper;
         } catch (ClassNotFoundException e) {
-            log.warn("{} = '{}': class not found on classpath — "
-                    + "falling back to DefaultTerminologyMapper", ENV_VAR, className);
+            log.warn("{} = '{}': class not found on classpath — " + FALLING_BACK, ENV_VAR, className);
         } catch (ClassCastException e) {
-            log.warn("{} = '{}': class does not implement TerminologyMapper ({}) — "
-                    + "falling back to DefaultTerminologyMapper", ENV_VAR, className,
+            log.warn("{} = '{}': class does not implement TerminologyMapper ({}) — " + FALLING_BACK, ENV_VAR, className,
                     e.getMessage());
         } catch (ReflectiveOperationException e) {
-            log.warn("{} = '{}': could not instantiate class ({}) — "
-                    + "falling back to DefaultTerminologyMapper", ENV_VAR, className,
+            log.warn("{} = '{}': could not instantiate class ({}) — " + FALLING_BACK, ENV_VAR, className,
                     e.getMessage());
         } catch (RuntimeException e) {
-            log.warn("{} = '{}': constructor threw {} ({}) — "
-                    + "falling back to DefaultTerminologyMapper", ENV_VAR, className,
+            log.warn("{} = '{}': constructor threw {} ({}) — " + FALLING_BACK, ENV_VAR, className,
                     e.getClass().getSimpleName(), e.getMessage());
         }
         return new DefaultTerminologyMapper();

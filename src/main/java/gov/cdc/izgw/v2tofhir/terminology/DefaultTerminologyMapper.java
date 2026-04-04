@@ -280,7 +280,8 @@ public class DefaultTerminologyMapper implements TerminologyMapper {
         if (resource == null) {
             throw new TerminologyException("Cannot load a null resource");
         }
-        if (resource instanceof NamingSystem ns) {
+        switch (resource) {
+        case NamingSystem ns -> {
             List<String> identifiers = new ArrayList<>();
             ns.getUniqueId().forEach(uid -> identifiers.add(uid.getValue()));
             if (!identifiers.isEmpty()) {
@@ -288,30 +289,31 @@ public class DefaultTerminologyMapper implements TerminologyMapper {
             } else {
                 log.warn("NamingSystem '{}' has no unique identifiers; skipping registration", ns.getName());
             }
-        } else if (resource instanceof ConceptMap cm) {
-            loadedConceptMaps.put(cm.getId(), cm);
-        } else if (resource instanceof CodeSystem cs) {
-            loadedCodeSystems.put(cs.getId(), cs);
-        } else if (resource instanceof ValueSet vs) {
-            loadedValueSets.put(vs.getId(), vs);
-        } else {
-            throw new TerminologyException(
-                "Unsupported resource type for load(): " + resource.getResourceType());
+        }
+        case ConceptMap cm -> loadedConceptMaps.put(cm.getIdElement().getIdPart(), cm);
+        case CodeSystem cs -> loadedCodeSystems.put(cs.getIdElement().getIdPart(), cs);
+        case ValueSet vs -> loadedValueSets.put(vs.getIdElement().getIdPart(), vs);
+        default -> throw new TerminologyException(
+				"Unsupported resource type for load(): " + resource.getResourceType());
         }
     }
 
     /**
      * {@inheritDoc}
      *
-     * <p>Checks the per-instance loaded map first, then falls back to the static
-     * {@link Mapping} registry via {@link Mapping#getMapping(String)} and
-     * {@link Mapping#asConceptMap()}.</p>
+     * <p>Checks the per-instance loaded map first, then falls back to the
+     * {@link Units#CONCEPT_MAP_ID} resource owned by {@link Units} (if the id matches),
+     * and finally to the static {@link Mapping} registry via {@link Mapping#getMapping(String)}
+     * and {@link Mapping#asConceptMap()}.</p>
      */
     @Override
     public Optional<ConceptMap> getConceptMap(String id) {
         ConceptMap cm = loadedConceptMaps.get(id);
         if (cm != null) {
             return Optional.of(cm);
+        }
+        if (Units.CONCEPT_MAP_ID.equals(id)) {
+            return Units.getConceptMap();
         }
         return Optional.ofNullable(Mapping.getMapping(id))
                 .map(Mapping::asConceptMap);
@@ -341,10 +343,19 @@ public class DefaultTerminologyMapper implements TerminologyMapper {
 
     /**
      * {@inheritDoc}
-     * <p>Returns from the per-instance loaded map.</p>
+     *
+     * <p>Checks the per-instance loaded map first, then falls back to the
+     * {@link Units#VALUE_SET_ID} resource owned by {@link Units} (if the id matches).</p>
      */
     @Override
     public Optional<ValueSet> getValueSet(String id) {
-        return Optional.ofNullable(loadedValueSets.get(id));
+        ValueSet vs = loadedValueSets.get(id);
+        if (vs != null) {
+            return Optional.of(vs);
+        }
+        if (Units.VALUE_SET_ID.equals(id)) {
+            return Units.getValueSet();
+        }
+        return Optional.empty();
     }
 }

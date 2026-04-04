@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.ServiceConfigurationError;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.hl7.fhir.r4.model.CodeSystem;
 import org.hl7.fhir.r4.model.CodeSystem.CodeSystemContentMode;
 import org.hl7.fhir.r4.model.CodeSystem.ConceptDefinitionComponent;
@@ -178,7 +179,7 @@ public class Mapping {
 			}
 			if (mapped != null) {
 				String mappedSystem = mapped.getUserString(MAPPED_SYSTEM);
-				if (!("*".equals(mappedSystem) || !coding.hasSystem() || StringUtils.equals(mappedSystem, coding.getSystem()))) {
+				if (!("*".equals(mappedSystem) || !coding.hasSystem() || Strings.CS.equals(mappedSystem, coding.getSystem()))) {
 					mapped = null;
 				}
 			} else if (useAny) {
@@ -545,11 +546,7 @@ public class Mapping {
 			String[] fields = null;
 			while ((fields = reader.readNext()) != null) {
 				line++;
-				try {
-					addMapping(name, m, line, indices, fields);
-				} catch (Exception e) {
-					log.warn("Skipping invalid row in {}({}): {}", name, line, e.getMessage());
-				}
+				parseConceptMapCsvLine(name, m, line, indices, fields);
 			}
 
 			log.debug("Loaded {} lines from {}", line, name);
@@ -558,6 +555,14 @@ public class Mapping {
 		}
 
 		return m;
+	}
+
+	private static void parseConceptMapCsvLine(String name, Mapping m, int line, int[] indices, String[] fields) {
+		try {
+			addMapping(name, m, line, indices, fields);
+		} catch (Exception e) {
+			log.warn("Skipping invalid row in {}({}): {}", name, line, e.getMessage());
+		}
 	}
 
 	/**
@@ -597,18 +602,22 @@ public class Mapping {
 			String[] fields = null;
 			while ((fields = reader.readNext()) != null) {
 				line++;
-				try {
-					addCodes(cs, fields);
-					cs.setCount(cs.getCount() + 1);
-				} catch (Exception e) {
-					log.warn("Skipping invalid code at line {}: {}", line, e.getMessage());
-				}
+				parseCodeSystemCsvLiine(line, cs, fields);
 			}
 
 			log.debug("Loaded {} codes from CodeSystem '{}'", cs.getCount(), cs.getName());
 
 		} catch (IOException e) {
 			throw new IOException("Error reading CSV at line " + line, e);
+		}
+	}
+
+	private static void parseCodeSystemCsvLiine(int line, CodeSystem cs, String[] fields) {
+		try {
+			addCodes(cs, fields);
+			cs.setCount(cs.getCount() + 1);
+		} catch (Exception e) {
+			log.warn("Skipping invalid code at line {}: {}", line, e.getMessage());
 		}
 	}
 

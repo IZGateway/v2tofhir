@@ -268,7 +268,7 @@ public class ISO3166 {
 		}
 	}
 	private static String normalize(String name) {
-		return name.replace(" and ", " ").replace(" of ", "").replace("the ", "").replaceAll("', ", "").toUpperCase();
+		return name.replace(" and ", " ").replace(" of ", "").replace("the ", "").replace("', ", "").toUpperCase();
 	}
 	/**
 	 * Get the ISO-3166 two letter code for the given country name or code
