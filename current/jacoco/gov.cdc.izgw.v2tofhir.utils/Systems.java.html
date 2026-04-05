@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Systems.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">gov.cdc.izgw.v2tofhir.utils</a> &gt; <span class="el_source">Systems.java</span></div><h1>Systems.java</h1><pre class="source lang-java linenums">package gov.cdc.izgw.v2tofhir.utils;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.hl7.fhir.r4.model.NamingSystem;
@@ -137,71 +136,123 @@ public final class Systems {
     public static final String LOCATION_TYPE_OID = gov.cdc.izgw.v2tofhir.terminology.Systems.LOCATION_TYPE_OID;
 
     /** @see gov.cdc.izgw.v2tofhir.terminology.Systems#IDENTIFIER_TYPES */
-<span class="fc" id="L140">    public static final Set&lt;String&gt; IDENTIFIER_TYPES = gov.cdc.izgw.v2tofhir.terminology.Systems.IDENTIFIER_TYPES;</span>
+<span class="fc" id="L139">    public static final Set&lt;String&gt; IDENTIFIER_TYPES = gov.cdc.izgw.v2tofhir.terminology.Systems.IDENTIFIER_TYPES;</span>
     /** @see gov.cdc.izgw.v2tofhir.terminology.Systems#ID_TYPES */
-<span class="fc" id="L142">    public static final Set&lt;String&gt; ID_TYPES = gov.cdc.izgw.v2tofhir.terminology.Systems.ID_TYPES;</span>
+<span class="fc" id="L141">    public static final Set&lt;String&gt; ID_TYPES = gov.cdc.izgw.v2tofhir.terminology.Systems.ID_TYPES;</span>
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Systems#getCodeSystemAliases()
+    /**
+     * Get a list of aliases known by the V2 Converter for different coding and identifier systems.
+     *
+     * &lt;p&gt;Returns a list of string lists containing aliases for systems. For each system,
+     * the FHIR preferred system URI is first in its sublist, the commonly used V2 namespace
+     * is second, and the OID for the system is last.&lt;/p&gt;
+     *
+     * @return  A list of string lists containing aliases for a coding or identifier system
+     * @see gov.cdc.izgw.v2tofhir.terminology.Systems#getCodeSystemAliases()
      * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper} instead. */
     @Deprecated(since = &quot;use TerminologyMapper&quot;)
     public static List&lt;List&lt;String&gt;&gt; getCodeSystemAliases() {
-<span class="fc" id="L148">        return gov.cdc.izgw.v2tofhir.terminology.Systems.getCodeSystemAliases();</span>
+<span class="fc" id="L155">        return gov.cdc.izgw.v2tofhir.terminology.Systems.getCodeSystemAliases();</span>
     }
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Systems#addNamingSystem(String, String...)
+    /**
+     * Add a naming system to the map of known systems.
+     *
+     * &lt;p&gt;The first entry in {@code list} must be the URI for the system.&lt;/p&gt;
+     *
+     * @param name  The name of the system
+     * @param list  A list of strings containing aliases for a coding or identifier system;
+     *              the first entry must be the URI
+     * @see gov.cdc.izgw.v2tofhir.terminology.Systems#addNamingSystem(String, String...)
      * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper} instead. */
     @Deprecated(since = &quot;use TerminologyMapper&quot;)
     public static void addNamingSystem(String name, String... list) {
-<span class="nc" id="L155">        gov.cdc.izgw.v2tofhir.terminology.Systems.addNamingSystem(name, list);</span>
-<span class="nc" id="L156">    }</span>
+<span class="nc" id="L170">        gov.cdc.izgw.v2tofhir.terminology.Systems.addNamingSystem(name, list);</span>
+<span class="nc" id="L171">    }</span>
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Systems#createNamingSystem(String, String)
+    /**
+     * Create a naming system with the given URI and name.
+     *
+     * @param uri   The URI for the naming system
+     * @param name  A common name for the naming system
+     * @return      The created naming system
+     * @see gov.cdc.izgw.v2tofhir.terminology.Systems#createNamingSystem(String, String)
      * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper} instead. */
     @Deprecated(since = &quot;use TerminologyMapper&quot;)
     public static NamingSystem createNamingSystem(String uri, String name) {
-<span class="nc" id="L162">        return gov.cdc.izgw.v2tofhir.terminology.Systems.createNamingSystem(uri, name);</span>
+<span class="nc" id="L183">        return gov.cdc.izgw.v2tofhir.terminology.Systems.createNamingSystem(uri, name);</span>
     }
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Systems#updateNamingSystem(NamingSystem, String)
+    /**
+     * Add a unique id to a naming system if it does not already exist.
+     *
+     * @param ns    The naming system to update
+     * @param uid   The unique id to add
+     * @see gov.cdc.izgw.v2tofhir.terminology.Systems#updateNamingSystem(NamingSystem, String)
      * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper} instead. */
     @Deprecated(since = &quot;use TerminologyMapper&quot;)
     public static void updateNamingSystem(NamingSystem ns, String uid) {
-<span class="nc" id="L169">        gov.cdc.izgw.v2tofhir.terminology.Systems.updateNamingSystem(ns, uid);</span>
-<span class="nc" id="L170">    }</span>
+<span class="nc" id="L195">        gov.cdc.izgw.v2tofhir.terminology.Systems.updateNamingSystem(ns, uid);</span>
+<span class="nc" id="L196">    }</span>
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Systems#toOid(String)
+    /**
+     * Given a URI, get the associated OID (without the {@code urn:oid:} prefix).
+     *
+     * @param uri   The URI to look up
+     * @return      The associated OID, or {@code null} if none is known
+     * @see gov.cdc.izgw.v2tofhir.terminology.Systems#toOid(String)
      * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper#toOid(String)} instead. */
     @Deprecated(since = &quot;use TerminologyMapper&quot;)
     public static String toOid(String uri) {
-<span class="nc" id="L176">        return gov.cdc.izgw.v2tofhir.terminology.Systems.toOid(uri);</span>
+<span class="nc" id="L207">        return gov.cdc.izgw.v2tofhir.terminology.Systems.toOid(uri);</span>
     }
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Systems#toTextName(String)
+    /**
+     * Get the commonly used V2 name for a coding or identifier system.
+     *
+     * @param uri   The system URI
+     * @return      The commonly used V2 name, or {@code null} if the name is unknown
+     * @see gov.cdc.izgw.v2tofhir.terminology.Systems#toTextName(String)
      * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper} instead. */
     @Deprecated(since = &quot;use TerminologyMapper&quot;)
     public static String toTextName(String uri) {
-<span class="fc" id="L183">        return gov.cdc.izgw.v2tofhir.terminology.Systems.toTextName(uri);</span>
+<span class="fc" id="L219">        return gov.cdc.izgw.v2tofhir.terminology.Systems.toTextName(uri);</span>
     }
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Systems#toUri(String)
+    /**
+     * Given an OID (with or without the {@code urn:oid:} prefix), get the associated URI.
+     *
+     * @param oid   The OID to look up
+     * @return      The associated URI, or {@code null} if none is known
+     * @see gov.cdc.izgw.v2tofhir.terminology.Systems#toUri(String)
      * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper#toUri(String)} instead. */
     @Deprecated(since = &quot;use TerminologyMapper&quot;)
     public static String toUri(String oid) {
-<span class="nc" id="L190">        return gov.cdc.izgw.v2tofhir.terminology.Systems.toUri(oid);</span>
+<span class="nc" id="L231">        return gov.cdc.izgw.v2tofhir.terminology.Systems.toUri(oid);</span>
     }
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Systems#getSystemNames(String)
+    /**
+     * Get all aliases by which the given system is known.
+     *
+     * @param system    The system URI, OID, or name to look up
+     * @return          A list of names the system is known by
+     * @see gov.cdc.izgw.v2tofhir.terminology.Systems#getSystemNames(String)
      * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper} instead. */
     @Deprecated(since = &quot;use TerminologyMapper&quot;)
     public static List&lt;String&gt; getSystemNames(String system) {
-<span class="fc" id="L197">        return gov.cdc.izgw.v2tofhir.terminology.Systems.getSystemNames(system);</span>
+<span class="fc" id="L243">        return gov.cdc.izgw.v2tofhir.terminology.Systems.getSystemNames(system);</span>
     }
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Systems#getNamingSystem(String)
+    /**
+     * Get the {@link NamingSystem} for a given name, system URI, or other alias.
+     *
+     * @param system    The search value (name, URI, or OID)
+     * @return          The NamingSystem, or {@code null} if not found
+     * @see gov.cdc.izgw.v2tofhir.terminology.Systems#getNamingSystem(String)
      * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper#getNamingSystem(String)} instead. */
     @Deprecated(since = &quot;use TerminologyMapper&quot;)
     public static NamingSystem getNamingSystem(String system) {
-<span class="nc" id="L204">        return gov.cdc.izgw.v2tofhir.terminology.Systems.getNamingSystem(system);</span>
+<span class="nc" id="L255">        return gov.cdc.izgw.v2tofhir.terminology.Systems.getNamingSystem(system);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

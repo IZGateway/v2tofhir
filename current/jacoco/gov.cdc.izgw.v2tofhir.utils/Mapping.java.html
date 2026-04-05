@@ -18,13 +18,29 @@ import org.hl7.fhir.r4.model.Type;
 @Deprecated(since = &quot;moved to gov.cdc.izgw.v2tofhir.terminology; use TerminologyMapper&quot;)
 public class Mapping extends gov.cdc.izgw.v2tofhir.terminology.Mapping {
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Mapping#ORIGINAL_SYSTEM */
+    /**
+     * Constant used to store the original system in {@code Type.userData} for types with a system.
+     *
+     * @see gov.cdc.izgw.v2tofhir.terminology.Mapping#ORIGINAL_SYSTEM
+     */
     public static final String ORIGINAL_SYSTEM = gov.cdc.izgw.v2tofhir.terminology.Mapping.ORIGINAL_SYSTEM;
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Mapping#ORIGINAL_DISPLAY */
+    /**
+     * Constant used to store the original display name in {@code Type.userData} for types with a display name.
+     *
+     * @see gov.cdc.izgw.v2tofhir.terminology.Mapping#ORIGINAL_DISPLAY
+     */
     public static final String ORIGINAL_DISPLAY = gov.cdc.izgw.v2tofhir.terminology.Mapping.ORIGINAL_DISPLAY;
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Mapping#ORIGINAL */
+    /**
+     * Constant used to store the original coding in {@code Coding.userData} for mapped values.
+     *
+     * @see gov.cdc.izgw.v2tofhir.terminology.Mapping#ORIGINAL
+     */
     public static final String ORIGINAL = gov.cdc.izgw.v2tofhir.terminology.Mapping.ORIGINAL;
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Mapping#V2_TABLE_PREFIX */
+    /**
+     * The prefix for V2 tables in HL7 Terminology.
+     *
+     * @see gov.cdc.izgw.v2tofhir.terminology.Mapping#V2_TABLE_PREFIX
+     */
     public static final String V2_TABLE_PREFIX = gov.cdc.izgw.v2tofhir.terminology.Mapping.V2_TABLE_PREFIX;
 
     /**
@@ -34,94 +50,272 @@ public class Mapping extends gov.cdc.izgw.v2tofhir.terminology.Mapping {
      */
     @Deprecated(since = &quot;moved to gov.cdc.izgw.v2tofhir.terminology; use TerminologyMapper&quot;)
     public Mapping(String name) {
-<span class="nc" id="L37">        super(name);</span>
-<span class="nc" id="L38">    }</span>
+<span class="nc" id="L53">        super(name);</span>
+<span class="nc" id="L54">    }</span>
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Mapping#getMapping(String) */
+    /**
+     * Get the specified mapping.
+     *
+     * @param name  The name of the mapping
+     * @return      The specified mapping, or {@code null} if it was not found
+     * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper#mapCode(String, org.hl7.fhir.r4.model.Coding)} instead.
+     * @see gov.cdc.izgw.v2tofhir.terminology.Mapping#getMapping(String)
+     */
     @Deprecated(since = &quot;moved to gov.cdc.izgw.v2tofhir.terminology; use TerminologyMapper&quot;)
     public static Mapping getMapping(String name) {
-<span class="nc" id="L43">        gov.cdc.izgw.v2tofhir.terminology.Mapping m = gov.cdc.izgw.v2tofhir.terminology.Mapping.getMapping(name);</span>
-<span class="nc bnc" id="L44" title="All 2 branches missed.">        return m == null ? null : new Mapping(m.getName());</span>
+<span class="nc" id="L66">        gov.cdc.izgw.v2tofhir.terminology.Mapping m = gov.cdc.izgw.v2tofhir.terminology.Mapping.getMapping(name);</span>
+<span class="nc bnc" id="L67" title="All 2 branches missed.">        return m == null ? null : new Mapping(m.getName());</span>
     }
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Mapping#addCodes(CodeSystem, String[]) */
+    /**
+     * Add the codes in {@code fields} to the specified {@link CodeSystem}.
+     *
+     * &lt;p&gt;Field data is expected to appear in this order:
+     * Code, Display, Definition, V2 Concept Comment, V2 Concept Comment As Published,
+     * HL7 Concept Usage Notes.&lt;/p&gt;
+     *
+     * @param cs        The CodeSystem to add codes to
+     * @param fields    The field data, in the order: code, display, definition, comment,
+     *                  comment as published, usage notes
+     * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.Mapping#addCodes(CodeSystem, String[])} directly.
+     * @see gov.cdc.izgw.v2tofhir.terminology.Mapping#addCodes(CodeSystem, String[])
+     */
+    @Deprecated(since = &quot;moved to gov.cdc.izgw.v2tofhir.terminology; use TerminologyMapper&quot;)
     public static void addCodes(CodeSystem cs, String[] fields) {
-<span class="nc" id="L49">        gov.cdc.izgw.v2tofhir.terminology.Mapping.addCodes(cs, fields);</span>
-<span class="nc" id="L50">    }</span>
+<span class="nc" id="L85">        gov.cdc.izgw.v2tofhir.terminology.Mapping.addCodes(cs, fields);</span>
+<span class="nc" id="L86">    }</span>
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Mapping#createNamingSystem(CodeSystem) */
+    /**
+     * Create a {@link NamingSystem} for the given {@link CodeSystem}.
+     *
+     * @param cs    The CodeSystem to create a NamingSystem for
+     * @return      The created NamingSystem
+     * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.Mapping#createNamingSystem(CodeSystem)} directly.
+     * @see gov.cdc.izgw.v2tofhir.terminology.Mapping#createNamingSystem(CodeSystem)
+     */
+    @Deprecated(since = &quot;moved to gov.cdc.izgw.v2tofhir.terminology; use TerminologyMapper&quot;)
     public static NamingSystem createNamingSystem(CodeSystem cs) {
-<span class="nc" id="L54">        return gov.cdc.izgw.v2tofhir.terminology.Mapping.createNamingSystem(cs);</span>
+<span class="nc" id="L98">        return gov.cdc.izgw.v2tofhir.terminology.Mapping.createNamingSystem(cs);</span>
     }
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Mapping#updateCodeLookup(Coding) */
+    /**
+     * Updates the display-name resolution table for a coding.
+     *
+     * @param coding    A coding with code, display and system all populated
+     * @return          The updated code-lookup map where the given coding is stored
+     * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper#setDisplay(String, String, String)} instead.
+     * @see gov.cdc.izgw.v2tofhir.terminology.Mapping#updateCodeLookup(Coding)
+     */
+    @Deprecated(since = &quot;moved to gov.cdc.izgw.v2tofhir.terminology; use TerminologyMapper&quot;)
     public static Map&lt;String, Coding&gt; updateCodeLookup(Coding coding) {
-<span class="nc" id="L59">        return gov.cdc.izgw.v2tofhir.terminology.Mapping.updateCodeLookup(coding);</span>
+<span class="nc" id="L111">        return gov.cdc.izgw.v2tofhir.terminology.Mapping.updateCodeLookup(coding);</span>
     }
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Mapping#getDisplay(Coding) */
+    /**
+     * Given a coding with code and system set, get the associated display name for
+     * the code if known.
+     *
+     * @param coding    The coding to search for
+     * @return          The display name for the code
+     * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper#getDisplay(String, String)} instead.
+     * @see gov.cdc.izgw.v2tofhir.terminology.Mapping#getDisplay(Coding)
+     */
+    @Deprecated(since = &quot;moved to gov.cdc.izgw.v2tofhir.terminology; use TerminologyMapper&quot;)
     public static String getDisplay(Coding coding) {
-<span class="nc" id="L64">        return gov.cdc.izgw.v2tofhir.terminology.Mapping.getDisplay(coding);</span>
+<span class="nc" id="L125">        return gov.cdc.izgw.v2tofhir.terminology.Mapping.getDisplay(coding);</span>
     }
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Mapping#hasDisplay(String, String) */
+    /**
+     * Indicates whether a display name is known for a coding with the given code
+     * and table or system name.
+     *
+     * @param code      The code to search for
+     * @param table     The HL7 V2 table or FHIR system URI to look in
+     * @return          {@code true} if a display name is known for this code and table
+     * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper#hasDisplay(String, String)} instead.
+     * @see gov.cdc.izgw.v2tofhir.terminology.Mapping#hasDisplay(String, String)
+     */
+    @Deprecated(since = &quot;moved to gov.cdc.izgw.v2tofhir.terminology; use TerminologyMapper&quot;)
     public static boolean hasDisplay(String code, String table) {
-<span class="nc" id="L69">        return gov.cdc.izgw.v2tofhir.terminology.Mapping.hasDisplay(code, table);</span>
+<span class="nc" id="L140">        return gov.cdc.izgw.v2tofhir.terminology.Mapping.hasDisplay(code, table);</span>
     }
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Mapping#getDisplay(String, String) */
+    /**
+     * Get the display name for a coding with the given code and table or system name.
+     *
+     * @param code      The code to search for
+     * @param table     The HL7 V2 table or FHIR system URI to look in
+     * @return          The display name for this code and table, or {@code null} if not found
+     * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper#getDisplay(String, String)} instead.
+     * @see gov.cdc.izgw.v2tofhir.terminology.Mapping#getDisplay(String, String)
+     */
+    @Deprecated(since = &quot;moved to gov.cdc.izgw.v2tofhir.terminology; use TerminologyMapper&quot;)
     public static String getDisplay(String code, String table) {
-<span class="nc" id="L74">        return gov.cdc.izgw.v2tofhir.terminology.Mapping.getDisplay(code, table);</span>
+<span class="nc" id="L154">        return gov.cdc.izgw.v2tofhir.terminology.Mapping.getDisplay(code, table);</span>
     }
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Mapping#setDisplay(Coding) */
+    /**
+     * Given a coding with code and system set, set the associated display name for
+     * the code if one is known.
+     *
+     * &lt;p&gt;If no display name is known the coding is unchanged. A default display name
+     * may therefore be provided before calling this method.&lt;/p&gt;
+     *
+     * @param coding    The coding to search for and potentially update
+     * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.Mapping#setDisplay(Coding)} directly.
+     * @see gov.cdc.izgw.v2tofhir.terminology.Mapping#setDisplay(Coding)
+     */
+    @Deprecated(since = &quot;moved to gov.cdc.izgw.v2tofhir.terminology; use TerminologyMapper&quot;)
     public static void setDisplay(Coding coding) {
-<span class="nc" id="L79">        gov.cdc.izgw.v2tofhir.terminology.Mapping.setDisplay(coding);</span>
-<span class="nc" id="L80">    }</span>
+<span class="nc" id="L170">        gov.cdc.izgw.v2tofhir.terminology.Mapping.setDisplay(coding);</span>
+<span class="nc" id="L171">    }</span>
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Mapping#reset(Type) */
+    /**
+     * Reset a {@link org.hl7.fhir.r4.model.Type} produced during conversion to its original,
+     * unmapped values for display and system.
+     *
+     * &lt;p&gt;The converter adds extra data for better interoperability (e.g., display names, code
+     * system URLs). Original supplied values are stored in user data under keys such as
+     * {@code &quot;original{FieldName}&quot;}. This method restores those original values.&lt;/p&gt;
+     *
+     * @param type  The type to reset to original values
+     * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.Mapping#reset(org.hl7.fhir.r4.model.Type)} directly.
+     * @see gov.cdc.izgw.v2tofhir.terminology.Mapping#reset(org.hl7.fhir.r4.model.Type)
+     */
+    @Deprecated(since = &quot;moved to gov.cdc.izgw.v2tofhir.terminology; use TerminologyMapper&quot;)
     public static void reset(Type type) {
-<span class="nc" id="L84">        gov.cdc.izgw.v2tofhir.terminology.Mapping.reset(type);</span>
-<span class="nc" id="L85">    }</span>
+<span class="nc" id="L187">        gov.cdc.izgw.v2tofhir.terminology.Mapping.reset(type);</span>
+<span class="nc" id="L188">    }</span>
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Mapping#reset(Coding) */
+    /**
+     * Reset a {@link Coding} produced during conversion to its original, unmapped values
+     * for display and system.
+     *
+     * &lt;p&gt;During the conversion process the V2 to FHIR converter stores the original V2 values
+     * in user data on the datatype. This method restores those original values.&lt;/p&gt;
+     *
+     * @param coding    A coding produced by DatatypeConverter to reset
+     * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.Mapping#reset(Coding)} directly.
+     * @see gov.cdc.izgw.v2tofhir.terminology.Mapping#reset(Coding)
+     */
+    @Deprecated(since = &quot;moved to gov.cdc.izgw.v2tofhir.terminology; use TerminologyMapper&quot;)
     public static void reset(Coding coding) {
-<span class="nc" id="L89">        gov.cdc.izgw.v2tofhir.terminology.Mapping.reset(coding);</span>
-<span class="nc" id="L90">    }</span>
+<span class="nc" id="L203">        gov.cdc.izgw.v2tofhir.terminology.Mapping.reset(coding);</span>
+<span class="nc" id="L204">    }</span>
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Mapping#reset(CodeableConcept) */
+    /**
+     * Reset a {@link CodeableConcept} produced during conversion to its original, unmapped
+     * values for display and system.
+     *
+     * &lt;p&gt;During the conversion process the V2 to FHIR converter stores the original V2 values
+     * in user data on the datatype. This method restores those original values.&lt;/p&gt;
+     *
+     * @param cc    A CodeableConcept produced by DatatypeConverter to reset
+     * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.Mapping#reset(CodeableConcept)} directly.
+     * @see gov.cdc.izgw.v2tofhir.terminology.Mapping#reset(CodeableConcept)
+     */
+    @Deprecated(since = &quot;moved to gov.cdc.izgw.v2tofhir.terminology; use TerminologyMapper&quot;)
     public static void reset(CodeableConcept cc) {
-<span class="nc" id="L94">        gov.cdc.izgw.v2tofhir.terminology.Mapping.reset(cc);</span>
-<span class="nc" id="L95">    }</span>
+<span class="nc" id="L219">        gov.cdc.izgw.v2tofhir.terminology.Mapping.reset(cc);</span>
+<span class="nc" id="L220">    }</span>
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Mapping#map(Coding) */
+    /**
+     * Given a coding and system, set the system and display values to the expected
+     * values in FHIR.
+     *
+     * @param coding    The coding to adjust
+     * @return          The mapped coding
+     * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.Mapping#map(Coding)} directly.
+     * @see gov.cdc.izgw.v2tofhir.terminology.Mapping#map(Coding)
+     */
+    @Deprecated(since = &quot;moved to gov.cdc.izgw.v2tofhir.terminology; use TerminologyMapper&quot;)
     public static Coding map(Coding coding) {
-<span class="nc" id="L99">        return gov.cdc.izgw.v2tofhir.terminology.Mapping.map(coding);</span>
+<span class="nc" id="L233">        return gov.cdc.izgw.v2tofhir.terminology.Mapping.map(coding);</span>
     }
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Mapping#mapSystem(Identifier) */
+    /**
+     * Map the V2 system value found in {@code ident.system} to the system URI expected in FHIR.
+     *
+     * &lt;p&gt;If the system is changed, the original value is stored and can later be retrieved via
+     * {@code ident.getUserData(Mapping.ORIGINAL_SYSTEM)}.&lt;/p&gt;
+     *
+     * @param ident     The identifier to adjust the system for
+     * @return          The updated Identifier
+     * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper#normalizeSystem(String)} instead.
+     * @see gov.cdc.izgw.v2tofhir.terminology.Mapping#mapSystem(Identifier)
+     */
+    @Deprecated(since = &quot;moved to gov.cdc.izgw.v2tofhir.terminology; use TerminologyMapper&quot;)
     public static Identifier mapSystem(Identifier ident) {
-<span class="nc" id="L104">        return gov.cdc.izgw.v2tofhir.terminology.Mapping.mapSystem(ident);</span>
+<span class="nc" id="L249">        return gov.cdc.izgw.v2tofhir.terminology.Mapping.mapSystem(ident);</span>
     }
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Mapping#mapTableNameToSystem(String) */
+    /**
+     * Given a coding system name or URL, get the preferred {@link CodeSystem} URL for FHIR.
+     *
+     * @param value     A coding system name or URL
+     * @return          The preferred name as a URL
+     * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper#v2TableUri(String)} instead.
+     * @see gov.cdc.izgw.v2tofhir.terminology.Mapping#mapTableNameToSystem(String)
+     */
+    @Deprecated(since = &quot;moved to gov.cdc.izgw.v2tofhir.terminology; use TerminologyMapper&quot;)
     public static String mapTableNameToSystem(String value) {
-<span class="nc" id="L109">        return gov.cdc.izgw.v2tofhir.terminology.Mapping.mapTableNameToSystem(value);</span>
+<span class="nc" id="L262">        return gov.cdc.izgw.v2tofhir.terminology.Mapping.mapTableNameToSystem(value);</span>
     }
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Mapping#v2Table(String) */
+    /**
+     * Return the normalized FHIR system name for the given V2 table.
+     *
+     * @param table     The V2 table name
+     * @return          The normalized FHIR system name for that table
+     * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper#v2TableUri(String)} instead.
+     * @see gov.cdc.izgw.v2tofhir.terminology.Mapping#v2Table(String)
+     */
+    @Deprecated(since = &quot;moved to gov.cdc.izgw.v2tofhir.terminology; use TerminologyMapper&quot;)
     public static String v2Table(String table) {
-<span class="nc" id="L114">        return gov.cdc.izgw.v2tofhir.terminology.Mapping.v2Table(table);</span>
+<span class="nc" id="L275">        return gov.cdc.izgw.v2tofhir.terminology.Mapping.v2Table(table);</span>
     }
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Mapping#loadConceptMapFromCsv(String, String) */
+    /**
+     * Load a ConceptMap from CSV content and add it to the mapping lookup tables.
+     *
+     * &lt;p&gt;CSV format expected:&lt;/p&gt;
+     * &lt;ul&gt;
+     *   &lt;li&gt;Line 1: Header row (ignored)&lt;/li&gt;
+     *   &lt;li&gt;Line 2: Column headers&lt;/li&gt;
+     *   &lt;li&gt;All other lines: Mapping data rows&lt;/li&gt;
+     * &lt;/ul&gt;
+     * &lt;p&gt;If a mapping with the same name already exists it will be overwritten.
+     * Invalid rows are logged and skipped.&lt;/p&gt;
+     *
+     * @param csvContent    The CSV content as a string
+     * @param name          The name for this mapping (used as the map identifier)
+     * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.Mapping#loadConceptMapFromCsv(String, String)} directly.
+     * @see gov.cdc.izgw.v2tofhir.terminology.Mapping#loadConceptMapFromCsv(String, String)
+     */
+    @Deprecated(since = &quot;moved to gov.cdc.izgw.v2tofhir.terminology; use TerminologyMapper&quot;)
     public static synchronized void loadConceptMapFromCsv(String csvContent, String name) {
-<span class="nc" id="L119">        gov.cdc.izgw.v2tofhir.terminology.Mapping.loadConceptMapFromCsv(csvContent, name);</span>
-<span class="nc" id="L120">    }</span>
+<span class="nc" id="L297">        gov.cdc.izgw.v2tofhir.terminology.Mapping.loadConceptMapFromCsv(csvContent, name);</span>
+<span class="nc" id="L298">    }</span>
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Mapping#loadCodeSystemFromCsv(String) */
+    /**
+     * Load a CodeSystem from CSV content and add it to the coding lookup tables.
+     *
+     * &lt;p&gt;CSV format expected:&lt;/p&gt;
+     * &lt;ul&gt;
+     *   &lt;li&gt;Line 1: Metadata (url, oid, name)&lt;/li&gt;
+     *   &lt;li&gt;Line 2: Column headers (Code, Display, Definition, V2 Concept Comment, …)&lt;/li&gt;
+     *   &lt;li&gt;All other lines: Code definition rows&lt;/li&gt;
+     * &lt;/ul&gt;
+     * &lt;p&gt;If a CodeSystem with the same name already exists it will be overwritten.
+     * Invalid rows are logged and skipped.&lt;/p&gt;
+     *
+     * @param csvContent    The CSV content as a string
+     * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.Mapping#loadCodeSystemFromCsv(String)} directly.
+     * @see gov.cdc.izgw.v2tofhir.terminology.Mapping#loadCodeSystemFromCsv(String)
+     */
+    @Deprecated(since = &quot;moved to gov.cdc.izgw.v2tofhir.terminology; use TerminologyMapper&quot;)
     public static synchronized void loadCodeSystemFromCsv(String csvContent) {
-<span class="nc" id="L124">        gov.cdc.izgw.v2tofhir.terminology.Mapping.loadCodeSystemFromCsv(csvContent);</span>
-<span class="nc" id="L125">    }</span>
+<span class="nc" id="L318">        gov.cdc.izgw.v2tofhir.terminology.Mapping.loadCodeSystemFromCsv(csvContent);</span>
+<span class="nc" id="L319">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

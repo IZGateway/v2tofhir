@@ -10,19 +10,43 @@
 public final class ISO3166 {
     private ISO3166() {}
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.ISO3166#twoLetterCode(String) */
+    /**
+     * Get the ISO-3166 two letter code for the given country name or code.
+     *
+     * @param name  The country name or ISO code
+     * @return      The ISO-3166 two letter code for the given country
+     * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper#normalizeCountry(String)} instead.
+     * @see gov.cdc.izgw.v2tofhir.terminology.ISO3166#twoLetterCode(String)
+     */
+    @Deprecated(since = &quot;moved to gov.cdc.izgw.v2tofhir.terminology; use TerminologyMapper&quot;)
     public static String twoLetterCode(String name) {
-<span class="nc" id="L15">        return gov.cdc.izgw.v2tofhir.terminology.ISO3166.twoLetterCode(name);</span>
+<span class="nc" id="L23">        return gov.cdc.izgw.v2tofhir.terminology.ISO3166.twoLetterCode(name);</span>
     }
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.ISO3166#threeLetterCode(String) */
+    /**
+     * Get the ISO-3166 three letter code for the given country name or code.
+     *
+     * @param name  The country name or ISO code
+     * @return      The ISO-3166 three letter code for the given country
+     * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.ISO3166#threeLetterCode(String)} directly.
+     * @see gov.cdc.izgw.v2tofhir.terminology.ISO3166#threeLetterCode(String)
+     */
+    @Deprecated(since = &quot;moved to gov.cdc.izgw.v2tofhir.terminology; use TerminologyMapper&quot;)
     public static String threeLetterCode(String name) {
-<span class="nc" id="L20">        return gov.cdc.izgw.v2tofhir.terminology.ISO3166.threeLetterCode(name);</span>
+<span class="nc" id="L36">        return gov.cdc.izgw.v2tofhir.terminology.ISO3166.threeLetterCode(name);</span>
     }
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.ISO3166#name(String) */
+    /**
+     * Get the ISO-3166 name for the given country name or code.
+     *
+     * @param name  The country name or ISO code
+     * @return      The ISO-3166 country name for the given country
+     * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper#lookupCountry(String, String)} instead.
+     * @see gov.cdc.izgw.v2tofhir.terminology.ISO3166#name(String)
+     */
+    @Deprecated(since = &quot;moved to gov.cdc.izgw.v2tofhir.terminology; use TerminologyMapper&quot;)
     public static String name(String name) {
-<span class="nc" id="L25">        return gov.cdc.izgw.v2tofhir.terminology.ISO3166.name(name);</span>
+<span class="nc" id="L49">        return gov.cdc.izgw.v2tofhir.terminology.ISO3166.name(name);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

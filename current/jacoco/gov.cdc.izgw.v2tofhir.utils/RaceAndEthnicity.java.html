@@ -13,19 +13,45 @@ import org.hl7.fhir.r4.model.Extension;
 public final class RaceAndEthnicity {
     private RaceAndEthnicity() {}
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.RaceAndEthnicity#US_CORE_RACE */
-    public static final String US_CORE_RACE = gov.cdc.izgw.v2tofhir.terminology.RaceAndEthnicity.US_CORE_RACE;
-    /** @see gov.cdc.izgw.v2tofhir.terminology.RaceAndEthnicity#US_CORE_ETHNICITY */
+    /**
+     * Extension URL for US Core Ethnicity.
+     *
+     * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.RaceAndEthnicity#US_CORE_ETHNICITY} directly.
+     * @see gov.cdc.izgw.v2tofhir.terminology.RaceAndEthnicity#US_CORE_ETHNICITY
+     */
     public static final String US_CORE_ETHNICITY = gov.cdc.izgw.v2tofhir.terminology.RaceAndEthnicity.US_CORE_ETHNICITY;
+    /**
+     * Extension URL for US Core Race.
+     *
+     * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.RaceAndEthnicity#US_CORE_RACE} directly.
+     * @see gov.cdc.izgw.v2tofhir.terminology.RaceAndEthnicity#US_CORE_RACE
+     */
+    public static final String US_CORE_RACE = gov.cdc.izgw.v2tofhir.terminology.RaceAndEthnicity.US_CORE_RACE;
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.RaceAndEthnicity#setRaceCode(CodeableConcept, Extension) */
+    /**
+     * Map a CodeableConcept containing a CDC Race Code into a US Core Race extension.
+     *
+     * @param race              The race code provided
+     * @param raceExtension     The extension to populate
+     * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper#mapRace(String, String)} instead.
+     * @see gov.cdc.izgw.v2tofhir.terminology.RaceAndEthnicity#setRaceCode(CodeableConcept, Extension)
+     */
+    @Deprecated(since = &quot;moved to gov.cdc.izgw.v2tofhir.terminology; use TerminologyMapper&quot;)
     public static void setRaceCode(CodeableConcept race, Extension raceExtension) {
-<span class="nc" id="L23">        gov.cdc.izgw.v2tofhir.terminology.RaceAndEthnicity.setRaceCode(race, raceExtension);</span>
-<span class="nc" id="L24">    }</span>
+<span class="nc" id="L41">        gov.cdc.izgw.v2tofhir.terminology.RaceAndEthnicity.setRaceCode(race, raceExtension);</span>
+<span class="nc" id="L42">    }</span>
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.RaceAndEthnicity#setEthnicityCode(CodeableConcept, Extension) */
+    /**
+     * Map a CodeableConcept containing a CDC Ethnicity code into a US Core Ethnicity extension.
+     *
+     * @param ethnicity             The ethnicity code provided
+     * @param ethnicityExtension    The extension to populate
+     * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper#mapEthnicity(String, String)} instead.
+     * @see gov.cdc.izgw.v2tofhir.terminology.RaceAndEthnicity#setEthnicityCode(CodeableConcept, Extension)
+     */
+    @Deprecated(since = &quot;moved to gov.cdc.izgw.v2tofhir.terminology; use TerminologyMapper&quot;)
     public static void setEthnicityCode(CodeableConcept ethnicity, Extension ethnicityExtension) {
-<span class="nc" id="L28">        gov.cdc.izgw.v2tofhir.terminology.RaceAndEthnicity.setEthnicityCode(ethnicity, ethnicityExtension);</span>
-<span class="nc" id="L29">    }</span>
+<span class="nc" id="L54">        gov.cdc.izgw.v2tofhir.terminology.RaceAndEthnicity.setEthnicityCode(ethnicity, ethnicityExtension);</span>
+<span class="nc" id="L55">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
