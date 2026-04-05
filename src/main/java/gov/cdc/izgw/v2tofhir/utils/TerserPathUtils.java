@@ -14,6 +14,8 @@ import ca.uhn.hl7v2.model.Type;
  * HAPI V2 Terser and FhirPath paths (as applied over V2 models). 
  */
 public class TerserPathUtils {
+	private static final String TERSER_PATH_SEP = "/";
+
 	private TerserPathUtils() {}
 	/**
 	 * Convert a FhirPath to a TerserPath
@@ -21,9 +23,9 @@ public class TerserPathUtils {
 	 * @return	A Terser path representation
 	 */
 	public static String fhirPathToTerserPath(String path) {
-		path = "/" + path;
+		path = TERSER_PATH_SEP + path;
 		// Replace . with /
-		path = path.replace(".", "/");
+		path = path.replace(".", TERSER_PATH_SEP);
 		while (path.contains("[")) {
 			String before = StringUtils.substringBefore(path, "[").trim();
 			String inside = StringUtils.substringBetween(path, "[", "]").trim();
@@ -51,7 +53,7 @@ public class TerserPathUtils {
 		}
 		Structure[] children = g.getAll(myName);
 		for (myRep = 0; myRep < children.length; myRep++) {
-			String path = getTerserPath(g) + "/" + myName;
+			String path = getTerserPath(g) + TERSER_PATH_SEP + myName;
 			if (children[myRep] == s) {
 				if (myRep == 0) {
 					return path;
@@ -61,7 +63,7 @@ public class TerserPathUtils {
 			}
 		}
 		if (s instanceof Segment) {
-			return g.getName() + "/" + myName;
+			return g.getName() + TERSER_PATH_SEP + myName;
 		}
 		throw new HL7Exception("Cannot find " + s.getName() + " in " + g.getName());
 	}
@@ -73,11 +75,11 @@ public class TerserPathUtils {
 	 */
 	public static String terserPathToFhirPath(String path) {
 		// Remove initial / 
-		if (path.startsWith("/")) {
+		if (path.startsWith(TERSER_PATH_SEP)) {
 			path = path.substring(1);
 		}
 		// Replace / with .
-		path = path.replace("/", ".");
+		path = path.replace(TERSER_PATH_SEP, ".");
 		// Replace ( and ) with [ and ]
 		while (path.contains("(")) {
 			String before = StringUtils.substringBefore(path, "(").trim();
@@ -106,32 +108,35 @@ public class TerserPathUtils {
 			} else if (StringUtils.isNotEmpty(parts[i])) {
 				numbers[i] = StringUtils.isNumeric(parts[i]) ? Integer.parseInt(parts[i]): -1;
 			} 
-			switch (i) {
-			case 0: // Segment name
-				fhirPath.append(parts[0].toUpperCase());
-				break;
-			case 1, 3: // Repetition number
-				if (numbers[i] > 0) {
-					fhirPath.append("[").append(numbers[i]).append("]");
-				}
-				break;
-			case 2: // Field position
-				fhirPath.append(".").append(parts[2]);
-				break;
-			case 4: // Component or subcomponent number
-				// Load segment from v2.8.1 structures.  If that fails, load from 2.5.1
-				type = ParserUtils.getFieldType(parts[0], numbers[2]);
-				fhirPath.append(type == null ? "UNKNOWN" : type.getName()).append(numbers[i]);
-				break;
-			case 5:
-				type = ParserUtils.getComponent(type, numbers[i]);
-				fhirPath.append(type == null ? "UNKNOWN" : type.getName()).append(numbers[i]);
-				break;
-			default:
-				break;
-			}
+			updateFhirPath(parts, numbers, type, fhirPath, i);
 		}
 		return fhirPath.toString();
+	}
+	private static void updateFhirPath(String[] parts, int[] numbers, Type type, StringBuilder fhirPath, int i) {
+		switch (i) {
+		case 0: // Segment name
+			fhirPath.append(parts[0].toUpperCase());
+			break;
+		case 1, 3: // Repetition number
+			if (numbers[i] > 0) {
+				fhirPath.append("[").append(numbers[i]).append("]");
+			}
+			break;
+		case 2: // Field position
+			fhirPath.append(".").append(parts[2]);
+			break;
+		case 4: // Component or subcomponent number
+			// Load segment from v2.8.1 structures.  If that fails, load from 2.5.1
+			type = ParserUtils.getFieldType(parts[0], numbers[2]);
+			fhirPath.append(type == null ? "UNKNOWN" : type.getName()).append(numbers[i]);
+			break;
+		case 5:
+			type = ParserUtils.getComponent(type, numbers[i]);
+			fhirPath.append(type == null ? "UNKNOWN" : type.getName()).append(numbers[i]);
+			break;
+		default:
+			break;
+		}
 	}
 
 }
