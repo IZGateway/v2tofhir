@@ -147,3 +147,10 @@
 - [x] 8.1 Add `archunit` dependency to `pom.xml` (test scope): `com.tngtech.archunit:archunit-junit5`
 - [x] 8.2 Create `TerminologyPackageBoundaryTests` in `src/test/java`: assert no class outside `gov.cdc.izgw.v2tofhir.terminology` imports `Systems`, `Mapping`, `Units`, `ISO3166`, or `RaceAndEthnicity` from the `terminology` package, with the exception of the five forwarding stubs in `gov.cdc.izgw.v2tofhir.utils`
 - [x] 8.3 Run `TerminologyPackageBoundaryTests` and confirm it passes after all migrations in task group 7
+
+## 9. `TerminologyMapperFactory` — Default Supplier Override
+
+- [x] 9.1 Add `static void setDefaultSupplier(Supplier<TerminologyMapper> supplier)` to `TerminologyMapperFactory`; implementation: if the `INSTANCE` `AtomicReference` already holds a resolved value, log a `WARN` and return (no-op); otherwise store the supplier for use when `V2TOFHIR_TERMINOLOGY_MAPPER` is absent
+- [x] 9.2 Update `resolve(String className)` to call `defaultSupplier.get()` instead of `new DefaultTerminologyMapper()` when `className` is null or blank, so that a supplier registered via `setDefaultSupplier` takes effect; error-fallback paths also use `defaultSupplier.get()`
+- [x] 9.3 Write unit tests: (a) supplier is called when env var is absent and supplier was pre-registered; (b) supplier is ignored when env var is set and names a valid class; (c) second call to `setDefaultSupplier` after resolution is a no-op and logs WARN; (d) `resetForTesting()` restores the default supplier; existing 10 tests continue to pass (14 total)
+- [x] 9.4 Update `resetForTesting()` to also reset the stored supplier to `DefaultTerminologyMapper::new` so that test isolation is maintained

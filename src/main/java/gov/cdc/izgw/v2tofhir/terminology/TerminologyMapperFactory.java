@@ -1,6 +1,7 @@
 package gov.cdc.izgw.v2tofhir.terminology;
 
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -35,6 +36,16 @@ public final class TerminologyMapperFactory {
     public static final String ENV_VAR = "V2TOFHIR_TERMINOLOGY_MAPPER";
 
     private static final AtomicReference<TerminologyMapper> INSTANCE = new AtomicReference<>();
+
+    /**
+     * Supplier used to create the default {@link TerminologyMapper} when
+     * {@code V2TOFHIR_TERMINOLOGY_MAPPER} is not set. Defaults to
+     * {@link DefaultTerminologyMapper#DefaultTerminologyMapper() new DefaultTerminologyMapper()}.
+     * Downstream libraries that embed v2tofhir and provide their own
+     * {@link TerminologyMapper} extension can replace this via
+     * {@link #setDefaultSupplier(Supplier)} before the first call to {@link #get()}.
+     */
+    private static volatile Supplier<TerminologyMapper> defaultSupplier = DefaultTerminologyMapper::new;
 
     private TerminologyMapperFactory() {
         // Utility class — not instantiable
@@ -85,12 +96,47 @@ public final class TerminologyMapperFactory {
     /**
      * Clears the cached {@link TerminologyMapper} instance so that the next call to
      * {@link #get()} will re-read the environment variable and resolve a new instance.
+     * Also resets the {@link #defaultSupplier} to {@link DefaultTerminologyMapper#DefaultTerminologyMapper()}
+     * so that a supplier registered by a previous test does not leak into the next test.
      *
      * <p><strong>This method is intended for use in tests only.</strong> Do not call it in
      * production code.</p>
      */
     static void resetForTesting() {
         INSTANCE.set(null);
+        defaultSupplier = DefaultTerminologyMapper::new;
+    }
+
+    // -------------------------------------------------------------------------
+    // Public configuration API
+    // -------------------------------------------------------------------------
+
+    /**
+     * Registers a supplier to use as the default {@link TerminologyMapper} when
+     * {@code V2TOFHIR_TERMINOLOGY_MAPPER} is not set.
+     *
+     * <p>Downstream libraries that embed v2tofhir and provide their own
+     * {@link TerminologyMapper} extension should call this during their own initialization
+     * so that {@link #get()} returns their implementation without requiring the end-user to
+     * configure any environment variable.</p>
+     *
+     * <p>If {@link #get()} has already resolved and cached an instance this method is a
+     * no-op (with a {@code WARN} log entry). The last supplier set before the first
+     * {@link #get()} call takes effect; use {@link #resetForTesting()} in tests to restore
+     * a clean state.</p>
+     *
+     * @param supplier a non-null supplier that produces the desired default mapper
+     * @throws IllegalArgumentException if {@code supplier} is {@code null}
+     */
+    public static void setDefaultSupplier(Supplier<TerminologyMapper> supplier) {
+        if (supplier == null) {
+            throw new IllegalArgumentException("supplier must not be null");
+        }
+        if (INSTANCE.get() != null) {
+            log.warn("setDefaultSupplier called after TerminologyMapperFactory has already resolved its instance; ignoring");
+            return;
+        }
+        defaultSupplier = supplier;
     }
 
     // -------------------------------------------------------------------------
@@ -99,9 +145,9 @@ public final class TerminologyMapperFactory {
 
     private static TerminologyMapper resolve(String className) {
         if (className == null || className.isBlank()) {
-            log.info("{}={} — using DefaultTerminologyMapper", ENV_VAR,
+            log.info("{}={} — using supplier-provided TerminologyMapper", ENV_VAR,
                     className == null ? "(not set)" : "(blank)");
-            return new DefaultTerminologyMapper();
+            return defaultSupplier.get();
         }
 
         log.info("{}={} — attempting to load custom TerminologyMapper", ENV_VAR, className);
@@ -127,6 +173,6 @@ public final class TerminologyMapperFactory {
             log.warn("{} = '{}': constructor threw {} ({}) — " + FALLING_BACK, ENV_VAR, className,
                     e.getClass().getSimpleName(), e.getMessage());
         }
-        return new DefaultTerminologyMapper();
+        return defaultSupplier.get();
     }
 }

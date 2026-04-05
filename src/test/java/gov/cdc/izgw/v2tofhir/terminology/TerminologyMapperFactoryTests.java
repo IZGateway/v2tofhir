@@ -128,6 +128,69 @@ class TerminologyMapperFactoryTests {
         assert first != second : "After resetForTesting(), a new instance should be created";
     }
 
+    // -------------------------------------------------------------------------
+    // setDefaultSupplier — task 9 tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    void setDefaultSupplier_usedWhenEnvVarAbsent() {
+        // Register a supplier that returns a ValidCustomMapper before get() is called
+        TerminologyMapperFactory.setDefaultSupplier(ValidCustomMapper::new);
+        TerminologyMapper mapper = TerminologyMapperFactory.get();
+        assertNotNull(mapper);
+        assertInstanceOf(ValidCustomMapper.class, mapper,
+                "get() should return the supplier-provided type when env var is absent");
+    }
+
+    @Test
+    void setDefaultSupplier_ignoredWhenClassNameProvided() {
+        // When loadMapper is given an explicit class name the supplier must NOT be used
+        TerminologyMapperFactory.setDefaultSupplier(ValidCustomMapper::new);
+        TerminologyMapper mapper = TerminologyMapperFactory.loadMapper(
+                ValidCustomMapper.class.getName());
+        assertNotNull(mapper);
+        assertInstanceOf(ValidCustomMapper.class, mapper,
+                "loadMapper with a valid class name should return that class regardless of supplier");
+        // The instance comes from the class name, not the supplier — both happen to be
+        // ValidCustomMapper here, so we verify by giving a *different* supplier and checking
+        // the correct class is still used
+        TerminologyMapperFactory.resetForTesting();
+        TerminologyMapperFactory.setDefaultSupplier(DefaultTerminologyMapper::new);
+        TerminologyMapper mapper2 = TerminologyMapperFactory.loadMapper(
+                ValidCustomMapper.class.getName());
+        assertInstanceOf(ValidCustomMapper.class, mapper2,
+                "loadMapper with a valid class name ignores the default supplier");
+    }
+
+    @Test
+    void setDefaultSupplier_afterResolution_isNoOp() {
+        // Resolve the instance first (with the default supplier → DefaultTerminologyMapper)
+        TerminologyMapper first = TerminologyMapperFactory.get();
+        assertInstanceOf(DefaultTerminologyMapper.class, first);
+
+        // Attempting to install a new supplier after resolution must be a no-op
+        TerminologyMapperFactory.setDefaultSupplier(ValidCustomMapper::new);
+
+        // The cached instance must not change
+        TerminologyMapper second = TerminologyMapperFactory.get();
+        assertSame(first, second,
+                "setDefaultSupplier after resolution must not replace the cached instance");
+        assertInstanceOf(DefaultTerminologyMapper.class, second,
+                "Cached instance type must remain DefaultTerminologyMapper");
+    }
+
+    @Test
+    void resetForTesting_resetSupplierToDefault() {
+        // Register a custom supplier, resolve, reset, then verify default is restored
+        TerminologyMapperFactory.setDefaultSupplier(ValidCustomMapper::new);
+        TerminologyMapperFactory.resetForTesting();
+
+        // After reset the supplier is back to DefaultTerminologyMapper::new
+        TerminologyMapper mapper = TerminologyMapperFactory.get();
+        assertInstanceOf(DefaultTerminologyMapper.class, mapper,
+                "resetForTesting() must restore the default supplier");
+    }
+
     // =========================================================================
     // Test helper classes (must be public / package-accessible for Class.forName
     // + getDeclaredConstructor().newInstance() to work)
