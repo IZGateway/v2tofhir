@@ -69,8 +69,8 @@ HL7 Version 2 to FHIR Conversion,com.ainq.fhir.utils,PathUtils,401,522,51,47,85,
 HL7 Version 2 to FHIR Conversion,com.ainq.fhir.utils,YamlUtils,249,24,9,0,58,7,15,2,9,2
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.terminology,RaceAndEthnicity,108,434,42,75,25,100,39,30,0,10
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.terminology,DemographicsMapper,4,0,0,0,2,0,2,0,2,0
-HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.terminology,TranslationResult,11,23,0,0,2,2,2,2,2,2
-HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.terminology,ConceptTranslator,4,0,0,0,2,0,2,0,2,0
+HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.terminology,TranslationResult,3,31,0,0,1,3,1,3,1,3
+HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.terminology,ConceptTranslator,4,68,0,14,2,13,2,8,2,1
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.terminology,NamingSystemResolver,30,0,6,0,10,0,8,0,5,0
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.terminology,Mapping,906,1028,112,102,194,236,86,72,20,31
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.terminology,TerminologyMapper,2,0,0,0,1,0,1,0,1,0
