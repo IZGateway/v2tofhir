@@ -79,7 +79,7 @@ HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.terminology,DisplayNameRe
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.terminology,UnitMapper,2,0,0,0,1,0,1,0,1,0
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.terminology,CodeValidator,2,0,0,0,1,0,1,0,1,0
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.terminology,TerminologyLoader,13,0,0,0,5,0,5,0,5,0
-HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.terminology,TerminologyMapperFactory,45,121,0,10,6,31,0,10,0,5
+HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.terminology,TerminologyMapperFactory,50,137,1,13,7,39,1,12,0,6
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.terminology,GeoMapper,4,0,0,0,2,0,2,0,2,0
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.terminology,ISO3166,14,4470,2,8,2,12,2,8,1,4
 HL7 Version 2 to FHIR Conversion,gov.cdc.izgw.v2tofhir.terminology,DefaultTerminologyMapper,24,334,8,27,5,74,7,36,0,24

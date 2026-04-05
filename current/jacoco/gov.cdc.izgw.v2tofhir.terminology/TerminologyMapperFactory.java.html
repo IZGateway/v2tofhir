@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TerminologyMapperFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">gov.cdc.izgw.v2tofhir.terminology</a> &gt; <span class="el_source">TerminologyMapperFactory.java</span></div><h1>TerminologyMapperFactory.java</h1><pre class="source lang-java linenums">package gov.cdc.izgw.v2tofhir.terminology;
 
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -26,7 +27,7 @@ import lombok.extern.slf4j.Slf4j;
  * @see TerminologyMapper
  * @see DefaultTerminologyMapper
  */
-<span class="fc" id="L29">@Slf4j</span>
+<span class="fc" id="L30">@Slf4j</span>
 public final class TerminologyMapperFactory {
 
     private static final String FALLING_BACK = &quot;falling back to DefaultTerminologyMapper&quot;;
@@ -34,7 +35,17 @@ public final class TerminologyMapperFactory {
 	/** Environment variable that names the {@link TerminologyMapper} implementation to use. */
     public static final String ENV_VAR = &quot;V2TOFHIR_TERMINOLOGY_MAPPER&quot;;
 
-<span class="fc" id="L37">    private static final AtomicReference&lt;TerminologyMapper&gt; INSTANCE = new AtomicReference&lt;&gt;();</span>
+<span class="fc" id="L38">    private static final AtomicReference&lt;TerminologyMapper&gt; INSTANCE = new AtomicReference&lt;&gt;();</span>
+
+    /**
+     * Supplier used to create the default {@link TerminologyMapper} when
+     * {@code V2TOFHIR_TERMINOLOGY_MAPPER} is not set. Defaults to
+     * {@link DefaultTerminologyMapper#DefaultTerminologyMapper() new DefaultTerminologyMapper()}.
+     * Downstream libraries that embed v2tofhir and provide their own
+     * {@link TerminologyMapper} extension can replace this via
+     * {@link #setDefaultSupplier(Supplier)} before the first call to {@link #get()}.
+     */
+<span class="fc" id="L48">    private static volatile Supplier&lt;TerminologyMapper&gt; defaultSupplier = DefaultTerminologyMapper::new;</span>
 
     private TerminologyMapperFactory() {
         // Utility class — not instantiable
@@ -55,13 +66,13 @@ public final class TerminologyMapperFactory {
      * @return the shared {@link TerminologyMapper}; never {@code null}
      */
     public static TerminologyMapper get() {
-<span class="fc" id="L58">        TerminologyMapper existing = INSTANCE.get();</span>
-<span class="fc bfc" id="L59" title="All 2 branches covered.">        if (existing != null) {</span>
-<span class="fc" id="L60">            return existing;</span>
+<span class="fc" id="L69">        TerminologyMapper existing = INSTANCE.get();</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">        if (existing != null) {</span>
+<span class="fc" id="L71">            return existing;</span>
         }
-<span class="fc" id="L62">        TerminologyMapper resolved = loadMapper(System.getenv(ENV_VAR));</span>
-<span class="fc" id="L63">        INSTANCE.compareAndSet(null, resolved);</span>
-<span class="fc" id="L64">        return INSTANCE.get();</span>
+<span class="fc" id="L73">        TerminologyMapper resolved = loadMapper(System.getenv(ENV_VAR));</span>
+<span class="fc" id="L74">        INSTANCE.compareAndSet(null, resolved);</span>
+<span class="fc" id="L75">        return INSTANCE.get();</span>
     }
 
     /**
@@ -79,55 +90,90 @@ public final class TerminologyMapperFactory {
      * @return a {@link TerminologyMapper}; never {@code null}
      */
     static TerminologyMapper loadMapper(String className) {
-<span class="fc" id="L82">        return resolve(className);</span>
+<span class="fc" id="L93">        return resolve(className);</span>
     }
 
     /**
      * Clears the cached {@link TerminologyMapper} instance so that the next call to
      * {@link #get()} will re-read the environment variable and resolve a new instance.
+     * Also resets the {@link #defaultSupplier} to {@link DefaultTerminologyMapper#DefaultTerminologyMapper()}
+     * so that a supplier registered by a previous test does not leak into the next test.
      *
      * &lt;p&gt;&lt;strong&gt;This method is intended for use in tests only.&lt;/strong&gt; Do not call it in
      * production code.&lt;/p&gt;
      */
     static void resetForTesting() {
-<span class="fc" id="L93">        INSTANCE.set(null);</span>
-<span class="fc" id="L94">    }</span>
+<span class="fc" id="L106">        INSTANCE.set(null);</span>
+<span class="fc" id="L107">        defaultSupplier = DefaultTerminologyMapper::new;</span>
+<span class="fc" id="L108">    }</span>
+
+    // -------------------------------------------------------------------------
+    // Public configuration API
+    // -------------------------------------------------------------------------
+
+    /**
+     * Registers a supplier to use as the default {@link TerminologyMapper} when
+     * {@code V2TOFHIR_TERMINOLOGY_MAPPER} is not set.
+     *
+     * &lt;p&gt;Downstream libraries that embed v2tofhir and provide their own
+     * {@link TerminologyMapper} extension should call this during their own initialization
+     * so that {@link #get()} returns their implementation without requiring the end-user to
+     * configure any environment variable.&lt;/p&gt;
+     *
+     * &lt;p&gt;If {@link #get()} has already resolved and cached an instance this method is a
+     * no-op (with a {@code WARN} log entry). The last supplier set before the first
+     * {@link #get()} call takes effect; use {@link #resetForTesting()} in tests to restore
+     * a clean state.&lt;/p&gt;
+     *
+     * @param supplier a non-null supplier that produces the desired default mapper
+     * @throws IllegalArgumentException if {@code supplier} is {@code null}
+     */
+    public static void setDefaultSupplier(Supplier&lt;TerminologyMapper&gt; supplier) {
+<span class="pc bpc" id="L132" title="1 of 2 branches missed.">        if (supplier == null) {</span>
+<span class="nc" id="L133">            throw new IllegalArgumentException(&quot;supplier must not be null&quot;);</span>
+        }
+<span class="fc bfc" id="L135" title="All 2 branches covered.">        if (INSTANCE.get() != null) {</span>
+<span class="fc" id="L136">            log.warn(&quot;setDefaultSupplier called after TerminologyMapperFactory has already resolved its instance; ignoring&quot;);</span>
+<span class="fc" id="L137">            return;</span>
+        }
+<span class="fc" id="L139">        defaultSupplier = supplier;</span>
+<span class="fc" id="L140">    }</span>
 
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------
 
     private static TerminologyMapper resolve(String className) {
-<span class="fc bfc" id="L101" title="All 4 branches covered.">        if (className == null || className.isBlank()) {</span>
-<span class="fc" id="L102">            log.info(&quot;{}={} — using DefaultTerminologyMapper&quot;, ENV_VAR,</span>
-<span class="fc bfc" id="L103" title="All 2 branches covered.">                    className == null ? &quot;(not set)&quot; : &quot;(blank)&quot;);</span>
-<span class="fc" id="L104">            return new DefaultTerminologyMapper();</span>
+<span class="fc bfc" id="L147" title="All 4 branches covered.">        if (className == null || className.isBlank()) {</span>
+<span class="fc" id="L148">            log.info(&quot;{}={} — using supplier-provided TerminologyMapper&quot;, ENV_VAR,</span>
+<span class="fc bfc" id="L149" title="All 2 branches covered.">                    className == null ? &quot;(not set)&quot; : &quot;(blank)&quot;);</span>
+<span class="fc" id="L150">            return defaultSupplier.get();</span>
         }
 
-<span class="fc" id="L107">        log.info(&quot;{}={} — attempting to load custom TerminologyMapper&quot;, ENV_VAR, className);</span>
+<span class="fc" id="L153">        log.info(&quot;{}={} — attempting to load custom TerminologyMapper&quot;, ENV_VAR, className);</span>
         try {
-<span class="fc" id="L109">            Class&lt;?&gt; clazz = Class.forName(className);</span>
-<span class="fc bfc" id="L110" title="All 2 branches covered.">            if (!TerminologyMapper.class.isAssignableFrom(clazz)) {</span>
-<span class="fc" id="L111">                log.warn(&quot;{} = '{}': class does not implement TerminologyMapper — &quot; + FALLING_BACK, ENV_VAR, className);</span>
-<span class="fc" id="L112">                return new DefaultTerminologyMapper();</span>
+<span class="fc" id="L155">            Class&lt;?&gt; clazz = Class.forName(className);</span>
+<span class="fc bfc" id="L156" title="All 2 branches covered.">            if (!TerminologyMapper.class.isAssignableFrom(clazz)) {</span>
+<span class="fc" id="L157">                log.warn(&quot;{} = '{}': class does not implement TerminologyMapper — &quot; + FALLING_BACK, ENV_VAR, className);</span>
+<span class="fc" id="L158">                return new DefaultTerminologyMapper();</span>
             }
-<span class="fc" id="L114">            TerminologyMapper mapper = (TerminologyMapper) clazz.getDeclaredConstructor()</span>
-<span class="fc" id="L115">                    .newInstance();</span>
-<span class="fc" id="L116">            log.info(&quot;Loaded custom TerminologyMapper: {}&quot;, className);</span>
-<span class="fc" id="L117">            return mapper;</span>
-<span class="fc" id="L118">        } catch (ClassNotFoundException e) {</span>
-<span class="fc" id="L119">            log.warn(&quot;{} = '{}': class not found on classpath — &quot; + FALLING_BACK, ENV_VAR, className);</span>
-<span class="nc" id="L120">        } catch (ClassCastException e) {</span>
-<span class="nc" id="L121">            log.warn(&quot;{} = '{}': class does not implement TerminologyMapper ({}) — &quot; + FALLING_BACK, ENV_VAR, className,</span>
-<span class="nc" id="L122">                    e.getMessage());</span>
-<span class="fc" id="L123">        } catch (ReflectiveOperationException e) {</span>
-<span class="fc" id="L124">            log.warn(&quot;{} = '{}': could not instantiate class ({}) — &quot; + FALLING_BACK, ENV_VAR, className,</span>
-<span class="fc" id="L125">                    e.getMessage());</span>
-<span class="nc" id="L126">        } catch (RuntimeException e) {</span>
-<span class="nc" id="L127">            log.warn(&quot;{} = '{}': constructor threw {} ({}) — &quot; + FALLING_BACK, ENV_VAR, className,</span>
-<span class="nc" id="L128">                    e.getClass().getSimpleName(), e.getMessage());</span>
-<span class="pc" id="L129">        }</span>
-<span class="fc" id="L130">        return new DefaultTerminologyMapper();</span>
+<span class="fc" id="L160">            TerminologyMapper mapper = (TerminologyMapper) clazz.getDeclaredConstructor()</span>
+<span class="fc" id="L161">                    .newInstance();</span>
+<span class="fc" id="L162">            log.info(&quot;Loaded custom TerminologyMapper: {}&quot;, className);</span>
+<span class="fc" id="L163">            return mapper;</span>
+<span class="fc" id="L164">        } catch (ClassNotFoundException e) {</span>
+<span class="fc" id="L165">            log.warn(&quot;{} = '{}': class not found on classpath — &quot; + FALLING_BACK, ENV_VAR, className);</span>
+<span class="nc" id="L166">        } catch (ClassCastException e) {</span>
+<span class="nc" id="L167">            log.warn(&quot;{} = '{}': class does not implement TerminologyMapper ({}) — &quot; + FALLING_BACK, ENV_VAR, className,</span>
+<span class="nc" id="L168">                    e.getMessage());</span>
+<span class="fc" id="L169">        } catch (ReflectiveOperationException e) {</span>
+<span class="fc" id="L170">            log.warn(&quot;{} = '{}': could not instantiate class ({}) — &quot; + FALLING_BACK, ENV_VAR, className,</span>
+<span class="fc" id="L171">                    e.getMessage());</span>
+<span class="nc" id="L172">        } catch (RuntimeException e) {</span>
+<span class="nc" id="L173">            log.warn(&quot;{} = '{}': constructor threw {} ({}) — &quot; + FALLING_BACK, ENV_VAR, className,</span>
+<span class="nc" id="L174">                    e.getClass().getSimpleName(), e.getMessage());</span>
+<span class="pc" id="L175">        }</span>
+<span class="fc" id="L176">        return defaultSupplier.get();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
