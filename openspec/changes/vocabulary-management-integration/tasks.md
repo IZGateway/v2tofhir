@@ -154,3 +154,10 @@
 - [x] 9.2 Update `resolve(String className)` to call `defaultSupplier.get()` instead of `new DefaultTerminologyMapper()` when `className` is null or blank, so that a supplier registered via `setDefaultSupplier` takes effect; error-fallback paths also use `defaultSupplier.get()`
 - [x] 9.3 Write unit tests: (a) supplier is called when env var is absent and supplier was pre-registered; (b) supplier is ignored when env var is set and names a valid class; (c) second call to `setDefaultSupplier` after resolution is a no-op and logs WARN; (d) `resetForTesting()` restores the default supplier; existing 10 tests continue to pass (14 total)
 - [x] 9.4 Update `resetForTesting()` to also reset the stored supplier to `DefaultTerminologyMapper::new` so that test isolation is maintained
+
+## 10. `ConceptTranslator` — `mapCodeableConcept` Default Method
+
+- [x] 10.1 Add `default CodeType mapCodeableConcept(String mappingName, CodeableConcept cc)` to the `ConceptTranslator` interface. Implement the two-pass algorithm: Pass 1 iterates all codings calling `mapCode(mappingName, coding)` and returns the first result where `TranslationResult.exact() == true`; Pass 2 returns the first non-empty result (pass-through); Pass 3 returns `cc.getCodingFirstRep().getCodeElement()`. Null/empty `CodeableConcept` returns `null`.
+- [x] 10.2 Verify `DefaultTerminologyMapper` inherits the default correctly (no override needed unless the static `Mapping` layer needs special handling for multi-coding lookup).
+- [x] 10.3 Write unit tests: (a) CodeableConcept with no recognized coding → Pass 3 returns first code unchanged; (b) CodeableConcept with one pass-through coding and one explicit match → explicit match wins (Pass 1); (c) CodeableConcept with only pass-through codings → first pass-through returned (Pass 2); (d) null/empty CodeableConcept → null; (e) ConceptMap absent → Pass 3 fallback.
+- [x] 10.4 Confirm all existing tests still pass (no regression).

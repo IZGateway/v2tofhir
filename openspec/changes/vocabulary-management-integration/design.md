@@ -75,6 +75,20 @@ The move is a package rename — all intra-package references are updated in the
 
 **Alternative considered:** Leave the static utilities in `utils` and only put interfaces + `DefaultTerminologyMapper` in `terminology`. Rejected — `DefaultTerminologyMapper` would need cross-package access to `utils` internals, and the package split would undercut the ability to make the statics package-private in the future.
 
+### 8. `ConceptTranslator.mapCodeableConcept` — multi-coding, multi-system lookup
+
+**Decision:** Add `default CodeType mapCodeableConcept(String mappingName, CodeableConcept cc)` to the `ConceptTranslator` sub-interface. The method iterates the codings of a `CodeableConcept` against a named ConceptMap using a two-pass strategy that correctly distinguishes explicit matches from `unmapped.mode = "provided"` pass-throughs:
+
+- **Pass 1** — iterate all codings; call `mapCode(mappingName, coding)`; return the first result where `TranslationResult.exact() == true` (explicit ConceptMap entry hit).
+- **Pass 2** — iterate all codings again; return the first non-empty `TranslationResult` regardless of `exact` (accepts a pass-through if no explicit match exists anywhere in the concept).
+- **Pass 3** — return `cc.getCodingFirstRep().getCodeElement()` unchanged as a last resort.
+
+**Rationale:** Single-pass acceptance of the first non-empty result would always return a code when `unmapped.mode = "provided"` is in effect, because every coding produces a result. The `TranslationResult.exact()` flag (already present on the immutable record) is the correct discriminator: it is `true` only when the source code was explicitly listed in a ConceptMap group element, and `false` when the result came from an `unmapped` clause. The two-pass design maximises the chance that an explicitly mapped coding is preferred over an unmapped one, even when the explicitly mapped coding is not first in the list.
+
+**Use in downstream libraries:** A downstream library that extends `CdaTerminologyMapper` (or any `TerminologyMapper` subclass) can call `mapCodeableConcept("my-priority-" + resourceType.getSimpleName(), cc)` to route per-resource-type priority ConceptMaps through the same two-pass logic, with sparse override via the `unmapped.other-map` chain described in that library's own design.
+
+**Alternative considered:** A new `translateCodeableConcept` method returning `Optional<TranslationResult>`. Discarded — callers need a `CodeType` directly; wrapping in Optional adds noise at every call site for a method whose Pass 3 always produces a value.
+
 ## Risks / Trade-offs
 
 **Risk: Segment parsers not yet updated call statics alongside new mapper calls** → Mitigation: Migration is done in a single pass per file in the tasks phase; CI import checks (or a checkstyle rule forbidding direct import of the statics outside `terminology`) prevent regression.
