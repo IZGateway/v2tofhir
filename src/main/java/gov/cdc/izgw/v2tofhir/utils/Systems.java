@@ -1,7 +1,6 @@
 package gov.cdc.izgw.v2tofhir.utils;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.hl7.fhir.r4.model.NamingSystem;
@@ -141,63 +140,115 @@ public final class Systems {
     /** @see gov.cdc.izgw.v2tofhir.terminology.Systems#ID_TYPES */
     public static final Set<String> ID_TYPES = gov.cdc.izgw.v2tofhir.terminology.Systems.ID_TYPES;
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Systems#getCodeSystemAliases()
+    /**
+     * Get a list of aliases known by the V2 Converter for different coding and identifier systems.
+     *
+     * <p>Returns a list of string lists containing aliases for systems. For each system,
+     * the FHIR preferred system URI is first in its sublist, the commonly used V2 namespace
+     * is second, and the OID for the system is last.</p>
+     *
+     * @return  A list of string lists containing aliases for a coding or identifier system
+     * @see gov.cdc.izgw.v2tofhir.terminology.Systems#getCodeSystemAliases()
      * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper} instead. */
     @Deprecated(since = "use TerminologyMapper")
     public static List<List<String>> getCodeSystemAliases() {
         return gov.cdc.izgw.v2tofhir.terminology.Systems.getCodeSystemAliases();
     }
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Systems#addNamingSystem(String, String...)
+    /**
+     * Add a naming system to the map of known systems.
+     *
+     * <p>The first entry in {@code list} must be the URI for the system.</p>
+     *
+     * @param name  The name of the system
+     * @param list  A list of strings containing aliases for a coding or identifier system;
+     *              the first entry must be the URI
+     * @see gov.cdc.izgw.v2tofhir.terminology.Systems#addNamingSystem(String, String...)
      * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper} instead. */
     @Deprecated(since = "use TerminologyMapper")
     public static void addNamingSystem(String name, String... list) {
         gov.cdc.izgw.v2tofhir.terminology.Systems.addNamingSystem(name, list);
     }
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Systems#createNamingSystem(String, String)
+    /**
+     * Create a naming system with the given URI and name.
+     *
+     * @param uri   The URI for the naming system
+     * @param name  A common name for the naming system
+     * @return      The created naming system
+     * @see gov.cdc.izgw.v2tofhir.terminology.Systems#createNamingSystem(String, String)
      * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper} instead. */
     @Deprecated(since = "use TerminologyMapper")
     public static NamingSystem createNamingSystem(String uri, String name) {
         return gov.cdc.izgw.v2tofhir.terminology.Systems.createNamingSystem(uri, name);
     }
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Systems#updateNamingSystem(NamingSystem, String)
+    /**
+     * Add a unique id to a naming system if it does not already exist.
+     *
+     * @param ns    The naming system to update
+     * @param uid   The unique id to add
+     * @see gov.cdc.izgw.v2tofhir.terminology.Systems#updateNamingSystem(NamingSystem, String)
      * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper} instead. */
     @Deprecated(since = "use TerminologyMapper")
     public static void updateNamingSystem(NamingSystem ns, String uid) {
         gov.cdc.izgw.v2tofhir.terminology.Systems.updateNamingSystem(ns, uid);
     }
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Systems#toOid(String)
+    /**
+     * Given a URI, get the associated OID (without the {@code urn:oid:} prefix).
+     *
+     * @param uri   The URI to look up
+     * @return      The associated OID, or {@code null} if none is known
+     * @see gov.cdc.izgw.v2tofhir.terminology.Systems#toOid(String)
      * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper#toOid(String)} instead. */
     @Deprecated(since = "use TerminologyMapper")
     public static String toOid(String uri) {
         return gov.cdc.izgw.v2tofhir.terminology.Systems.toOid(uri);
     }
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Systems#toTextName(String)
+    /**
+     * Get the commonly used V2 name for a coding or identifier system.
+     *
+     * @param uri   The system URI
+     * @return      The commonly used V2 name, or {@code null} if the name is unknown
+     * @see gov.cdc.izgw.v2tofhir.terminology.Systems#toTextName(String)
      * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper} instead. */
     @Deprecated(since = "use TerminologyMapper")
     public static String toTextName(String uri) {
         return gov.cdc.izgw.v2tofhir.terminology.Systems.toTextName(uri);
     }
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Systems#toUri(String)
+    /**
+     * Given an OID (with or without the {@code urn:oid:} prefix), get the associated URI.
+     *
+     * @param oid   The OID to look up
+     * @return      The associated URI, or {@code null} if none is known
+     * @see gov.cdc.izgw.v2tofhir.terminology.Systems#toUri(String)
      * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper#toUri(String)} instead. */
     @Deprecated(since = "use TerminologyMapper")
     public static String toUri(String oid) {
         return gov.cdc.izgw.v2tofhir.terminology.Systems.toUri(oid);
     }
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Systems#getSystemNames(String)
+    /**
+     * Get all aliases by which the given system is known.
+     *
+     * @param system    The system URI, OID, or name to look up
+     * @return          A list of names the system is known by
+     * @see gov.cdc.izgw.v2tofhir.terminology.Systems#getSystemNames(String)
      * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper} instead. */
     @Deprecated(since = "use TerminologyMapper")
     public static List<String> getSystemNames(String system) {
         return gov.cdc.izgw.v2tofhir.terminology.Systems.getSystemNames(system);
     }
 
-    /** @see gov.cdc.izgw.v2tofhir.terminology.Systems#getNamingSystem(String)
+    /**
+     * Get the {@link NamingSystem} for a given name, system URI, or other alias.
+     *
+     * @param system    The search value (name, URI, or OID)
+     * @return          The NamingSystem, or {@code null} if not found
+     * @see gov.cdc.izgw.v2tofhir.terminology.Systems#getNamingSystem(String)
      * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper#getNamingSystem(String)} instead. */
     @Deprecated(since = "use TerminologyMapper")
     public static NamingSystem getNamingSystem(String system) {
