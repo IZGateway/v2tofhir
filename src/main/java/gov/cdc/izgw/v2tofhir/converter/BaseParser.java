@@ -238,7 +238,7 @@ public abstract class BaseParser<U,S> implements Parser<U,S> {
 			ProvenanceEntityComponent entity = p.getEntityFirstRep();
 			try {
 				String encodedSegment = encode(segment);
-				StringType originalText = new StringType(encode(segment)); // Was new StringType(context.getHl7DataId()+"#"+PathUtils.getTerserPath(segment))
+				StringType originalText = new StringType(encode(segment)); // Was new StringType(context.getHl7DataId()+"#"+TerserPathUtils.getTerserPath(segment))
 				if (entity.getExtension().stream()
 						.noneMatch(ext -> 
 							BaseParser.ORIGINAL_TEXT.equals(ext.getUrl()) && 

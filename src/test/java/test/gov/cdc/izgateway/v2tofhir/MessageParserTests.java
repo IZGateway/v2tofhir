@@ -59,7 +59,7 @@ import gov.cdc.izgw.v2tofhir.segment.FieldHandler;
 import gov.cdc.izgw.v2tofhir.segment.IzDetail;
 import gov.cdc.izgw.v2tofhir.segment.PIDParser;
 import gov.cdc.izgw.v2tofhir.segment.Processor;
-import gov.cdc.izgw.v2tofhir.utils.Mapping;
+import gov.cdc.izgw.v2tofhir.terminology.TerminologyMapperFactory;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 import gov.cdc.izgw.v2tofhir.utils.QBPUtils;
 import gov.cdc.izgw.v2tofhir.utils.TestData;
@@ -79,9 +79,9 @@ class MessageParserTests extends TestBase {
 		log.debug("{} loaded", TestBase.class.getName());
 	}
 
-	// Force load of Mapping class before any testing starts.
+	// Force initialization of the terminology mapper before any testing starts.
 	@SuppressWarnings("unused")
-	private static final Class<Mapping> MAPPING_CLASS = Mapping.class; 
+	private static final gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper MAPPER = TerminologyMapperFactory.get(); 
 
 	private static long id = 0;
 	private String generateId() {
@@ -533,12 +533,14 @@ class MessageParserTests extends TestBase {
 	
 	private String getMappedValue(ComesFrom from, Type type) {
 		String value;
-		Mapping m = null;
 		if (!from.map().isEmpty()) {
-			m = Mapping.getMapping(from.map());
 			value = ParserUtils.toString(type);
 			String oldValue = value;
-			Coding coding = m.mapCode(value);
+			org.hl7.fhir.r4.model.Coding sourceCoding = new org.hl7.fhir.r4.model.Coding().setCode(value);
+			org.hl7.fhir.r4.model.Coding coding = TerminologyMapperFactory.get()
+					.mapCode(from.map(), sourceCoding)
+					.map(gov.cdc.izgw.v2tofhir.terminology.TranslationResult::resultCoding)
+					.orElse(null);
 			if (coding != null) {
 				value = coding.hasCode() ? coding.getCode() : null;
 			}

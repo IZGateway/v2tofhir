@@ -27,7 +27,7 @@ import gov.cdc.izgw.v2tofhir.annotation.Produces;
 import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
 import gov.cdc.izgw.v2tofhir.utils.Codes;
-import gov.cdc.izgw.v2tofhir.utils.Mapping;
+import gov.cdc.izgw.v2tofhir.terminology.TerminologyMapperFactory;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 import gov.cdc.izgw.v2tofhir.utils.Systems;
 
@@ -258,7 +258,7 @@ public class RXAParser extends AbstractSegmentParser {
 			// Convert a code to an Organization name and identifier
 			for (Coding coding: manufacturer.getCoding()) {
 				String system = coding.getSystem();
-				if (Systems.MVX.equals(system) || Mapping.v2Table("0227").equals(system)) {
+				if (Systems.MVX.equals(system) || TerminologyMapperFactory.get().v2TableUri("0227").equals(system)) {
 					if (coding.hasDisplay()) {
 						mOrg.setName(coding.getDisplay());
 					}

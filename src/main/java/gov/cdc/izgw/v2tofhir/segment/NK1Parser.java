@@ -20,7 +20,8 @@ import org.hl7.fhir.r4.model.StringType;
 import gov.cdc.izgw.v2tofhir.annotation.ComesFrom;
 import gov.cdc.izgw.v2tofhir.annotation.Produces;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
-import gov.cdc.izgw.v2tofhir.utils.Mapping;
+import gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper;
+import gov.cdc.izgw.v2tofhir.terminology.TerminologyMapperFactory;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 import gov.cdc.izgw.v2tofhir.utils.Systems;
 import lombok.extern.slf4j.Slf4j;
@@ -93,21 +94,22 @@ public class NK1Parser extends AbstractSegmentParser {
 	@ComesFrom(path = "RelatedPerson.relationship", field = 7, table = "0131", map = "ContactRole", comment = "Contact Role")
 	public void setRelationship(CodeableConcept relationship) {
 		CodeableConcept mappedConcept = new CodeableConcept(); 
+		TerminologyMapper mapper = TerminologyMapperFactory.get();
 		for (Coding coding: relationship.getCoding()) {
 			if (!coding.hasSystem() || !coding.hasCode()) {
 				continue;
 			}
-			Mapping m = null;
+			String mappingName;
 			if (coding.getSystem().endsWith("0063")) {
-				m = Mapping.getMapping("Relationship");
+				mappingName = "Relationship";
 			} else if (coding.getSystem().endsWith("0131")) {
-				m = Mapping.getMapping("ContactRole");
+				mappingName = "ContactRole";
 			} else {
 				continue;
 			}
 			
-			Coding mappedCode = m.mapCode(coding, true);
-			mappedConcept.addCoding(mappedCode);
+			mapper.mapCode(mappingName, coding)
+				.ifPresent(result -> mappedConcept.addCoding(result.resultCoding()));
 		}
 		// Add the mapped codes first, since they are the preferred concepts.
 		if (!mappedConcept.isEmpty()) {

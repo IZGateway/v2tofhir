@@ -18,7 +18,6 @@ import ca.uhn.hl7v2.model.Varies;
 import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
 import gov.cdc.izgw.v2tofhir.datatype.AddressParser;
 import gov.cdc.izgw.v2tofhir.datatype.HumanNameParser;
-import gov.cdc.izgw.v2tofhir.utils.Mapping;
 import gov.cdc.izgw.v2tofhir.utils.TextUtils;
 import lombok.extern.slf4j.Slf4j;
 import test.gov.cdc.izgateway.TestUtils;
@@ -54,7 +53,7 @@ class CompositeStringTypeTests extends TestBase {
 			// Remove any converter added extra data.
 			@SuppressWarnings({ "unchecked", "unused" })
 			FT save = actual == null ? null : (FT)actual.copy();  // Save the old data
-			Mapping.reset(actual);
+			DatatypeConverter.reset(actual);
 			actualString = TextUtils.toString(actual);
 			assertEquals(StringUtils.trim(inputString).toUpperCase(), StringUtils.trim(actualString).toUpperCase());
 			// log.warn("Assertion Error: {}", err.getMessage());
