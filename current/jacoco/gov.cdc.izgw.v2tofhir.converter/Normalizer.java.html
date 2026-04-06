@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.CodeableConcept;
@@ -120,7 +120,7 @@ public class Normalizer {
 	 * @return	The endpoint to remove, or null if the two endpoints are different.
 	 */
 	public static Endpoint merge(Endpoint first, Endpoint later) {
-<span class="pc bpc" id="L123" title="1 of 2 branches missed.">		if (StringUtils.equals(first.getName(), later.getName()) &amp;&amp;</span>
+<span class="pc bpc" id="L123" title="1 of 2 branches missed.">		if (Strings.CS.equals(first.getName(), later.getName()) &amp;&amp;</span>
 <span class="nc bnc" id="L124" title="All 2 branches missed.">			identifiersEqual(first.getIdentifierFirstRep(), later.getIdentifierFirstRep())</span>
 		) {
 <span class="nc" id="L126">			ParserUtils.mergeReferences(first, later);</span>
@@ -179,7 +179,7 @@ public class Normalizer {
 			}
 		}
 		
-<span class="fc bfc" id="L182" title="All 2 branches covered.">		if (StringUtils.equals(first.getName(), later.getName()) &amp;&amp;</span>
+<span class="fc bfc" id="L182" title="All 2 branches covered.">		if (Strings.CS.equals(first.getName(), later.getName()) &amp;&amp;</span>
 <span class="pc bpc" id="L183" title="1 of 2 branches missed.">			identifiersEqual(first.getIdentifierFirstRep(), later.getIdentifierFirstRep())</span>
 		) {
 			// Ensure both resources reference the same endpoint

@@ -27,7 +27,7 @@ import gov.cdc.izgw.v2tofhir.annotation.Produces;
 import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
 import gov.cdc.izgw.v2tofhir.utils.Codes;
-import gov.cdc.izgw.v2tofhir.utils.Mapping;
+import gov.cdc.izgw.v2tofhir.terminology.TerminologyMapperFactory;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 import gov.cdc.izgw.v2tofhir.utils.Systems;
 
@@ -258,7 +258,7 @@ public class RXAParser extends AbstractSegmentParser {
 			// Convert a code to an Organization name and identifier
 <span class="fc bfc" id="L259" title="All 2 branches covered.">			for (Coding coding: manufacturer.getCoding()) {</span>
 <span class="fc" id="L260">				String system = coding.getSystem();</span>
-<span class="pc bpc" id="L261" title="3 of 4 branches missed.">				if (Systems.MVX.equals(system) || Mapping.v2Table(&quot;0227&quot;).equals(system)) {</span>
+<span class="pc bpc" id="L261" title="3 of 4 branches missed.">				if (Systems.MVX.equals(system) || TerminologyMapperFactory.get().v2TableUri(&quot;0227&quot;).equals(system)) {</span>
 <span class="pc bpc" id="L262" title="1 of 2 branches missed.">					if (coding.hasDisplay()) {</span>
 <span class="fc" id="L263">						mOrg.setName(coding.getDisplay());</span>
 					}

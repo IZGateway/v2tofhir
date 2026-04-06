@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.hl7.fhir.r4.model.HumanName;
 import org.hl7.fhir.r4.model.HumanName.NameUse;
 import org.hl7.fhir.r4.model.StringType;
@@ -22,13 +23,13 @@ import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
  */
 public class HumanNameParser implements DatatypeParser&lt;HumanName&gt; {
 	/** Name prefixes appearing before the given name */
-<span class="fc" id="L25">	public static final Set&lt;String&gt; PREFIXES = Collections.unmodifiableSet(new HashSet&lt;&gt;(Arrays.asList(&quot;mr&quot;, &quot;mrs&quot;, &quot;miss&quot;, &quot;sr&quot;, &quot;br&quot;, &quot;fr&quot;, &quot;dr&quot;)));</span>
+<span class="fc" id="L26">	public static final Set&lt;String&gt; PREFIXES = Collections.unmodifiableSet(new HashSet&lt;&gt;(Arrays.asList(&quot;mr&quot;, &quot;mrs&quot;, &quot;miss&quot;, &quot;sr&quot;, &quot;br&quot;, &quot;fr&quot;, &quot;dr&quot;)));</span>
 	/** Name suffixes appearing after the surname (family) name */
-<span class="fc" id="L27">	public static final Set&lt;String&gt; SUFFIXES = Collections.unmodifiableSet(new HashSet&lt;&gt;(Arrays.asList(&quot;jr&quot;, &quot;sr&quot;, &quot;i&quot;, &quot;ii&quot;, &quot;iii&quot;, &quot;iv&quot;, &quot;v&quot;)));</span>
+<span class="fc" id="L28">	public static final Set&lt;String&gt; SUFFIXES = Collections.unmodifiableSet(new HashSet&lt;&gt;(Arrays.asList(&quot;jr&quot;, &quot;sr&quot;, &quot;i&quot;, &quot;ii&quot;, &quot;iii&quot;, &quot;iv&quot;, &quot;v&quot;)));</span>
 	/** An affix is a prefix to a family name
 	 * See https://en.wikipedia.org/wiki/List_of_family_name_affixes
 	 */
-<span class="fc" id="L31">	public static final Set&lt;String&gt; AFFIXES = Collections.unmodifiableSet(new HashSet&lt;&gt;(Arrays.asList(&quot;Abu&quot;, &quot;al&quot;, &quot;bet&quot;, &quot;bint&quot;, &quot;el&quot;, &quot;ibn&quot;, &quot;ter&quot;,</span>
+<span class="fc" id="L32">	public static final Set&lt;String&gt; AFFIXES = Collections.unmodifiableSet(new HashSet&lt;&gt;(Arrays.asList(&quot;Abu&quot;, &quot;al&quot;, &quot;bet&quot;, &quot;bint&quot;, &quot;el&quot;, &quot;ibn&quot;, &quot;ter&quot;,</span>
 			&quot;fer&quot;, &quot;ait&quot;, &quot;a\u00eft&quot;, &quot;at&quot;, &quot;ath&quot;, &quot;de&quot;, &quot;'s&quot;, &quot;'t&quot;, &quot;ter&quot;, &quot;van&quot;, &quot;vande&quot;, &quot;vanden&quot;, &quot;vander&quot;, &quot;van't&quot;,
 			&quot;von&quot;, &quot;bath&quot;, &quot;bat&quot;, &quot;ben&quot;, &quot;bin&quot;, &quot;del&quot;, &quot;degli&quot;, &quot;della&quot;, &quot;di&quot;, &quot;a&quot;, &quot;ab&quot;, &quot;ap&quot;, &quot;ferch&quot;, &quot;verch&quot;,
 			&quot;verch&quot;, &quot;erch&quot;, &quot;af&quot;, &quot;alam&quot;, &quot;\u0101lam&quot;, &quot;bar&quot;, &quot;ch&quot;, &quot;chaudhary&quot;, &quot;da&quot;, &quot;das&quot;, &quot;de&quot;, &quot;dele&quot;, &quot;dos&quot;,
@@ -36,7 +37,7 @@ public class HumanNameParser implements DatatypeParser&lt;HumanName&gt; {
 			&quot;mhic&quot;, &quot;mic&quot;, &quot;mala&quot;, &quot;na&quot;, &quot;nga&quot;, &quot;ng\u0101&quot;, &quot;nic&quot;, &quot;ni&quot;, &quot;n\u00ed&quot;, &quot;nin&quot;, &quot;o&quot;, &quot;\u00f3&quot;, &quot;ua&quot;, &quot;ui&quot;,
 			&quot;u\u00ed&quot;, &quot;oz&quot;, &quot;\u00f6z&quot;, &quot;pour&quot;, &quot;te&quot;, &quot;tre&quot;, &quot;war&quot;)));
 	/** Professional suffixes appearing after the surname (family) and any other suffixes */
-<span class="fc" id="L39">	public static final Set&lt;String&gt; DEGREES = Collections.unmodifiableSet(new HashSet&lt;&gt;(Arrays.asList(&quot;ab&quot;, &quot;ba&quot;, &quot;bs&quot;, &quot; be&quot;, &quot;bfa&quot;, &quot;btech&quot;, &quot;llb&quot;,</span>
+<span class="fc" id="L40">	public static final Set&lt;String&gt; DEGREES = Collections.unmodifiableSet(new HashSet&lt;&gt;(Arrays.asList(&quot;ab&quot;, &quot;ba&quot;, &quot;bs&quot;, &quot; be&quot;, &quot;bfa&quot;, &quot;btech&quot;, &quot;llb&quot;,</span>
 			&quot;bsc&quot;, &quot;ma&quot;, &quot;ms&quot;, &quot;msc&quot;, &quot;mfa&quot;, &quot;llm&quot;, &quot;mla&quot;, &quot;mha&quot;, &quot;mba&quot;, &quot;msc&quot;, &quot;meng&quot;, &quot;mph&quot;, &quot;mbi&quot;, &quot;jd&quot;, &quot;md&quot;, &quot;do&quot;,
 			&quot;pharmd&quot;, &quot;dmin&quot;, &quot;phd&quot;, &quot;edd&quot;, &quot;dphil&quot;, &quot;dba&quot;, &quot;lld&quot;, &quot;engd&quot;, &quot;esq&quot;, &quot;rn&quot;, &quot;lpn&quot;, &quot;cna&quot;, &quot;bsn&quot;, &quot;msn&quot;,
 			&quot;mss&quot;, &quot;msw&quot;, &quot;arpn&quot;, &quot;np&quot;, &quot;cnm&quot;, &quot;cns&quot;, &quot;crna&quot;, &quot;dns&quot;, &quot;dnp&quot;, &quot;dsw&quot;, &quot;mahs&quot;, &quot;maop&quot;, &quot;mc&quot;, &quot;mdiv&quot;, &quot;ddiv&quot;,
@@ -55,20 +56,20 @@ public class HumanNameParser implements DatatypeParser&lt;HumanName&gt; {
 
 	)));
 
-<span class="fc" id="L58">	enum NamePart {</span>
-<span class="fc" id="L59">		PREFIX, PREFIXANDSUFFIX, GIVEN, AFFIX, FAMILY, SUFFIX, NAME</span>
+<span class="fc" id="L59">	enum NamePart {</span>
+<span class="fc" id="L60">		PREFIX, PREFIXANDSUFFIX, GIVEN, AFFIX, FAMILY, SUFFIX, NAME</span>
 	}
 
 	/**
 	 * Construct a HumanNameParser
 	 */
-<span class="fc" id="L65">	public HumanNameParser() {</span>
+<span class="fc" id="L66">	public HumanNameParser() {</span>
 		// Construct a default HumanNameParser
-<span class="fc" id="L67">	}</span>
+<span class="fc" id="L68">	}</span>
 
 	@Override
 	public Class&lt;HumanName&gt; type() {
-<span class="nc" id="L71">		return HumanName.class;</span>
+<span class="nc" id="L72">		return HumanName.class;</span>
 	}
 
 	/**
@@ -82,7 +83,7 @@ public class HumanNameParser implements DatatypeParser&lt;HumanName&gt; {
 	 */
 	@Override
 	public HumanName fromString(String name) {
-<span class="fc" id="L85">		return computeFromString(name);</span>
+<span class="fc" id="L86">		return computeFromString(name);</span>
 	}
 	
 	/**
@@ -95,195 +96,195 @@ public class HumanNameParser implements DatatypeParser&lt;HumanName&gt; {
 	 * @return The parsed name in a HumanName object
 	 */
 	public static HumanName computeFromString(String name) {
-<span class="pc bpc" id="L98" title="1 of 2 branches missed.">		if (name == null) {</span>
-<span class="nc" id="L99">			return null;</span>
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">		if (name == null) {</span>
+<span class="nc" id="L100">			return null;</span>
 		}
-<span class="fc" id="L101">		HumanName hn = new HumanName();</span>
-<span class="fc" id="L102">		hn.setText(name);</span>
-<span class="fc" id="L103">		String[] parts = name.split(&quot;\\s&quot;);</span>
-<span class="fc" id="L104">		StringBuilder familyName = new StringBuilder();</span>
-<span class="fc bfc" id="L105" title="All 2 branches covered.">		for (String part : parts) {</span>
-<span class="fc" id="L106">			updateNamePart(hn, familyName, part);</span>
+<span class="fc" id="L102">		HumanName hn = new HumanName();</span>
+<span class="fc" id="L103">		hn.setText(name);</span>
+<span class="fc" id="L104">		String[] parts = name.split(&quot;\\s&quot;);</span>
+<span class="fc" id="L105">		StringBuilder familyName = new StringBuilder();</span>
+<span class="fc bfc" id="L106" title="All 2 branches covered.">		for (String part : parts) {</span>
+<span class="fc" id="L107">			updateNamePart(hn, familyName, part);</span>
 		}
-<span class="fc" id="L108">		List&lt;StringType&gt; given = hn.getGiven();</span>
-<span class="pc bpc" id="L109" title="2 of 4 branches missed.">		if (familyName.isEmpty() &amp;&amp; !given.isEmpty()) {</span>
-<span class="fc" id="L110">			String family = given.get(given.size() - 1).toString();</span>
-<span class="fc" id="L111">			hn.setFamily(family);</span>
-<span class="fc" id="L112">			given.remove(given.size() - 1);</span>
-<span class="fc" id="L113">			hn.setGiven(null);</span>
-<span class="fc bfc" id="L114" title="All 2 branches covered.">			for (StringType g : given) {</span>
-<span class="fc" id="L115">				hn.addGiven(g.toString());</span>
-<span class="fc" id="L116">			}</span>
-<span class="pc bnc" id="L117" title="All 2 branches missed.">		} else if (!familyName.isEmpty()) {</span>
-<span class="nc" id="L118">			familyName.setLength(familyName.length() - 1); // Remove terminal &quot; &quot;</span>
-<span class="nc" id="L119">			hn.setFamily(familyName.toString());</span>
+<span class="fc" id="L109">		List&lt;StringType&gt; given = hn.getGiven();</span>
+<span class="pc bpc" id="L110" title="2 of 4 branches missed.">		if (familyName.isEmpty() &amp;&amp; !given.isEmpty()) {</span>
+<span class="fc" id="L111">			String family = given.get(given.size() - 1).toString();</span>
+<span class="fc" id="L112">			hn.setFamily(family);</span>
+<span class="fc" id="L113">			given.remove(given.size() - 1);</span>
+<span class="fc" id="L114">			hn.setGiven(null);</span>
+<span class="fc bfc" id="L115" title="All 2 branches covered.">			for (StringType g : given) {</span>
+<span class="fc" id="L116">				hn.addGiven(g.toString());</span>
+<span class="fc" id="L117">			}</span>
+<span class="pc bnc" id="L118" title="All 2 branches missed.">		} else if (!familyName.isEmpty()) {</span>
+<span class="nc" id="L119">			familyName.setLength(familyName.length() - 1); // Remove terminal &quot; &quot;</span>
+<span class="nc" id="L120">			hn.setFamily(familyName.toString());</span>
 		}
-<span class="fc bfc" id="L121" title="All 2 branches covered.">		if (hn.isEmpty()) {</span>
-<span class="fc" id="L122">			return null;</span>
+<span class="fc bfc" id="L122" title="All 2 branches covered.">		if (hn.isEmpty()) {</span>
+<span class="fc" id="L123">			return null;</span>
 		}
-<span class="fc" id="L124">		return hn;</span>
+<span class="fc" id="L125">		return hn;</span>
 	}
 
 	private static void updateNamePart(HumanName hn, StringBuilder familyName, String part) {
-<span class="fc" id="L128">		NamePart classification = classifyNamePart(part);</span>
-<span class="pc bpc" id="L129" title="4 of 6 branches missed.">		switch (classification) {</span>
+<span class="fc" id="L129">		NamePart classification = classifyNamePart(part);</span>
+<span class="pc bpc" id="L130" title="4 of 6 branches missed.">		switch (classification) {</span>
 		case PREFIXANDSUFFIX:
-<span class="nc bnc" id="L131" title="All 4 branches missed.">			if (!hn.hasGiven() &amp;&amp; familyName.isEmpty()) {</span>
-<span class="nc" id="L132">				hn.addPrefix(part);</span>
-<span class="nc" id="L133">				return;</span>
+<span class="nc bnc" id="L132" title="All 4 branches missed.">			if (!hn.hasGiven() &amp;&amp; familyName.isEmpty()) {</span>
+<span class="nc" id="L133">				hn.addPrefix(part);</span>
+<span class="nc" id="L134">				return;</span>
 			} 
-<span class="nc bnc" id="L135" title="All 2 branches missed.">			if (familyName.isEmpty()) { </span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">			if (familyName.isEmpty()) { </span>
 				// could be a prefix or a suffix, but we haven't yet started
 				// on suffixes and are beyond prefixes.  
 				// Only thing that is both is &quot;sr&quot;.
 				// We add it as a given name.
-<span class="nc" id="L140">				hn.addGiven(part);</span>
-<span class="nc" id="L141">				return;</span>
+<span class="nc" id="L141">				hn.addGiven(part);</span>
+<span class="nc" id="L142">				return;</span>
 			}
 			// Fall through to add suffix if we have some part of familyName
 		case SUFFIX:
-<span class="fc" id="L145">			hn.addSuffix(part);</span>
-<span class="fc" id="L146">			return;</span>
+<span class="fc" id="L146">			hn.addSuffix(part);</span>
+<span class="fc" id="L147">			return;</span>
 		case PREFIX:
-<span class="nc bnc" id="L148" title="All 4 branches missed.">			if (!hn.hasGiven() &amp;&amp; familyName.isEmpty()) {</span>
-<span class="nc" id="L149">				hn.addPrefix(part);</span>
-<span class="nc" id="L150">				return;</span>
+<span class="nc bnc" id="L149" title="All 4 branches missed.">			if (!hn.hasGiven() &amp;&amp; familyName.isEmpty()) {</span>
+<span class="nc" id="L150">				hn.addPrefix(part);</span>
+<span class="nc" id="L151">				return;</span>
 			} 
-<span class="nc" id="L152">			familyName.append(part).append(&quot; &quot;);</span>
-<span class="nc" id="L153">			return;</span>
+<span class="nc" id="L153">			familyName.append(part).append(&quot; &quot;);</span>
+<span class="nc" id="L154">			return;</span>
 		case AFFIX:
-<span class="nc bnc" id="L155" title="All 2 branches missed.">			if (!hn.hasGiven()) {</span>
-<span class="nc" id="L156">				hn.addGiven(part);</span>
-<span class="nc" id="L157">				return;</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">			if (!hn.hasGiven()) {</span>
+<span class="nc" id="L157">				hn.addGiven(part);</span>
+<span class="nc" id="L158">				return;</span>
 			} 
-<span class="nc" id="L159">			familyName.append(part).append(&quot; &quot;);</span>
-<span class="nc" id="L160">			return;</span>
+<span class="nc" id="L160">			familyName.append(part).append(&quot; &quot;);</span>
+<span class="nc" id="L161">			return;</span>
 		case NAME:
-<span class="pc bpc" id="L162" title="1 of 2 branches missed.">			if (familyName.isEmpty()) {</span>
-<span class="fc" id="L163">				hn.addGiven(part);</span>
-<span class="fc" id="L164">				return;</span>
+<span class="pc bpc" id="L163" title="1 of 2 branches missed.">			if (familyName.isEmpty()) {</span>
+<span class="fc" id="L164">				hn.addGiven(part);</span>
+<span class="fc" id="L165">				return;</span>
 			} 
-<span class="nc" id="L166">			familyName.append(part).append(&quot; &quot;);</span>
-<span class="nc" id="L167">			return;</span>
+<span class="nc" id="L167">			familyName.append(part).append(&quot; &quot;);</span>
+<span class="nc" id="L168">			return;</span>
 		default:
-<span class="nc" id="L169">			return;</span>
+<span class="nc" id="L170">			return;</span>
 		}
 	}
 
 	private static NamePart classifyNamePart(String part) {
-<span class="pc bpc" id="L174" title="1 of 2 branches missed.">		if (isPrefix(part)) {</span>
-<span class="nc bnc" id="L175" title="All 2 branches missed.">			return isSuffix(part) ? NamePart.PREFIXANDSUFFIX : NamePart.PREFIX;</span>
+<span class="pc bpc" id="L175" title="1 of 2 branches missed.">		if (isPrefix(part)) {</span>
+<span class="nc bnc" id="L176" title="All 2 branches missed.">			return isSuffix(part) ? NamePart.PREFIXANDSUFFIX : NamePart.PREFIX;</span>
 		}
-<span class="pc bpc" id="L177" title="1 of 2 branches missed.">		if (isAffix(part)) {</span>
-<span class="nc" id="L178">			return NamePart.AFFIX;</span>
+<span class="pc bpc" id="L178" title="1 of 2 branches missed.">		if (isAffix(part)) {</span>
+<span class="nc" id="L179">			return NamePart.AFFIX;</span>
 		}
-<span class="pc bpc" id="L180" title="1 of 4 branches missed.">		if (isSuffix(part) || isDegree(part)) {</span>
-<span class="fc" id="L181">			return NamePart.SUFFIX;</span>
+<span class="pc bpc" id="L181" title="1 of 4 branches missed.">		if (isSuffix(part) || isDegree(part)) {</span>
+<span class="fc" id="L182">			return NamePart.SUFFIX;</span>
 		}
-<span class="fc" id="L183">		return NamePart.NAME;</span>
+<span class="fc" id="L184">		return NamePart.NAME;</span>
 	}
 
 	@Override
 	public HumanName convert(Type t) {
-<span class="fc" id="L188">		t = DatatypeConverter.adjustIfVaries(t);</span>
-<span class="pc bpc" id="L189" title="1 of 2 branches missed.">		if (t instanceof Primitive pt) {</span>
-<span class="nc bnc" id="L190" title="All 4 branches missed.">			if (t instanceof Primitive p &amp;&amp; DatatypeConverter.isDeleted(p)) {</span>
-<span class="nc" id="L191">				return DatatypeConverter.markDeleted(new HumanName());</span>
+<span class="fc" id="L189">		t = DatatypeConverter.adjustIfVaries(t);</span>
+<span class="pc bpc" id="L190" title="1 of 2 branches missed.">		if (t instanceof Primitive pt) {</span>
+<span class="nc bnc" id="L191" title="All 4 branches missed.">			if (t instanceof Primitive p &amp;&amp; DatatypeConverter.isDeleted(p)) {</span>
+<span class="nc" id="L192">				return DatatypeConverter.markDeleted(new HumanName());</span>
 			}
 
-<span class="nc" id="L194">			return fromString(pt.getValue());</span>
+<span class="nc" id="L195">			return fromString(pt.getValue());</span>
 		}
 
-<span class="pc bpc" id="L197" title="1 of 2 branches missed.">		if (t instanceof Composite comp) {</span>
-<span class="fc" id="L198">			Type[] types = comp.getComponents();</span>
-<span class="pc bpc" id="L199" title="2 of 4 branches missed.">			switch (t.getName()) {</span>
+<span class="pc bpc" id="L198" title="1 of 2 branches missed.">		if (t instanceof Composite comp) {</span>
+<span class="fc" id="L199">			Type[] types = comp.getComponents();</span>
+<span class="pc bpc" id="L200" title="2 of 4 branches missed.">			switch (t.getName()) {</span>
 			case &quot;CNN&quot;:
-<span class="nc" id="L201">				return HumanNameParser.parse(types, 1, -1);</span>
+<span class="nc" id="L202">				return HumanNameParser.parse(types, 1, -1);</span>
 			case &quot;XCN&quot;:
-<span class="fc" id="L203">				HumanName hn = HumanNameParser.parse(types, 1, 9);</span>
-<span class="pc bpc" id="L204" title="3 of 6 branches missed.">				if (hn != null &amp;&amp; types.length &gt; 20 &amp;&amp; types[20] != null) {</span>
-<span class="fc" id="L205">					String suffix = ParserUtils.toString(types[20]);</span>
-<span class="fc" id="L206">					hn.addSuffix(suffix);</span>
+<span class="fc" id="L204">				HumanName hn = HumanNameParser.parse(types, 1, 9);</span>
+<span class="pc bpc" id="L205" title="3 of 6 branches missed.">				if (hn != null &amp;&amp; types.length &gt; 20 &amp;&amp; types[20] != null) {</span>
+<span class="fc" id="L206">					String suffix = ParserUtils.toString(types[20]);</span>
+<span class="fc" id="L207">					hn.addSuffix(suffix);</span>
 				}
-<span class="fc" id="L208">				return hn;</span>
+<span class="fc" id="L209">				return hn;</span>
 			case &quot;XPN&quot;:
-<span class="fc" id="L210">				return HumanNameParser.parse(types, 0, 6);</span>
+<span class="fc" id="L211">				return HumanNameParser.parse(types, 0, 6);</span>
 			default:
 				break;
 			}
 		}
-<span class="nc" id="L215">		return null;</span>
+<span class="nc" id="L216">		return null;</span>
 	}
 
 	@Override
 	public Type convert(HumanName name) {
-<span class="nc" id="L220">		return null;</span>
+<span class="nc" id="L221">		return null;</span>
 	}
 
 	static HumanName parse(Type[] types, int offset, int nameTypeLoc) {
-<span class="fc" id="L224">		HumanName hn = new HumanName();</span>
-<span class="fc bfc" id="L225" title="All 2 branches covered.">		for (int i = 0; i &lt; 6; i++) {</span>
-<span class="fc" id="L226">			String part = ParserUtils.toString(types[i + offset]);</span>
-<span class="fc bfc" id="L227" title="All 2 branches covered.">			if (StringUtils.isBlank(part)) {</span>
-<span class="fc" id="L228">				continue;</span>
+<span class="fc" id="L225">		HumanName hn = new HumanName();</span>
+<span class="fc bfc" id="L226" title="All 2 branches covered.">		for (int i = 0; i &lt; 6; i++) {</span>
+<span class="fc" id="L227">			String part = ParserUtils.toString(types[i + offset]);</span>
+<span class="fc bfc" id="L228" title="All 2 branches covered.">			if (StringUtils.isBlank(part)) {</span>
+<span class="fc" id="L229">				continue;</span>
 			}
-<span class="pc bpc" id="L230" title="4 of 7 branches missed.">			switch (i) {</span>
+<span class="pc bpc" id="L231" title="4 of 7 branches missed.">			switch (i) {</span>
 			case 0: // Family Name (as ST in HL7 2.3)
-<span class="fc" id="L232">				hn.setFamily(part);</span>
-<span class="fc" id="L233">				break;</span>
+<span class="fc" id="L233">				hn.setFamily(part);</span>
+<span class="fc" id="L234">				break;</span>
 			case 1: // Given Name
-<span class="fc" id="L235">				hn.addGiven(part);</span>
-<span class="fc" id="L236">				break;</span>
+<span class="fc" id="L236">				hn.addGiven(part);</span>
+<span class="fc" id="L237">				break;</span>
 			case 2: // Second and Further Given Name or Initials
 					// Thereof
-<span class="fc" id="L239">				hn.addGiven(part);</span>
-<span class="fc" id="L240">				break;</span>
+<span class="fc" id="L240">				hn.addGiven(part);</span>
+<span class="fc" id="L241">				break;</span>
 			case 3: // Suffix
-<span class="nc" id="L242">				hn.addSuffix(part);</span>
-<span class="nc" id="L243">				break;</span>
+<span class="nc" id="L243">				hn.addSuffix(part);</span>
+<span class="nc" id="L244">				break;</span>
 			case 4: // Prefix
-<span class="nc" id="L245">				hn.addPrefix(part);</span>
-<span class="nc" id="L246">				break;</span>
+<span class="nc" id="L246">				hn.addPrefix(part);</span>
+<span class="nc" id="L247">				break;</span>
 			case 5: // Degree
-<span class="nc" id="L248">				hn.addSuffix(part);</span>
-<span class="nc" id="L249">				break;</span>
+<span class="nc" id="L249">				hn.addSuffix(part);</span>
+<span class="nc" id="L250">				break;</span>
 			default:
 				break;
 			}
 		}
-<span class="fc" id="L254">		Type type = DatatypeConverter.adjustIfVaries(types, nameTypeLoc);</span>
+<span class="fc" id="L255">		Type type = DatatypeConverter.adjustIfVaries(types, nameTypeLoc);</span>
 
-<span class="pc bpc" id="L256" title="1 of 2 branches missed.">		if (type instanceof Primitive pt) {</span>
-<span class="fc" id="L257">			String nameType = pt.getValue();</span>
-<span class="fc" id="L258">			hn.setUse(toNameUse(nameType));</span>
+<span class="pc bpc" id="L257" title="1 of 2 branches missed.">		if (type instanceof Primitive pt) {</span>
+<span class="fc" id="L258">			String nameType = pt.getValue();</span>
+<span class="fc" id="L259">			hn.setUse(toNameUse(nameType));</span>
 		}
-<span class="fc bfc" id="L260" title="All 2 branches covered.">		if (hn.isEmpty()) {</span>
-<span class="fc" id="L261">			return null;</span>
+<span class="fc bfc" id="L261" title="All 2 branches covered.">		if (hn.isEmpty()) {</span>
+<span class="fc" id="L262">			return null;</span>
 		}
-<span class="fc" id="L263">		return hn;</span>
+<span class="fc" id="L264">		return hn;</span>
 	}
 
 	private static NameUse toNameUse(String nameType) {
-<span class="fc bfc" id="L267" title="All 2 branches covered.">		if (nameType == null) {</span>
-<span class="fc" id="L268">			return null;</span>
+<span class="fc bfc" id="L268" title="All 2 branches covered.">		if (nameType == null) {</span>
+<span class="fc" id="L269">			return null;</span>
 		}
-<span class="pc bpc" id="L270" title="6 of 9 branches missed.">		switch (StringUtils.upperCase(nameType)) {</span>
+<span class="pc bpc" id="L271" title="6 of 9 branches missed.">		switch (StringUtils.upperCase(nameType)) {</span>
 		case &quot;A&quot;: // Assigned
-<span class="nc" id="L272">			return NameUse.USUAL;</span>
+<span class="nc" id="L273">			return NameUse.USUAL;</span>
 		case &quot;D&quot;: // Customary Name
-<span class="nc" id="L274">			return NameUse.USUAL;</span>
+<span class="nc" id="L275">			return NameUse.USUAL;</span>
 		case &quot;L&quot;: // Official Registry Name
-<span class="fc" id="L276">			return NameUse.OFFICIAL;</span>
+<span class="fc" id="L277">			return NameUse.OFFICIAL;</span>
 		case &quot;M&quot;: // Maiden Name
-<span class="fc" id="L278">			return NameUse.MAIDEN;</span>
+<span class="fc" id="L279">			return NameUse.MAIDEN;</span>
 		case &quot;N&quot;: // Nickname
-<span class="nc" id="L280">			return NameUse.NICKNAME;</span>
+<span class="nc" id="L281">			return NameUse.NICKNAME;</span>
 		case &quot;NOUSE&quot;: // No Longer To Be Used
-<span class="nc" id="L282">			return NameUse.OLD;</span>
+<span class="nc" id="L283">			return NameUse.OLD;</span>
 		case &quot;R&quot;: // Registered Name
-<span class="nc" id="L284">			return NameUse.OFFICIAL;</span>
+<span class="nc" id="L285">			return NameUse.OFFICIAL;</span>
 		case &quot;TEMP&quot;: // Temporary Name
-<span class="nc" id="L286">			return NameUse.TEMP;</span>
+<span class="nc" id="L287">			return NameUse.TEMP;</span>
 		case &quot;B&quot;, // Birth name
 				&quot;BAD&quot;, // Bad Name
 				&quot;C&quot;, // Adopted Name
@@ -298,7 +299,7 @@ public class HumanNameParser implements DatatypeParser&lt;HumanName&gt; {
 				&quot;T&quot;, // Indigenous/Tribal
 				&quot;U&quot;: // Unknown
 		default:
-<span class="fc" id="L301">			return null;</span>
+<span class="fc" id="L302">			return null;</span>
 		}
 	}
 
@@ -308,7 +309,7 @@ public class HumanNameParser implements DatatypeParser&lt;HumanName&gt; {
 	 * @return	True if it is an affix to the name.
 	 */
 	public static boolean isAffix(String part) {
-<span class="fc" id="L311">		return AFFIXES.contains(StringUtils.lowerCase(part));</span>
+<span class="fc" id="L312">		return AFFIXES.contains(StringUtils.lowerCase(part));</span>
 	}
 
 	/**
@@ -317,7 +318,7 @@ public class HumanNameParser implements DatatypeParser&lt;HumanName&gt; {
 	 * @return	True if it is an prefix to the name.
 	 */
 	public static boolean isPrefix(String part) {
-<span class="fc" id="L320">		return PREFIXES.contains(StringUtils.replace(StringUtils.lowerCase(part), &quot;.&quot;, &quot;&quot;));</span>
+<span class="fc" id="L321">		return PREFIXES.contains(Strings.CS.replace(StringUtils.lowerCase(part), &quot;.&quot;, &quot;&quot;));</span>
 	}
 
 	/**
@@ -326,7 +327,7 @@ public class HumanNameParser implements DatatypeParser&lt;HumanName&gt; {
 	 * @return	True if it is an suffix to the name.
 	 */
 	public static boolean isSuffix(String part) {
-<span class="fc" id="L329">		return SUFFIXES.contains(StringUtils.replace(StringUtils.lowerCase(part), &quot;.&quot;, &quot;&quot;));</span>
+<span class="fc" id="L330">		return SUFFIXES.contains(Strings.CS.replace(StringUtils.lowerCase(part), &quot;.&quot;, &quot;&quot;));</span>
 	}
 
 	/**
@@ -335,7 +336,7 @@ public class HumanNameParser implements DatatypeParser&lt;HumanName&gt; {
 	 * @return	True if it is a degree following the name
 	 */
 	public static boolean isDegree(String part) {
-<span class="fc" id="L338">		return DEGREES.contains(StringUtils.replace(StringUtils.lowerCase(part), &quot;.&quot;, &quot;&quot;));</span>
+<span class="fc" id="L339">		return DEGREES.contains(Strings.CS.replace(StringUtils.lowerCase(part), &quot;.&quot;, &quot;&quot;));</span>
 	}
 
 }
