@@ -3,7 +3,7 @@
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.lang3.Strings;
+import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.CodeType;
 import org.hl7.fhir.r4.model.CodeableConcept;
@@ -109,8 +109,8 @@ public class OBRParser extends AbstractSegmentParser {
 	
 	private boolean equals(Identifier id1, Identifier id2) {
 <span class="nc" id="L111">		return</span>
-<span class="nc bnc" id="L112" title="All 2 branches missed.">			Strings.CS.equals(id1.getSystem(), id2.getSystem()) &amp;&amp;</span>
-<span class="nc bnc" id="L113" title="All 2 branches missed.">			Strings.CS.equals(id1.getValue(), id2.getValue());</span>
+<span class="nc bnc" id="L112" title="All 2 branches missed.">			StringUtils.equals(id1.getSystem(), id2.getSystem()) &amp;&amp;</span>
+<span class="nc bnc" id="L113" title="All 2 branches missed.">			StringUtils.equals(id1.getValue(), id2.getValue());</span>
 	}
 
 	/**
