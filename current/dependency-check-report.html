@@ -91,9 +91,13 @@
                     }
                 });
                 $('#modal-add-header').click(function () {
-                    xml = '<?xml version="1.0" encoding="UTF-8"?>\n<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">\n   ';
-                    xml += $("#modal-text").text().replace(/\n/g,'\n   ');
-                    xml += '\n</suppressions>';
+                    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.4.xsd"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.4.xsd
+                                  https://dependency-check.github.io/DependencyCheck/dependency-suppression.1.4.xsd">
+    ${$("#modal-text").text().replace(/\n/g,'\n    ')}
+</suppressions>`;
                     $('#modal-add-header').toggleClass('active');
                     $('#modal-text').text(xml).focus().select();
                 });
@@ -139,26 +143,26 @@
             }
             function setCopyText(name, matchType, matchValue, suppressType, suppressVal) {
                 var xml =  '<suppress>\n';
-                xml += '   <notes><!'+'[CDATA[\n   file name: ' + name + '\n   ]]'+'></notes>\n';
+                xml += '    <notes><![CDATA[\n    file name: ' + name + '\n    ]]></notes>\n';
                 if (matchType=='packageUrl') {
                     var v = matchValue.match(/^[^@]+/);
                     if (v && v[0]) {
-                        xml += '   <'+matchType+' regex="true">^' + escapeRegExp(v[0]) + '@.*$</'+matchType+'>\n';
+                        xml += '    <'+matchType+' regex="true">^' + escapeRegExp(v[0]) + '@.*$</'+matchType+'>\n';
                     } else {
-                        xml += '   <'+matchType+'>' + matchValue + '</'+matchType+'>\n';
+                        xml += '    <'+matchType+'>' + matchValue + '</'+matchType+'>\n';
                     }
                 } else {
-                    xml += '   <'+matchType+'>' + matchValue + '</'+matchType+'>\n';
+                    xml += '    <'+matchType+'>' + matchValue + '</'+matchType+'>\n';
                 }
                 if (suppressType=='cpe') {
                     v = suppressVal.match(/^cpe:\/a:[^:]+:[^:]+/);
                     if (v && v[0]) {
-                        xml += '   <'+suppressType+'>' + v[0] + '</'+suppressType+'>\n';
+                        xml += '    <'+suppressType+'>' + v[0] + '</'+suppressType+'>\n';
                     } else {
-                        xml += '   <'+suppressType+'>' + suppressVal + '</'+suppressType+'>\n';
+                        xml += '    <'+suppressType+'>' + suppressVal + '</'+suppressType+'>\n';
                     }
                 } else {
-                    xml += '   <'+suppressType+'>' + suppressVal + '</'+suppressType+'>\n';
+                    xml += '    <'+suppressType+'>' + suppressVal + '</'+suppressType+'>\n';
                 }
                 xml += '</suppress>';
                 $('#modal-text').text(xml);
@@ -265,7 +269,8 @@
             }
             #modal-text {
                 border: 0;
-                overflow: hidden
+                overflow: auto;
+                white-space: pre;
             }
             #modal-text:focus {
                 outline: none;
@@ -652,8 +657,8 @@
         <div id="modal-background"></div>
         <div id="modal-content">
             <div>Press CTR-C to copy XML&nbsp;<a href="https://dependency-check.github.io/DependencyCheck/general/suppression.html" class="infolink" target="_blank" title="Help with suppressing false positives">[help]</a></div>
-                <button id="modal-suppress-change-to-packageUrl" class="modal-button suppresstype" title="Supress by Maven Group Artifact Version">Suppress By GAV</button>
-                <button id="modal-suppress-change-to-sha1" class="modal-button suppresstype" title="Supress by SHA1 hash">Suppress By SHA1</button><br/>
+                <button id="modal-suppress-change-to-packageUrl" class="modal-button suppresstype" title="Supress by Maven Group Artifact Version">Suppress by Package URL</button>
+                <button id="modal-suppress-change-to-sha1" class="modal-button suppresstype" title="Supress by SHA1 hash">Suppress by SHA1</button><br/>
                 <input type="hidden" id="suppress-name"/>
                 <input type="hidden" id="suppress-type"/><input type="hidden" id="suppress-val"/>
                 <input type="hidden" id="suppress-sha1"/><input type="hidden" id="suppress-packageUrl"/>
@@ -677,18 +682,18 @@ Getting Help: <a href="https://github.com/dependency-check/DependencyCheck/issue
 
                 Scan Information (<a href="#" title="Click to toggle display" id="scanInformationToggle">show all</a>):<br/>
                     <ul class="indent">
-                        <li><i>dependency-check version</i>: 12.2.0</li>
-                        <li><i>Report Generated On</i>: Fri, 10 Apr 2026 06:48:26 GMT</li>
+                        <li><i>dependency-check version</i>: 12.2.1</li>
+                        <li><i>Report Generated On</i>: Mon, 13 Apr 2026 06:57:24 GMT</li>
                         <li><i>Dependencies Scanned</i>:&nbsp;1 (1 unique)</li>
                         <li><i>Vulnerable Dependencies</i>:&nbsp;<span id="vulnerableCount">0</span></li>
                         <li><i>Vulnerabilities Found</i>:&nbsp;0</li>
                         <li><i>Vulnerabilities Suppressed</i>:&nbsp;0
                         </li>
                         <li class="scaninfo">...</li>
-                        <li class="scaninfo hidden"><i>NVD API Last Checked</i>: 2026-04-09T12:08:10Z</li>
-                        <li class="scaninfo hidden"><i>NVD API Last Modified</i>: 2026-04-09T11:16:21Z</li>
-                        <li class="scaninfo hidden"><i>NVD Cache Last Checked</i>: 2026-04-09T12:08:10Z</li>
-                        <li class="scaninfo hidden"><i>NVD Cache Last Modified</i>: 2026-04-09T11:16:21Z</li>
+                        <li class="scaninfo hidden"><i>NVD API Last Checked</i>: 2026-04-12T11:55:49Z</li>
+                        <li class="scaninfo hidden"><i>NVD API Last Modified</i>: 2026-04-12T11:16:16Z</li>
+                        <li class="scaninfo hidden"><i>NVD Cache Last Checked</i>: 2026-04-12T11:55:49Z</li>
+                        <li class="scaninfo hidden"><i>NVD Cache Last Modified</i>: 2026-04-12T11:16:16Z</li>
                     </ul><br/>
 <h2>Summary</h2>
                 <p><span id="tablecaption-plain">Summary of Vulnerable Dependencies </span><a href="#" title="Click to toggle display" id="vulnerabilityDisplayToggle">(click to show all)</a></p>
@@ -703,11 +708,11 @@ Getting Help: <a href="https://github.com/dependency-check/DependencyCheck/issue
                         <th class="sortable" data-sort="int"    title="The count of evidence collected to identify the CPE">Evidence&nbsp;Count</th>
                     </tr></thead>
                     <tr class="notvulnerable">
-                        <td data-sort-value="V2TOFHIR-2.2.0-SNAPSHOT.JAR"><a href="#l1_08ea0397764feefb15cb97ea5a7325b1b6439f0b">v2tofhir-2.2.0-SNAPSHOT.jar</a></td>
+                        <td data-sort-value="V2TOFHIR-2.2.0-SNAPSHOT.JAR"><a href="#l1_cc7d2d7fa1ed4e1084bc13f8473ad74341a93a94">v2tofhir-2.2.0-SNAPSHOT.jar</a></td>
                         <td data-sort-value="">
                         </td>
                         <td data-sort-value="pkg:maven/gov.cdc.izgw/v2tofhir@2.2.0-SNAPSHOT">
-                                <a href="https://ossindex.sonatype.org/component/pkg:maven/gov.cdc.izgw/v2tofhir@2.2.0-SNAPSHOT?utm_source=dependency-check&amp;utm_medium=integration&amp;utm_content=12.2.0" target="_blank">pkg:maven/gov.cdc.izgw/v2tofhir@2.2.0-SNAPSHOT</a>
+                                <a href="https://ossindex.sonatype.org/component/pkg:maven/gov.cdc.izgw/v2tofhir@2.2.0-SNAPSHOT?utm_source=dependency-check&amp;utm_medium=integration&amp;utm_content=12.2.1" target="_blank">pkg:maven/gov.cdc.izgw/v2tofhir@2.2.0-SNAPSHOT</a>
 </td>
                         <td data-sort-value="-10">&nbsp;</td>
                         <td>0</td>
@@ -716,15 +721,15 @@ Getting Help: <a href="https://github.com/dependency-check/DependencyCheck/issue
                     </tr>
                 </table>
                 <h2 id="header-dependencies">Dependencies (vulnerable)</h2>
-                     <h3 class="subsectionheader standardsubsection notvulnerable"><a name="l1_08ea0397764feefb15cb97ea5a7325b1b6439f0b"></a>v2tofhir-2.2.0-SNAPSHOT.jar</h3>
+                     <h3 class="subsectionheader standardsubsection notvulnerable"><a name="l1_cc7d2d7fa1ed4e1084bc13f8473ad74341a93a94"></a>v2tofhir-2.2.0-SNAPSHOT.jar</h3>
                     <div class="subsectioncontent notvulnerable">
                             <p><b>Description:</b><pre>This is the v2tofhir Converter core code for the IZ Gateway Transformation Service</pre></p>
                         <p>
                             <b>License:</b><pre class="indent">MIT-LICENSE: https://opensource.org/license/MIT</pre>
                             <b>File&nbsp;Path:</b>&nbsp;/github/workspace/target/v2tofhir-2.2.0-SNAPSHOT.jar<br/>
-                            <b>MD5:</b>&nbsp;c8789897b4e5ba0c48c2557b52c9a3d3<br/>
-                            <b>SHA1:</b>&nbsp;08ea0397764feefb15cb97ea5a7325b1b6439f0b<br/>
-                            <b>SHA256:</b>e10aaff3bd95385d3bedcc81be3f87927158c4c1c70585c9a9115e4b24205601
+                            <b>MD5:</b>&nbsp;a86d89bba17ded4330d30e1e8b30b0d7<br/>
+                            <b>SHA1:</b>&nbsp;cc7d2d7fa1ed4e1084bc13f8473ad74341a93a94<br/>
+                            <b>SHA256:</b>4ad17dd56d8bfef8a2ea8bc224f067f271f4166068bade1abac8b7c8c547bab7
                         </p>
                         <h4 id="header1" class="subsectionheader expandable expandablesubsection white">Evidence</h4>
                         <div id="content1" class="subsectioncontent standardsubsection hidden">
@@ -765,7 +770,7 @@ Getting Help: <a href="https://github.com/dependency-check/DependencyCheck/issue
                         <h4 id="header2" class="subsectionheader white">Identifiers</h4>
                         <div id="content2" class="subsectioncontent standardsubsection">
                             <ul>
-                                    <li><a href="https://ossindex.sonatype.org/component/pkg:maven/gov.cdc.izgw/v2tofhir@2.2.0-SNAPSHOT?utm_source=dependency-check&amp;utm_medium=integration&amp;utm_content=12.2.0" target="_blank">pkg:maven/gov.cdc.izgw/v2tofhir@2.2.0-SNAPSHOT</a>
+                                    <li><a href="https://ossindex.sonatype.org/component/pkg:maven/gov.cdc.izgw/v2tofhir@2.2.0-SNAPSHOT?utm_source=dependency-check&amp;utm_medium=integration&amp;utm_content=12.2.1" target="_blank">pkg:maven/gov.cdc.izgw/v2tofhir@2.2.0-SNAPSHOT</a>
                                     &nbsp;&nbsp;(<i>Confidence</i>:High)
                                 </li>
                             </ul>
