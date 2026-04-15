@@ -68,10 +68,10 @@ public class RXAParser extends AbstractSegmentParser {
 		izDetail = IzDetail.get(getMessageParser());
 		izDetail.initializeResources(false, getSegment());
 		if (izDetail.hasImmunization()) {
-			return izDetail.immunization;
+			return izDetail.getImmunization();
 		} else if (izDetail.hasRecommendation()) {
-			recommendation = izDetail.immunizationRecommendation.addRecommendation();
-			return izDetail.immunizationRecommendation;
+			recommendation = izDetail.getImmunizationRecommendation().addRecommendation();
+			return izDetail.getImmunizationRecommendation();
 		}
 		// Until we support RXA more generally, we don't know what to do with this segment 
 		return null;
@@ -87,7 +87,7 @@ public class RXAParser extends AbstractSegmentParser {
 	@ComesFrom(path = "Immunization.occurrenceDateTime", field = 3, comment = "Date/Time Start of Administration")
 	public void setAdministrationDateTime(DateTimeType administrationDateTime) {
 		if (izDetail.hasImmunization()) {
-			izDetail.immunization.setOccurrence(administrationDateTime);
+			izDetail.getImmunization().setOccurrence(administrationDateTime);
 		} else if (izDetail.hasRecommendation()) {
 			recommendation.getDateCriterionFirstRep().setValueElement(administrationDateTime);
 		}
@@ -104,12 +104,12 @@ public class RXAParser extends AbstractSegmentParser {
 		// CDC says RXA-5 cannot repeat, but STC example shows a repeat, handle the
 		// repeat as additional codes.
 		if (izDetail.hasImmunization()) {
-			if (izDetail.immunization.hasVaccineCode()) {
+			if (izDetail.getImmunization().hasVaccineCode()) {
 				for (Coding coding: vaccineCode.getCoding()) {
-					izDetail.immunization.getVaccineCode().addCoding(coding);
+					izDetail.getImmunization().getVaccineCode().addCoding(coding);
 				}
 			} else {
-				izDetail.immunization.setVaccineCode(vaccineCode);
+				izDetail.getImmunization().setVaccineCode(vaccineCode);
 			}
 		} else if (izDetail.hasRecommendation()) {
 			if (recommendation.hasVaccineCode()) {
@@ -131,7 +131,7 @@ public class RXAParser extends AbstractSegmentParser {
 	@ComesFrom(path = "Immunization.doseQuantity.value", field = 6, comment = "Administered Amount")
 	public void setDoseAmount(DecimalType doseQuantity) {
 		if (izDetail.hasImmunization()) {
-			izDetail.immunization.getDoseQuantity().setValueElement(doseQuantity);
+			izDetail.getImmunization().getDoseQuantity().setValueElement(doseQuantity);
 		}
 	}
 	/*
@@ -145,7 +145,7 @@ public class RXAParser extends AbstractSegmentParser {
 			also = "Immunization.doseQuantity.unit")
 	public void setDoseAmount(CodeableConcept doseUnits) {
 		if (izDetail.hasImmunization()) {
-			DatatypeConverter.setUnits(izDetail.immunization.getDoseQuantity(), doseUnits);
+			DatatypeConverter.setUnits(izDetail.getImmunization().getDoseQuantity(), doseUnits);
 		}
 	}
 	
@@ -167,8 +167,8 @@ public class RXAParser extends AbstractSegmentParser {
 	public void setAdministeringProvider(Practitioner adminProvider) {
 		if (izDetail.hasImmunization()) {
 			addResource(adminProvider);
-			Reference ref = ParserUtils.toReference(adminProvider, izDetail.immunization, "performer", "practitioner");
-			ImmunizationPerformerComponent perf = izDetail.immunization.addPerformer().setActor(ref);
+			Reference ref = ParserUtils.toReference(adminProvider, izDetail.getImmunization(), "performer", "practitioner");
+			ImmunizationPerformerComponent perf = izDetail.getImmunization().addPerformer().setActor(ref);
 			perf.setFunction(Codes.ADMIN_PROVIDER_FUNCTION_CODE);
 		}
 	}
@@ -190,7 +190,7 @@ public class RXAParser extends AbstractSegmentParser {
 			// since few HL7 V2 versions have both (RXA-11 withdrawl started 
 			// when RXA-27 introduced in V2.6).
 			addResource(administerAt);
-			izDetail.immunization.setLocation(ParserUtils.toReference(administerAt, izDetail.immunization, "location"));
+			izDetail.getImmunization().setLocation(ParserUtils.toReference(administerAt, izDetail.getImmunization(), "location"));
 		}
 	}
 
@@ -204,11 +204,11 @@ public class RXAParser extends AbstractSegmentParser {
 	@ComesFrom(path = "Immunization.location.Location.address", field = 28, comment = "Administered-at Address")
 	public void setAdministerAtAddress(Address administerAtAddress) {
 		if (izDetail.hasImmunization()) {
-			Reference locRef = izDetail.immunization.getLocation();
+			Reference locRef = izDetail.getImmunization().getLocation();
 			Location location = null;
 			if (locRef == null) {
 				location = createResource(Location.class);
-				izDetail.immunization.setLocation(ParserUtils.toReference(location, izDetail.immunization, "location"));
+				izDetail.getImmunization().setLocation(ParserUtils.toReference(location, izDetail.getImmunization(), "location"));
 			} else {
 				location = ParserUtils.getResource(Location.class, locRef);
 			}
@@ -226,7 +226,7 @@ public class RXAParser extends AbstractSegmentParser {
 	@ComesFrom(path = "Immunization.lotNumber", field = 15, comment = "Substance Lot Number")
 	public void setLotNumber(StringType lotNumber) {
 		if (izDetail.hasImmunization()) {
-			izDetail.immunization.setLotNumberElement(lotNumber);
+			izDetail.getImmunization().setLotNumberElement(lotNumber);
 		}
 	}
 	
@@ -240,7 +240,7 @@ public class RXAParser extends AbstractSegmentParser {
 	@ComesFrom(path = "Immunization.expirationDate", field = 16, comment = "Substance Expiration Date")
 	public void setExpirationDate(DateType expiration) {
 		if (izDetail.hasImmunization()) {
-			izDetail.immunization.setExpirationDateElement(expiration);
+			izDetail.getImmunization().setExpirationDateElement(expiration);
 		}
 	}
 	
@@ -268,7 +268,7 @@ public class RXAParser extends AbstractSegmentParser {
 			if (mOrg.hasName() || mOrg.hasIdentifier()) {
 				addResource(mOrg);
 			}
-			izDetail.immunization.setManufacturer(ParserUtils.toReference(mOrg, izDetail.immunization, "manufacturer"));
+			izDetail.getImmunization().setManufacturer(ParserUtils.toReference(mOrg, izDetail.getImmunization(), "manufacturer"));
 		}
 	}
 	
@@ -282,8 +282,8 @@ public class RXAParser extends AbstractSegmentParser {
 	@ComesFrom(path = "Immunization.statusReason", field = 18, comment = "Substance/Treatment Refusal Reason")
 	public void setSubstanceTreatmentRefusalReason(CodeableConcept substanceTreatmentRefusalReason) {
 		if (izDetail.hasImmunization()) {
-			izDetail.immunization.setStatus(ImmunizationStatus.NOTDONE);
-			izDetail.immunization.setStatusReason(substanceTreatmentRefusalReason);
+			izDetail.getImmunization().setStatus(ImmunizationStatus.NOTDONE);
+			izDetail.getImmunization().setStatusReason(substanceTreatmentRefusalReason);
 		}
 	}
 	
@@ -297,7 +297,7 @@ public class RXAParser extends AbstractSegmentParser {
 	@ComesFrom(path = "Immunization.reasonCode", field = 19, comment = "Indication")
 	public void setIndication(CodeableConcept indication) {
 		if (izDetail.hasImmunization()) {
-			izDetail.immunization.addReasonCode(indication);
+			izDetail.getImmunization().addReasonCode(indication);
 		} else if (izDetail.hasRecommendation()) {
 			recommendation.addForecastReason(indication);
 		}
@@ -333,7 +333,7 @@ public class RXAParser extends AbstractSegmentParser {
 			}
 			// RXA-22 field in can be D, which is a delete (entered-in-error), 
 			// that overrides first, so we don't check for conflicts
-			izDetail.immunization.setStatus(code);
+			izDetail.getImmunization().setStatus(code);
 		}
 	}
 
@@ -347,9 +347,9 @@ public class RXAParser extends AbstractSegmentParser {
 	@ComesFrom(path = "Immunization.recorded", field = 22, comment = "System Entry Date/Time")
 	public void setSystemEntryDateTime(DateTimeType systemEntryDateTime) {
 		if (izDetail.hasImmunization()) {
-			izDetail.immunization.setRecordedElement(systemEntryDateTime);
+			izDetail.getImmunization().setRecordedElement(systemEntryDateTime);
 		} else if (izDetail.hasRecommendation()) {
-			izDetail.immunizationRecommendation.setDateElement(systemEntryDateTime);
+			izDetail.getImmunizationRecommendation().setDateElement(systemEntryDateTime);
 		}
 	}
 }

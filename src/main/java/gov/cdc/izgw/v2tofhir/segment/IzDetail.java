@@ -28,7 +28,7 @@ public class IzDetail {
 	private final MessageParser mp;
 	
 	private Boolean hasImmunization = null;
-	Immunization immunization;
+	private Immunization immunization;
 	
 	private Boolean hasImmunizationRecommendation = null;
 	ImmunizationRecommendation immunizationRecommendation;
@@ -71,7 +71,11 @@ public class IzDetail {
 		}
 	}
 
-	boolean hasRecommendation() {
+	/**
+	 * Returns true if this message context contains an ImmunizationRecommendation.
+	 * @return true if an ImmunizationRecommendation is expected/present for this message
+	 */
+	public boolean hasRecommendation() {
 		if (hasImmunizationRecommendation != null) {
 			return hasImmunizationRecommendation;
 		}
@@ -79,12 +83,32 @@ public class IzDetail {
 		return hasImmunizationRecommendation;
 	}
 	
-	boolean hasImmunization() {
+	/**
+	 * Returns true if this message context contains an Immunization.
+	 * @return true if an Immunization is expected/present for this message
+	 */
+	public boolean hasImmunization() {
 		if (hasImmunization != null) {
 			return hasImmunization;
 		}
 		checkForImmunization();
 		return hasImmunization;
+	}
+	
+	/**
+	 * Returns the Immunization resource for this message context, or null if none has been created.
+	 * @return the Immunization resource, or null
+	 */
+	public Immunization getImmunization() {
+		return immunization;
+	}
+
+	/**
+	 * Returns the ImmunizationRecommendation resource for this message context, or null if none has been created.
+	 * @return the ImmunizationRecommendation resource, or null
+	 */
+	public ImmunizationRecommendation getImmunizationRecommendation() {
+		return immunizationRecommendation;
 	}
 	
 	private void checkForImmunization() {
@@ -163,10 +187,10 @@ public class IzDetail {
 	}
 	/**
 	 * Get the recommendation component.
-	 * @return The recommendation from the ImmunizationRecommendation resource.
+	 * @return The recommendation from the ImmunizationRecommendation resource, or null if not yet created.
 	 */
 	public ImmunizationRecommendationRecommendationComponent getRecommendation() {
-		if (hasRecommendation()) {
+		if (hasRecommendation() && immunizationRecommendation != null) {
 			// Get the recommendation created by the last RXA.
 			List<ImmunizationRecommendationRecommendationComponent> l = immunizationRecommendation.getRecommendation();
 			if (l.isEmpty()) {

@@ -138,7 +138,7 @@ public class ORCParser extends AbstractSegmentParser {
 		}
 		order.addIdentifier(ident);
 		if (izDetail.hasImmunization()) {
-			izDetail.immunization.addIdentifier(ident);
+			izDetail.getImmunization().addIdentifier(ident);
 		}
 	}
 	/**
@@ -229,7 +229,7 @@ public class ORCParser extends AbstractSegmentParser {
 	public void setOrderCreationTime(DateTimeType orderDateTime) {
 		order.setAuthoredOnElement(orderDateTime);
 		if (izDetail.hasImmunization()) {
-			izDetail.immunization.setRecordedElement(orderDateTime);
+			izDetail.getImmunization().setRecordedElement(orderDateTime);
 		}
 	}
 	
@@ -255,8 +255,8 @@ public class ORCParser extends AbstractSegmentParser {
 			requesterRef = ParserUtils.toReference(requester, order, REQUESTER);
 			order.setRequester(requesterRef);
 			if (izDetail.hasImmunization()) {
-				requesterRef = ParserUtils.toReference(requester, izDetail.immunization, "performer", "practitioner");
-				ImmunizationPerformerComponent perf = izDetail.immunization.addPerformer().setActor(requesterRef);
+				requesterRef = ParserUtils.toReference(requester, izDetail.getImmunization(), "performer", "practitioner");
+				ImmunizationPerformerComponent perf = izDetail.getImmunization().addPerformer().setActor(requesterRef);
 				perf.setFunction(Codes.ORDERING_PROVIDER_FUNCTION_CODE);
 			}
 		}
@@ -347,7 +347,7 @@ public class ORCParser extends AbstractSegmentParser {
 		for (Coding securityCode: confidentiality.getCoding()) {
 			order.getMeta().addSecurity(securityCode);
 			if (izDetail.hasImmunization()) {
-				izDetail.immunization.getMeta().addSecurity(securityCode);
+				izDetail.getImmunization().getMeta().addSecurity(securityCode);
 			}
 		}
 	}

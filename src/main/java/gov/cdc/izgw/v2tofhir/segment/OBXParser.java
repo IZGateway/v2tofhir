@@ -425,16 +425,17 @@ public class OBXParser extends AbstractSegmentParser {
 	}
 	
 	private void handleVisObservations(IBase converted) {
+		Immunization immunization = izDetail.getImmunization();
 		if (VisCode.VACCINE_ELIGIBILITY_CODE.equals(redirect)) {
-			izDetail.immunization.addProgramEligibility((CodeableConcept) converted);
-			observation.addPartOf(ParserUtils.toReference(izDetail.immunization, observation, "partOf"));
+			immunization.addProgramEligibility((CodeableConcept) converted);
+			observation.addPartOf(ParserUtils.toReference(izDetail.getImmunization(), observation, "partOf"));
 			return;
 		} 
-		ImmunizationEducationComponent education = getLastEducation(izDetail.immunization);
+		ImmunizationEducationComponent education = getLastEducation(immunization);
 		// If the observation is already present in education
 		if (redirect.isPresent(education)) {
 			// Create a new education element.
-			education = izDetail.immunization.addEducation();
+			education = izDetail.getImmunization().addEducation();
 		}
 		switch (redirect) {
 		case VIS_DELIVERY_DATE_CODE:
@@ -485,9 +486,9 @@ public class OBXParser extends AbstractSegmentParser {
 		if (!VisCode.OTHER.equals(redirect)) {
 			Reference ref = null;
 			if (izDetail.hasImmunization()) {
-				ref = ParserUtils.toReference(izDetail.immunization, observation, "partof");
+				ref = ParserUtils.toReference(izDetail.getImmunization(), observation, "partof");
 			} else if (izDetail.hasRecommendation()) {
-				ref = ParserUtils.toReference(izDetail.immunizationRecommendation, observation, "partof");
+				ref = ParserUtils.toReference(izDetail.getImmunizationRecommendation(), observation, "partof");
 			}
 			if (ref != null && !observation.getPartOf().contains(ref)) {
 				observation.addPartOf(ref);
