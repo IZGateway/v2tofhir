@@ -1049,6 +1049,7 @@ public class DatatypeConverter {
 	public static <T extends BaseDateTimeType, U extends BaseDateTimeType> U castInto(T from, U to) {
 		to.setValue(from.getValue());
 		to.setPrecision(from.getPrecision());
+		to.setTimeZone(from.getTimeZone());
 		return to;
 	}
 
