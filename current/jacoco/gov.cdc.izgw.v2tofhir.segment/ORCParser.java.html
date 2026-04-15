@@ -138,7 +138,7 @@ public class ORCParser extends AbstractSegmentParser {
 		}
 <span class="fc" id="L139">		order.addIdentifier(ident);</span>
 <span class="fc bfc" id="L140" title="All 2 branches covered.">		if (izDetail.hasImmunization()) {</span>
-<span class="fc" id="L141">			izDetail.immunization.addIdentifier(ident);</span>
+<span class="fc" id="L141">			izDetail.getImmunization().addIdentifier(ident);</span>
 		}
 <span class="fc" id="L143">	}</span>
 	/**
@@ -229,7 +229,7 @@ public class ORCParser extends AbstractSegmentParser {
 	public void setOrderCreationTime(DateTimeType orderDateTime) {
 <span class="fc" id="L230">		order.setAuthoredOnElement(orderDateTime);</span>
 <span class="fc bfc" id="L231" title="All 2 branches covered.">		if (izDetail.hasImmunization()) {</span>
-<span class="fc" id="L232">			izDetail.immunization.setRecordedElement(orderDateTime);</span>
+<span class="fc" id="L232">			izDetail.getImmunization().setRecordedElement(orderDateTime);</span>
 		}
 <span class="fc" id="L234">	}</span>
 	
@@ -255,8 +255,8 @@ public class ORCParser extends AbstractSegmentParser {
 <span class="fc" id="L255">			requesterRef = ParserUtils.toReference(requester, order, REQUESTER);</span>
 <span class="fc" id="L256">			order.setRequester(requesterRef);</span>
 <span class="fc bfc" id="L257" title="All 2 branches covered.">			if (izDetail.hasImmunization()) {</span>
-<span class="fc" id="L258">				requesterRef = ParserUtils.toReference(requester, izDetail.immunization, &quot;performer&quot;, &quot;practitioner&quot;);</span>
-<span class="fc" id="L259">				ImmunizationPerformerComponent perf = izDetail.immunization.addPerformer().setActor(requesterRef);</span>
+<span class="fc" id="L258">				requesterRef = ParserUtils.toReference(requester, izDetail.getImmunization(), &quot;performer&quot;, &quot;practitioner&quot;);</span>
+<span class="fc" id="L259">				ImmunizationPerformerComponent perf = izDetail.getImmunization().addPerformer().setActor(requesterRef);</span>
 <span class="fc" id="L260">				perf.setFunction(Codes.ORDERING_PROVIDER_FUNCTION_CODE);</span>
 			}
 		}
@@ -347,7 +347,7 @@ public class ORCParser extends AbstractSegmentParser {
 <span class="nc bnc" id="L347" title="All 2 branches missed.">		for (Coding securityCode: confidentiality.getCoding()) {</span>
 <span class="nc" id="L348">			order.getMeta().addSecurity(securityCode);</span>
 <span class="nc bnc" id="L349" title="All 2 branches missed.">			if (izDetail.hasImmunization()) {</span>
-<span class="nc" id="L350">				izDetail.immunization.getMeta().addSecurity(securityCode);</span>
+<span class="nc" id="L350">				izDetail.getImmunization().getMeta().addSecurity(securityCode);</span>
 			}
 <span class="nc" id="L352">		}</span>
 <span class="nc" id="L353">	}</span>

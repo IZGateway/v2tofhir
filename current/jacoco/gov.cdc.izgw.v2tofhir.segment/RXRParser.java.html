@@ -43,7 +43,7 @@ public class RXRParser extends AbstractSegmentParser {
 	@Override
 	public IBaseResource setup() {
 <span class="fc" id="L45">		izDetail = IzDetail.get(getMessageParser());</span>
-<span class="fc" id="L46">		return izDetail.immunization;</span>
+<span class="fc" id="L46">		return izDetail.getImmunization();</span>
 	}
 	
 	/*
@@ -56,7 +56,7 @@ public class RXRParser extends AbstractSegmentParser {
 	@ComesFrom(path = &quot;Immunization.route&quot;, field = 1, table = &quot;0162&quot;, comment = &quot;Route&quot;)
 	public void setRoute(CodeableConcept route) {
 <span class="pc bpc" id="L58" title="1 of 2 branches missed.">		if (izDetail.hasImmunization()) {</span>
-<span class="fc" id="L59">			izDetail.immunization.setRoute(route);</span>
+<span class="fc" id="L59">			izDetail.getImmunization().setRoute(route);</span>
 		}
 <span class="fc" id="L61">	}</span>
 	/*
@@ -69,7 +69,7 @@ public class RXRParser extends AbstractSegmentParser {
 	@ComesFrom(path = &quot;Immunization.site&quot;, field = 2, table = &quot;0163&quot;, comment = &quot;Administration Site&quot;)
 	public void setAdministrationSite(CodeableConcept administrationSite) {
 <span class="pc bpc" id="L71" title="1 of 2 branches missed.">		if (izDetail.hasImmunization()) {</span>
-<span class="fc" id="L72">			izDetail.immunization.setSite(administrationSite);</span>
+<span class="fc" id="L72">			izDetail.getImmunization().setSite(administrationSite);</span>
 		}
 <span class="fc" id="L74">	}</span>
 }

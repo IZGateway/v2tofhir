@@ -68,10 +68,10 @@ public class RXAParser extends AbstractSegmentParser {
 <span class="fc" id="L68">		izDetail = IzDetail.get(getMessageParser());</span>
 <span class="fc" id="L69">		izDetail.initializeResources(false, getSegment());</span>
 <span class="fc bfc" id="L70" title="All 2 branches covered.">		if (izDetail.hasImmunization()) {</span>
-<span class="fc" id="L71">			return izDetail.immunization;</span>
+<span class="fc" id="L71">			return izDetail.getImmunization();</span>
 <span class="pc bpc" id="L72" title="1 of 2 branches missed.">		} else if (izDetail.hasRecommendation()) {</span>
-<span class="fc" id="L73">			recommendation = izDetail.immunizationRecommendation.addRecommendation();</span>
-<span class="fc" id="L74">			return izDetail.immunizationRecommendation;</span>
+<span class="fc" id="L73">			recommendation = izDetail.getImmunizationRecommendation().addRecommendation();</span>
+<span class="fc" id="L74">			return izDetail.getImmunizationRecommendation();</span>
 		}
 		// Until we support RXA more generally, we don't know what to do with this segment 
 <span class="nc" id="L77">		return null;</span>
@@ -87,7 +87,7 @@ public class RXAParser extends AbstractSegmentParser {
 	@ComesFrom(path = &quot;Immunization.occurrenceDateTime&quot;, field = 3, comment = &quot;Date/Time Start of Administration&quot;)
 	public void setAdministrationDateTime(DateTimeType administrationDateTime) {
 <span class="fc bfc" id="L89" title="All 2 branches covered.">		if (izDetail.hasImmunization()) {</span>
-<span class="fc" id="L90">			izDetail.immunization.setOccurrence(administrationDateTime);</span>
+<span class="fc" id="L90">			izDetail.getImmunization().setOccurrence(administrationDateTime);</span>
 <span class="pc bpc" id="L91" title="1 of 2 branches missed.">		} else if (izDetail.hasRecommendation()) {</span>
 <span class="fc" id="L92">			recommendation.getDateCriterionFirstRep().setValueElement(administrationDateTime);</span>
 		}
@@ -104,12 +104,12 @@ public class RXAParser extends AbstractSegmentParser {
 		// CDC says RXA-5 cannot repeat, but STC example shows a repeat, handle the
 		// repeat as additional codes.
 <span class="fc bfc" id="L106" title="All 2 branches covered.">		if (izDetail.hasImmunization()) {</span>
-<span class="pc bpc" id="L107" title="1 of 2 branches missed.">			if (izDetail.immunization.hasVaccineCode()) {</span>
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">			if (izDetail.getImmunization().hasVaccineCode()) {</span>
 <span class="nc bnc" id="L108" title="All 2 branches missed.">				for (Coding coding: vaccineCode.getCoding()) {</span>
-<span class="nc" id="L109">					izDetail.immunization.getVaccineCode().addCoding(coding);</span>
+<span class="nc" id="L109">					izDetail.getImmunization().getVaccineCode().addCoding(coding);</span>
 <span class="nc" id="L110">				}</span>
 			} else {
-<span class="fc" id="L112">				izDetail.immunization.setVaccineCode(vaccineCode);</span>
+<span class="fc" id="L112">				izDetail.getImmunization().setVaccineCode(vaccineCode);</span>
 			}
 <span class="pc bpc" id="L114" title="1 of 2 branches missed.">		} else if (izDetail.hasRecommendation()) {</span>
 <span class="pc bpc" id="L115" title="1 of 2 branches missed.">			if (recommendation.hasVaccineCode()) {</span>
@@ -131,7 +131,7 @@ public class RXAParser extends AbstractSegmentParser {
 	@ComesFrom(path = &quot;Immunization.doseQuantity.value&quot;, field = 6, comment = &quot;Administered Amount&quot;)
 	public void setDoseAmount(DecimalType doseQuantity) {
 <span class="fc bfc" id="L133" title="All 2 branches covered.">		if (izDetail.hasImmunization()) {</span>
-<span class="fc" id="L134">			izDetail.immunization.getDoseQuantity().setValueElement(doseQuantity);</span>
+<span class="fc" id="L134">			izDetail.getImmunization().getDoseQuantity().setValueElement(doseQuantity);</span>
 		}
 <span class="fc" id="L136">	}</span>
 	/*
@@ -145,7 +145,7 @@ public class RXAParser extends AbstractSegmentParser {
 			also = &quot;Immunization.doseQuantity.unit&quot;)
 	public void setDoseAmount(CodeableConcept doseUnits) {
 <span class="fc bfc" id="L147" title="All 2 branches covered.">		if (izDetail.hasImmunization()) {</span>
-<span class="fc" id="L148">			DatatypeConverter.setUnits(izDetail.immunization.getDoseQuantity(), doseUnits);</span>
+<span class="fc" id="L148">			DatatypeConverter.setUnits(izDetail.getImmunization().getDoseQuantity(), doseUnits);</span>
 		}
 <span class="fc" id="L150">	}</span>
 	
@@ -167,8 +167,8 @@ public class RXAParser extends AbstractSegmentParser {
 	public void setAdministeringProvider(Practitioner adminProvider) {
 <span class="fc bfc" id="L168" title="All 2 branches covered.">		if (izDetail.hasImmunization()) {</span>
 <span class="fc" id="L169">			addResource(adminProvider);</span>
-<span class="fc" id="L170">			Reference ref = ParserUtils.toReference(adminProvider, izDetail.immunization, &quot;performer&quot;, &quot;practitioner&quot;);</span>
-<span class="fc" id="L171">			ImmunizationPerformerComponent perf = izDetail.immunization.addPerformer().setActor(ref);</span>
+<span class="fc" id="L170">			Reference ref = ParserUtils.toReference(adminProvider, izDetail.getImmunization(), &quot;performer&quot;, &quot;practitioner&quot;);</span>
+<span class="fc" id="L171">			ImmunizationPerformerComponent perf = izDetail.getImmunization().addPerformer().setActor(ref);</span>
 <span class="fc" id="L172">			perf.setFunction(Codes.ADMIN_PROVIDER_FUNCTION_CODE);</span>
 		}
 <span class="fc" id="L174">	}</span>
@@ -190,7 +190,7 @@ public class RXAParser extends AbstractSegmentParser {
 			// since few HL7 V2 versions have both (RXA-11 withdrawl started 
 			// when RXA-27 introduced in V2.6).
 <span class="fc" id="L192">			addResource(administerAt);</span>
-<span class="fc" id="L193">			izDetail.immunization.setLocation(ParserUtils.toReference(administerAt, izDetail.immunization, &quot;location&quot;));</span>
+<span class="fc" id="L193">			izDetail.getImmunization().setLocation(ParserUtils.toReference(administerAt, izDetail.getImmunization(), &quot;location&quot;));</span>
 		}
 <span class="fc" id="L195">	}</span>
 
@@ -204,11 +204,11 @@ public class RXAParser extends AbstractSegmentParser {
 	@ComesFrom(path = &quot;Immunization.location.Location.address&quot;, field = 28, comment = &quot;Administered-at Address&quot;)
 	public void setAdministerAtAddress(Address administerAtAddress) {
 <span class="nc bnc" id="L206" title="All 2 branches missed.">		if (izDetail.hasImmunization()) {</span>
-<span class="nc" id="L207">			Reference locRef = izDetail.immunization.getLocation();</span>
+<span class="nc" id="L207">			Reference locRef = izDetail.getImmunization().getLocation();</span>
 <span class="nc" id="L208">			Location location = null;</span>
 <span class="nc bnc" id="L209" title="All 2 branches missed.">			if (locRef == null) {</span>
 <span class="nc" id="L210">				location = createResource(Location.class);</span>
-<span class="nc" id="L211">				izDetail.immunization.setLocation(ParserUtils.toReference(location, izDetail.immunization, &quot;location&quot;));</span>
+<span class="nc" id="L211">				izDetail.getImmunization().setLocation(ParserUtils.toReference(location, izDetail.getImmunization(), &quot;location&quot;));</span>
 			} else {
 <span class="nc" id="L213">				location = ParserUtils.getResource(Location.class, locRef);</span>
 			}
@@ -226,7 +226,7 @@ public class RXAParser extends AbstractSegmentParser {
 	@ComesFrom(path = &quot;Immunization.lotNumber&quot;, field = 15, comment = &quot;Substance Lot Number&quot;)
 	public void setLotNumber(StringType lotNumber) {
 <span class="fc bfc" id="L228" title="All 2 branches covered.">		if (izDetail.hasImmunization()) {</span>
-<span class="fc" id="L229">			izDetail.immunization.setLotNumberElement(lotNumber);</span>
+<span class="fc" id="L229">			izDetail.getImmunization().setLotNumberElement(lotNumber);</span>
 		}
 <span class="fc" id="L231">	}</span>
 	
@@ -240,7 +240,7 @@ public class RXAParser extends AbstractSegmentParser {
 	@ComesFrom(path = &quot;Immunization.expirationDate&quot;, field = 16, comment = &quot;Substance Expiration Date&quot;)
 	public void setExpirationDate(DateType expiration) {
 <span class="pc bpc" id="L242" title="1 of 2 branches missed.">		if (izDetail.hasImmunization()) {</span>
-<span class="fc" id="L243">			izDetail.immunization.setExpirationDateElement(expiration);</span>
+<span class="fc" id="L243">			izDetail.getImmunization().setExpirationDateElement(expiration);</span>
 		}
 <span class="fc" id="L245">	}</span>
 	
@@ -268,7 +268,7 @@ public class RXAParser extends AbstractSegmentParser {
 <span class="pc bpc" id="L268" title="3 of 4 branches missed.">			if (mOrg.hasName() || mOrg.hasIdentifier()) {</span>
 <span class="fc" id="L269">				addResource(mOrg);</span>
 			}
-<span class="fc" id="L271">			izDetail.immunization.setManufacturer(ParserUtils.toReference(mOrg, izDetail.immunization, &quot;manufacturer&quot;));</span>
+<span class="fc" id="L271">			izDetail.getImmunization().setManufacturer(ParserUtils.toReference(mOrg, izDetail.getImmunization(), &quot;manufacturer&quot;));</span>
 		}
 <span class="fc" id="L273">	}</span>
 	
@@ -282,8 +282,8 @@ public class RXAParser extends AbstractSegmentParser {
 	@ComesFrom(path = &quot;Immunization.statusReason&quot;, field = 18, comment = &quot;Substance/Treatment Refusal Reason&quot;)
 	public void setSubstanceTreatmentRefusalReason(CodeableConcept substanceTreatmentRefusalReason) {
 <span class="pc bpc" id="L284" title="1 of 2 branches missed.">		if (izDetail.hasImmunization()) {</span>
-<span class="fc" id="L285">			izDetail.immunization.setStatus(ImmunizationStatus.NOTDONE);</span>
-<span class="fc" id="L286">			izDetail.immunization.setStatusReason(substanceTreatmentRefusalReason);</span>
+<span class="fc" id="L285">			izDetail.getImmunization().setStatus(ImmunizationStatus.NOTDONE);</span>
+<span class="fc" id="L286">			izDetail.getImmunization().setStatusReason(substanceTreatmentRefusalReason);</span>
 		}
 <span class="fc" id="L288">	}</span>
 	
@@ -297,7 +297,7 @@ public class RXAParser extends AbstractSegmentParser {
 	@ComesFrom(path = &quot;Immunization.reasonCode&quot;, field = 19, comment = &quot;Indication&quot;)
 	public void setIndication(CodeableConcept indication) {
 <span class="pc bpc" id="L299" title="1 of 2 branches missed.">		if (izDetail.hasImmunization()) {</span>
-<span class="fc" id="L300">			izDetail.immunization.addReasonCode(indication);</span>
+<span class="fc" id="L300">			izDetail.getImmunization().addReasonCode(indication);</span>
 <span class="nc bnc" id="L301" title="All 2 branches missed.">		} else if (izDetail.hasRecommendation()) {</span>
 <span class="nc" id="L302">			recommendation.addForecastReason(indication);</span>
 		}
@@ -333,7 +333,7 @@ public class RXAParser extends AbstractSegmentParser {
 			}
 			// RXA-22 field in can be D, which is a delete (entered-in-error), 
 			// that overrides first, so we don't check for conflicts
-<span class="fc" id="L336">			izDetail.immunization.setStatus(code);</span>
+<span class="fc" id="L336">			izDetail.getImmunization().setStatus(code);</span>
 		}
 <span class="fc" id="L338">	}</span>
 
@@ -347,9 +347,9 @@ public class RXAParser extends AbstractSegmentParser {
 	@ComesFrom(path = &quot;Immunization.recorded&quot;, field = 22, comment = &quot;System Entry Date/Time&quot;)
 	public void setSystemEntryDateTime(DateTimeType systemEntryDateTime) {
 <span class="nc bnc" id="L349" title="All 2 branches missed.">		if (izDetail.hasImmunization()) {</span>
-<span class="nc" id="L350">			izDetail.immunization.setRecordedElement(systemEntryDateTime);</span>
+<span class="nc" id="L350">			izDetail.getImmunization().setRecordedElement(systemEntryDateTime);</span>
 <span class="nc bnc" id="L351" title="All 2 branches missed.">		} else if (izDetail.hasRecommendation()) {</span>
-<span class="nc" id="L352">			izDetail.immunizationRecommendation.setDateElement(systemEntryDateTime);</span>
+<span class="nc" id="L352">			izDetail.getImmunizationRecommendation().setDateElement(systemEntryDateTime);</span>
 		}
 <span class="nc" id="L354">	}</span>
 }
