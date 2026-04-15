@@ -31,15 +31,21 @@ public class IzDetail {
 	private Immunization immunization;
 	
 	private Boolean hasImmunizationRecommendation = null;
-	ImmunizationRecommendation immunizationRecommendation;
-	
-	Organization requestingOrganization;
+	private ImmunizationRecommendation immunizationRecommendation;
+
+	private Organization requestingOrganization;
 	private Segment segment;
-	
+
 	private IzDetail(MessageParser mp) {
 		this.mp = mp;
 	}
-	static IzDetail get(MessageParser mp) {
+
+	/**
+	 * Get or create the IzDetail instance for the given MessageParser context.
+	 * @param mp the message parser
+	 * @return the IzDetail instance for this parse context
+	 */
+	public static IzDetail get(MessageParser mp) {
 		IzDetail detail = mp.getContext().getProperty(IzDetail.class);
 		if (detail == null) {
 			detail = new IzDetail(mp);
@@ -110,7 +116,23 @@ public class IzDetail {
 	public ImmunizationRecommendation getImmunizationRecommendation() {
 		return immunizationRecommendation;
 	}
-	
+
+	/**
+	 * Returns the requesting Organization resource for this message context, or null if none has been created.
+	 * @return the requesting Organization resource, or null
+	 */
+	public Organization getRequestingOrganization() {
+		return requestingOrganization;
+	}
+
+	/**
+	 * Sets the requesting Organization resource for this message context.
+	 * @param requestingOrganization the Organization to associate with this context
+	 */
+	public void setRequestingOrganization(Organization requestingOrganization) {
+		this.requestingOrganization = requestingOrganization;
+	}
+
 	private void checkForImmunization() {
 		// Look at the RXA, Profile and Message Header
 		hasImmunization = Boolean.FALSE;
