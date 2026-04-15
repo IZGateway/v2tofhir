@@ -31,21 +31,27 @@ public class IzDetail {
 	private Immunization immunization;
 	
 <span class="fc" id="L33">	private Boolean hasImmunizationRecommendation = null;</span>
-	ImmunizationRecommendation immunizationRecommendation;
-	
-	Organization requestingOrganization;
+	private ImmunizationRecommendation immunizationRecommendation;
+
+	private Organization requestingOrganization;
 	private Segment segment;
-	
+
 <span class="fc" id="L39">	private IzDetail(MessageParser mp) {</span>
 <span class="fc" id="L40">		this.mp = mp;</span>
 <span class="fc" id="L41">	}</span>
-	static IzDetail get(MessageParser mp) {
-<span class="fc" id="L43">		IzDetail detail = mp.getContext().getProperty(IzDetail.class);</span>
-<span class="fc bfc" id="L44" title="All 2 branches covered.">		if (detail == null) {</span>
-<span class="fc" id="L45">			detail = new IzDetail(mp);</span>
-<span class="fc" id="L46">			mp.getContext().setProperty(detail);</span>
+
+	/**
+	 * Get or create the IzDetail instance for the given MessageParser context.
+	 * @param mp the message parser
+	 * @return the IzDetail instance for this parse context
+	 */
+	public static IzDetail get(MessageParser mp) {
+<span class="fc" id="L49">		IzDetail detail = mp.getContext().getProperty(IzDetail.class);</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">		if (detail == null) {</span>
+<span class="fc" id="L51">			detail = new IzDetail(mp);</span>
+<span class="fc" id="L52">			mp.getContext().setProperty(detail);</span>
 		}
-<span class="fc" id="L48">		return detail;</span>
+<span class="fc" id="L54">		return detail;</span>
 	}
 	
 	/**
@@ -53,34 +59,34 @@ public class IzDetail {
 	 * @param mp	The message parser used for testing
 	 */
 	public static void testWith(MessageParser mp) {
-<span class="fc" id="L56">		IzDetail detail = mp.getContext().getProperty(IzDetail.class);</span>
-<span class="pc bpc" id="L57" title="1 of 2 branches missed.">		if (detail == null) {</span>
-<span class="fc" id="L58">			detail = new IzDetail(mp);</span>
-<span class="fc" id="L59">			detail.hasImmunization = true;</span>
-<span class="fc" id="L60">			detail.hasImmunizationRecommendation = false;</span>
-<span class="fc" id="L61">			detail.immunization = mp.createResource(Immunization.class);</span>
-<span class="fc" id="L62">			MessageHeader mh = mp.getFirstResource(MessageHeader.class);</span>
-<span class="pc bpc" id="L63" title="3 of 4 branches missed.">			if (mh != null &amp;&amp; detail.hasImmunization()) {</span>
-<span class="nc" id="L64">				mh.addFocus(ParserUtils.toReference(detail.immunization, mh, &quot;focus&quot;));</span>
+<span class="fc" id="L62">		IzDetail detail = mp.getContext().getProperty(IzDetail.class);</span>
+<span class="pc bpc" id="L63" title="1 of 2 branches missed.">		if (detail == null) {</span>
+<span class="fc" id="L64">			detail = new IzDetail(mp);</span>
+<span class="fc" id="L65">			detail.hasImmunization = true;</span>
+<span class="fc" id="L66">			detail.hasImmunizationRecommendation = false;</span>
+<span class="fc" id="L67">			detail.immunization = mp.createResource(Immunization.class);</span>
+<span class="fc" id="L68">			MessageHeader mh = mp.getFirstResource(MessageHeader.class);</span>
+<span class="pc bpc" id="L69" title="3 of 4 branches missed.">			if (mh != null &amp;&amp; detail.hasImmunization()) {</span>
+<span class="nc" id="L70">				mh.addFocus(ParserUtils.toReference(detail.immunization, mh, &quot;focus&quot;));</span>
 			}
-<span class="fc" id="L66">			Patient p = mp.getLastResource(Patient.class);</span>
-<span class="pc bpc" id="L67" title="1 of 2 branches missed.">			if (p != null) {</span>
-<span class="nc" id="L68">				detail.immunization.setPatient(ParserUtils.toReference(detail.immunization, p, &quot;patient&quot;));</span>
+<span class="fc" id="L72">			Patient p = mp.getLastResource(Patient.class);</span>
+<span class="pc bpc" id="L73" title="1 of 2 branches missed.">			if (p != null) {</span>
+<span class="nc" id="L74">				detail.immunization.setPatient(ParserUtils.toReference(detail.immunization, p, &quot;patient&quot;));</span>
 			}
-<span class="fc" id="L70">			mp.getContext().setProperty(detail);</span>
+<span class="fc" id="L76">			mp.getContext().setProperty(detail);</span>
 		}
-<span class="fc" id="L72">	}</span>
+<span class="fc" id="L78">	}</span>
 
 	/**
 	 * Returns true if this message context contains an ImmunizationRecommendation.
 	 * @return true if an ImmunizationRecommendation is expected/present for this message
 	 */
 	public boolean hasRecommendation() {
-<span class="fc bfc" id="L79" title="All 2 branches covered.">		if (hasImmunizationRecommendation != null) {</span>
-<span class="fc" id="L80">			return hasImmunizationRecommendation;</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">		if (hasImmunizationRecommendation != null) {</span>
+<span class="fc" id="L86">			return hasImmunizationRecommendation;</span>
 		}
-<span class="fc" id="L82">		checkForImmunization();</span>
-<span class="fc" id="L83">		return hasImmunizationRecommendation;</span>
+<span class="fc" id="L88">		checkForImmunization();</span>
+<span class="fc" id="L89">		return hasImmunizationRecommendation;</span>
 	}
 	
 	/**
@@ -88,11 +94,11 @@ public class IzDetail {
 	 * @return true if an Immunization is expected/present for this message
 	 */
 	public boolean hasImmunization() {
-<span class="pc bpc" id="L91" title="1 of 2 branches missed.">		if (hasImmunization != null) {</span>
-<span class="fc" id="L92">			return hasImmunization;</span>
+<span class="pc bpc" id="L97" title="1 of 2 branches missed.">		if (hasImmunization != null) {</span>
+<span class="fc" id="L98">			return hasImmunization;</span>
 		}
-<span class="nc" id="L94">		checkForImmunization();</span>
-<span class="nc" id="L95">		return hasImmunization;</span>
+<span class="nc" id="L100">		checkForImmunization();</span>
+<span class="nc" id="L101">		return hasImmunization;</span>
 	}
 	
 	/**
@@ -100,7 +106,7 @@ public class IzDetail {
 	 * @return the Immunization resource, or null
 	 */
 	public Immunization getImmunization() {
-<span class="fc" id="L103">		return immunization;</span>
+<span class="fc" id="L109">		return immunization;</span>
 	}
 
 	/**
@@ -108,53 +114,69 @@ public class IzDetail {
 	 * @return the ImmunizationRecommendation resource, or null
 	 */
 	public ImmunizationRecommendation getImmunizationRecommendation() {
-<span class="fc" id="L111">		return immunizationRecommendation;</span>
+<span class="fc" id="L117">		return immunizationRecommendation;</span>
 	}
-	
+
+	/**
+	 * Returns the requesting Organization resource for this message context, or null if none has been created.
+	 * @return the requesting Organization resource, or null
+	 */
+	public Organization getRequestingOrganization() {
+<span class="fc" id="L125">		return requestingOrganization;</span>
+	}
+
+	/**
+	 * Sets the requesting Organization resource for this message context.
+	 * @param requestingOrganization the Organization to associate with this context
+	 */
+	public void setRequestingOrganization(Organization requestingOrganization) {
+<span class="fc" id="L133">		this.requestingOrganization = requestingOrganization;</span>
+<span class="fc" id="L134">	}</span>
+
 	private void checkForImmunization() {
 		// Look at the RXA, Profile and Message Header
-<span class="fc" id="L116">		hasImmunization = Boolean.FALSE;</span>
-<span class="fc" id="L117">		hasImmunizationRecommendation = Boolean.FALSE;</span>
-<span class="fc" id="L118">		immunization = null;</span>
-<span class="fc" id="L119">		immunizationRecommendation = null;</span>
+<span class="fc" id="L138">		hasImmunization = Boolean.FALSE;</span>
+<span class="fc" id="L139">		hasImmunizationRecommendation = Boolean.FALSE;</span>
+<span class="fc" id="L140">		immunization = null;</span>
+<span class="fc" id="L141">		immunizationRecommendation = null;</span>
 
 		// RXA couldn't be checked, fall back to MSH profile.
-<span class="fc bfc" id="L122" title="All 2 branches covered.">		for (CanonicalType url: mp.getBundle().getMeta().getProfile()) {</span>
-<span class="fc bfc" id="L123" title="All 4 branches covered.">			if (&quot;CDCPHINVS#Z32&quot;.equals(url.getValue()) || &quot;CDCPHINVS#Z22&quot;.equals(url.getValue())) {</span>
+<span class="fc bfc" id="L144" title="All 2 branches covered.">		for (CanonicalType url: mp.getBundle().getMeta().getProfile()) {</span>
+<span class="fc bfc" id="L145" title="All 4 branches covered.">			if (&quot;CDCPHINVS#Z32&quot;.equals(url.getValue()) || &quot;CDCPHINVS#Z22&quot;.equals(url.getValue())) {</span>
 				// An RSP_K11 conforming to Z32, or a VXU_V04 conforming to Z22 
 				// will always have Immunization resources
-<span class="fc" id="L126">				hasImmunization = Boolean.TRUE;</span>
-<span class="fc" id="L127">				hasImmunizationRecommendation = Boolean.FALSE;</span>
-<span class="fc" id="L128">				return;</span>
+<span class="fc" id="L148">				hasImmunization = Boolean.TRUE;</span>
+<span class="fc" id="L149">				hasImmunizationRecommendation = Boolean.FALSE;</span>
+<span class="fc" id="L150">				return;</span>
 			} 
 			
-<span class="pc bpc" id="L131" title="1 of 2 branches missed.">			if (&quot;CDCPHINVS#Z42&quot;.equals(url.getValue())) {</span>
+<span class="pc bpc" id="L153" title="1 of 2 branches missed.">			if (&quot;CDCPHINVS#Z42&quot;.equals(url.getValue())) {</span>
 				// Whereas an RSP_K11 conforming to a Z42 will have an ImmunizationRecommendation or 
 				// an Immunization.  We must look at the RXA to determine which of these two cases
 				// are possible.  If RXA-5 = 998^No Vaccine Administered^CVX, then it's a recommendation.
-<span class="fc" id="L135">				hasImmunization = Boolean.FALSE;</span>
-<span class="fc" id="L136">				hasImmunizationRecommendation = Boolean.TRUE;</span>
-<span class="fc" id="L137">				return;</span>
+<span class="fc" id="L157">				hasImmunization = Boolean.FALSE;</span>
+<span class="fc" id="L158">				hasImmunizationRecommendation = Boolean.TRUE;</span>
+<span class="fc" id="L159">				return;</span>
 			}
-<span class="nc" id="L139">		}</span>
+<span class="nc" id="L161">		}</span>
 		
 		// Nope, still haven't figured it out.
-<span class="fc" id="L142">		MessageHeader mh = mp.getFirstResource(MessageHeader.class);</span>
-<span class="pc bpc" id="L143" title="1 of 2 branches missed.">		if (mh == null) {</span>
+<span class="fc" id="L164">		MessageHeader mh = mp.getFirstResource(MessageHeader.class);</span>
+<span class="pc bpc" id="L165" title="1 of 2 branches missed.">		if (mh == null) {</span>
 			// there is no message header, so not an immunization or recommendation.
-<span class="fc" id="L145">			hasImmunization = Boolean.FALSE;</span>
-<span class="fc" id="L146">			hasImmunizationRecommendation = Boolean.FALSE;</span>
-<span class="fc" id="L147">			return;</span>
+<span class="fc" id="L167">			hasImmunization = Boolean.FALSE;</span>
+<span class="fc" id="L168">			hasImmunizationRecommendation = Boolean.FALSE;</span>
+<span class="fc" id="L169">			return;</span>
 		}
 		
-<span class="nc bnc" id="L150" title="All 2 branches missed.">		for (Coding tag: mh.getMeta().getTag()) {</span>
-<span class="nc bnc" id="L151" title="All 4 branches missed.">			if (TerminologyMapperFactory.get().v2TableUri(&quot;0076&quot;).equals(tag.getSystem()) &amp;&amp; &quot;VXU&quot;.equals(tag.getCode())) {</span>
+<span class="nc bnc" id="L172" title="All 2 branches missed.">		for (Coding tag: mh.getMeta().getTag()) {</span>
+<span class="nc bnc" id="L173" title="All 4 branches missed.">			if (TerminologyMapperFactory.get().v2TableUri(&quot;0076&quot;).equals(tag.getSystem()) &amp;&amp; &quot;VXU&quot;.equals(tag.getCode())) {</span>
 				// VXU, so must be an Immunization
-<span class="nc" id="L153">				hasImmunization = Boolean.TRUE;</span>
-<span class="nc" id="L154">				hasImmunizationRecommendation = Boolean.FALSE;</span>
+<span class="nc" id="L175">				hasImmunization = Boolean.TRUE;</span>
+<span class="nc" id="L176">				hasImmunizationRecommendation = Boolean.FALSE;</span>
 			}
-<span class="nc" id="L156">		}</span>
-<span class="nc" id="L157">	}</span>
+<span class="nc" id="L178">		}</span>
+<span class="nc" id="L179">	}</span>
 	
 	/**
 	 * Looks at the RXA to see whether this is an Immunization or ImmunizationRecommendation
@@ -164,41 +186,41 @@ public class IzDetail {
 	@SuppressWarnings(&quot;unused&quot;)
 	private boolean checkRXA() {
 		// Set default value
-<span class="nc" id="L167">		boolean defaulted = true;</span>
-<span class="nc" id="L168">		hasImmunizationRecommendation = true;</span>
-<span class="nc bnc" id="L169" title="All 2 branches missed.">		if (segment != null) {</span>
-<span class="nc" id="L170">			Segment rxa = null;</span>
-<span class="nc bnc" id="L171" title="All 2 branches missed.">			if (&quot;ORC&quot;.equals(segment.getName())) {</span>
-<span class="nc" id="L172">				rxa = ParserUtils.getFollowingSegment(segment, &quot;RXA&quot;);</span>
-<span class="nc bnc" id="L173" title="All 2 branches missed.">			} else if (&quot;RXA&quot;.equals(segment.getName())) {</span>
-<span class="nc" id="L174">				rxa = segment;</span>
+<span class="nc" id="L189">		boolean defaulted = true;</span>
+<span class="nc" id="L190">		hasImmunizationRecommendation = true;</span>
+<span class="nc bnc" id="L191" title="All 2 branches missed.">		if (segment != null) {</span>
+<span class="nc" id="L192">			Segment rxa = null;</span>
+<span class="nc bnc" id="L193" title="All 2 branches missed.">			if (&quot;ORC&quot;.equals(segment.getName())) {</span>
+<span class="nc" id="L194">				rxa = ParserUtils.getFollowingSegment(segment, &quot;RXA&quot;);</span>
+<span class="nc bnc" id="L195" title="All 2 branches missed.">			} else if (&quot;RXA&quot;.equals(segment.getName())) {</span>
+<span class="nc" id="L196">				rxa = segment;</span>
 			}
-<span class="nc bnc" id="L176" title="All 2 branches missed.">			if (rxa == null) {</span>
+<span class="nc bnc" id="L198" title="All 2 branches missed.">			if (rxa == null) {</span>
 				// ORC but NO RXA
-<span class="nc" id="L178">				hasImmunization = hasImmunizationRecommendation = false;</span>
-<span class="nc" id="L179">				return false;</span>
+<span class="nc" id="L200">				hasImmunization = hasImmunizationRecommendation = false;</span>
+<span class="nc" id="L201">				return false;</span>
 			}
-<span class="nc" id="L181">			hasImmunizationRecommendation = &quot;998&quot;.equals(ParserUtils.toString(rxa, 5));</span>
-<span class="nc" id="L182">			defaulted = false;</span>
+<span class="nc" id="L203">			hasImmunizationRecommendation = &quot;998&quot;.equals(ParserUtils.toString(rxa, 5));</span>
+<span class="nc" id="L204">			defaulted = false;</span>
 		} 
 		// else No segment, but known to be a Z42, assume testing for ImmunizationRecommendation
-<span class="nc bnc" id="L185" title="All 2 branches missed.">		hasImmunization = !hasImmunizationRecommendation;</span>
-<span class="nc bnc" id="L186" title="All 2 branches missed.">		return !defaulted;</span>
+<span class="nc bnc" id="L207" title="All 2 branches missed.">		hasImmunization = !hasImmunizationRecommendation;</span>
+<span class="nc bnc" id="L208" title="All 2 branches missed.">		return !defaulted;</span>
 	}
 	/**
 	 * Get the recommendation component.
 	 * @return The recommendation from the ImmunizationRecommendation resource, or null if not yet created.
 	 */
 	public ImmunizationRecommendationRecommendationComponent getRecommendation() {
-<span class="pc bpc" id="L193" title="2 of 4 branches missed.">		if (hasRecommendation() &amp;&amp; immunizationRecommendation != null) {</span>
+<span class="pc bpc" id="L215" title="2 of 4 branches missed.">		if (hasRecommendation() &amp;&amp; immunizationRecommendation != null) {</span>
 			// Get the recommendation created by the last RXA.
-<span class="fc" id="L195">			List&lt;ImmunizationRecommendationRecommendationComponent&gt; l = immunizationRecommendation.getRecommendation();</span>
-<span class="pc bpc" id="L196" title="1 of 2 branches missed.">			if (l.isEmpty()) {</span>
-<span class="nc" id="L197">				return null;</span>
+<span class="fc" id="L217">			List&lt;ImmunizationRecommendationRecommendationComponent&gt; l = immunizationRecommendation.getRecommendation();</span>
+<span class="pc bpc" id="L218" title="1 of 2 branches missed.">			if (l.isEmpty()) {</span>
+<span class="nc" id="L219">				return null;</span>
 			}
-<span class="fc" id="L199">			return l.get(l.size() - 1); </span>
+<span class="fc" id="L221">			return l.get(l.size() - 1); </span>
 		}
-<span class="nc" id="L201">		return null;</span>
+<span class="nc" id="L223">		return null;</span>
 	}
 	
 	/**
@@ -208,30 +230,30 @@ public class IzDetail {
 	 */
 	public void initializeResources(boolean initialize, Segment segment) {
 		// Create the necessary resources.
-<span class="fc" id="L211">		DomainResource created = null;</span>
-<span class="fc" id="L212">		Patient p = mp.getLastResource(Patient.class);</span>
-<span class="fc" id="L213">		this.segment = segment;</span>
-<span class="fc bfc" id="L214" title="All 2 branches covered.">		if (initialize) {</span>
-<span class="fc" id="L215">			checkForImmunization();</span>
+<span class="fc" id="L233">		DomainResource created = null;</span>
+<span class="fc" id="L234">		Patient p = mp.getLastResource(Patient.class);</span>
+<span class="fc" id="L235">		this.segment = segment;</span>
+<span class="fc bfc" id="L236" title="All 2 branches covered.">		if (initialize) {</span>
+<span class="fc" id="L237">			checkForImmunization();</span>
 		}
-<span class="fc bfc" id="L217" title="All 4 branches covered.">		if (hasRecommendation() &amp;&amp; immunizationRecommendation == null) {</span>
-<span class="fc" id="L218">			created = immunizationRecommendation = mp.createResource(ImmunizationRecommendation.class);</span>
-<span class="pc bpc" id="L219" title="1 of 2 branches missed.">			if (p != null) {</span>
-<span class="fc" id="L220">				immunizationRecommendation.setPatient(ParserUtils.toReference(p, immunizationRecommendation, &quot;patient&quot;));</span>
+<span class="fc bfc" id="L239" title="All 4 branches covered.">		if (hasRecommendation() &amp;&amp; immunizationRecommendation == null) {</span>
+<span class="fc" id="L240">			created = immunizationRecommendation = mp.createResource(ImmunizationRecommendation.class);</span>
+<span class="pc bpc" id="L241" title="1 of 2 branches missed.">			if (p != null) {</span>
+<span class="fc" id="L242">				immunizationRecommendation.setPatient(ParserUtils.toReference(p, immunizationRecommendation, &quot;patient&quot;));</span>
 			}
 		}
-<span class="fc bfc" id="L223" title="All 4 branches covered.">		if (hasImmunization() &amp;&amp; immunization == null) {</span>
-<span class="fc" id="L224">			created = immunization = mp.createResource(Immunization.class);</span>
-<span class="pc bpc" id="L225" title="1 of 2 branches missed.">			if (p != null) {</span>
-<span class="fc" id="L226">				immunization.setPatient(ParserUtils.toReference(p, immunization, &quot;patient&quot;));</span>
+<span class="fc bfc" id="L245" title="All 4 branches covered.">		if (hasImmunization() &amp;&amp; immunization == null) {</span>
+<span class="fc" id="L246">			created = immunization = mp.createResource(Immunization.class);</span>
+<span class="pc bpc" id="L247" title="1 of 2 branches missed.">			if (p != null) {</span>
+<span class="fc" id="L248">				immunization.setPatient(ParserUtils.toReference(p, immunization, &quot;patient&quot;));</span>
 			}
 		}
-<span class="fc bfc" id="L229" title="All 2 branches covered.">		if (created != null) {</span>
-<span class="fc" id="L230">			MessageHeader mh = mp.getFirstResource(MessageHeader.class);</span>
-<span class="pc bpc" id="L231" title="1 of 2 branches missed.">			if (mh != null) {</span>
-<span class="fc" id="L232">				mh.addFocus(ParserUtils.toReference(created, mh, &quot;focus&quot;));</span>
+<span class="fc bfc" id="L251" title="All 2 branches covered.">		if (created != null) {</span>
+<span class="fc" id="L252">			MessageHeader mh = mp.getFirstResource(MessageHeader.class);</span>
+<span class="pc bpc" id="L253" title="1 of 2 branches missed.">			if (mh != null) {</span>
+<span class="fc" id="L254">				mh.addFocus(ParserUtils.toReference(created, mh, &quot;focus&quot;));</span>
 			}
 		}
-<span class="fc" id="L235">	}</span>
+<span class="fc" id="L257">	}</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

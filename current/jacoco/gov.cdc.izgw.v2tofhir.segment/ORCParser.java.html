@@ -296,15 +296,15 @@ public class ORCParser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path = &quot;ServiceRequest.requester.PractitionerRole.organization&quot;, field = 21) 
 	public void setOrderingOrganization(Organization organization) {
-<span class="fc bfc" id="L299" title="All 2 branches covered.">		if (izDetail.requestingOrganization != null) {</span>
+<span class="fc bfc" id="L299" title="All 2 branches covered.">		if (izDetail.getRequestingOrganization() != null) {</span>
 			// If organization already exists, just copy name and identifier from XON
-<span class="fc" id="L301">			izDetail.requestingOrganization.setNameElement(organization.getNameElement());</span>
-<span class="fc" id="L302">			izDetail.requestingOrganization.setIdentifier(organization.getIdentifier());</span>
+<span class="fc" id="L301">			izDetail.getRequestingOrganization().setNameElement(organization.getNameElement());</span>
+<span class="fc" id="L302">			izDetail.getRequestingOrganization().setIdentifier(organization.getIdentifier());</span>
 		} else {
-<span class="fc" id="L304">			izDetail.requestingOrganization = addResource(organization);</span>
+<span class="fc" id="L304">			izDetail.setRequestingOrganization(addResource(organization));</span>
 		}
 <span class="fc" id="L306">		getRequester();</span>
-<span class="fc" id="L307">		Reference orgReference = ParserUtils.toReference(izDetail.requestingOrganization, requester, REQUESTER);</span>
+<span class="fc" id="L307">		Reference orgReference = ParserUtils.toReference(izDetail.getRequestingOrganization(), requester, REQUESTER);</span>
 <span class="fc" id="L308">		requester.setOrganization(orgReference);</span>
 <span class="fc" id="L309">		updateRequesterName();</span>
 <span class="fc" id="L310">	}</span>
@@ -318,11 +318,11 @@ public class ORCParser extends AbstractSegmentParser {
 		        + &quot;.organization.Organization.address&quot;, field = 22
 	) 
 	public void setOrderingOrganizationAddress(Address orderingProviderAddress) {
-<span class="nc bnc" id="L321" title="All 2 branches missed.">		if (izDetail.requestingOrganization == null) {</span>
-<span class="nc" id="L322">			izDetail.requestingOrganization = createResource(Organization.class);</span>
-<span class="nc" id="L323">			getRequester().setOrganization(ParserUtils.toReference(izDetail.requestingOrganization, requester, REQUESTER));</span>
+<span class="nc bnc" id="L321" title="All 2 branches missed.">		if (izDetail.getRequestingOrganization() == null) {</span>
+<span class="nc" id="L322">			izDetail.setRequestingOrganization(createResource(Organization.class));</span>
+<span class="nc" id="L323">			getRequester().setOrganization(ParserUtils.toReference(izDetail.getRequestingOrganization(), requester, REQUESTER));</span>
 		}
-<span class="nc" id="L325">		izDetail.requestingOrganization.addAddress(orderingProviderAddress);</span>
+<span class="nc" id="L325">		izDetail.getRequestingOrganization().addAddress(orderingProviderAddress);</span>
 <span class="nc" id="L326">	}</span>
 	
 	/**
@@ -331,11 +331,11 @@ public class ORCParser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path = &quot;ServiceRequest.requester.PractitionerRole.organization.Organization.telecom&quot;, field = 23) 
 	public void setOrderingOrganizationTelecom(ContactPoint orderingProviderContact) {
-<span class="nc bnc" id="L334" title="All 2 branches missed.">		if (izDetail.requestingOrganization == null) {</span>
-<span class="nc" id="L335">			izDetail.requestingOrganization = createResource(Organization.class);</span>
-<span class="nc" id="L336">			getRequester().setOrganization(ParserUtils.toReference(izDetail.requestingOrganization, requester, REQUESTER));</span>
+<span class="nc bnc" id="L334" title="All 2 branches missed.">		if (izDetail.getRequestingOrganization() == null) {</span>
+<span class="nc" id="L335">			izDetail.setRequestingOrganization(createResource(Organization.class));</span>
+<span class="nc" id="L336">			getRequester().setOrganization(ParserUtils.toReference(izDetail.getRequestingOrganization(), requester, REQUESTER));</span>
 		}
-<span class="nc" id="L338">		izDetail.requestingOrganization.addTelecom(orderingProviderContact);</span>
+<span class="nc" id="L338">		izDetail.getRequestingOrganization().addTelecom(orderingProviderContact);</span>
 <span class="nc" id="L339">	}</span>
 	
 	/**
