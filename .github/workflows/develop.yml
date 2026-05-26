@@ -169,7 +169,7 @@ jobs:
           --disableAssembly            
             
     - name: Publish Site
-      uses: peaceiris/actions-gh-pages@v4
+      uses: peaceiris/actions-gh-pages@v4.1
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./target/site

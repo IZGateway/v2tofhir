@@ -428,14 +428,14 @@ jobs:
           if-no-files-found: ignore
 
       - name: Publish Site (Current)
-        uses: peaceiris/actions-gh-pages@v4
+        uses: peaceiris/actions-gh-pages@v4.1
         with:
           github_token: ${{ steps.app-token.outputs.token }}
           publish_dir: ./target/site
           destination_dir: current
 
       - name: Publish Site (Versioned)
-        uses: peaceiris/actions-gh-pages@v4
+        uses: peaceiris/actions-gh-pages@v4.1
         with:
           github_token: ${{ steps.app-token.outputs.token }}
           publish_dir: ./target/site
