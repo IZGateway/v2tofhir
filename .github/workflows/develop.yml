@@ -40,21 +40,21 @@ jobs:
     steps:
     
     - name: Checkout the software  
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       # Necessary to enable push to protected branch
       with:
         ssh-key: ${{secrets.ACTIONS_KEY}}
         fetch-depth: 0  # Shallow clones should be disabled for better SonarCloud analysis
         
     - name: Set up JDK 21
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@v5
       with:
         java-version: '21'
         distribution: 'temurin'
         cache: maven
         
     - name: Set up Maven
-      uses: stCarolas/setup-maven@v5
+      uses: stCarolas/setup-maven@v5.1
       with:
         maven-version: 3.9.0
         
@@ -180,14 +180,14 @@ jobs:
       run: ls -lR ~/.m2 > ./m2-listing.txt
 
     - name: Upload build environment as artifact for failed build
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: ${{ failure() }}
       with:
         name: build-failure
         path: .
 
     - name: Upload dependency check log
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: ${{ always() }}
       with:
         name: DependencyCheck

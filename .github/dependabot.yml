@@ -1,0 +1,14 @@
+version: 2
+updates:
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    labels:
+      - 'dependencies'
+      - 'github-actions'
+    ignore:
+      - dependency-name: '*'
+        update-types:
+          ['version-update:semver-patch', 'version-update:semver-minor']
