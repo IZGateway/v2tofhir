@@ -1,27 +1,72 @@
 schema: spec-driven
 
 # Project context
-# This is shown to AI when creating artifacts.
+# This is shown to AI when creating artifacts (included in every OpenSpec request).
 context: |
-  See openspec/project.md for comprehensive project documentation.
+  v2tofhir — core library for the IZ Gateway Transformation Service. Converts HL7 V2
+  messages (primarily the CDC V2.5.1 immunization VXU_V04 profile) to FHIR R4 Bundles.
+  Accepts full messages, individual segments, structures, or groups.
+  Group: gov.cdc.izgw · Artifact: v2tofhir · Org: Audacious Inquiry.
 
-  Tech stack: Java 21, Maven, Spring Boot, HAPI FHIR R4, Lombok
+  Design principle (Postel's Law / robustness): conversion methods never throw during
+  conversion. They return null on empty/invalid input and convert as much as possible
+  rather than failing — log warnings for data issues, then continue.
 
-  Domain: Healthcare interoperability - HL7 V2 to FHIR R4 conversion
+  Tech stack:
+  - Java 21, Maven
+  - HAPI V2 2.5.1 (supports v2.1–v2.8.1)
+  - HAPI FHIR 8.x (R4 structures, validation, FHIRPath)
+  - Spring Boot via izgw-bom parent
+  - Lombok (@Data, @Slf4j); Jackson (JSON/YAML); OpenCSV (loads concept-map CSVs);
+    Commons (lang3, text, io, compress, beanutils, validator)
 
-  Key conventions:
-  - Segment parsers extend AbstractSegmentParser
-  - Datatype parsers implement DatatypeParser<T>
-  - Use static utility classes (Systems, Mapping, Units, Codes) for terminology
-  - Use @Slf4j for logging, @Data for data classes
-  - Document classes with @author Audacious Inquiry
-  - All terminology lookups go through Systems and Mapping utility classes
+  Build & test:
+  - mvn clean install            # full build with tests
+  - mvn test                     # all tests (Surefire matches **/*Tests.java)
+  - mvn test -Dtest=ClassName    # single test class
+  - mvn jacoco:report            # coverage (after mvn test)
+  - Test classes are suffixed `Tests`, NOT `Test` — a class named FooTest silently won't run.
 
-  Code style:
-  - Meaningful names, minimal comments needed with good naming
-  - Use HAPI FHIR fluent API patterns
-  - Leverage HL7 V2 table references for code system mapping
-  - Support standard vocabularies (LOINC, SNOMED, RxNorm, CVX, etc.)
+  Conversion flow:
+  - MessageParser.createBundle() orchestrates the parse loop. MSH initializes Context;
+    a DocumentReference holds the raw message; each segment resolves a SegmentParser by
+    reflection (custom packages first, then built-ins). parser.setup() creates the primary
+    resource; FieldHandlers built from @ComesFrom annotations pull V2 fields through
+    DatatypeConverter and invoke setters. Returns a Bundle (BundleType.MESSAGE).
+  - Multi-segment resources: several V2 segments contribute to one FHIR resource
+    (Patient ← PID+PD1+PV1; Immunization ← ORC+RXA+RXR+OBX). A later parser reaches the
+    in-progress resource with getLastResource(Class).
+
+  Annotation-driven mapping:
+  - Segment parsers declare their resource with @Produces and map each V2 field to a FHIR
+    path with @ComesFrom on setters. @ComesFrom's `map` names a concept-map CSV in
+    src/main/resources/coding/ (~109 files, loaded by Mapping). FieldHandlers MUST be
+    initialized in a static {} block via AbstractSegmentParser.initFieldHandlers(...).
+  - New DatatypeParser discovery is hardcoded in DatatypeConverter: add a static instance,
+    a toX() delegate, AND a case in the generic convert() dispatcher — all three.
+
+  Key classes (gov.cdc.izgw.v2tofhir):
+  - converter/MessageParser        entry point; orchestrates the parse loop
+  - converter/BaseParser           resource lifecycle, ULID assignment, parser discovery
+  - segment/AbstractSegmentParser  base for segment parsers; builds FieldHandlers
+  - converter/DatatypeConverter    100+ static to*/convert methods for V2↔FHIR types
+  - datatype/*Parser               DatatypeParser<T> impls (Address, HumanName, ...)
+
+  Terminology — note the active refactor: two parallel packages with duplicated classes
+  (Systems, Mapping, Units, ISO3166, RaceAndEthnicity exist in both):
+  - utils/        original static-utility implementations, still wired into the converters
+  - terminology/  newer injectable abstractions (TerminologyMapper, ConceptTranslator,
+                  NamingSystemResolver, ...) introduced by the vocabulary-management-integration change
+  When touching terminology, check which package the call site actually uses and whether the
+  in-flight change covers your edit, so you don't extend a path that's being replaced.
+
+  Conventions:
+  - Logging via @Slf4j; never System.out/err. Never log raw PHI/PII.
+  - Parsers are NOT thread-safe and are cheap — new instance per message; never share across threads.
+  - Identifiers use ULID, encoded via FhirIdCodec; setIdGenerator(...) for deterministic snapshot-test IDs.
+  - @author Audacious Inquiry on all classes.
+  - Use HAPI FHIR fluent API patterns; leverage HL7 V2 table references for code-system mapping;
+    support standard vocabularies (LOINC, SNOMED, RxNorm, CVX, MVX, UCUM, etc.).
 
 # Per-artifact rules
 rules:
