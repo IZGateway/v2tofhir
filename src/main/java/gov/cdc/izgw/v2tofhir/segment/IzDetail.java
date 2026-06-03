@@ -14,7 +14,7 @@ import org.hl7.fhir.r4.model.Patient;
 
 import ca.uhn.hl7v2.model.Segment;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
-import gov.cdc.izgw.v2tofhir.utils.Mapping;
+import gov.cdc.izgw.v2tofhir.terminology.TerminologyMapperFactory;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 
 /**
@@ -28,18 +28,24 @@ public class IzDetail {
 	private final MessageParser mp;
 	
 	private Boolean hasImmunization = null;
-	Immunization immunization;
+	private Immunization immunization;
 	
 	private Boolean hasImmunizationRecommendation = null;
-	ImmunizationRecommendation immunizationRecommendation;
-	
-	Organization requestingOrganization;
+	private ImmunizationRecommendation immunizationRecommendation;
+
+	private Organization requestingOrganization;
 	private Segment segment;
-	
+
 	private IzDetail(MessageParser mp) {
 		this.mp = mp;
 	}
-	static IzDetail get(MessageParser mp) {
+
+	/**
+	 * Get or create the IzDetail instance for the given MessageParser context.
+	 * @param mp the message parser
+	 * @return the IzDetail instance for this parse context
+	 */
+	public static IzDetail get(MessageParser mp) {
 		IzDetail detail = mp.getContext().getProperty(IzDetail.class);
 		if (detail == null) {
 			detail = new IzDetail(mp);
@@ -71,7 +77,11 @@ public class IzDetail {
 		}
 	}
 
-	boolean hasRecommendation() {
+	/**
+	 * Returns true if this message context contains an ImmunizationRecommendation.
+	 * @return true if an ImmunizationRecommendation is expected/present for this message
+	 */
+	public boolean hasRecommendation() {
 		if (hasImmunizationRecommendation != null) {
 			return hasImmunizationRecommendation;
 		}
@@ -79,7 +89,11 @@ public class IzDetail {
 		return hasImmunizationRecommendation;
 	}
 	
-	boolean hasImmunization() {
+	/**
+	 * Returns true if this message context contains an Immunization.
+	 * @return true if an Immunization is expected/present for this message
+	 */
+	public boolean hasImmunization() {
 		if (hasImmunization != null) {
 			return hasImmunization;
 		}
@@ -87,6 +101,38 @@ public class IzDetail {
 		return hasImmunization;
 	}
 	
+	/**
+	 * Returns the Immunization resource for this message context, or null if none has been created.
+	 * @return the Immunization resource, or null
+	 */
+	public Immunization getImmunization() {
+		return immunization;
+	}
+
+	/**
+	 * Returns the ImmunizationRecommendation resource for this message context, or null if none has been created.
+	 * @return the ImmunizationRecommendation resource, or null
+	 */
+	public ImmunizationRecommendation getImmunizationRecommendation() {
+		return immunizationRecommendation;
+	}
+
+	/**
+	 * Returns the requesting Organization resource for this message context, or null if none has been created.
+	 * @return the requesting Organization resource, or null
+	 */
+	public Organization getRequestingOrganization() {
+		return requestingOrganization;
+	}
+
+	/**
+	 * Sets the requesting Organization resource for this message context.
+	 * @param requestingOrganization the Organization to associate with this context
+	 */
+	public void setRequestingOrganization(Organization requestingOrganization) {
+		this.requestingOrganization = requestingOrganization;
+	}
+
 	private void checkForImmunization() {
 		// Look at the RXA, Profile and Message Header
 		hasImmunization = Boolean.FALSE;
@@ -124,7 +170,7 @@ public class IzDetail {
 		}
 		
 		for (Coding tag: mh.getMeta().getTag()) {
-			if (Mapping.v2Table("0076").equals(tag.getSystem()) && "VXU".equals(tag.getCode())) {
+			if (TerminologyMapperFactory.get().v2TableUri("0076").equals(tag.getSystem()) && "VXU".equals(tag.getCode())) {
 				// VXU, so must be an Immunization
 				hasImmunization = Boolean.TRUE;
 				hasImmunizationRecommendation = Boolean.FALSE;
@@ -163,10 +209,10 @@ public class IzDetail {
 	}
 	/**
 	 * Get the recommendation component.
-	 * @return The recommendation from the ImmunizationRecommendation resource.
+	 * @return The recommendation from the ImmunizationRecommendation resource, or null if not yet created.
 	 */
 	public ImmunizationRecommendationRecommendationComponent getRecommendation() {
-		if (hasRecommendation()) {
+		if (hasRecommendation() && immunizationRecommendation != null) {
 			// Get the recommendation created by the last RXA.
 			List<ImmunizationRecommendationRecommendationComponent> l = immunizationRecommendation.getRecommendation();
 			if (l.isEmpty()) {

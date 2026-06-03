@@ -8,6 +8,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.validator.routines.EmailValidator;
 import org.hl7.fhir.r4.model.ContactPoint;
 import org.hl7.fhir.r4.model.ContactPoint.ContactPointSystem;
@@ -165,7 +166,7 @@ public class ContactPointParser implements DatatypeParser<ContactPoint> {
 		} else {
 			email = value; 
 		}
-		if (StringUtils.startsWith(email, "mailto:")) {
+		if (Strings.CS.startsWith(email, "mailto:")) {
 			email = email.substring(7);
 		}
 		/*

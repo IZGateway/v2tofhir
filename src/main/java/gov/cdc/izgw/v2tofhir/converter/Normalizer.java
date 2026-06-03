@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.CodeableConcept;
@@ -120,7 +120,7 @@ public class Normalizer {
 	 * @return	The endpoint to remove, or null if the two endpoints are different.
 	 */
 	public static Endpoint merge(Endpoint first, Endpoint later) {
-		if (StringUtils.equals(first.getName(), later.getName()) &&
+		if (Strings.CS.equals(first.getName(), later.getName()) &&
 			identifiersEqual(first.getIdentifierFirstRep(), later.getIdentifierFirstRep())
 		) {
 			ParserUtils.mergeReferences(first, later);
@@ -179,7 +179,7 @@ public class Normalizer {
 			}
 		}
 		
-		if (StringUtils.equals(first.getName(), later.getName()) &&
+		if (Strings.CS.equals(first.getName(), later.getName()) &&
 			identifiersEqual(first.getIdentifierFirstRep(), later.getIdentifierFirstRep())
 		) {
 			// Ensure both resources reference the same endpoint

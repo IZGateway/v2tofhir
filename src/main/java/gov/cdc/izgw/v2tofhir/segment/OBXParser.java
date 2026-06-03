@@ -4,7 +4,7 @@ import java.util.List;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.hl7.fhir.instance.model.api.IBase;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Address;
@@ -52,7 +52,7 @@ import gov.cdc.izgw.v2tofhir.utils.Codes;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 import gov.cdc.izgw.v2tofhir.utils.Systems;
 import gov.cdc.izgw.v2tofhir.utils.TextUtils;
-import gov.cdc.izgw.v2tofhir.utils.Units;
+import gov.cdc.izgw.v2tofhir.terminology.TerminologyMapperFactory;
 
 /**
  * OBXParser parses any OBX segments in a message to an Immunization if the message is a VXU or an 
@@ -413,32 +413,29 @@ public class OBXParser extends AbstractSegmentParser {
 		}
 		if (value instanceof Quantity qty) {
 			String code = units.getCodingFirstRep().getCode();
-			Coding unit = Units.toUcum(code);
-			if (unit != null) {
-				if (unit.hasDisplay()) {
-					qty.setUnit(unit.getDisplay());
-				} else {
-					qty.setUnit(code);
-				}
-				qty.setCode(unit.getCode());
-				qty.setSystem(unit.getSystem());
-			} else {
-				qty.setUnit(units.getCodingFirstRep().getCode());
-			}
+			TerminologyMapperFactory.get().mapUnit(code).ifPresentOrElse(
+				unit -> {
+					qty.setUnit(unit.hasDisplay() ? unit.getDisplay() : code);
+					qty.setCode(unit.getCode());
+					qty.setSystem(unit.getSystem());
+				},
+				() -> qty.setUnit(code)
+			);
 		}
 	}
 	
 	private void handleVisObservations(IBase converted) {
+		Immunization immunization = izDetail.getImmunization();
 		if (VisCode.VACCINE_ELIGIBILITY_CODE.equals(redirect)) {
-			izDetail.immunization.addProgramEligibility((CodeableConcept) converted);
-			observation.addPartOf(ParserUtils.toReference(izDetail.immunization, observation, "partOf"));
+			immunization.addProgramEligibility((CodeableConcept) converted);
+			observation.addPartOf(ParserUtils.toReference(izDetail.getImmunization(), observation, "partOf"));
 			return;
 		} 
-		ImmunizationEducationComponent education = getLastEducation(izDetail.immunization);
+		ImmunizationEducationComponent education = getLastEducation(immunization);
 		// If the observation is already present in education
 		if (redirect.isPresent(education)) {
 			// Create a new education element.
-			education = izDetail.immunization.addEducation();
+			education = izDetail.getImmunization().addEducation();
 		}
 		switch (redirect) {
 		case VIS_DELIVERY_DATE_CODE:
@@ -489,9 +486,9 @@ public class OBXParser extends AbstractSegmentParser {
 		if (!VisCode.OTHER.equals(redirect)) {
 			Reference ref = null;
 			if (izDetail.hasImmunization()) {
-				ref = ParserUtils.toReference(izDetail.immunization, observation, "partof");
+				ref = ParserUtils.toReference(izDetail.getImmunization(), observation, "partof");
 			} else if (izDetail.hasRecommendation()) {
-				ref = ParserUtils.toReference(izDetail.immunizationRecommendation, observation, "partof");
+				ref = ParserUtils.toReference(izDetail.getImmunizationRecommendation(), observation, "partof");
 			}
 			if (ref != null && !observation.getPartOf().contains(ref)) {
 				observation.addPartOf(ref);
@@ -567,7 +564,7 @@ public class OBXParser extends AbstractSegmentParser {
 	@ComesFrom(path = "Observation.interpretation", field = 8, table="0078", comment = "Interpretation Code")	
 	public void setInterpretationCodes(CodeableConcept interpretationCode) {
 		for (Coding coding: interpretationCode.getCoding()) {
-			if (coding.hasSystem() && StringUtils.endsWith(coding.getSystem(), "0078")) {
+			if (coding.hasSystem() && Strings.CS.endsWith(coding.getSystem(), "0078")) {
 				coding.setSystem("http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation");
 			}
 		}

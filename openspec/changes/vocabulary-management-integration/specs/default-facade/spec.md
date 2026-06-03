@@ -34,35 +34,13 @@
 
 ---
 
-### Requirement: MessageParser integration
-`MessageParser` SHALL gain a `TerminologyMapper terminologyMapper` field initialized by `TerminologyMapperFactory.get()`. It SHALL expose `getTerminologyMapper()` and `setTerminologyMapper(TerminologyMapper)` accessors. Segment parsers that extend `AbstractSegmentParser` SHALL access the mapper via `getMessageParser().getTerminologyMapper()`.
-
-#### Scenario: Default mapper available without configuration
-- **WHEN** `new MessageParser()` is constructed with no other configuration
-- **THEN** `messageParser.getTerminologyMapper()` SHALL return a non-null `TerminologyMapper` instance
-
-#### Scenario: Custom mapper injectable per-instance
-- **WHEN** `messageParser.setTerminologyMapper(customMapper)` is called
-- **THEN** `messageParser.getTerminologyMapper()` SHALL return `customMapper`
-- **AND** subsequent parse operations on that `MessageParser` SHALL use `customMapper` for all terminology lookups
-
-#### Scenario: Segment parsers inherit the mapper
-- **WHEN** a segment parser (e.g., `PIDParser`) calls `getMessageParser().getTerminologyMapper()`
-- **THEN** the mapper set on the parent `MessageParser` SHALL be returned
-
----
-
-### Requirement: DatatypeConverter overloads
-`DatatypeConverter` SHALL gain new overloads `convertCoding(Type t, String table, TerminologyMapper m)` and `convertCodeableConcept(Type t, String table, TerminologyMapper m)`. The existing zero-argument and two-argument static forms SHALL delegate to `TerminologyMapperFactory.get()` so that a custom mapper installed via the environment variable is honoured even through static call paths.
-
-#### Scenario: Explicit mapper overload used by callers with a mapper
-- **WHEN** `DatatypeConverter.convertCoding(t, "0001", myMapper)` is called
-- **THEN** `myMapper.mapCode("0001", ...)` SHALL be invoked for the code translation
+### Requirement: DatatypeConverter factory delegation
+`DatatypeConverter`'s existing static forms `convertCoding(Type t, String table)` and `convertCodeableConcept(Type t, String table)` SHALL delegate terminology lookups to `TerminologyMapperFactory.get()` instead of calling the static utility classes directly. This ensures that a custom mapper installed via the `V2TOFHIR_TERMINOLOGY_MAPPER` environment variable is honoured even through static call paths. No three-argument overloads are needed — the factory is the single injection point.
 
 #### Scenario: Static fallback uses factory
-- **WHEN** `DatatypeConverter.convertCoding(t, "0001")` is called (no mapper argument)
+- **WHEN** `DatatypeConverter.convertCoding(t, "0001")` is called
 - **AND** `V2TOFHIR_TERMINOLOGY_MAPPER` is set to a custom class name
-- **THEN** the custom mapper's `mapCode` SHALL be invoked, not `DefaultTerminologyMapper`'s
+- **THEN** the custom mapper's methods SHALL be invoked, not `DefaultTerminologyMapper`'s
 
 #### Scenario: Backward-compatible behavior when no env var set
 - **WHEN** `DatatypeConverter.convertCoding(t, "0001")` is called
@@ -72,14 +50,10 @@
 ---
 
 ### Requirement: Full caller migration — no static imports outside terminology package
-Every class in v2tofhir that previously called `Systems`, `Mapping`, `Units`, `ISO3166`, or `RaceAndEthnicity` directly SHALL be updated to call through an injected `TerminologyMapper` instance. After migration, no class outside `gov.cdc.izgw.v2tofhir.terminology` SHALL import any of those five static utility classes.
+Every class in v2tofhir that previously called `Systems`, `Mapping`, `Units`, `ISO3166`, or `RaceAndEthnicity` directly SHALL be updated to call through `TerminologyMapperFactory.get()` or through `DatatypeConverter` (which itself delegates to the factory). After migration, no class outside `gov.cdc.izgw.v2tofhir.terminology` SHALL import any of those five static utility classes.
 
 Affected callers: `DatatypeConverter`, `ERRParser`, `IzDetail`, `NK1Parser`, `OBXParser`, `PIDParser`, `PV1Parser`, `RXAParser`.
 
 #### Scenario: Segment parser calls mapper not static
 - **WHEN** `PIDParser` processes a race field
-- **THEN** it SHALL call `getMessageParser().getTerminologyMapper().mapRace(...)` rather than `RaceAndEthnicity.*`
-
-#### Scenario: No direct import of static classes outside package
-- **WHEN** the ArchUnit rule runs after migration
-- **THEN** zero violations SHALL be reported for the five static utility classes
+- **THEN** it SHALL call `TerminologyMapperFactory.get().mapRace(...)` rather than `RaceAndEthnicity.*`

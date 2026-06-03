@@ -49,7 +49,7 @@ import ca.uhn.hl7v2.model.Primitive;
 import ca.uhn.hl7v2.model.Type;
 import ca.uhn.hl7v2.model.Varies;
 import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
-import gov.cdc.izgw.v2tofhir.utils.Mapping;
+import gov.cdc.izgw.v2tofhir.terminology.TerminologyMapperFactory;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
 import gov.cdc.izgw.v2tofhir.utils.Systems;
 import lombok.extern.slf4j.Slf4j;
@@ -71,9 +71,9 @@ class DatatypeConverterTests extends TestBase {
 			+ "\n}";
 	protected static final FhirContext ctx = FhirContext.forR4();
 	protected static final IParser fhirParser = ctx.newJsonParser().setPrettyPrint(true);
-	// Force load of Mapping class before any testing starts.
+	// Force initialization of the terminology mapper before any testing starts.
 	@SuppressWarnings("unused")
-	private static final Class<Mapping> MAPPING_CLASS = Mapping.class; 
+	private static final gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper MAPPER = TerminologyMapperFactory.get(); 
 	@ParameterizedTest
 	@MethodSource("getTestMessages") // should be getTestMessages, other possible values are for localized testing
 	@Disabled("Used for testing a local microsoft V2 converter")
@@ -134,7 +134,7 @@ class DatatypeConverterTests extends TestBase {
 				// Either both are blank or both are filled.
 				if (!StringUtils.isBlank(first)) {
 					// If both are filled, check values.
-					String[] a = { getComponent(t, 2), Mapping.getDisplay(coding) };
+					String[] a = { getComponent(t, 2), TerminologyMapperFactory.get().getDisplay(coding.getSystem(), coding.getCode()).orElse(null) };
 					List<String> l = Arrays.asList(a);
 					Supplier<Boolean> test = null;
 					
