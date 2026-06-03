@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-06-03
+
+### Changes
+- chore: Update OpenSpec and add OpenSpec Claude skills ([#44](https://github.com/IZGateway/v2tofhir/pull/44))
+- chore: Bump izgw-bom to 1.9.0 snapshot ([#42](https://github.com/IZGateway/v2tofhir/pull/42))
+- ci: upgrade GitHub Actions to Node.js 24 and add Dependabot config ([#43](https://github.com/IZGateway/v2tofhir/pull/43))
+- Implement vocabulary-management-integration change request via openspec ([#41](https://github.com/IZGateway/v2tofhir/pull/41))
+
 ## [2.1.0] - 2026-04-01
 
 ### Changes
