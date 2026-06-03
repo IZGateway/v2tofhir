@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MSHParser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">gov.cdc.izgw.v2tofhir.segment</a> &gt; <span class="el_source">MSHParser.java</span></div><h1>MSHParser.java</h1><pre class="source lang-java linenums">package gov.cdc.izgw.v2tofhir.segment;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.hl7.fhir.instance.model.api.IBaseResource;
+import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.CodeableConcept;
+import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.Endpoint;
+import org.hl7.fhir.r4.model.Identifier;
+import org.hl7.fhir.r4.model.InstantType;
+import org.hl7.fhir.r4.model.MessageHeader;
+import org.hl7.fhir.r4.model.OperationOutcome;
+import org.hl7.fhir.r4.model.Organization;
+import org.hl7.fhir.r4.model.Provenance;
+import org.hl7.fhir.r4.model.Reference;
+
+import gov.cdc.izgw.v2tofhir.annotation.ComesFrom;
+import gov.cdc.izgw.v2tofhir.annotation.Produces;
+import gov.cdc.izgw.v2tofhir.converter.MessageParser;
+import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * The MSH Parser creates a MessageHeader Resource for MSH segments.
+ * 
+ * @see &lt;a href=&quot;https://hl7.org/fhir/uv/v2mappings/2024Jan/ConceptMap-segment-msh-to-bundle.html&quot;&gt;V2-to-FHIR: MSH to Bundle&lt;/a&gt;
+ * @see &lt;a href=&quot;https://hl7.org/fhir/uv/v2mappings/2024Jan/ConceptMap-segment-msh-to-messageheader.html&quot;&gt;V2-to-FHIR: MSH to MessageHeader&lt;/a&gt;
+ * 
+ * @author Audacious Inquiry
+ */
+@Produces(segment=&quot;MSH&quot;, resource=MessageHeader.class, extra = { Organization.class, OperationOutcome.class, Bundle.class })
+<span class="fc" id="L34">@Slf4j</span>
+public class MSHParser extends AbstractSegmentParser {
+	private static final String SENDER = &quot;sender&quot;;
+
+	private static final String RECEIVER = &quot;receiver&quot;;
+
+	private MessageHeader mh;
+	
+	private static final String SENDING_ORGANIZATION = &quot;sendingOrganization&quot;;
+	private static final String DESTINATION_ORGANIZATION = &quot;destinationOrganization&quot;;
+
+	static {
+<span class="fc" id="L46">		log.debug(&quot;{} loaded&quot;, MSHParser.class.getName());</span>
+	}
+<span class="fc" id="L48">	private static final List&lt;FieldHandler&gt; fieldHandlers = new ArrayList&lt;&gt;();</span>
+	/**
+	 * Construct a new MSHParser for the specified messageParser instance.
+	 * @param messageParser	The messageParser this parser is associated with.
+	 */
+	public MSHParser(MessageParser messageParser) {
+<span class="fc" id="L54">		super(messageParser, &quot;MSG&quot;);</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">		if (fieldHandlers.isEmpty()) {</span>
+<span class="fc" id="L56">			FieldHandler.initFieldHandlers(this, fieldHandlers);</span>
+		}
+<span class="fc" id="L58">	}</span>
+	
+	public List&lt;FieldHandler&gt; getFieldHandlers() {
+<span class="fc" id="L61">		return fieldHandlers;</span>
+	}
+
+	@Override
+	public IBaseResource setup() {
+		Provenance provenance;
+<span class="fc" id="L67">		mh = createResource(MessageHeader.class);</span>
+<span class="fc" id="L68">		provenance = (Provenance) mh.getUserData(Provenance.class.getName());</span>
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">		if (provenance != null) {</span>
+<span class="fc" id="L70">			provenance.getActivity().addCoding(new Coding(null, &quot;v2-FHIR transformation&quot;, &quot;HL7 V2 to FHIR transformation&quot;));</span>
+		}
+<span class="fc" id="L72">		return mh;</span>
+	}
+
+	/**
+	 * Create the sending organization (or update the existing one) and add a 
+	 * reference to it to the MessageHeader.sender field.
+	 *  
+	 * @param ident	The identifier of the sending organization.
+	 */
+	@ComesFrom(path=&quot;MessageHeader.responsible&quot;, field = 22, type=&quot;XON&quot;, comment=&quot;Sending Responsible Organization&quot;)
+	public void setSourceSender(Identifier ident) {
+<span class="fc" id="L83">		Organization sendingOrganization = getOrganization(SENDING_ORGANIZATION);</span>
+<span class="fc" id="L84">		sendingOrganization.addIdentifier(ident);</span>
+<span class="fc" id="L85">		mh.setResponsible(ParserUtils.toReference(sendingOrganization, mh, &quot;responsible&quot;));</span>
+<span class="fc" id="L86">	}</span>
+	
+	/**
+	 * Create the sending organization (or update the existing one) and add a 
+	 * reference to it to the MessageHeader.sender field.
+	 *  
+	 * @param senderEndpoint	The identifier of the sending application.
+	 */
+	@ComesFrom(path=&quot;MessageHeader.source.endpoint&quot;, field = 3, 
+			   also={ &quot;MessageHeader.sender&quot;, &quot;Organization.endpoint.identifier&quot;, &quot;Endpoint.name&quot;, &quot;Endpoint.identifier&quot; }, 
+			   comment=&quot;Sending Application&quot;)
+	public void setSourceSenderEndpoint(Identifier senderEndpoint) {
+<span class="fc" id="L98">		mh.getSource().setEndpoint(senderEndpoint.getSystem());</span>
+<span class="fc" id="L99">		Organization sendingOrganization = getOrganization(SENDING_ORGANIZATION); </span>
+<span class="fc" id="L100">		Endpoint ep = createResource(Endpoint.class);</span>
+<span class="fc" id="L101">		ep.setName(senderEndpoint.getSystem());</span>
+<span class="fc" id="L102">		ep.addIdentifier().setValue(senderEndpoint.getSystem());</span>
+<span class="fc" id="L103">		sendingOrganization.getEndpoint().add(ParserUtils.toReference(ep, sendingOrganization, &quot;endpoint&quot;));</span>
+<span class="fc" id="L104">		mh.setSender(ParserUtils.toReference(sendingOrganization, mh, SENDER));</span>
+<span class="fc" id="L105">	}</span>
+	
+	/**
+	 * Set the sending facility
+	 * @param sendingFacility The sending facility
+	 */
+	@ComesFrom(path=&quot;MessageHeader.source.name&quot;, field = 4, comment=&quot;Sending Facility&quot;,
+			also=&quot;MessageHeader.sender&quot;)
+	public void setSourceSenderName(Identifier sendingFacility) {
+<span class="fc" id="L114">		mh.getSource().setName(sendingFacility.getSystem());</span>
+<span class="fc" id="L115">		Organization sendingOrganization = getOrganization(SENDING_ORGANIZATION);</span>
+<span class="fc" id="L116">		sendingOrganization.setName(sendingFacility.getSystem());</span>
+<span class="fc" id="L117">		mh.setSender(ParserUtils.toReference(sendingOrganization, mh, SENDER));</span>
+<span class="fc" id="L118">	}</span>
+	
+	private Organization getOrganization(String organizationType) {
+<span class="fc" id="L121">		Organization organization = (Organization) mh.getUserData(organizationType);</span>
+<span class="fc bfc" id="L122" title="All 2 branches covered.">		if (organization == null) {</span>
+<span class="fc bfc" id="L123" title="All 2 branches covered.">			if (SENDING_ORGANIZATION.equals(organizationType)) {</span>
+<span class="fc" id="L124">				organization = createResource(Organization.class);</span>
+<span class="fc" id="L125">				mh.setSender(ParserUtils.toReference(organization, mh, SENDER));</span>
+<span class="fc" id="L126">				mh.setUserData(organizationType, organization);</span>
+<span class="pc bpc" id="L127" title="1 of 2 branches missed.">			} else if (DESTINATION_ORGANIZATION.equals(organizationType)) {</span>
+<span class="fc" id="L128">				organization = createResource(Organization.class);</span>
+<span class="fc" id="L129">				mh.getDestinationFirstRep().setReceiver(ParserUtils.toReference(organization, mh, RECEIVER));</span>
+<span class="fc" id="L130">				mh.setUserData(organizationType, organization);</span>
+			} else {
+<span class="nc" id="L132">				throw new IllegalArgumentException(&quot;Unrecognized organization type: &quot; + organizationType);</span>
+			}
+		}
+<span class="fc" id="L135">		return organization;</span>
+	}
+	
+	/**
+	 * Copy information from the reciever organization to the destination organization
+	 * @param receiver The receiving organization from an XON
+	 */
+	@ComesFrom(path=&quot;MessageHeader.destination.receiver&quot;, field = 23, type=&quot;XON&quot;, comment=&quot;Receiving Responsible Organization&quot;)
+	public void setDestinationReceiver(Organization receiver) {
+<span class="fc" id="L144">		Organization receivingOrganization = getOrganization(DESTINATION_ORGANIZATION);</span>
+<span class="pc bpc" id="L145" title="1 of 2 branches missed.">		if (receiver.hasName()) {</span>
+<span class="fc" id="L146">			receivingOrganization.setName(receiver.getName());</span>
+		}
+<span class="pc bpc" id="L148" title="1 of 2 branches missed.">		if (receiver.hasIdentifier()) {</span>
+<span class="fc bfc" id="L149" title="All 2 branches covered.">			for (Identifier ident: receiver.getIdentifier()) {</span>
+<span class="fc" id="L150">				receivingOrganization.addIdentifier(ident);</span>
+<span class="fc" id="L151">			}</span>
+		}
+<span class="pc bpc" id="L153" title="1 of 2 branches missed.">		if (receiver.hasEndpoint()) {</span>
+<span class="nc bnc" id="L154" title="All 2 branches missed.">			for (Reference endpoint: receiver.getEndpoint()) {</span>
+<span class="nc" id="L155">				receivingOrganization.addEndpoint(endpoint);</span>
+<span class="nc" id="L156">			}</span>
+		}
+<span class="fc" id="L158">		mh.getDestinationFirstRep().setReceiver(ParserUtils.toReference(receivingOrganization, mh, RECEIVER));</span>
+<span class="fc" id="L159">	}</span>
+	
+	
+	/**
+	 * Set the receiver endpoint from MSH-5
+	 * @param receiverEndpoint	The receiver endpoint
+	 */
+	@ComesFrom(path=&quot;MessageHeader.destination.endpoint&quot;, field = 5, comment=&quot;Receiving Application&quot;,
+			   also=&quot;MessageHeader.destination.receiver.Organization.endpoint&quot;)
+	public void setDestinationReceiverEndpoint(Identifier receiverEndpoint) {
+<span class="fc" id="L169">		mh.getDestinationFirstRep().setEndpoint(receiverEndpoint.getSystem());</span>
+		
+<span class="fc" id="L171">		Organization organization = getOrganization(DESTINATION_ORGANIZATION);</span>
+<span class="fc" id="L172">		Endpoint endpoint = createResource(Endpoint.class);</span>
+<span class="fc" id="L173">		endpoint.addIdentifier(receiverEndpoint);</span>
+<span class="fc" id="L174">		organization.addEndpoint(ParserUtils.toReference(endpoint, organization, &quot;endpoint&quot;));</span>
+<span class="fc" id="L175">		mh.getDestinationFirstRep().setReceiver(ParserUtils.toReference(organization, mh, RECEIVER));</span>
+<span class="fc" id="L176">	}</span>
+	
+	/**
+	 * Set the destination name from MSH-6 Receiving Facility
+	 * @param receiverName	The receiving facility name
+	 */
+	@ComesFrom(path=&quot;MessageHeader.destination.name&quot;, field = 6, comment=&quot;Receiving Facility&quot;,
+			   also=&quot;MessageHeader.destination.receiver.Organization.identifier&quot;)
+	public void setDestinationReceiverName(Identifier receiverName) {
+<span class="fc" id="L185">		mh.getDestinationFirstRep().setName(receiverName.getSystem());</span>
+<span class="fc" id="L186">		Organization organization = getOrganization(DESTINATION_ORGANIZATION);</span>
+<span class="fc" id="L187">		organization.addIdentifier(new Identifier().setValue(receiverName.getSystem()));</span>
+<span class="fc" id="L188">		mh.getDestinationFirstRep().setReceiver(ParserUtils.toReference(organization, mh, RECEIVER));</span>
+<span class="fc" id="L189">	}</span>
+	
+	
+	/**
+	 * Set the bundle timestamp from MSH-7
+	 * @param dateTimeOfMessage The timestamp 
+	 */
+	@ComesFrom(path=&quot;Bundle.timestamp&quot;, field = 7, comment = &quot;Date/Time Of Message&quot;)
+	public void setDateTimeOfMessage(InstantType dateTimeOfMessage) {
+<span class="fc" id="L198">		getBundle().setTimestampElement(dateTimeOfMessage);</span>
+<span class="fc" id="L199">	}</span>
+	
+	/**
+	 * Add a tag for the messageCode from MSH-9-1
+	 * @param messageCode	The message code
+	 */
+	@ComesFrom(path=&quot;MessageHeader.meta.tag&quot;, field = 9, component = 1, table=&quot;0076&quot;, comment=&quot;Message Code&quot;)
+	public void setMetaTag(Coding messageCode) {
+<span class="fc" id="L207">		mh.getMeta().addTag(messageCode);</span>
+<span class="fc" id="L208">	}</span>
+	
+	/**
+	 * Add a tag for the trigger event in MSH-9-2
+	 * @param triggerEvent The trigger event.
+	 */
+	@ComesFrom(path=&quot;MessageHeader.eventCoding&quot;, field = 9, component = 2, table=&quot;0003&quot;, comment=&quot;Trigger Event&quot;)
+	public void setEvent(Coding triggerEvent) {
+<span class="fc" id="L216">		mh.setEvent(triggerEvent);</span>
+<span class="fc" id="L217">	}</span>
+	
+	/**
+	 * Set the message structure in MSH-9-3
+	 * @param messageStructure The message structure.
+	 */
+	@ComesFrom(path=&quot;Bundle.implicitRules&quot;, field = 9, component = 3, table=&quot;0354&quot;, comment=&quot;Message Structure&quot;,
+			   also=&quot;MessageHeader.definition&quot;)
+	public void setMessageStructure(Coding messageStructure) {
+<span class="fc" id="L226">		String rules = &quot;http://v2plus.hl7.org/2021Jan/message-structure/&quot; + messageStructure.getCode();</span>
+<span class="fc" id="L227">		getBundle().setImplicitRules(rules);</span>
+		// It's about as close as we get, and has the virtue of being a pretty close to a FHIR StructureDefinition
+<span class="fc" id="L229">		mh.setDefinition(rules);</span>
+<span class="fc" id="L230">	}</span>
+	
+	/**
+	 * Set the bundle identifier from MSH-10 Message Identifier
+	 * @param ident	The message identifier
+	 */
+	@ComesFrom(path=&quot;Bundle.identifier&quot;, field = 10)
+	public void setBundleIdentifier(Identifier ident) {
+<span class="fc" id="L238">		getBundle().setIdentifier(ident);</span>
+<span class="fc" id="L239">	}</span>
+	
+	/**
+	 * Set the Message Profile from MSH-21
+	 * @param ident	The message profile id
+	 */
+	@ComesFrom(path=&quot;Bundle.meta.profile&quot;, field = 21)
+	public void setMetaProfile(Identifier ident) {
+<span class="fc" id="L247">		String rules = &quot;&quot;;</span>
+<span class="pc bpc" id="L248" title="1 of 2 branches missed.">		if (ident.hasSystem()) {</span>
+<span class="fc" id="L249">			rules = ident.getSystem();</span>
+		}
+<span class="pc bpc" id="L251" title="1 of 2 branches missed.">		if (ident.hasValue()) {</span>
+<span class="fc" id="L252">			rules = rules + &quot;#&quot; + ident.getValue();</span>
+		}
+<span class="fc" id="L254">		getBundle().getMeta().addProfile(rules);</span>
+<span class="fc" id="L255">	}</span>
+	
+	/**
+	 * Set security tags on the message
+	 * @param securityCode	The security code
+	 */
+	@ComesFrom(path=&quot;MessageHeader.meta.security&quot;, field=8)
+	@ComesFrom(path=&quot;MessageHeader.meta.security&quot;, field=26, type = &quot;CWE&quot;, table = &quot;0952&quot;)
+	@ComesFrom(path=&quot;MessageHeader.meta.security&quot;, field=27, type = &quot;CWE&quot;, table = &quot;0953&quot;)
+	@ComesFrom(path=&quot;MessageHeader.meta.security&quot;, field=28, type = &quot;ST&quot;)
+	public void addSecurity(CodeableConcept securityCode) {
+<span class="nc bnc" id="L266" title="All 2 branches missed.">		for (Coding coding: securityCode.getCoding()) {</span>
+<span class="nc" id="L267">			mh.getMeta().addSecurity(coding);</span>
+<span class="nc" id="L268">		}</span>
+<span class="nc" id="L269">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
