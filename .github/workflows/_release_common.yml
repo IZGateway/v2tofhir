@@ -40,7 +40,7 @@ jobs:
           private-key: ${{ secrets.RELEASE_AUTOMATION_APP_KEY }}
 
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0  # Full history for release notes generation
