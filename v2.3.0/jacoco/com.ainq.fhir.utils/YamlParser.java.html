@@ -1,0 +1,282 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>YamlParser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">com.ainq.fhir.utils</a> &gt; <span class="el_source">YamlParser.java</span></div><h1>YamlParser.java</h1><pre class="source lang-java linenums">package com.ainq.fhir.utils;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.io.Writer;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+
+import org.hl7.fhir.instance.model.api.IBase;
+import org.hl7.fhir.instance.model.api.IBaseResource;
+import org.hl7.fhir.instance.model.api.IIdType;
+
+import ca.uhn.fhir.context.ConfigurationException;
+import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.fhir.parser.DataFormatException;
+import ca.uhn.fhir.parser.IParser;
+import ca.uhn.fhir.parser.IParserErrorHandler;
+import ca.uhn.fhir.rest.api.EncodingEnum;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * YamlParser implements the HAPI FHIR IParser interface, enabling it
+ * to be used to convert FHIR Resources and elements to and from YAML
+ *  
+ * @author Audacious Inquiry
+ * @see &lt;a href=&quot;https://motorcycleguy.blogspot.com/2021/08/yaml-as-fhir-format.html&quot;&gt;YAML as a FHIR Format&lt;/a&gt;
+ *
+ */
+<span class="fc" id="L31">@Slf4j</span>
+public class YamlParser implements IParser {
+    private static final String YAML_WRITE_ERROR = &quot;Error Converting to YAML&quot;;
+	private static final String YAML_READ_ERROR = &quot;Error Converting from YAML&quot;;
+	private final IParser jsonParser;
+    
+    /**
+     * Create a YamlParser with the default(R4) FhirContext
+     */
+    public YamlParser() {
+<span class="nc" id="L41">    	this(FhirContext.forR4());</span>
+<span class="nc" id="L42">    }</span>
+    /**
+     * Create a new Yaml Parser from a FhirContext
+     * @param context The FhirContext to use to create the parser
+     */
+<span class="fc" id="L47">    public YamlParser(FhirContext context) {</span>
+<span class="fc" id="L48">        jsonParser = context.newJsonParser();</span>
+<span class="fc" id="L49">    }</span>
+
+    @Override
+    public String encodeResourceToString(IBaseResource theResource) throws DataFormatException {
+
+        try {
+<span class="fc" id="L55">            return YamlUtils.toYaml(jsonParser.encodeResourceToString(theResource));</span>
+<span class="nc" id="L56">        } catch (IOException e) {</span>
+<span class="nc" id="L57">        	log.error(YAML_WRITE_ERROR + &quot;: {}&quot;, e.getMessage(), e);</span>
+<span class="nc" id="L58">            throw new DataFormatException(YAML_WRITE_ERROR, e);</span>
+        }
+    }
+
+    @Override
+    public void encodeResourceToWriter(IBaseResource theResource, Writer theWriter)
+        throws IOException, DataFormatException {
+
+        try {
+<span class="nc" id="L67">            theWriter.write(YamlUtils.toYaml(jsonParser.encodeResourceToString(theResource)));</span>
+<span class="nc" id="L68">        } catch (IOException e) {</span>
+<span class="nc" id="L69">        	log.error(&quot;Error Converting to YAML: {}&quot;, e.getMessage(), e);</span>
+<span class="nc" id="L70">            throw new DataFormatException(YAML_WRITE_ERROR, e);</span>
+<span class="nc" id="L71">        }</span>
+<span class="nc" id="L72">    }</span>
+
+    @Override
+    public IIdType getEncodeForceResourceId() {
+<span class="nc" id="L76">        return jsonParser.getEncodeForceResourceId();</span>
+    }
+
+    @Override
+    public EncodingEnum getEncoding() {
+<span class="nc" id="L81">        return jsonParser.getEncoding();</span>
+    }
+
+    @Override
+    public List&lt;Class&lt;? extends IBaseResource&gt;&gt; getPreferTypes() {
+<span class="nc" id="L86">        return jsonParser.getPreferTypes();</span>
+    }
+
+    @Override
+    public boolean isOmitResourceId() {
+<span class="nc" id="L91">        return jsonParser.isOmitResourceId();</span>
+    }
+
+    @Override
+    public Boolean getStripVersionsFromReferences() {
+<span class="nc" id="L96">        return jsonParser.getStripVersionsFromReferences();</span>
+    }
+
+    @Override
+    public boolean isSummaryMode() {
+<span class="nc" id="L101">        return jsonParser.isSummaryMode();</span>
+    }
+
+    @Override
+    public &lt;T extends IBaseResource&gt; T parseResource(Class&lt;T&gt; theResourceType, Reader theReader)
+        throws DataFormatException {
+        try {
+<span class="nc" id="L108">            return jsonParser.parseResource(theResourceType, YamlUtils.fromYaml(theReader));</span>
+<span class="nc" id="L109">        } catch (IOException e) {</span>
+<span class="nc" id="L110">            throw new DataFormatException(YAML_READ_ERROR, e);</span>
+        }
+    }
+
+    @Override
+    public &lt;T extends IBaseResource&gt; T parseResource(Class&lt;T&gt; theResourceType, InputStream theInputStream)
+        throws DataFormatException {
+        try {
+<span class="nc" id="L118">            return jsonParser.parseResource(theResourceType, YamlUtils.fromYaml(theInputStream));</span>
+<span class="nc" id="L119">        } catch (IOException e) {</span>
+<span class="nc" id="L120">            throw new DataFormatException(YAML_READ_ERROR, e);</span>
+        }
+    }
+
+    @Override
+    public &lt;T extends IBaseResource&gt; T parseResource(Class&lt;T&gt; theResourceType, String theString)
+        throws DataFormatException {
+        try {
+<span class="nc" id="L128">            return jsonParser.parseResource(theResourceType, YamlUtils.fromYaml(theString));</span>
+<span class="nc" id="L129">        } catch (Exception e) {</span>
+<span class="nc" id="L130">            throw new DataFormatException(YAML_READ_ERROR, e);</span>
+        }
+    }
+
+    @Override
+    public IBaseResource parseResource(Reader theReader) throws ConfigurationException, DataFormatException {
+        try {
+<span class="nc" id="L137">            return jsonParser.parseResource(YamlUtils.fromYaml(theReader));</span>
+<span class="nc" id="L138">        } catch (Exception e) {</span>
+<span class="nc" id="L139">            throw new DataFormatException(YAML_READ_ERROR, e);</span>
+        }
+    }
+
+    @Override
+    public IBaseResource parseResource(InputStream theInputStream)
+        throws ConfigurationException, DataFormatException {
+        try {
+<span class="nc" id="L147">            return jsonParser.parseResource(YamlUtils.fromYaml(theInputStream));</span>
+<span class="nc" id="L148">        } catch (Exception e) {</span>
+<span class="nc" id="L149">            throw new DataFormatException(YAML_READ_ERROR, e);</span>
+        }
+    }
+
+    @Override
+    public IBaseResource parseResource(String theMessageString) throws ConfigurationException, DataFormatException {
+        try {
+<span class="nc" id="L156">            return jsonParser.parseResource(YamlUtils.fromYaml(theMessageString));</span>
+<span class="nc" id="L157">        } catch (Exception e) {</span>
+<span class="nc" id="L158">            throw new DataFormatException(YAML_READ_ERROR, e);</span>
+        }
+    }
+
+    @Override
+    public IParser setEncodeElements(Set&lt;String&gt; theEncodeElements) {
+<span class="nc" id="L164">        return jsonParser.setEncodeElements(theEncodeElements);</span>
+    }
+
+    @Override
+    public void setEncodeElementsAppliesToChildResourcesOnly(boolean theEncodeElementsAppliesToChildResourcesOnly) {
+<span class="nc" id="L169">        jsonParser.setEncodeElementsAppliesToChildResourcesOnly(theEncodeElementsAppliesToChildResourcesOnly);</span>
+<span class="nc" id="L170">    }</span>
+
+    @Override
+    public boolean isEncodeElementsAppliesToChildResourcesOnly() {
+<span class="nc" id="L174">        return jsonParser.isEncodeElementsAppliesToChildResourcesOnly();</span>
+    }
+
+    @Override
+    public IParser setEncodeForceResourceId(IIdType theForceResourceId) {
+<span class="nc" id="L179">        jsonParser.setEncodeForceResourceId(theForceResourceId);</span>
+<span class="nc" id="L180">        return this;</span>
+    }
+
+    @Override
+    public IParser setOmitResourceId(boolean theOmitResourceId) {
+<span class="nc" id="L185">        jsonParser.setOmitResourceId(theOmitResourceId);</span>
+<span class="nc" id="L186">        return this;</span>
+    }
+
+    @Override
+    public IParser setParserErrorHandler(IParserErrorHandler theErrorHandler) {
+<span class="nc" id="L191">        jsonParser.setParserErrorHandler(theErrorHandler);</span>
+<span class="nc" id="L192">        return this;</span>
+    }
+
+    @Override
+    public void setPreferTypes(List&lt;Class&lt;? extends IBaseResource&gt;&gt; thePreferTypes) {
+<span class="nc" id="L197">        jsonParser.setPreferTypes(thePreferTypes);</span>
+<span class="nc" id="L198">    }</span>
+
+    @Override
+    public IParser setPrettyPrint(boolean thePrettyPrint) {
+<span class="nc" id="L202">        jsonParser.setPrettyPrint(thePrettyPrint);</span>
+<span class="nc" id="L203">        return this;</span>
+    }
+
+    @Override
+    public IParser setServerBaseUrl(String theUrl) {
+<span class="nc" id="L208">        jsonParser.setServerBaseUrl(theUrl);</span>
+<span class="nc" id="L209">        return this;</span>
+    }
+
+    @Override
+    public IParser setStripVersionsFromReferences(Boolean theStripVersionsFromReferences) {
+<span class="nc" id="L214">        jsonParser.setStripVersionsFromReferences(theStripVersionsFromReferences);</span>
+<span class="nc" id="L215">        return this;</span>
+    }
+
+    @Override
+    public IParser setOverrideResourceIdWithBundleEntryFullUrl(
+        Boolean theOverrideResourceIdWithBundleEntryFullUrl) {
+<span class="nc" id="L221">        jsonParser.setOverrideResourceIdWithBundleEntryFullUrl(theOverrideResourceIdWithBundleEntryFullUrl);</span>
+<span class="nc" id="L222">        return this;</span>
+    }
+
+    @Override
+    public IParser setSummaryMode(boolean theSummaryMode) {
+<span class="nc" id="L227">        jsonParser.setSummaryMode(theSummaryMode);</span>
+<span class="nc" id="L228">        return this;</span>
+    }
+
+    @Override
+    public IParser setSuppressNarratives(boolean theSuppressNarratives) {
+<span class="nc" id="L233">        jsonParser.setSuppressNarratives(theSuppressNarratives);</span>
+<span class="nc" id="L234">        return this;</span>
+    }
+
+    @Override
+    public IParser setDontStripVersionsFromReferencesAtPaths(String... thePaths) {
+<span class="nc" id="L239">        jsonParser.setDontStripVersionsFromReferencesAtPaths(thePaths);</span>
+<span class="nc" id="L240">        return this;</span>
+    }
+
+    @Override
+    public IParser setDontStripVersionsFromReferencesAtPaths(Collection&lt;String&gt; thePaths) {
+<span class="nc" id="L245">        jsonParser.setDontStripVersionsFromReferencesAtPaths(thePaths);</span>
+<span class="nc" id="L246">        return this;</span>
+    }
+
+    @Override
+    public Set&lt;String&gt; getDontStripVersionsFromReferencesAtPaths() {
+<span class="nc" id="L251">        return jsonParser.getDontStripVersionsFromReferencesAtPaths();</span>
+    }
+
+	@Override
+	public String encodeToString(IBase theElement) throws DataFormatException {
+        try {
+<span class="nc" id="L257">            return YamlUtils.toYaml(jsonParser.encodeToString(theElement));</span>
+<span class="nc" id="L258">        } catch (IOException e) {</span>
+<span class="nc" id="L259">            throw new DataFormatException(YAML_WRITE_ERROR, e);</span>
+        }
+	}
+
+	@Override
+	public void encodeToWriter(IBase theElement, Writer theWriter) throws DataFormatException, IOException {
+        try {
+<span class="nc" id="L266">            theWriter.write(YamlUtils.toYaml(jsonParser.encodeToString(theElement)));</span>
+<span class="nc" id="L267">        } catch (IOException e) {</span>
+<span class="nc" id="L268">            throw new DataFormatException(YAML_WRITE_ERROR, e);</span>
+<span class="nc" id="L269">        }</span>
+<span class="nc" id="L270">	}</span>
+
+	@Override
+	public IParser setDontEncodeElements(Collection&lt;String&gt; theDontEncodeElements) {
+<span class="nc" id="L274">		return jsonParser.setDontEncodeElements(theDontEncodeElements);</span>
+	}
+	
+	@Override
+	public void parseInto(Reader theSource, IBase theTarget) throws IOException {
+<span class="nc" id="L279">		jsonParser.parseInto(YamlUtils.fromYaml(theSource), theTarget);</span>
+<span class="nc" id="L280">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
