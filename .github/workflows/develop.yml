@@ -40,7 +40,7 @@ jobs:
     steps:
     
     - name: Checkout the software  
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
       # Necessary to enable push to protected branch
       with:
         ssh-key: ${{secrets.ACTIONS_KEY}}
