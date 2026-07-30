@@ -64,7 +64,7 @@ import lombok.extern.slf4j.Slf4j;
 				// Simplify it, stripping any parameters such as charset.
 <span class="fc" id="L65">				mediaType = new MediaType(mediaType.getType(), mediaType.getSubtype());</span>
 <span class="fc" id="L66">			} catch (InvalidMediaTypeException e) {</span>
-<span class="fc" id="L67">				log.warn(&quot;Unparseable Content-Type '{}', guessing media type from content&quot;, contentType);</span>
+<span class="fc" id="L67">				log.warn(&quot;Unparseable Content-Type '{}', guessing media type from content&quot;, contentType, e);</span>
 <span class="fc" id="L68">				mediaType = ContentUtils.guessMediaType(bis);</span>
 <span class="fc" id="L69">			}</span>
 		}
