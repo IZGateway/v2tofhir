@@ -10,7 +10,7 @@ The mapping SHALL be:
 |-------|----------------|------------|
 | `AE`  | `error`        | `invalid`        |
 | `AR`  | `fatal`        | `processing`     |
-| `TM`  | `warning`      | `too-costly`     |
+| `TM`  | `warning`      | `multiple-matches` |
 | `OK`  | `information`  | `informational`  |
 | `NF`  | `information`  | `informational`  |
 | any other / unrecognized non-empty code | `information` | `informational` |
@@ -20,7 +20,7 @@ Code comparison SHALL be case-insensitive.
 
 #### Scenario: TM (too much data found) maps to a warning
 - **WHEN** a `QAK` segment with `QAK-2 = TM` is parsed (e.g. an `RSP^K11` where the query matched more records than the record limit and no `PID` segments are returned)
-- **THEN** the resulting `OperationOutcome.issue` has `severity = warning` and `code = too-costly`
+- **THEN** the resulting `OperationOutcome.issue` has `severity = warning` and `code = multiple-matches`
 - **AND** `OperationOutcome.issue.details` still contains the `v2-0208` coding with code `TM`
 
 #### Scenario: OK maps to informational

@@ -73,10 +73,12 @@ public class QAKParser extends AbstractSegmentParser {
 	
 	/**
 	 * Set OperationOutcome.issue.details, issue.code, and issue.severity
-	 * 
+	 *
 	 * Sets issue.details to details
-	 * Maps issue.code and issue.severity from details
-	 * 
+	 * Maps issue.code and issue.severity from the QAK-2 code (HL7 table 0208):
+	 * AE → error/invalid, AR → fatal/processing, TM (too much data found) → warning/multiple-matches,
+	 * NF, OK, and any other non-empty code → information/informational, an absent code → information/unknown.
+	 *
 	 * @param details	The coding found in QAK-2 from table 0208
 	 */
 	@ComesFrom(path="OperationOutcome[1].issue.details", field = 2, table = "0208", 
@@ -94,6 +96,10 @@ public class QAKParser extends AbstractSegmentParser {
 			case "AR":
 				issue.setCode(IssueType.PROCESSING);
 				issue.setSeverity(IssueSeverity.FATAL);
+				break;
+			case "TM":	// Too much data found (HL7 table 0208)
+				issue.setCode(IssueType.MULTIPLEMATCHES);
+				issue.setSeverity(IssueSeverity.WARNING);
 				break;
 			case "NF", "OK":
 			default:
