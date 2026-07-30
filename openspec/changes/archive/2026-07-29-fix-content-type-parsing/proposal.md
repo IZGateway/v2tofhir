@@ -21,10 +21,11 @@ and is a prerequisite for the `$match`-based patient-matching flow (IGDD-3164).
 ## Capabilities
 
 ### New Capabilities
-- `fhir-content-negotiation`: Reading and writing FHIR resource bodies over HTTP for
-  non-HAPI-native Spring Boot applications — selecting the correct FHIR parser from the
-  request `Content-Type` (including parameters such as `charset`) and from response
-  content negotiation.
+- `fhir-content-negotiation`: Reading FHIR resource bodies over HTTP for non-HAPI-native
+  Spring Boot applications — selecting the correct FHIR parser from the request
+  `Content-Type` (including parameters such as `charset`), with body-sniffing fallback
+  when the header is absent or unparseable. (The write/response side of the converter is
+  unchanged by this fix and can be specified when it is next touched.)
 
 ### Modified Capabilities
 <!-- None: no existing spec in openspec/specs/ describes this behavior yet. -->

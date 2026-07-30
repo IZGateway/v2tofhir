@@ -11,17 +11,20 @@ import org.hl7.fhir.r4.model.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.HttpOutputMessage;
+import org.springframework.http.InvalidMediaTypeException;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.converter.HttpMessageNotWritableException;
 
 import ca.uhn.fhir.parser.IParser;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * This is a converter to and from FHIR for SpringBoot applications that are
- * not using the HAPI on FHIR native web server. 
+ * not using the HAPI on FHIR native web server.
  */
+@Slf4j
 public class FhirConverter implements HttpMessageConverter<Resource> {
 	@Override
 	public boolean canRead(Class<?> clazz, MediaType mediaType) {
@@ -55,9 +58,14 @@ public class FhirConverter implements HttpMessageConverter<Resource> {
 		if (StringUtils.isBlank(contentType)) {
 			mediaType = ContentUtils.guessMediaType(bis);
 		} else {
-			mediaType = new MediaType(contentType);
-			// Simplify it.
-			mediaType = new MediaType(mediaType.getType(), mediaType.getType());
+			try {
+				mediaType = MediaType.parseMediaType(contentType);
+				// Simplify it, stripping any parameters such as charset.
+				mediaType = new MediaType(mediaType.getType(), mediaType.getSubtype());
+			} catch (InvalidMediaTypeException e) {
+				log.warn("Unparseable Content-Type '{}', guessing media type from content", contentType);
+				mediaType = ContentUtils.guessMediaType(bis);
+			}
 		}
 		parser = ContentUtils.selectParser(mediaType);
 		return parser.parseResource(clazz, bis);

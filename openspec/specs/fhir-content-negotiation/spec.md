@@ -1,4 +1,13 @@
-## ADDED Requirements
+# fhir-content-negotiation Specification
+
+## Purpose
+
+Reading FHIR resource bodies over HTTP for non-HAPI-native Spring Boot applications:
+selecting the correct FHIR parser from the request `Content-Type` (including parameters
+such as `charset`), with body-sniffing fallback when the header is absent or unparseable.
+(The write/response side of the converter is not yet covered by this spec.)
+
+## Requirements
 
 ### Requirement: Parse request Content-Type with parameters
 The system SHALL parse the incoming HTTP `Content-Type` header when reading a FHIR
@@ -36,11 +45,15 @@ the JSON parser for JSON or unrecognized FHIR media types.
 - **WHEN** the simplified media type is a FHIR media type not explicitly mapped to XML or YAML
 - **THEN** the JSON FHIR parser is used to read the body
 
-### Requirement: Infer media type when Content-Type is absent
-When the request has no `Content-Type` header (blank or missing), the system SHALL infer
-the media type by inspecting the leading content of the request body and select the
-matching parser rather than failing.
+### Requirement: Infer media type when Content-Type is absent or unparseable
+When the request has no `Content-Type` header (blank or missing), or the header value
+cannot be parsed as a media type, the system SHALL infer the media type by inspecting the
+leading content of the request body and select the matching parser rather than failing.
 
 #### Scenario: Missing Content-Type falls back to content sniffing
 - **WHEN** a FHIR resource body is read with no `Content-Type` header
 - **THEN** the media type is inferred from the body's leading characters and the corresponding FHIR parser is selected
+
+#### Scenario: Unparseable Content-Type falls back to content sniffing
+- **WHEN** a FHIR resource body is read with a `Content-Type` header that is not a valid media type
+- **THEN** no error is propagated, the media type is inferred from the body's leading characters, and the corresponding FHIR parser is selected

@@ -68,9 +68,13 @@ simplification already performed inside `ContentUtils.selectParser(...)`.
 
 ### Decision 3: Robustness — keep read tolerant
 Consistent with the library's Postel's-Law principle, a malformed/unparseable
-`Content-Type` should not hard-fail body reading. Treat a value that cannot be parsed the
-same as a missing `Content-Type` by falling back to `ContentUtils.guessMediaType(bis)`
-(body sniffing), rather than propagating an exception.
+`Content-Type` should not hard-fail body reading. Catch `InvalidMediaTypeException` — the
+`IllegalArgumentException` subclass that `MediaType.parseMediaType(...)` throws — and treat
+the value the same as a missing `Content-Type` by falling back to
+`ContentUtils.guessMediaType(bis)` (body sniffing), rather than propagating the exception.
+Catch only `InvalidMediaTypeException`, not `IllegalArgumentException` or broader, so
+unrelated failures still surface. Log the fallback at `warn`; `FhirConverter` has no logger
+today, so add Lombok's `@Slf4j` to the class (Lombok is already a project dependency).
 
 - **Alternative considered:** let a bad header throw. Rejected — inconsistent with the
   rest of the converter and with the blank-header path, and it is exactly the failure
@@ -79,8 +83,9 @@ same as a missing `Content-Type` by falling back to `ContentUtils.guessMediaType
 ### Decision 4: Regression test at the converter level
 Add `FhirConverterTests` (Surefire matches `*Tests.java`) that drives `read()` with a
 `MockHttpInputMessage`-style input carrying `Content-Type: application/fhir+json;charset=UTF-8`
-and asserts a resource is parsed. Include an XML case and a blank/missing-header case to
-lock in parser selection and the sniffing fallback.
+and asserts a resource is parsed. Include XML, YAML, blank/missing-header,
+unparseable-header, and unrecognized-FHIR-media-type cases so every spec scenario
+(parser selection, default-to-JSON, and the sniffing fallback) is locked in by a test.
 
 ## Risks / Trade-offs
 
@@ -90,6 +95,10 @@ lock in parser selection and the sniffing fallback.
 - **[Case/whitespace variants of media types]** → `parseMediaType` normalizes structure;
   `canRead`/`selectParser` already lower-case type/subtype, so no new casing handling is
   needed.
+- **[Charset parameter is stripped, not honored]** → Simplifying to `type/subtype` discards
+  `charset`, so the body is always read with HAPI's default (UTF-8) decoding; a hypothetical
+  non-UTF-8 body would be misread. Accepted deliberately: FHIR mandates UTF-8 for its
+  media types, so honoring other charsets is out of scope.
 - **[Very small blast radius]** → Change is one method; low risk of regressing other
   converter behavior. The new tests are the primary guard.
 
