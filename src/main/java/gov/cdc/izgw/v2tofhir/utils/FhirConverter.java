@@ -3,6 +3,7 @@ package gov.cdc.izgw.v2tofhir.utils;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.lang.reflect.Modifier;
 import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -68,6 +69,23 @@ public class FhirConverter implements HttpMessageConverter<Resource> {
 			}
 		}
 		parser = ContentUtils.selectParser(mediaType);
+		// HAPI's typed parseResource(Class, ...) scans the target class and rejects
+		// abstract classes / interfaces (e.g. org.hl7.fhir.r4.model.Resource) with
+		// "HAPI-1682: Can not scan abstract or interface class". Spring passes the
+		// *declared* @RequestBody type, so a handler declaring an abstract type such
+		// as Resource fails here before the controller runs. When the requested type
+		// is abstract/interface, use the auto-detecting overload, which reads
+		// resourceType from the payload and resolves the concrete class.
+		if (Modifier.isAbstract(clazz.getModifiers()) || clazz.isInterface()) {
+			Resource parsed = (Resource) parser.parseResource(bis);
+			if (!clazz.isInstance(parsed)) {
+				throw new HttpMessageNotReadableException(
+					"Parsed resource type '" + parsed.fhirType()
+						+ "' is not assignable to requested type " + clazz.getName(),
+					inputMessage);
+			}
+			return parsed;
+		}
 		return parser.parseResource(clazz, bis);
 	}
 
