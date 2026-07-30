@@ -64,7 +64,7 @@ public class FhirConverter implements HttpMessageConverter<Resource> {
 				// Simplify it, stripping any parameters such as charset.
 				mediaType = new MediaType(mediaType.getType(), mediaType.getSubtype());
 			} catch (InvalidMediaTypeException e) {
-				log.warn("Unparseable Content-Type '{}', guessing media type from content", contentType);
+				log.warn("Unparseable Content-Type '{}', guessing media type from content", contentType, e);
 				mediaType = ContentUtils.guessMediaType(bis);
 			}
 		}
