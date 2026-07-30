@@ -115,7 +115,7 @@ public class YamlParser implements IParser {
     public &lt;T extends IBaseResource&gt; T parseResource(Class&lt;T&gt; theResourceType, InputStream theInputStream)
         throws DataFormatException {
         try {
-<span class="nc" id="L118">            return jsonParser.parseResource(theResourceType, YamlUtils.fromYaml(theInputStream));</span>
+<span class="fc" id="L118">            return jsonParser.parseResource(theResourceType, YamlUtils.fromYaml(theInputStream));</span>
 <span class="nc" id="L119">        } catch (IOException e) {</span>
 <span class="nc" id="L120">            throw new DataFormatException(YAML_READ_ERROR, e);</span>
         }
@@ -199,8 +199,8 @@ public class YamlParser implements IParser {
 
     @Override
     public IParser setPrettyPrint(boolean thePrettyPrint) {
-<span class="nc" id="L202">        jsonParser.setPrettyPrint(thePrettyPrint);</span>
-<span class="nc" id="L203">        return this;</span>
+<span class="fc" id="L202">        jsonParser.setPrettyPrint(thePrettyPrint);</span>
+<span class="fc" id="L203">        return this;</span>
     }
 
     @Override
