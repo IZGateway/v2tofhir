@@ -3,6 +3,7 @@ package gov.cdc.izgw.v2tofhir.utils;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.lang.reflect.Modifier;
 import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -11,17 +12,20 @@ import org.hl7.fhir.r4.model.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.HttpOutputMessage;
+import org.springframework.http.InvalidMediaTypeException;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.converter.HttpMessageNotWritableException;
 
 import ca.uhn.fhir.parser.IParser;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * This is a converter to and from FHIR for SpringBoot applications that are
- * not using the HAPI on FHIR native web server. 
+ * not using the HAPI on FHIR native web server.
  */
+@Slf4j
 public class FhirConverter implements HttpMessageConverter<Resource> {
 	@Override
 	public boolean canRead(Class<?> clazz, MediaType mediaType) {
@@ -55,11 +59,33 @@ public class FhirConverter implements HttpMessageConverter<Resource> {
 		if (StringUtils.isBlank(contentType)) {
 			mediaType = ContentUtils.guessMediaType(bis);
 		} else {
-			mediaType = new MediaType(contentType);
-			// Simplify it.
-			mediaType = new MediaType(mediaType.getType(), mediaType.getType());
+			try {
+				mediaType = MediaType.parseMediaType(contentType);
+				// Simplify it, stripping any parameters such as charset.
+				mediaType = new MediaType(mediaType.getType(), mediaType.getSubtype());
+			} catch (InvalidMediaTypeException e) {
+				log.warn("Unparseable Content-Type '{}', guessing media type from content", contentType, e);
+				mediaType = ContentUtils.guessMediaType(bis);
+			}
 		}
 		parser = ContentUtils.selectParser(mediaType);
+		// HAPI's typed parseResource(Class, ...) scans the target class and rejects
+		// abstract classes / interfaces (e.g. org.hl7.fhir.r4.model.Resource) with
+		// "HAPI-1682: Can not scan abstract or interface class". Spring passes the
+		// *declared* @RequestBody type, so a handler declaring an abstract type such
+		// as Resource fails here before the controller runs. When the requested type
+		// is abstract/interface, use the auto-detecting overload, which reads
+		// resourceType from the payload and resolves the concrete class.
+		if (Modifier.isAbstract(clazz.getModifiers()) || clazz.isInterface()) {
+			Resource parsed = (Resource) parser.parseResource(bis);
+			if (!clazz.isInstance(parsed)) {
+				throw new HttpMessageNotReadableException(
+					"Parsed resource type '" + parsed.fhirType()
+						+ "' is not assignable to requested type " + clazz.getName(),
+					inputMessage);
+			}
+			return parsed;
+		}
 		return parser.parseResource(clazz, bis);
 	}
 
