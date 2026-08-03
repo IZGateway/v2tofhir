@@ -24,9 +24,9 @@ public class ContentUtils {
 	/** Unicode Byte Order Mark is NOT considered to be whitespace */
 	public static final char BOM = '\uFEFF';
 	/** Fhir Context for R4 */
-<span class="fc" id="L27">	public static final FhirContext R4 = FhirContext.forR4();</span>
+<span class="nc" id="L27">	public static final FhirContext R4 = FhirContext.forR4();</span>
 	/** FHIR R4 Parser for JSON Content */
-<span class="fc" id="L29">	public static final IParser FHIR_JSON_PARSER = ContentUtils.R4.newJsonParser().setPrettyPrint(ContentUtils.PRETTY);</span>
+<span class="nc" id="L29">	public static final IParser FHIR_JSON_PARSER = ContentUtils.R4.newJsonParser().setPrettyPrint(ContentUtils.PRETTY);</span>
 	/** Mime Type for FHIR in JSON format */
 	public static final String FHIR_PLUS_JSON_VALUE = &quot;application/fhir+json&quot;;
 	/** Mime Type for FHIR in XML format */
@@ -37,13 +37,13 @@ public class ContentUtils {
 	public static final String YAML_VALUE = &quot;application/yaml&quot;;
 	
 	/** Media Type for FHIR in JSON format */
-<span class="fc" id="L40">	public static final MediaType FHIR_PLUS_JSON = parseMediaType(FHIR_PLUS_JSON_VALUE);</span>
+<span class="nc" id="L40">	public static final MediaType FHIR_PLUS_JSON = parseMediaType(FHIR_PLUS_JSON_VALUE);</span>
 	/** Media Type for FHIR in XML format */
-<span class="fc" id="L42">	public static final MediaType FHIR_PLUS_XML = parseMediaType(FHIR_PLUS_XML_VALUE);</span>
+<span class="nc" id="L42">	public static final MediaType FHIR_PLUS_XML = parseMediaType(FHIR_PLUS_XML_VALUE);</span>
 	/** Media Type for FHIR in YAML format */
-<span class="fc" id="L44">	public static final MediaType FHIR_PLUS_YAML = parseMediaType(FHIR_PLUS_YAML_VALUE);</span>
+<span class="nc" id="L44">	public static final MediaType FHIR_PLUS_YAML = parseMediaType(FHIR_PLUS_YAML_VALUE);</span>
 	/** Media Type for YAML format */
-<span class="fc" id="L46">	public static final MediaType YAML = parseMediaType(YAML_VALUE);</span>
+<span class="nc" id="L46">	public static final MediaType YAML = parseMediaType(YAML_VALUE);</span>
 	/** Media Type for CDA Format */
 	public static final String CDA_VALUE = &quot;application/cda+xml&quot;;
 	/** Media Type for HL7 V2 ER7 Format */
@@ -52,11 +52,11 @@ public class ContentUtils {
 	public static final String HL7V2_XML_VALUE = &quot;application/hl7v2+xml&quot;;
 	
 	/** FHIR R4 Parser for XML Content */
-<span class="fc" id="L55">	public static final IParser FHIR_XML_PARSER = ContentUtils.R4.newXmlParser().setPrettyPrint(ContentUtils.PRETTY);</span>
+<span class="nc" id="L55">	public static final IParser FHIR_XML_PARSER = ContentUtils.R4.newXmlParser().setPrettyPrint(ContentUtils.PRETTY);</span>
 	/** FHIR R4 Parser for YAML Content */
-<span class="fc" id="L57">	public static final IParser FHIR_YAML_PARSER = new YamlParser(ContentUtils.R4).setPrettyPrint(ContentUtils.PRETTY);</span>
+<span class="nc" id="L57">	public static final IParser FHIR_YAML_PARSER = new YamlParser(ContentUtils.R4).setPrettyPrint(ContentUtils.PRETTY);</span>
 	/** Supported FHIR Media Types */
-<span class="fc" id="L59">	protected static final List&lt;MediaType&gt; FHIR_MEDIA_TYPES = Arrays.asList(</span>
+<span class="nc" id="L59">	protected static final List&lt;MediaType&gt; FHIR_MEDIA_TYPES = Arrays.asList(</span>
 		new MediaType(&quot;application&quot;, &quot;fhir&quot;),
 		new MediaType(&quot;text&quot;, &quot;fhir&quot;),
 		FHIR_PLUS_JSON,
@@ -67,7 +67,7 @@ public class ContentUtils {
 		MediaType.APPLICATION_XML,
 		MediaType.TEXT_XML
 	);
-<span class="fc" id="L70">	protected static final List&lt;MediaType&gt; HL7_MEDIA_TYPES = Arrays.asList(</span>
+<span class="nc" id="L70">	protected static final List&lt;MediaType&gt; HL7_MEDIA_TYPES = Arrays.asList(</span>
 		new MediaType(&quot;application&quot;, &quot;fhir&quot;),
 		new MediaType(&quot;text&quot;, &quot;fhir&quot;),
 		FHIR_PLUS_JSON,
@@ -78,12 +78,12 @@ public class ContentUtils {
 		MediaType.APPLICATION_XML,
 		MediaType.TEXT_XML,
 		new MediaType(&quot;text&quot;, &quot;hl7v2&quot;),
-<span class="fc" id="L81">		MediaType.valueOf(HL7V2_TEXT_VALUE),</span>
+<span class="nc" id="L81">		MediaType.valueOf(HL7V2_TEXT_VALUE),</span>
 		new MediaType(&quot;application&quot;, &quot;hl7v2&quot;),
-<span class="fc" id="L83">		MediaType.valueOf(HL7V2_XML_VALUE),</span>
+<span class="nc" id="L83">		MediaType.valueOf(HL7V2_XML_VALUE),</span>
 		new MediaType(&quot;text&quot;, &quot;cda&quot;),
 		new MediaType(&quot;application&quot;, &quot;cda&quot;),
-<span class="fc" id="L86">		MediaType.valueOf(CDA_VALUE)</span>
+<span class="nc" id="L86">		MediaType.valueOf(CDA_VALUE)</span>
 	);
 
 	private ContentUtils() {}
@@ -160,18 +160,18 @@ public class ContentUtils {
 	 * @throws IOException	If an IO Error occurs.
 	 */
 	public static MediaType guessMediaType(InputStream inputStream) throws IOException {
-<span class="fc" id="L163">		inputStream.mark(512);</span>
+<span class="nc" id="L163">		inputStream.mark(512);</span>
 		try {
-<span class="pc bpc" id="L165" title="1 of 2 branches missed.">			for (int i = 0; i &lt; 512; i++) {</span>
-<span class="fc" id="L166">				int c = inputStream.read();</span>
-<span class="pc bpc" id="L167" title="1 of 2 branches missed.">				if (c &lt; 0) {</span>
+<span class="nc bnc" id="L165" title="All 2 branches missed.">			for (int i = 0; i &lt; 512; i++) {</span>
+<span class="nc" id="L166">				int c = inputStream.read();</span>
+<span class="nc bnc" id="L167" title="All 2 branches missed.">				if (c &lt; 0) {</span>
 <span class="nc" id="L168">					break;</span>
 				} 
-<span class="fc bfc" id="L170" title="All 2 branches covered.">				if (c == '&lt;') {</span>
-<span class="fc" id="L171">					return FHIR_PLUS_XML;</span>
+<span class="nc bnc" id="L170" title="All 2 branches missed.">				if (c == '&lt;') {</span>
+<span class="nc" id="L171">					return FHIR_PLUS_XML;</span>
 				} 
-<span class="pc bpc" id="L173" title="1 of 2 branches missed.">				if (c == '{') {</span>
-<span class="fc" id="L174">					return FHIR_PLUS_JSON;</span>
+<span class="nc bnc" id="L173" title="All 2 branches missed.">				if (c == '{') {</span>
+<span class="nc" id="L174">					return FHIR_PLUS_JSON;</span>
 				} 
 <span class="nc bnc" id="L176" title="All 2 branches missed.">				if (c == '-') {</span>
 <span class="nc" id="L177">					return FHIR_PLUS_YAML;</span>
@@ -182,7 +182,7 @@ public class ContentUtils {
 				}
 			}
 		} finally {
-<span class="fc" id="L185">			inputStream.reset();</span>
+<span class="nc" id="L185">			inputStream.reset();</span>
 		}
 <span class="nc" id="L187">		return FHIR_PLUS_JSON;</span>
 	}
@@ -194,25 +194,25 @@ public class ContentUtils {
 	 */
 	public static IParser selectParser(MediaType mediaType) {
 		// Simplify the media type.
-<span class="fc" id="L197">		mediaType = new MediaType(mediaType.getType(), mediaType.getSubtype());</span>
+<span class="nc" id="L197">		mediaType = new MediaType(mediaType.getType(), mediaType.getSubtype());</span>
 		// Convert to string for switch
-<span class="fc" id="L199">		String mimeType = StringUtils.defaultString(mediaType.toString());</span>
-<span class="fc bfc" id="L200" title="All 3 branches covered.">		switch (mimeType) {</span>
+<span class="nc" id="L199">		String mimeType = StringUtils.defaultString(mediaType.toString());</span>
+<span class="nc bnc" id="L200" title="All 3 branches missed.">		switch (mimeType) {</span>
 		case FHIR_PLUS_XML_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.TEXT_XML_VALUE:
-<span class="fc" id="L202">			return FHIR_XML_PARSER;</span>
+<span class="nc" id="L202">			return FHIR_XML_PARSER;</span>
 			
 		case FHIR_PLUS_YAML_VALUE, YAML_VALUE:
-<span class="fc" id="L205">			return FHIR_YAML_PARSER;</span>
+<span class="nc" id="L205">			return FHIR_YAML_PARSER;</span>
 			
 		case FHIR_PLUS_JSON_VALUE, MediaType.APPLICATION_JSON_VALUE:
 		default:
-<span class="fc" id="L209">			return FHIR_JSON_PARSER;</span>
+<span class="nc" id="L209">			return FHIR_JSON_PARSER;</span>
 		}
 	}
 
 	private static MediaType parseMediaType(String contentType) {
-<span class="fc" id="L214">		String[] parts = contentType.split(&quot;/&quot;);</span>
-<span class="fc" id="L215">		return new MediaType(parts[0], parts[1]);</span>
+<span class="nc" id="L214">		String[] parts = contentType.split(&quot;/&quot;);</span>
+<span class="nc" id="L215">		return new MediaType(parts[0], parts[1]);</span>
 	}
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
