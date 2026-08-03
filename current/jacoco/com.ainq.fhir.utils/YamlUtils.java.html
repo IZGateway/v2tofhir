@@ -56,11 +56,11 @@ import ca.uhn.fhir.parser.IParser;
      * @throws IOException	If an IO error occured while reading.
      */
     public static String fromYaml(InputStream in) throws IOException {
-<span class="nc" id="L59">        ObjectMapper yamlReader = newYAMLMapper();</span>
-<span class="nc" id="L60">        Object obj = yamlReader.readValue(in, Object.class);</span>
+<span class="fc" id="L59">        ObjectMapper yamlReader = newYAMLMapper();</span>
+<span class="fc" id="L60">        Object obj = yamlReader.readValue(in, Object.class);</span>
 
-<span class="nc" id="L62">        ObjectMapper jsonWriter = new ObjectMapper();</span>
-<span class="nc" id="L63">        return jsonWriter.writeValueAsString(obj);</span>
+<span class="fc" id="L62">        ObjectMapper jsonWriter = new ObjectMapper();</span>
+<span class="fc" id="L63">        return jsonWriter.writeValueAsString(obj);</span>
     }
 
     /**
