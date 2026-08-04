@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2026-08-04
+
+### Changes
+- Use izgw-bom to released 1.13.0 ([#50](https://github.com/IZGateway/v2tofhir/pull/50))
+- IGDD-3164 & IGDD-3168 Parse Content-Type with parameters in FhirConverter.read() & request body for /Patient/$match ([#49](https://github.com/IZGateway/v2tofhir/pull/49))
+- chore: Update openspec skills/commands for version 1.6.0 ([#48](https://github.com/IZGateway/v2tofhir/pull/48))
+- chore: Bump izgw-bom version to latest snapshot ([#47](https://github.com/IZGateway/v2tofhir/pull/47))
+
 ## [2.3.0] - 2026-07-07
 
 ### Changes
