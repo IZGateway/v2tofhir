@@ -7,19 +7,19 @@
 - [ ] 1.3 Confirm no signature/behavior change is needed in `ORCParser` — its `@ComesFrom` setters
       already branch on `hasImmunization()` / `hasRecommendation()`.
 
-## 2. Forecast splitting (one resource per `30956-7`)
+## 2. Forecast splitting (one `recommendation` component per `30956-7`, single resource)
 
-- [ ] 2.1 In `IzDetail`, add per-group forecast state — `forecastBlockStarted`, `groupIdentifier`
-      (ORC-3), `groupDate` (RXA-22) — and reset all three in `checkForImmunization()` alongside the
-      existing resource/boolean reset.
+- [ ] 2.1 In `IzDetail`, share the `ImmunizationRecommendation` across forecast groups:
+      `initializeResources` reuses the message's existing resource instead of creating one per
+      ORC (shape B has up to 10 forecast groups). Default the resource's required `date` from
+      the MSH-7 message timestamp at creation (RXA-22 overwrites it when present — Nevada
+      truncates forecast RXAs at RXA-20). Add per-group state `forecastBlockStarted`, reset in
+      `checkForImmunization()` alongside the existing boolean reset.
 - [ ] 2.2 Add `IzDetail.startForecastBlock()` returning the
       `ImmunizationRecommendationRecommendationComponent` to write into:
-      - first block in the group → adopt the `ImmunizationRecommendation` created at ORC time and
-        the empty component added by `RXAParser.setup()`;
-      - later blocks → `mp.createResource(ImmunizationRecommendation.class)`, set the `Patient`
-        reference and add the `MessageHeader.focus` entry (same wiring as
-        `initializeResources`), copy `groupDate`, add one `recommendation` component, and make it
-        the current resource.
+      - first block in the group → adopt the empty component added by `RXAParser.setup()`;
+      - later blocks → `immunizationRecommendation.addRecommendation()`, and make it the
+        component `getRecommendation()` returns.
 - [ ] 2.3 In `OBXParser.VisCode`, collapse the two entries for LOINC `30956-7`
       (`VIS_VACCINE_TYPE_CODE`, `FORECAST_VACCINE_CODE`) into a single constant, and remove it from
       the VIS education switch in `handleVisObservations`. Add a `ponytail:` comment naming the
@@ -32,22 +32,25 @@
 - [ ] 2.5 In `OBXParser.handleRecommendationObservations()`, make the `30956-7` case set
       `recommendation.vaccineCode` from the converted `CodeableConcept` (this is the previously
       unreachable `FORECAST_VACCINE_CODE` body).
-- [ ] 2.6 In `RXAParser`, drop `addVaccineCode(RXA-5)` on the forecast path (the `998` placeholder),
-      and route `RXA-22` into `IzDetail.groupDate` so it applies to every resource in the group
-      rather than only the first.
+- [ ] 2.6 In `RXAParser`, on the forecast path: drop `addVaccineCode(RXA-5)` (the `998`
+      placeholder) and drop the RXA-3 write
+      (`recommendation.getDateCriterionFirstRep().setValueElement(...)`, `RXAParser.java:92`) —
+      it auto-creates a `dateCriterion` with no `code`, violating R4 `dateCriterion.code` 1..1,
+      and forecast RXA-3 is only the forecast-generation timestamp. Keep
+      `RXA-22 → ImmunizationRecommendation.date` (overwrites the MSH-7 default from 2.1).
 - [ ] 2.7 Verify field-handler ordering holds — `FieldHandler.compareComesFrom` sorts priority
       descending then field ascending, and `redirectTo` (field 3) / `setValue` (field 5) both use
       the default priority, so OBX-3 is handled before OBX-5. Add a comment at the
       `startForecastBlock()` call site recording that this ordering is load-bearing.
 
-## 3. Per-block identifier (downstream id collision)
+## 3. Resource identifier (downstream deterministic id)
 
-- [ ] 3.1 In `ORCParser.addOrderIdentifier`, record the ORC-3 identifier on `IzDetail` for the
-      forecast path (the history path already copies it to `Immunization`).
-- [ ] 3.2 When a block's `vaccineCode` is set, give that `ImmunizationRecommendation` an
-      `identifier` using the group identifier's system and value `<ORC-3 value>-<CVX code>`
-      (e.g. `9999-43`). Unique within the bundle, stable across repeat queries for the same vaccine
-      group.
+- [ ] 3.1 In `ORCParser.addOrderIdentifier`, copy the ORC-3 identifier onto the
+      `ImmunizationRecommendation` on the forecast path (the history path already copies it to
+      `Immunization`), so downstream `adjustIdentifiers` hashes a non-null key. Set it once —
+      shape B repeats the same sentinel (`9999^AKA`) on every forecast ORC; don't duplicate.
+      Confirm the emitted `Identifier.system` is URI-shaped (assigning authorities like `AKA`
+      must not land raw in `system`).
 
 ## 4. Committed test data and assertions
 
@@ -58,19 +61,23 @@ lines, so this is the mechanism's first use — sanity-check that a deliberately
 fails the build before relying on it.
 
 - [ ] 4.1 Add `@` assertions under the CDC IG mixed Z42 message (`messages.txt:997`):
-      3 `Immunization`, 1 `ImmunizationRecommendation`; the recommendation's `vaccineCode` is `31`
+      3 `Immunization`, 1 `ImmunizationRecommendation` with a single `recommendation`
+      component whose `vaccineCode` is `31`
       (**not** `998`); at least one `Immunization` has `vaccineCode` populated and `status =
       completed` from RXA-20 `CP` — assert against the `31` or `48` dose, **not** `110`, whose
       RXA-20 is corrupt in the fixture (`CP< CR>`) and yields a null status.
 - [ ] 4.2 Add `@` assertions under the CDC IG shape-A message (`messages.txt:1039`, comment
-      "Sample message for multiple recommendations"): 3 `ImmunizationRecommendation` resources with
-      `vaccineCode` `03`, `10`, `107` respectively, and each with only its own `dateCriterion`
-      (this fixture currently produces 1 merged recommendation).
+      "Sample message for multiple recommendations"): 1 `ImmunizationRecommendation` resource
+      with `recommendation.count() = 3`, component `vaccineCode`s `03`, `10`, `107`
+      respectively, each component with only its own `dateCriterion`, no `dateCriterion`
+      lacking a `code`, and the resource `date` populated (this fixture currently produces
+      1 merged recommendation component).
 - [ ] 4.3 Add one hand-written shape-B message to `messages.txt` with invented identifiers: one
       history ORC/RXA carrying genuine VIS OBX (`29769-7`, `29768-9`) plus three forecast ORC/RXAs
       with RXA-5 == 998, each with a single `30956-7` and its own dates/series status. Assert
-      1 `Immunization` with one `education` element, and 3 `ImmunizationRecommendation` with
-      distinct `vaccineCode`s and distinct `identifier`s.
+      1 `Immunization` with one `education` element, and 1 `ImmunizationRecommendation` with
+      3 `recommendation` components carrying distinct `vaccineCode`s, each with its own
+      `forecastStatus`; the resource carries the ORC-3 identifier and a `date`.
 - [ ] 4.4 Add an assertion that an evaluated-history `Immunization` whose group carries `30956-7`
       has **no** `education` element (guards the regression this change would otherwise introduce).
 - [ ] 4.5 Add an assertion that `64994-7` populates `Immunization.programEligibility` (silently
@@ -91,13 +98,16 @@ fails the build before relying on it.
       `Assumptions.assumeTrue`-skips when it is unset. Nothing is committed; CI skips it.
 - [ ] 5.2 The loader must split each file at the **second** `MSH` (these captures prepend the QBP
       request to the RSP response) and tolerate `\r`-only line endings.
-- [ ] 5.3 The test asserts, for every file found: no `ImmunizationRecommendation` has
-      `vaccineCode` `998`; every `ImmunizationRecommendation` has a distinct `identifier`; and the
-      `Immunization` + `ImmunizationRecommendation` counts match the number of non-998 and `30956-7`
-      occurrences in the source message respectively.
+- [ ] 5.3 The test asserts, for every file found: at most one `ImmunizationRecommendation` per
+      message; no `recommendation` component has `vaccineCode` `998`; every component has a
+      `forecastStatus`; no `dateCriterion` lacks a `code`; the resource has a `date` and an
+      `identifier`; the `Immunization` count matches the number of non-998 RXAs and the
+      `recommendation` component count matches the number of `30956-7` occurrences in forecast
+      groups.
 - [ ] 5.4 Run it locally against `izgw-transform/ehex-testing` and confirm the measured targets:
-      Nevada → 2 `Immunization` + 16 `ImmunizationRecommendation`; Alaska → 3 `Immunization` +
-      10 `ImmunizationRecommendation`.
+      Nevada → 2 `Immunization` + 1 `ImmunizationRecommendation` with 16 components (`date`
+      from MSH-7 — Nevada forecast RXAs truncate at RXA-20); Alaska → 3 `Immunization` +
+      1 `ImmunizationRecommendation` with 10 components (`date` from RXA-22).
 - [ ] 5.5 Document the invocation in the test class Javadoc:
       `mvn test -Dtest=Z42ForecastTests -Dv2tofhir.localMessages=/path/to/ehex-testing`
 

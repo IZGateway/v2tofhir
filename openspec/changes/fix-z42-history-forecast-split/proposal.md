@@ -44,27 +44,36 @@ follow-up.
 - `IzDetail.checkForImmunization()` stops hard-setting `hasImmunizationRecommendation = true`
   for the `CDCPHINVS#Z42` profile; it delegates to the existing (currently dead)
   per-RXA discriminator `IzDetail.checkRXA()`.
-- **Within a forecast group, start a new `ImmunizationRecommendation` on each
-  `OBX-3 = 30956-7`**, and take that block's `vaccineCode` from the OBX-5 value rather than
-  from the `998` placeholder in RXA-5. This normalizes shapes A and B to the same output:
-  one `ImmunizationRecommendation` resource per forecast vaccine group.
+- **Carry all forecasts in a Z42 message on a single `ImmunizationRecommendation` resource,
+  with one `recommendation` component per `OBX-3 = 30956-7`**, taking each component's
+  `vaccineCode` from the OBX-5 value rather than from the `998` placeholder in RXA-5. This is
+  FHIR R4's intended model — the resource is "a patient's point-in-time set of recommendations",
+  and every per-forecast field (`vaccineCode`, `forecastStatus`, `dateCriterion`) lives on the
+  `recommendation` component. It normalizes shapes A and B to the same output and removes the
+  downstream identifier-collision problem entirely (one resource, no colliding ids).
 - Stop routing `OBX-3 = 30956-7` in an evaluated-**history** group to
   `Immunization.education` (a Vaccine Information Statement slot). In Z42 history that OBX is
   the *evaluated antigen*, not a VIS vaccine type.
 - No change to Z22 (VXU_V04) or Z32 (RSP_K11 history-only) — those remain pure `Immunization`,
   and `30956-7` there keeps its VIS meaning.
+- Keep the `ImmunizationRecommendation` FHIR R4-valid: populate the required `date` from
+  RXA-22 when present, else from the MSH-7 message timestamp (Nevada truncates forecast RXAs
+  at RXA-20, so RXA-22 is absent there); stop mapping forecast RXA-3 to a `dateCriterion`
+  (it currently creates a criterion with no `code`, violating `dateCriterion.code` 1..1);
+  carry the ORC-3 identifier on the resource.
 - **BREAKING** (output-shape): a Z42 message that previously produced N
-  `ImmunizationRecommendation` entries now produces a mix of `Immunization` and
-  `ImmunizationRecommendation` entries, and the recommendation count changes for shape A.
+  `ImmunizationRecommendation` entries now produces a mix of `Immunization` entries and
+  exactly one `ImmunizationRecommendation` holding one `recommendation` component per
+  forecast.
 
 ### Measured effect
 
 | Message | Before | After |
 |---|---|---|
-| `messages.txt:997` (CDC IG mixed) | 0 IZ, 1 IZR | 3 IZ, 1 IZR |
-| `messages.txt:1039` (CDC IG, shape A ×3) | 0 IZ, 1 IZR | 0 IZ, 3 IZR |
-| Nevada response (shape A ×16) | 0 IZ, 1 IZR | 2 IZ, 16 IZR |
-| Alaska response (shape B ×10) | 0 IZ, 13 IZR | 3 IZ, 10 IZR |
+| `messages.txt:997` (CDC IG mixed) | 0 IZ, 1 IZR | 3 IZ, 1 IZR (1 component) |
+| `messages.txt:1039` (CDC IG, shape A ×3) | 0 IZ, 1 IZR (merged) | 0 IZ, 1 IZR (3 components) |
+| Nevada response (shape A ×16) | 0 IZ, 1 IZR (merged) | 2 IZ, 1 IZR (16 components) |
+| Alaska response (shape B ×10) | 0 IZ, 13 IZR | 3 IZ, 1 IZR (10 components) |
 
 ## Capabilities
 
@@ -72,7 +81,8 @@ follow-up.
 - `immunization-history-forecast-conversion`: how RSP_K11 responses (and VXU) map ORC/RXA
   groups to FHIR `Immunization` vs `ImmunizationRecommendation`, keyed by message profile
   (Z22/Z32/Z42) and, for the mixed Z42 case, by the per-RXA `RXA-5 == 998` discriminator; plus
-  how multiple forecasts within one forecast group are split into separate resources.
+  how multiple forecasts are split into separate `recommendation` components on a single
+  `ImmunizationRecommendation` resource.
 
 ### Modified Capabilities
 <!-- none: no existing spec covers RXA→Immunization/Recommendation resource selection -->
@@ -81,12 +91,15 @@ follow-up.
 
 - **Code**:
   - `segment/IzDetail.java` — `checkForImmunization()` Z42 branch delegates to `checkRXA()`
-    (un-dead it); new forecast-block bookkeeping so each `30956-7` gets its own resource.
-  - `segment/OBXParser.java` — create/adopt the per-block `ImmunizationRecommendation` on
+    (un-dead it); the `ImmunizationRecommendation` resource is shared across forecast groups,
+    and new forecast-block bookkeeping gives each `30956-7` its own `recommendation` component.
+  - `segment/OBXParser.java` — adopt/add the per-block `recommendation` component on
     `OBX-3 = 30956-7`; set its `vaccineCode` from OBX-5; stop treating `30956-7` as a VIS
     vaccine type in a history group.
-  - `segment/RXAParser.java` — drop `addVaccineCode(RXA-5)` on the forecast path (the `998`
-    placeholder); carry the group's `date` so it applies to every resource in the group.
+  - `segment/RXAParser.java` — on the forecast path, drop `addVaccineCode(RXA-5)` (the `998`
+    placeholder) and the RXA-3 `dateCriterion` write (creates a code-less criterion,
+    invalid per R4 `dateCriterion.code` 1..1); RXA-22 sets the resource `date`, with the
+    MSH-7 message timestamp as the default when RXA-22 is absent.
   - No signature changes to `ORCParser` — its `@ComesFrom` setters already branch on
     `hasImmunization()` / `hasRecommendation()`, so history fields (identifier, recorded,
     performer) populate automatically once a group is classed as `Immunization`.
@@ -98,14 +111,15 @@ follow-up.
   fixtures break.
 - **Robustness**: honors Postel's Law — no new throwing paths; an ORC with no following RXA
   yields neither resource, and a forecast group with no `30956-7` still yields one
-  recommendation without a `vaccineCode`.
+  `recommendation` component without a `vaccineCode` (tolerated violation of R4 invariant
+  `imr-1`; garbage in, best-effort out — never observed in real IIS responses).
 - **Downstream (`izgw-transform`)**:
   - `v2tofhir` is pinned **directly** in `izgw-transform/pom.xml` (not in `izgw-bom`), so the
     version bump is an `izgw-transform` commit.
   - `GET /ImmunizationRecommendation` will stop returning evaluated history (see design —
     accepted, by the two-query model).
-  - Forecast ORC-3 is the sentinel `9999` in every observed IIS response and
-    `ImmunizationRecommendation` carries no identifier, so `FhirController.adjustIdentifiers`
-    assigns all forecast resources the *same* FHIR id. Producing N resources per group makes
-    that collision material, so this change must give each forecast resource an identifier
-    that includes its vaccine code.
+  - `ImmunizationRecommendation` currently carries no identifier, so
+    `FhirController.adjustIdentifiers` hashes a `patient|null|null` key for it. With the
+    single-resource model there is nothing to collide with, but the resource still gets the
+    ORC-3 identifier (sentinel `9999^NV0000` / `9999^AKA`) so the downstream deterministic id
+    is stable and non-null.

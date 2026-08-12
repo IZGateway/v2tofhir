@@ -2,9 +2,10 @@
 
 Defines how HL7 V2 immunization messages (VXU_V04 and RSP_K11 query responses) map each ORC/RXA
 group to a FHIR R4 `Immunization` (a dose administered) or `ImmunizationRecommendation` (a
-forecast), and how multiple forecasts carried in one message are split into separate resources, so
-that a mixed "evaluated history and forecast" response preserves both the patient's real
-immunization history and each individual forecast.
+forecast), and how multiple forecasts carried in one message are split into separate
+`recommendation` components of a single `ImmunizationRecommendation` resource, so that a mixed
+"evaluated history and forecast" response preserves both the patient's real immunization history
+and each individual forecast.
 
 ## ADDED Requirements
 
@@ -37,7 +38,8 @@ For a message conforming to profile `Z42`, the converter SHALL decide the resour
 independently for each ORC/RXA group using the administered vaccine code in RXA-5:
 
 - WHEN the RXA-5 vaccine code identifier equals `998` ("no vaccine administered"), the group SHALL
-  be represented as one or more `ImmunizationRecommendation` resources (a forecast group).
+  contribute `recommendation` component(s) to the message's single `ImmunizationRecommendation`
+  resource (a forecast group).
 - OTHERWISE (any other CVX code, i.e. a real administered/historical dose), the group SHALL be
   represented as an `Immunization`.
 
@@ -57,7 +59,8 @@ A single Z42 message therefore MAY yield a mixture of `Immunization` and
 
 - **WHEN** a Z42 response contains an ORC/RXA group whose RXA-5 is `998^no vaccine administered^CVX`
   with forecast OBX segments (e.g. date due, series status)
-- **THEN** that group is represented as `ImmunizationRecommendation` resources
+- **THEN** that group is represented as `recommendation` component(s) of an
+  `ImmunizationRecommendation` resource
 
 #### Scenario: Mixed Z42 response yields both resource types
 
@@ -66,25 +69,27 @@ A single Z42 message therefore MAY yield a mixture of `Immunization` and
 - **THEN** the resulting bundle contains three `Immunization` resources and one
   `ImmunizationRecommendation` resource
 
-### Requirement: One ImmunizationRecommendation per forecast vaccine group
+### Requirement: One recommendation component per forecast vaccine group
 
+All forecast groups in a Z42 message SHALL contribute to a single `ImmunizationRecommendation`
+resource (FHIR R4 defines the resource as a patient's point-in-time set of recommendations).
 Within a forecast group (RXA-5 == 998), the converter SHALL treat each
 `OBX-3 = 30956-7^Vaccine Type^LN` observation as the start of a distinct forecast, and SHALL
-produce one `ImmunizationRecommendation` resource per such observation.
+produce one `recommendation` component per such observation.
 
-- The OBX-5 value of the `30956-7` observation SHALL be that resource's
-  `recommendation.vaccineCode`. The `998` placeholder in RXA-5 SHALL NOT be used as a
+- The OBX-5 value of the `30956-7` observation SHALL be that component's
+  `vaccineCode`. The `998` placeholder in RXA-5 SHALL NOT be used as a
   `recommendation.vaccineCode`.
 - Forecast observations following a `30956-7` (e.g. `30980-7` date due, `30981-5` earliest date,
   `59777-3` latest date, `59778-1` overdue date, `59783-1` series status, `30973-2` dose number,
-  `59782-3` doses in series) SHALL apply to the most recently started forecast, until the next
+  `59782-3` doses in series) SHALL apply to the most recently started component, until the next
   `30956-7` or the end of the group.
 - OBX-4 (Observation Sub-ID) SHALL NOT be used to delimit forecasts. It is not reliably
   incremented across IIS implementations, and evaluated-history groups use it for unrelated
   observations.
-- Each `ImmunizationRecommendation` produced for a forecast group SHALL carry an `identifier` that
-  is unique within the bundle and derived from the group's ORC-3 order number together with the
-  forecast vaccine code, so that downstream deterministic identifier assignment does not collide.
+- The converter SHALL NOT produce a `dateCriterion` without a `code` (R4 requires
+  `dateCriterion.code` 1..1). In particular, forecast RXA-3 (the forecast-generation
+  timestamp) SHALL NOT be mapped to a `dateCriterion`.
 
 This requirement makes the two observed IIS layouts produce equivalent output: one where a single
 998 RXA carries every forecast, and one where each forecast has its own 998 RXA.
@@ -93,28 +98,53 @@ This requirement makes the two observed IIS layouts produce equivalent output: o
 
 - **WHEN** a Z42 response contains one ORC/RXA group with RXA-5 == 998 followed by sixteen
   `30956-7^Vaccine Type^LN` observations, each with its own date and series-status observations
-- **THEN** the bundle contains sixteen `ImmunizationRecommendation` resources
-- **AND** each carries the `vaccineCode` from its own `30956-7` observation
-- **AND** each carries only the date criteria and series status that followed its own `30956-7`
+- **THEN** the bundle contains one `ImmunizationRecommendation` resource with sixteen
+  `recommendation` components
+- **AND** each component carries the `vaccineCode` from its own `30956-7` observation
+- **AND** each component carries only the date criteria and series status that followed its own
+  `30956-7`
 
 #### Scenario: One forecast per forecast RXA
 
 - **WHEN** a Z42 response contains ten ORC/RXA groups, each with RXA-5 == 998 and a single
   `30956-7^Vaccine Type^LN` observation
-- **THEN** the bundle contains ten `ImmunizationRecommendation` resources
-- **AND** each carries the `vaccineCode` from its own `30956-7` observation
+- **THEN** the bundle contains one `ImmunizationRecommendation` resource with ten
+  `recommendation` components
+- **AND** each component carries the `vaccineCode` from its own `30956-7` observation
 
 #### Scenario: OBX-4 sub-id is not treated as a forecast delimiter
 
 - **WHEN** a forecast group's observations all carry the same OBX-4 Observation Sub-ID but include
   more than one `30956-7^Vaccine Type^LN`
-- **THEN** one `ImmunizationRecommendation` is produced per `30956-7`, not one per sub-id
+- **THEN** one `recommendation` component is produced per `30956-7`, not one per sub-id
 
 #### Scenario: Forecast status is passed through as received
 
 - **WHEN** a forecast's `59783-1` series-status observation uses a LOINC answer code
   (e.g. `LA13423-1^Overdue^LN`) or an IIS-local code (e.g. `P^Past Due^99002`)
 - **THEN** the code is placed in `recommendation.forecastStatus` as received, without translation
+
+### Requirement: The ImmunizationRecommendation satisfies R4 required elements
+
+The single `ImmunizationRecommendation` produced for a Z42 message SHALL populate:
+
+- `date` (required 1..1): from RXA-22 when present; otherwise from the MSH-7 message
+  date/time. (Some IIS truncate forecast RXAs before RXA-22.)
+- `identifier`: the forecast group's ORC-3 filler order number, so downstream deterministic
+  identifier assignment hashes a non-null, stable key.
+- `recommendation.forecastStatus` (required 1..1): from the block's `59783-1` series-status
+  observation, passed through as received. When the input omits `59783-1`, the component is
+  emitted without a `forecastStatus` (tolerated invalid input; conversion never throws).
+
+#### Scenario: Forecast RXA truncated before RXA-22
+
+- **WHEN** a Z42 forecast group's RXA ends at RXA-20 (no RXA-22 system entry date)
+- **THEN** the `ImmunizationRecommendation.date` is populated from the MSH-7 message date/time
+
+#### Scenario: RXA-22 supplies the recommendation date
+
+- **WHEN** a Z42 forecast group's RXA carries RXA-22
+- **THEN** the `ImmunizationRecommendation.date` is populated from RXA-22
 
 ### Requirement: Vaccine type in an evaluated-history group is not a VIS document
 
@@ -158,12 +188,13 @@ throw during conversion.
 #### Scenario: Forecast group with no vaccine type observation
 
 - **WHEN** an ORC/RXA group has RXA-5 == 998 but no `30956-7^Vaccine Type^LN` observation
-- **THEN** a single `ImmunizationRecommendation` is produced for the group with no
-  `recommendation.vaccineCode`, and conversion continues without error
+- **THEN** a single `recommendation` component is produced for the group with no `vaccineCode`
+  (a tolerated violation of R4 invariant `imr-1` for malformed input), and conversion
+  continues without error
 
 #### Scenario: Forecast observation before any vaccine type observation
 
 - **WHEN** a forecast group's first observation is a date or series-status observation appearing
   before any `30956-7^Vaccine Type^LN`
-- **THEN** it is applied to a single `ImmunizationRecommendation` for the group, and conversion
+- **THEN** it is applied to the group's initial `recommendation` component, and conversion
   continues without error

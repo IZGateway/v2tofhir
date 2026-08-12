@@ -124,12 +124,18 @@ completely unexercised:
 **Goals**
 - Z42 messages classify each ORC/RXA group correctly (history → `Immunization`,
   `RXA-5 == 998` → forecast).
-- Both forecast shapes produce the same output: one `ImmunizationRecommendation` resource per
-  forecast vaccine group, with the real antigen as its `vaccineCode`.
+- Both forecast shapes produce the same output: a single `ImmunizationRecommendation`
+  resource with one `recommendation` component per forecast vaccine group, each carrying the
+  real antigen as its `vaccineCode`. This is R4's intended model — the resource is "a
+  patient's point-in-time set of recommendations", and every per-forecast field
+  (`vaccineCode`, `forecastStatus`, `dateCriterion`, `series`, dose numbers) lives on the
+  component.
 - Reuse the existing `checkRXA()` logic rather than adding a parallel path.
 - No behavior change for Z22 / Z32 / VXU.
-- Each forecast resource carries an identifier unique within the message, so downstream
-  deterministic-id assignment does not collide.
+- The emitted `ImmunizationRecommendation` satisfies R4 required elements: `date` (1..1)
+  even when the IIS omits RXA-22 (Nevada truncates forecast RXAs at RXA-20), and no
+  `dateCriterion` without its required `code`. It carries the ORC-3 identifier so downstream
+  deterministic-id assignment hashes a non-null key.
 
 **Non-Goals**
 - No use of RXA-9 (information source) or RXA-20 (completion status) as type discriminators —
@@ -162,14 +168,26 @@ if ("CDCPHINVS#Z42".equals(url.getValue())) {
 `RXAParser.initializeResources(false, …)` call does not re-decide, so it consumes the ORC's
 per-group decision.
 
-### 2. Forecast splitting — adopt-first, then create
+### 2. Forecast splitting — one resource, one `recommendation` component per `30956-7`
 
-`IzDetail` gains per-group forecast bookkeeping, all reset in `checkForImmunization()`:
+**Model choice.** Two FHIR-valid options existed: N `ImmunizationRecommendation` resources
+with one `recommendation` component each, or one resource with N components. The single
+resource is chosen: it is R4's canonical model (the resource is defined as "a patient's
+point-in-time set of recommendations", which is exactly what one Z42 response is), it is the
+smaller diff (no new resource creation, no `MessageHeader.focus` wiring, no per-block
+identifier minting), and it eliminates the downstream `adjustIdentifiers` collision outright —
+there is only one forecast resource per message.
+
+**Resource sharing across groups.** `checkForImmunization()` keeps resetting the decision
+booleans per ORC, but `initializeResources` reuses the message's existing
+`ImmunizationRecommendation` instead of creating a fresh one per forecast group (shape B has
+up to 10 such groups). `RXAParser.setup()` continues to `addRecommendation()` one empty
+component per forecast RXA — on the shared resource.
+
+`IzDetail` gains per-group forecast bookkeeping, reset in `checkForImmunization()`:
 
 ```java
 private boolean forecastBlockStarted;   // has a 30956-7 been seen in this group yet?
-private Identifier groupIdentifier;     // ORC-3, for minting per-block identifiers
-private DateTimeType groupDate;         // RXA-22, applied to every resource in the group
 ```
 
 and one new method:
@@ -177,23 +195,21 @@ and one new method:
 ```java
 /**
  * Start a new forecast block (OBX-3 == 30956-7 inside a forecast group).
- * The first block adopts the ImmunizationRecommendation already created for the RXA;
- * each later block gets its own resource.
+ * The first block adopts the empty recommendation component added by RXAParser.setup();
+ * each later block adds a new component to the same resource.
  * @return the recommendation component the block's OBX values should be written to
  */
 public ImmunizationRecommendationRecommendationComponent startForecastBlock() { … }
 ```
 
-- **First block in the group** — adopt the `ImmunizationRecommendation` created at ORC time and
-  the empty `recommendation` component added by `RXAParser.setup()`. Nothing new is created, so
-  shape B (one block per RXA) follows exactly today's creation path.
-- **Each later block** — `mp.createResource(ImmunizationRecommendation.class)`, wire the `Patient`
-  reference and the `MessageHeader.focus` entry the same way `initializeResources` does, copy
-  `groupDate` onto it, add one `recommendation` component, and make it the current resource so
-  `getImmunizationRecommendation()` / `getRecommendation()` return it.
+- **First block in the group** — adopt the empty `recommendation` component added by
+  `RXAParser.setup()`. Nothing new is created, so shape B (one block per RXA) follows exactly
+  today's creation path.
+- **Each later block** — `immunizationRecommendation.addRecommendation()`, and make it the
+  component that `getRecommendation()` returns.
 
-Shape A therefore yields 16 resources for 16 blocks; shape B yields 10 for 10 single-block RXAs.
-Identical output shape from both.
+Shape A therefore yields one resource with 16 components; shape B yields one resource with
+10 components (one per single-block RXA). Identical output shape from both.
 
 ### 3. `OBXParser` wiring
 
@@ -211,47 +227,61 @@ if (izDetail.hasRecommendation() && VisCode.VACCINE_TYPE.equals(redirect)) {
 ```
 
 - `setValue()` (field 5) then populates `recommendation.vaccineCode` from the converted
-  `CodeableConcept` — reviving what was the unreachable `FORECAST_VACCINE_CODE` case — and mints
-  the per-block identifier (below).
+  `CodeableConcept` — reviving what was the unreachable `FORECAST_VACCINE_CODE` case.
 - `setup()` keeps its existing `recommendation = izDetail.getRecommendation()` as a fallback so
   a forecast OBX arriving *before* any `30956-7` still has a target.
 - In a history group (`hasImmunization()`), `30956-7` does nothing beyond the standard
   `Observation` + `partOf` link — no `education` element.
 
-### 4. Per-block identifier (prevents downstream id collision)
+### 4. R4 required elements and identifier
 
-Forecast ORC-3 is the sentinel `9999` in every observed response (`9999^NV0000`, `9999^AKA`), and
-`ImmunizationRecommendation` currently gets no identifier at all. `izgw-transform`
-`FhirController.adjustIdentifiers` builds the FHIR id from `getIdentifierFirstRep()`, which never
-returns null, so today every forecast resource hashes the same `patient|null|null` key. Emitting N
-resources per group makes that collision material.
+FHIR R4 constraints verified against `hl7.org/fhir/R4/immunizationrecommendation.html`:
+`date` 1..1, `recommendation.forecastStatus` 1..1, `dateCriterion.code` 1..1, and invariant
+`imr-1` (`vaccineCode` or `targetDisease` SHALL be present on each component).
 
-- `ORCParser.addOrderIdentifier` records ORC-3 on `IzDetail` for the forecast path (it already
-  copies it to `Immunization` on the history path).
-- When a block's `vaccineCode` arrives, the resource's identifier is set to the group identifier's
-  system with value `<ORC-3 value>-<CVX code>` (e.g. `9999-43`, `9999-03`). Unique within the
-  message, and stable across repeat queries for the same vaccine group — which is what the
-  downstream deterministic id needs.
+- **`date` (1..1).** RXA-22 supplies it when present (Alaska populates RXA-22 on every RXA).
+  Nevada truncates forecast RXAs at RXA-20, so `initializeResources` defaults `date` from the
+  MSH-7 message timestamp when creating the resource; RXA-22 overwrites it when it arrives.
+- **`forecastStatus` (1..1).** `59783-1` is present in every observed forecast block, so each
+  component gets one. A block missing it leaves the component without a `forecastStatus` —
+  tolerated (Postel), no value is synthesized.
+- **`dateCriterion.code` (1..1).** The current forecast path maps RXA-3 through
+  `recommendation.getDateCriterionFirstRep().setValueElement(...)` (`RXAParser.java:92`),
+  auto-creating a criterion with a value but **no code** — invalid, and semantically noise
+  (forecast RXA-3 is the forecast-generation timestamp). The RXA-3 write is dropped on the
+  forecast path, alongside the RXA-5 drop.
+- **`imr-1`.** A forecast group with no `30956-7` leaves its component with no `vaccineCode`
+  and no `targetDisease` — a tolerated invariant violation for garbage input, never observed
+  in real IIS responses.
+- **Identifier.** `ImmunizationRecommendation` currently gets no identifier, so downstream
+  `FhirController.adjustIdentifiers` hashes `patient|null|null`. With one resource per message
+  there is no collision, but `ORCParser.addOrderIdentifier` still copies ORC-3 (sentinel
+  `9999^NV0000` / `9999^AKA`) onto the resource on the forecast path — mirroring the history
+  path — so the deterministic id is stable and non-null.
 
 ### Edge cases
 
 - **ORC with no RXA**: `checkRXA()` sets both booleans false → no resource; `ServiceRequest` still
   produced. Matches the robustness principle.
-- **Forecast group with no `30956-7`**: `forecastBlockStarted` stays false, the RXA-created
-  resource and its single component stand as today, with no `vaccineCode`. No throw.
+- **Forecast group with no `30956-7`**: `forecastBlockStarted` stays false, the component added
+  by `RXAParser.setup()` stands as today, with no `vaccineCode` (tolerated `imr-1` violation —
+  see Decision 4). No throw.
 - **Lazy getter before any ORC/RXA** (`segment == null`): `checkRXA()` defaults to recommendation
   (its existing behavior); acceptable because a Z42 message with no ORC/RXA produces no
   immunization resources anyway.
 - **Z22 / Z32 branches unchanged** → no regression for history-only or VXU. VIS handling is
   untouched because no VIS block in any fixture or observed response uses `30956-7`.
 - **`RXAParser` forecast writes**: `addVaccineCode(RXA-5)` is dropped on the forecast path (it is
-  what stamps the useless `998`). `RXA-22 → ImmunizationRecommendation.date` is captured as
-  `groupDate` so it lands on every resource in the group, not just the first.
+  what stamps the useless `998`), and so is the RXA-3 `dateCriterion` write (code-less criterion,
+  see Decision 4). `RXA-22 → ImmunizationRecommendation.date` stays; when absent, the MSH-7
+  default from resource creation stands.
 
 ## Risks / Trade-offs
 
-- **Output-shape change** for Z42 consumers: history rows become `Immunization`, and shape-A
-  forecast counts go from 1 to N. This is the intended correction; documented as BREAKING.
+- **Output-shape change** for Z42 consumers: history rows become `Immunization`, and forecast
+  output becomes exactly one `ImmunizationRecommendation` with one component per forecast —
+  shape-A components go from 1 merged to N, shape-B resources go from N to 1. This is the
+  intended correction; documented as BREAKING.
 - `getFollowingSegment` depends on HAPI's nonstandard-segment naming (`ORC`, `ORC2`, …). Verified
   empirically above, and now covered by a direct unit test rather than only a message-level one.
 - Dropping `30956-7` from VIS education is right for all observed data but not literally what the
@@ -330,9 +360,9 @@ accidentally.
 
 | Fixture | Contents | Expected after this change |
 |---|---|---|
-| `messages.txt:997` | 3 history ORC/RXA (`31`, `48`, `110`) + 1 forecast block | 3 `Immunization`, 1 `ImmunizationRecommendation` (`vaccineCode = 31`) |
-| `messages.txt:1039` | 1 forecast RXA, 3 `30956-7` blocks (`03`, `10`, `107`) — **shape A** | 0 `Immunization`, 3 `ImmunizationRecommendation` |
-| *new, hand-written* | 1 history ORC/RXA with real VIS OBX (`29769-7`/`29768-9`) + 3 forecast ORC/RXAs, one `30956-7` each — **shape B** | 1 `Immunization` (1 `education`), 3 `ImmunizationRecommendation` |
+| `messages.txt:997` | 3 history ORC/RXA (`31`, `48`, `110`) + 1 forecast block | 3 `Immunization`, 1 `ImmunizationRecommendation` with 1 component (`vaccineCode = 31`) |
+| `messages.txt:1039` | 1 forecast RXA, 3 `30956-7` blocks (`03`, `10`, `107`) — **shape A** | 0 `Immunization`, 1 `ImmunizationRecommendation` with 3 components |
+| *new, hand-written* | 1 history ORC/RXA with real VIS OBX (`29769-7`/`29768-9`) + 3 forecast ORC/RXAs, one `30956-7` each — **shape B** | 1 `Immunization` (1 `education`), 1 `ImmunizationRecommendation` with 3 components |
 
 Assertions are `@`-prefixed FHIRPath lines placed under each message in `messages.txt`. The
 `testTheData` harness (`MessageParserTests.java:90`) already loads and evaluates them via
