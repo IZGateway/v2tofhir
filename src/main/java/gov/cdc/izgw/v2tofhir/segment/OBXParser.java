@@ -102,8 +102,16 @@ public class OBXParser extends AbstractSegmentParser {
 		if (izDetail.hasRecommendation()) {
 			recommendation = izDetail.getRecommendation();
 		}
-			
+
 		observation = createResource(Observation.class);
+		// The V2-to-FHIR IG maps every OBX to Observation.subject = the message's Patient
+		// ("Observation[2].subject.reference=Patient[1].id" on the VXU_V04 to Bundle map).  Without
+		// it an observation cannot be attributed to anyone -- a forecast observation has no partOf
+		// either, so subject is its only link to the patient.
+		Patient patient = getLastResource(Patient.class);
+		if (patient != null) {
+			observation.setSubject(ParserUtils.toReference(patient, observation, "patient", "subject"));
+		}
 		return observation;
 	}
 	
