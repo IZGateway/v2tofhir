@@ -146,20 +146,34 @@ The single `ImmunizationRecommendation` produced for a Z42 message SHALL populat
 - **WHEN** a Z42 forecast group's RXA carries RXA-22
 - **THEN** the `ImmunizationRecommendation.date` is populated from RXA-22
 
-### Requirement: Vaccine type in an evaluated-history group is not a VIS document
+### Requirement: Vaccine type in a Z42 message is not a VIS document
 
-The `30956-7^Vaccine Type^LN` observation appearing in an evaluated-**history** ORC/RXA group
-reports the antigen the dose was evaluated against. The converter SHALL NOT record it as Vaccine
-Information Statement material on `Immunization.education`.
+In a message conforming to profile `Z42`, the `30956-7^Vaccine Type^LN` observation reports the
+antigen a dose was evaluated against (history group) or the antigen being forecast (forecast group).
+The converter SHALL NOT record it as Vaccine Information Statement material on
+`Immunization.education`.
+
+For a message NOT conforming to `Z42` — a VXU, a history-only response, or any other profile — the
+converter SHALL continue to record `30956-7` as it did previously, as an
+`iso21090-SC-coding` extension on `Immunization.education.documentType`. No observed message of those
+kinds carries `30956-7`, but the behaviour is preserved because this library serves consumers whose
+message content is not known here.
 
 Vaccine Information Statement observations (`69764-9` document type, `29768-9` publication date,
-`29769-7` presentation date) SHALL continue to populate `Immunization.education`.
+`29769-7` presentation date) SHALL continue to populate `Immunization.education` for every profile.
 
 #### Scenario: Evaluated antigen does not create an education element
 
 - **WHEN** a Z42 evaluated-history group for a `09^Td (adult)^CVX` dose is followed by
   `OBX|1|CE|30956-7^Vaccine Type^LN|1|107^DTaP, UF^CVX`
 - **THEN** the resulting `Immunization` has no `education` element created from that observation
+
+#### Scenario: Vaccine type outside a Z42 keeps its VIS reading
+
+- **WHEN** a VXU contains a VIS block (`69764-9`, `29768-9`, `29769-7`) followed by
+  `OBX|4|CE|30956-7^vaccine type^LN|1|110^DTaP-HepB-IPV^CVX`
+- **THEN** the resulting `Immunization` has one `education` element whose `documentType` carries an
+  `iso21090-SC-coding` extension holding that vaccine type
 
 #### Scenario: Genuine VIS observations still populate education
 
@@ -168,22 +182,136 @@ Vaccine Information Statement observations (`69764-9` document type, `29768-9` p
 - **THEN** the resulting `Immunization` has an `education` element with the corresponding
   presentation and publication dates
 
+#### Scenario: Evaluated antigen creates no education element even with no VIS present
+
+- **WHEN** an evaluated-history group carries `30956-7` and no Vaccine Information Statement
+  observation at all
+- **THEN** the resulting `Immunization` has no `education` element
+
 #### Scenario: Vaccine funding eligibility reaches the Immunization
 
 - **WHEN** an evaluated-history group is followed by a
   `64994-7^Vaccine funding program eligibility category^LN` observation
 - **THEN** the value is populated on `Immunization.programEligibility`
 
+### Requirement: A forecast observation carries no reference to the recommendation
+
+The converter SHALL NOT place an `ImmunizationRecommendation` reference in `Observation.partOf`. FHIR
+R4 restricts `Observation.partOf` to `MedicationAdministration`, `MedicationDispense`,
+`MedicationStatement`, `Procedure`, `Immunization` and `ImagingStudy`.
+
+The converter SHALL NOT populate
+`ImmunizationRecommendation.recommendation.supportingPatientInformation` from forecast observations
+either. Each forecast observation's content is already carried by the `recommendation` component, so
+such a reference would identify a duplicate, and it would not resolve for any consumer that filters
+the bundle down to the requested resource type.
+
+An `Observation` produced from a **recognized** immunization observation code in an evaluated-history
+group SHALL use `Observation.partOf` referencing the `Immunization`, which R4 permits. Recognized
+codes are those the converter maps: the Vaccine Information Statement codes, `64994-7`, `30956-7`,
+`59779-9`, `30973-2`, `59782-3`, `59781-5` and the forecast codes.
+
+An observation carrying any other code is still produced as an `Observation`, but currently gets no
+`partOf`, because an unrecognized code returns before the linking step. This spec deliberately states
+no requirement for that case and asserts no scenario over it. `30963-3^Vaccine Purchased With` is the
+one observed instance, and it is logged as a pre-existing deviation to be fixed (design, deviation 4:
+map it to `Immunization.fundingSource` and link it), so pinning today's behaviour in a test would
+cement the defect.
+
+#### Scenario: Forecast observation is unlinked
+
+- **WHEN** a forecast group's observations follow a `30956-7^Vaccine Type^LN`
+- **THEN** each resulting `Observation` has no `partOf`
+- **AND** no `recommendation` component has a `supportingPatientInformation`
+
+#### Scenario: Every reference the ImmunizationRecommendation emits is resolvable in the bundle
+
+- **WHEN** a Z42 response is converted
+- **THEN** the `ImmunizationRecommendation` references only resources present in the bundle
+
+An `Observation` produced from any OBX SHALL carry `Observation.subject` referencing the message's
+`Patient`, as the V2-to-FHIR IG requires (`Observation[2].subject.reference=Patient[1].id`). This is
+the only path by which a forecast observation can be attributed to a patient, since it carries no
+`partOf`.
+
+#### Scenario: Every observation is attributable to the patient
+
+- **WHEN** any message containing OBX segments is converted
+- **THEN** every resulting `Observation` has `subject` referencing the `Patient`
+
+#### Scenario: History observation for a recognized code keeps partOf
+
+- **WHEN** an evaluated-history group is followed by an observation whose code the converter maps
+  (e.g. `64994-7^Vaccine funding program eligibility category^LN`)
+- **THEN** the resulting `Observation` has `partOf` referencing the `Immunization`
+
+### Requirement: Forecast reason and schedule authority are preserved
+
+- The converter SHALL map `OBX-3 = 30982-3^Reason Code^LN` in a forecast group to
+  `recommendation.forecastReason` on the block's component. When the value is free text, it SHALL be
+  carried as the `CodeableConcept` text with no coding.
+- The converter SHALL map `OBX-3 = 59779-9^Immunization Schedule Used^LN` to the publishing
+  authority: `ImmunizationRecommendation.authority` in a forecast group, and
+  `Immunization.protocolApplied.authority` in an evaluated-history group. Both are
+  `Reference(Organization)`, and the referenced `Organization` SHALL take its name from the
+  observation value.
+
+#### Scenario: Too Old forecast carries its reason
+
+- **WHEN** a forecast block has `59783-1` series status `LA13424-9^Too Old^LN` and
+  `OBX|n|ST|30982-3^Reason Code^LN|k|Patient has exceeded the maximum age`
+- **THEN** that component's `forecastReason` carries the text "Patient has exceeded the maximum age"
+
+#### Scenario: Schedule used becomes the recommendation authority
+
+- **WHEN** a forecast group contains `OBX|n|CE|59779-9^Immunization Schedule Used^LN|k|VXC16^ACIP^CDCPHINVS`
+- **THEN** `ImmunizationRecommendation.authority` references an `Organization` named for that value
+
+### Requirement: Dose number and series size reach an administered dose
+
+The converter SHALL map, in an evaluated-history group, `OBX-3 = 30973-2^Dose Number in Series^LN` to
+`Immunization.protocolApplied.doseNumber[x]` and `OBX-3 = 59782-3^Number of Doses in Series^LN` to
+`Immunization.protocolApplied.seriesDoses[x]`, on a single `protocolApplied` element shared with the
+`59779-9` authority.
+
+`Immunization.protocolApplied.doseNumber[x]` is required 1..1. The converter SHALL NOT synthesize a
+value to satisfy it; a group supplying only `59782-3` or only `59779-9` yields a `protocolApplied`
+without a `doseNumber`, a tolerated violation for incomplete input.
+
+#### Scenario: Historical dose carries its position in the series
+
+- **WHEN** an evaluated-history group contains `30973-2` with value 1 and `59782-3` with value 3
+- **THEN** the `Immunization` has one `protocolApplied` with `doseNumber` 1 and `seriesDoses` 3
+
+### Requirement: Only Vaccine Information Statement codes create an education element
+
+The converter SHALL create or select an `Immunization.education` element only when handling
+`69764-9` (document type), `29768-9` (publication date) or `29769-7` (presentation date).
+
+No other observation — including `30956-7` (evaluated antigen), `59781-5` (dose validity) and the
+forecast codes — SHALL cause an `education` element to be created, including as a side effect of
+looking one up.
+
+#### Scenario: Dose validity in a history group creates no education element
+
+- **WHEN** an evaluated-history group with no Vaccine Information Statement observations is followed
+  by `OBX|n|ID|59781-5^Dose Validity^LN|k|Y`
+- **THEN** the resulting `Immunization` has no `education` element, empty or otherwise
+
 ### Requirement: Robust handling of incomplete groups
 
 Resource selection and forecast splitting SHALL follow the library's robustness principle and never
 throw during conversion.
 
-#### Scenario: ORC with no following RXA
+#### Scenario: Z42 ORC with no following RXA
 
-- **WHEN** an ORC segment has no following RXA segment in its group
+- **WHEN** a Z42 response contains an ORC segment with no following RXA segment in its group
 - **THEN** the converter produces neither an `Immunization` nor an `ImmunizationRecommendation` for
   that group, and conversion continues without error
+
+The per-group discriminator only runs for Z42, so this does not extend to other profiles. A Z22, Z32
+or VXU message decides from the profile alone, and an ORC with no following RXA there still yields an
+`Immunization`. That is existing behaviour and is unchanged.
 
 #### Scenario: Forecast group with no vaccine type observation
 

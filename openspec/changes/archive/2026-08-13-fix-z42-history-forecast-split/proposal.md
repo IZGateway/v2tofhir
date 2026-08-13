@@ -66,14 +66,52 @@ follow-up.
   exactly one `ImmunizationRecommendation` holding one `recommendation` component per
   forecast.
 
+### Added after live validation against a running Transformation Service
+
+Converting a real Nevada Z42 response end to end showed the split working, and exposed four further
+defects on the same path. They are in scope here because without them a Z42 forecast is still not
+usable by a FHIR client: the data a client needs to interpret the forecast either never reaches the
+`ImmunizationRecommendation` or reaches it through a reference R4 does not permit.
+
+- **`Observation.partOf` cannot reference an `ImmunizationRecommendation`.** R4 restricts
+  `Observation.partOf` to
+  `MedicationAdministration | MedicationDispense | MedicationStatement | Procedure | Immunization | ImagingStudy`.
+  The forecast link is removed and deliberately **not** replaced — every forecast observation's
+  content is already on the `recommendation` component, and a
+  `supportingPatientInformation` reference would dangle for any consumer that filters the bundle to
+  the requested resource type (measured: 80 unresolvable references on a live Nevada query). The
+  history path (`Observation.partOf` → `Immunization`) is valid and is unchanged.
+- **`30982-3^Reason Code` is discarded.** Nevada sends the explanation of a `Too Old` forecast as
+  free text ("Patient has exceeded the maximum age") — six times in one response. It becomes
+  `recommendation.forecastReason`.
+- **`59779-9^Immunization Schedule Used` is discarded.** `VXC16^ACIP^CDCPHINVS` names the authority
+  that published the schedule the forecast was computed against. R4's definition of
+  `ImmunizationRecommendation.authority` is literally "Indicates the authority who published the
+  protocol (e.g. ACIP)".
+- **`30973-2` / `59782-3` are discarded on the history path.** Dose number and doses-in-series are
+  mapped for a forecast but dropped for an administered dose. They become
+  `Immunization.protocolApplied.doseNumber[x]` / `.seriesDoses[x]`, with `59779-9` supplying that
+  element's `authority`.
+
+Two defects found the same way are already folded into the sections above rather than listed as
+additions, because they are corrections to this change's own behaviour: a phantom empty
+`Immunization.education` element created by any non-VIS OBX in a history group, and the `partof`
+search name not matching FHIR's canonical `part-of`.
+
 ### Measured effect
 
 | Message | Before | After |
 |---|---|---|
 | `messages.txt:997` (CDC IG mixed) | 0 IZ, 1 IZR | 3 IZ, 1 IZR (1 component) |
 | `messages.txt:1039` (CDC IG, shape A ×3) | 0 IZ, 1 IZR (merged) | 0 IZ, 1 IZR (3 components) |
-| Nevada response (shape A ×16) | 0 IZ, 1 IZR (merged) | 2 IZ, 1 IZR (16 components) |
-| Alaska response (shape B ×10) | 0 IZ, 13 IZR | 3 IZ, 1 IZR (10 components) |
+| Nevada response (shape A ×16) | 0 IZ, **3** IZR (2 administered doses mislabeled + 1 merged forecast, 27 `dateCriterion`, no `date`) | 2 IZ, 1 IZR (16 components) |
+| Alaska response (shape B ×10) | 0 IZ, 13 IZR (3 administered doses mislabeled + 10 forecasts) | 3 IZ, 1 IZR (10 components) |
+
+Before-numbers confirmed against captured pre-fix responses from 2026-08-06, not estimated. Those
+captures also confirm two things the design only predicted: every `ImmunizationRecommendation` in a
+response shared **one** id — `NV0000|3973565|null|null` ×3 and `AKA|2722530|null|null` ×13, the
+`patient|null|null` hash from `FhirController.adjustIdentifiers` — and Nevada's merged forecast
+resource had **no `date`**, violating R4's 1..1.
 
 ## Capabilities
 
@@ -95,7 +133,12 @@ follow-up.
     and new forecast-block bookkeeping gives each `30956-7` its own `recommendation` component.
   - `segment/OBXParser.java` — adopt/add the per-block `recommendation` component on
     `OBX-3 = 30956-7`; set its `vaccineCode` from OBX-5; stop treating `30956-7` as a VIS
-    vaccine type in a history group.
+    vaccine type in a history group; return before touching `Immunization.education` for any
+    non-VIS code (otherwise `getEducationFirstRep()` creates a phantom empty element); link
+    drop the R4-invalid `Observation.partOf` link on the forecast path without replacing it;
+    map `30982-3` to `recommendation.forecastReason`, `59779-9` to
+    `ImmunizationRecommendation.authority` / `Immunization.protocolApplied.authority`, and
+    `30973-2` / `59782-3` to `Immunization.protocolApplied` on the history path.
   - `segment/RXAParser.java` — on the forecast path, drop `addVaccineCode(RXA-5)` (the `998`
     placeholder) and the RXA-3 `dateCriterion` write (creates a code-less criterion,
     invalid per R4 `dateCriterion.code` 1..1); RXA-22 sets the resource `date`, with the
@@ -116,8 +159,11 @@ follow-up.
 - **Downstream (`izgw-transform`)**:
   - `v2tofhir` is pinned **directly** in `izgw-transform/pom.xml` (not in `izgw-bom`), so the
     version bump is an `izgw-transform` commit.
-  - `GET /ImmunizationRecommendation` will stop returning evaluated history (see design —
-    accepted, by the two-query model).
+  - `GET /ImmunizationRecommendation` stops labelling evaluated history as `match`. That first read
+    as "stops returning it", accepted under the two-query model; the transform has since chosen to
+    return those doses as `include` instead of dropping them, in its own change
+    `fix-fhir-searchset-include-mode`. No `v2tofhir` change followed. See design, "The searchset
+    filter used to drop evaluated history".
   - `ImmunizationRecommendation` currently carries no identifier, so
     `FhirController.adjustIdentifiers` hashes a `patient|null|null` key for it. With the
     single-resource model there is nothing to collide with, but the resource still gets the
