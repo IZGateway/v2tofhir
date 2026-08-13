@@ -13,6 +13,7 @@ import org.hl7.fhir.r4.model.Encounter;
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Immunization;
 import org.hl7.fhir.r4.model.Immunization.ImmunizationPerformerComponent;
+import org.hl7.fhir.r4.model.ImmunizationRecommendation;
 import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.Practitioner;
@@ -139,6 +140,12 @@ public class ORCParser extends AbstractSegmentParser {
 		order.addIdentifier(ident);
 		if (izDetail.hasImmunization()) {
 			izDetail.getImmunization().addIdentifier(ident);
+		} else if (izDetail.hasRecommendation() && Codes.FILLER_ORDER_IDENTIFIER_TYPE == type) {
+			// Use ORC-3 as the ImmunizationRecommendation identifier
+			ImmunizationRecommendation recommendation = izDetail.getImmunizationRecommendation();
+			if (recommendation != null && !recommendation.hasIdentifier()) {
+				recommendation.addIdentifier(ident);
+			}
 		}
 	}
 	/**

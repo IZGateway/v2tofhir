@@ -3,6 +3,7 @@ package gov.cdc.izgw.v2tofhir.segment;
 import java.util.List;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Optional;
 
 import org.apache.commons.lang3.Strings;
 import org.hl7.fhir.instance.model.api.IBase;
@@ -112,10 +113,15 @@ public class OBXParser extends AbstractSegmentParser {
 		VIS_DOCUMENT_TYPE_CODE("69764-9"),
 		VIS_VERSION_DATE_CODE("29768-9"),
 		VIS_DELIVERY_DATE_CODE("29769-7"),
-		VIS_VACCINE_TYPE_CODE("30956-7"),
 		// Used with ImmunizationRecommendation
 		FORECAST_SCHEDULE("59779-9"),
-		FORECAST_VACCINE_CODE("30956-7"),
+		/**
+		 * Vaccine type.  In a Z42 (evaluated history and forecast) message this is the vaccine a
+		 * dose was evaluated against. So renamed to work for both. Otherwise, works how it always has.
+		 * Replaces FORECAST_VACCINE_CODE, which declared this same LOINC code later in the enum and
+		 * so was never matched because VisCode.match() returns the first constant in declaration order.
+		 */
+		VACCINE_TYPE("30956-7"),
 		FORECAST_SERIES_NAME("59780-7"),
 		FORECAST_DOSE_NUMBER("30973-2"),
 		DOSE_VALIDITY("59781-5"),
@@ -166,7 +172,7 @@ public class OBXParser extends AbstractSegmentParser {
 				return education.hasPresentationDate();
 			case VIS_DOCUMENT_TYPE_CODE:
 				return education.getDocumentTypeElement().hasValue();
-			case VIS_VACCINE_TYPE_CODE:
+			case VACCINE_TYPE:
 				return education.getDocumentTypeElement().hasExtension();
 			case VIS_VERSION_DATE_CODE:
 				return education.hasPublicationDateElement();
@@ -200,6 +206,14 @@ public class OBXParser extends AbstractSegmentParser {
 			redirect = VisCode.match(observationCode);
 		} else {
 			redirect = null;
+		}
+		if (izDetail.hasRecommendation() && VisCode.VACCINE_TYPE.equals(redirect)) {
+			// A vaccine type starts a new forecast. OBX-3 is processed before OBX-5, so this
+			// component exists before its vaccine code is set.
+			ImmunizationRecommendationRecommendationComponent block = izDetail.startForecastBlock();
+			if (block != null) {
+				recommendation = block;
+			}
 		}
 	}
 	
@@ -423,14 +437,61 @@ public class OBXParser extends AbstractSegmentParser {
 			);
 		}
 	}
-	
+
+	/**
+	 * Add one observation from a history group to the Immunization.
+	 * <p>
+	 * The observation code in OBX-3 selects the target element:
+	 * <ul>
+	 * <li>64994-7 Vaccine funding program eligibility goes to programEligibility.</li>
+	 * <li>59779-9 Immunization schedule used goes to protocolApplied.authority.</li>
+	 * <li>30973-2 Dose number in series goes to protocolApplied.doseNumber.</li>
+	 * <li>59782-3 Number of doses in series goes to protocolApplied.seriesDoses.</li>
+	 * <li>69764-9, 29768-9 and 29769-7 are Vaccine Information Statement codes.
+	 *     They go to education.</li>
+	 * <li>30956-7 Vaccine type goes to education only if the message is not a Z42.</li>
+	 * </ul>
+	 * <p>
+	 * The method returns immediately for all other codes. This is necessary because
+	 * getEducationFirstRep() adds an element. An early return prevents an empty education element.
+	 *
+	 * @param converted The converted OBX-5 value
+	 */
 	private void handleVisObservations(IBase converted) {
 		Immunization immunization = izDetail.getImmunization();
-		if (VisCode.VACCINE_ELIGIBILITY_CODE.equals(redirect)) {
+		switch (redirect) {
+		case VACCINE_ELIGIBILITY_CODE:
+			// linkObservation() has already set Observation.partOf for this observation.
 			immunization.addProgramEligibility((CodeableConcept) converted);
-			observation.addPartOf(ParserUtils.toReference(izDetail.getImmunization(), observation, "partOf"));
 			return;
-		} 
+		case FORECAST_SCHEDULE:
+			// The schedule the dose was evaluated against names its publishing authority.
+			immunization.getProtocolAppliedFirstRep()
+				.setAuthority(ParserUtils.toReference(getScheduleAuthority(converted), immunization, "authority"));
+			return;
+		case FORECAST_DOSE_NUMBER:
+			// R4 requires protocolApplied.doseNumber[x] 1..1, and this is the only thing that
+			// supplies it on the history path.
+			toPositiveInt(converted).ifPresent(immunization.getProtocolAppliedFirstRep()::setDoseNumber);
+			return;
+		case FORECAST_NUMBER_DOSES:
+			toPositiveInt(converted).ifPresent(immunization.getProtocolAppliedFirstRep()::setSeriesDoses);
+			return;
+		case VACCINE_TYPE:
+			if (izDetail.isEvaluatedHistoryAndForecast()) {
+				// Z42: the antigen this dose was evaluated against, not a VIS.  See VisCode.VACCINE_TYPE.
+				return;
+			}
+			// Any other profile keeps the original reading, so nothing this library produced for a
+			// VXU or a history-only response changes.
+			break;
+		case VIS_DELIVERY_DATE_CODE, VIS_DOCUMENT_TYPE_CODE, VIS_VERSION_DATE_CODE:
+			break;
+		default:
+			// Nothing else belongs in Immunization.education -- 59781-5 dose validity in particular.
+			// Return before getLastEducation(), which would otherwise create an empty element.
+			return;
+		}
 		ImmunizationEducationComponent education = getLastEducation(immunization);
 		// If the observation is already present in education
 		if (redirect.isPresent(education)) {
@@ -456,14 +517,15 @@ public class OBXParser extends AbstractSegmentParser {
 			} 
 			getParser().warn("Cannot convert {} to StringType for VIS Document Type", converted.fhirType());
 			return;
-		case VIS_VACCINE_TYPE_CODE:
+		case VACCINE_TYPE:
+			// Only reached outside a Z42 -- the vaccine the VIS covers.
 			if (converted instanceof CodeableConcept cc) {
 				education.getDocumentTypeElement()
 					.addExtension()
 						.setUrl("http://hl7.org/fhir/StructureDefinition/iso21090-SC-coding")
 						.setValue(cc.getCodingFirstRep());
 				return;
-			} 
+			}
 			getParser().warn("Cannot convert {} to CodeableConcept for VIS Vaccine Type", converted.fhirType());
 			return;
 		case VIS_VERSION_DATE_CODE:
@@ -479,28 +541,66 @@ public class OBXParser extends AbstractSegmentParser {
 	}
 
 	/**
-	 * Link the Observation to the Immunization or ImmunizationRecommendation to
-	 * which it applies.
+	 * Get or create the Organization that published the schedule named by a 59779-9 observation
+	 * (e.g. VXC16^ACIP^CDCPHINVS).  One Organization is shared by the whole message.
+	 * @param converted	The converted OBX-5 value
+	 * @return	The publishing authority
+	 */
+	private Organization getScheduleAuthority(IBase converted) {
+		Organization authority = izDetail.getScheduleAuthority();
+		if (authority == null) {
+			authority = createResource(Organization.class);
+			izDetail.setScheduleAuthority(authority);
+		}
+		if (!authority.hasName() && converted instanceof CodeableConcept cc) {
+			Coding coding = cc.getCodingFirstRep();
+			// The schedule name is the display (ACIP), falling back to the code (VXC16).
+			authority.setName(coding.hasDisplay() ? coding.getDisplay() : coding.getCode());
+			authority.addIdentifier(new Identifier().setSystem(coding.getSystem()).setValue(coding.getCode()));
+		}
+		return authority;
+	}
+
+	private static Optional<PositiveIntType> toPositiveInt(IBase converted) {
+		if (converted instanceof Quantity qty && qty.hasValue()) {
+			return Optional.of(new PositiveIntType(qty.getValue().intValue()));
+		}
+		return Optional.empty();
+	}
+
+	/**
+	 * Link the Observation to the Immunization it applies to.
+	 *
+	 * A forecast observation gets no link at all, deliberately.  R4 types Observation.partOf as
+	 * Reference(MedicationAdministration | MedicationDispense | MedicationStatement | Procedure |
+	 * Immunization | ImagingStudy), so an ImmunizationRecommendation cannot go there.  The element
+	 * that would fit, recommendation.supportingPatientInformation, is not used either: every
+	 * forecast observation's content is already carried by the recommendation component itself
+	 * (vaccineCode, forecastStatus, dateCriterion, doseNumber, seriesDoses, forecastReason,
+	 * authority), so the reference would only point at a duplicate.  Consumers that apply a
+	 * searchset filter drop the Observations, which would leave those references unresolvable.
+	 *
+	 * TODO: if a forecast observation ever carries something the component cannot hold, link it
+	 * with ParserUtils.toReference(observation, immunizationRecommendation, "information") — the
+	 * search name matters, because downstream _include resolves on registered names, not on fields.
 	 */
 	private void linkObservation() {
-		if (!VisCode.OTHER.equals(redirect)) {
-			Reference ref = null;
-			if (izDetail.hasImmunization()) {
-				ref = ParserUtils.toReference(izDetail.getImmunization(), observation, "partof");
-			} else if (izDetail.hasRecommendation()) {
-				ref = ParserUtils.toReference(izDetail.getImmunizationRecommendation(), observation, "partof");
-			}
-			if (ref != null && !observation.getPartOf().contains(ref)) {
-				observation.addPartOf(ref);
-			}
+		if (VisCode.OTHER.equals(redirect) || !izDetail.hasImmunization()) {
+			return;
+		}
+		// Both spellings are registered: "part-of" is the FHIR search parameter name, "partof" is
+		// what this library has always used and what existing callers pass to _revinclude.
+		Reference ref = ParserUtils.toReference(izDetail.getImmunization(), observation, "partof", "part-of");
+		if (!observation.getPartOf().contains(ref)) {
+			observation.addPartOf(ref);
 		}
 	}
 
 	private void handleRecommendationObservations(IBase converted) {
-		if (redirect == null) {
+		if (redirect == null || recommendation == null) {
 			return;
 		}
-		
+
 		ImmunizationRecommendationRecommendationDateCriterionComponent criterion = null;
 		int value = 0;
 		switch (redirect) {
@@ -515,11 +615,19 @@ public class OBXParser extends AbstractSegmentParser {
 			recommendation.setSeriesDoses(new PositiveIntType(value));
 			break;
 		case FORECAST_SCHEDULE:
+			// The schedule the forecast was computed against names its publishing authority.
+			// R4: "Indicates the authority who published the protocol (e.g. ACIP)."
+			ImmunizationRecommendation forecast = izDetail.getImmunizationRecommendation();
+			if (!forecast.hasAuthority()) {
+				forecast.setAuthority(
+					ParserUtils.toReference(getScheduleAuthority(converted), forecast, "authority")
+				);
+			}
 			break;
 		case FORECAST_SERIES_NAME:
 			recommendation.setSeriesElement((StringType)converted);
 			break;
-		case FORECAST_VACCINE_CODE:
+		case VACCINE_TYPE:
 			recommendation.addVaccineCode((CodeableConcept)converted);
 			break;
 		case NEXT_DOSE_OVERDUE,
@@ -534,6 +642,16 @@ public class OBXParser extends AbstractSegmentParser {
 			recommendation.setForecastStatus((CodeableConcept)converted);
 			break;
 		case WHY_INVALID:
+			// The reason the forecast has the status it has.  IIS send this as free text
+			// ("Patient has exceeded the maximum age"), and forecastReason's binding is
+			// example-strength, so text with no coding is the faithful representation.
+			if (converted instanceof CodeableConcept cc) {
+				recommendation.addForecastReason(cc);
+			} else if (converted instanceof org.hl7.fhir.r4.model.PrimitiveType<?> text && text.hasValue()) {
+				recommendation.addForecastReason(new CodeableConcept().setText(text.asStringValue()));
+			} else {
+				getParser().warn("Cannot convert {} to a forecast reason", converted.fhirType());
+			}
 			break;
 		default:
 			break;
@@ -588,7 +706,8 @@ public class OBXParser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path = "Observation.status", field = 11, table = "0085", comment = "Observation Result Status")	
 	public void setObservationResultStatus(CodeType observationResultStatus) 
-	{		observation.setStatus(toObservationStatus(observationResultStatus)); 
+	{
+		observation.setStatus(toObservationStatus(observationResultStatus)); 
 	}
 		
 	/**
@@ -620,7 +739,8 @@ public class OBXParser extends AbstractSegmentParser {
 	 * @param dateTimeoftheObservation the effectiveTime
 	 */
 	@ComesFrom(path = "Observation.effectiveDateTime", field = 14, comment = "Date/Time of the Observation")
-	public void setDateTimeoftheObservation(DateTimeType dateTimeoftheObservation) {		observation.setEffective(dateTimeoftheObservation); 
+	public void setDateTimeoftheObservation(DateTimeType dateTimeoftheObservation) {
+		observation.setEffective(dateTimeoftheObservation); 
 	}
 	
 	
@@ -668,7 +788,8 @@ public class OBXParser extends AbstractSegmentParser {
 	@ComesFrom(path = "Observation.performer.PractitionerRole.practitioner", field = 16, comment = "Responsible Observer")
 	public void setResponsibleObserver(Practitioner responsibleObserver) 
 	{
-		addResource(responsibleObserver);		getPerformer();
+		addResource(responsibleObserver);
+		getPerformer();
 		performer.setPractitioner(ParserUtils.toReference(responsibleObserver, performer, PERFORMER));
 	}
 	
@@ -678,7 +799,8 @@ public class OBXParser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path = "Observation.method", field = 17, comment = "Observation Method")
 	public void setObservationMethod(CodeableConcept observationMethod) 
-	{		observation.setMethod(observationMethod);
+	{
+		observation.setMethod(observationMethod);
 	}
 	
 	/**
@@ -711,7 +833,8 @@ public class OBXParser extends AbstractSegmentParser {
 	 */
 	@ComesFrom(path = "Observation.bodySite", field = 20, comment = "Observation Site")
 	public void setObservationSite(CodeableConcept observationSite) 
-	{		observation.setBodySite(observationSite);
+	{
+		observation.setBodySite(observationSite);
 	}
 	
 	/**
@@ -748,7 +871,8 @@ public class OBXParser extends AbstractSegmentParser {
 			addResource(performingOrganization);
 			org = performingOrganization;
 			performer.setOrganization(ParserUtils.toReference(org, performer, PERFORMER));
-		}	}
+		}
+	}
 	
 	/**
 	 * Set the address of the performing organization
@@ -771,7 +895,8 @@ public class OBXParser extends AbstractSegmentParser {
 	 * @param performingOrganizationMedicalDirector the medical director 
 	 */
 	@ComesFrom(path = "Observation.performer.PractitionerRole.practitioner", field = 25, comment = "Performing Organization Medical Director")
-	public void setPerformingOrganizationMedicalDirector(Practitioner performingOrganizationMedicalDirector) {		// NOTE: The performingOrganizationMedicalDirector is a separate performer from the default performer
+	public void setPerformingOrganizationMedicalDirector(Practitioner performingOrganizationMedicalDirector) {
+		// NOTE: The performingOrganizationMedicalDirector is a separate performer from the default performer
 		// returned by getPerformer.
 		getPerformer();
 		if (performer.hasPractitioner()) {
