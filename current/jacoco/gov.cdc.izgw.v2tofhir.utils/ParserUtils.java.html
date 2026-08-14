@@ -794,25 +794,25 @@ public class ParserUtils {
 	 * @return	The found segment, or null of it could not be found.
 	 */
 	public static Segment getFollowingSegment(Segment segment, String findName) {
-<span class="fc" id="L797">		Segment found = null;</span>
-<span class="fc" id="L798">		String myName = segment.getName();</span>
+<span class="nc" id="L797">		Segment found = null;</span>
+<span class="nc" id="L798">		String myName = segment.getName();</span>
 		// We've got some segment, get to the immediately following segment in findName
 		try {
-<span class="fc" id="L801">			Group g = segment.getParent();</span>
-<span class="pc bpc" id="L802" title="1 of 2 branches missed.">			if (g == null) {</span>
+<span class="nc" id="L801">			Group g = segment.getParent();</span>
+<span class="nc bnc" id="L802" title="All 2 branches missed.">			if (g == null) {</span>
 <span class="nc" id="L803">				return null;</span>
 			}
 			
-<span class="fc" id="L806">			boolean foundMe = false;</span>
-<span class="pc bpc" id="L807" title="1 of 2 branches missed.">			for (String name: g.getNames()) {</span>
-<span class="fc bfc" id="L808" title="All 2 branches covered.">				if (!foundMe) {</span>
-<span class="fc bfc" id="L809" title="All 4 branches covered.">					foundMe = name.startsWith(myName) &amp;&amp; g.get(name) == segment;</span>
-<span class="fc" id="L810">					continue;</span>
+<span class="nc" id="L806">			boolean foundMe = false;</span>
+<span class="nc bnc" id="L807" title="All 2 branches missed.">			for (String name: g.getNames()) {</span>
+<span class="nc bnc" id="L808" title="All 2 branches missed.">				if (!foundMe) {</span>
+<span class="nc bnc" id="L809" title="All 4 branches missed.">					foundMe = name.startsWith(myName) &amp;&amp; g.get(name) == segment;</span>
+<span class="nc" id="L810">					continue;</span>
 				}
 				
-<span class="pc bpc" id="L813" title="1 of 2 branches missed.">				if (name.startsWith(findName)) {</span>
-<span class="fc" id="L814">					found = (Segment)g.get(name);</span>
-<span class="fc" id="L815">					break;</span>
+<span class="nc bnc" id="L813" title="All 2 branches missed.">				if (name.startsWith(findName)) {</span>
+<span class="nc" id="L814">					found = (Segment)g.get(name);</span>
+<span class="nc" id="L815">					break;</span>
 				} 
 				
 <span class="nc bnc" id="L818" title="All 2 branches missed.">				if (name.startsWith(myName)) {</span>
@@ -821,8 +821,8 @@ public class ParserUtils {
 			}
 <span class="nc" id="L822">		} catch (HL7Exception e) {</span>
 <span class="nc" id="L823">			log.warn(UNEXPECTED_HL7_EXCEPTION, e.getMessage(), e);</span>
-<span class="fc" id="L824">		}</span>
-<span class="fc" id="L825">		return found;</span>
+<span class="nc" id="L824">		}</span>
+<span class="nc" id="L825">		return found;</span>
 	}
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

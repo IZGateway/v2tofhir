@@ -389,7 +389,7 @@ public class Normalizer {
 	public static List&lt;StringType&gt; removeProfessionalSuffix(HumanName f) {
 <span class="fc" id="L390">		List&lt;StringType&gt; toRemove = new ArrayList&lt;&gt;();</span>
 <span class="fc bfc" id="L391" title="All 2 branches covered.">		for (StringType suffix : f.getSuffix()) {</span>
-<span class="fc bfc" id="L392" title="All 2 branches covered.">			if (HumanNameParser.isDegree(suffix.asStringValue())) {</span>
+<span class="pc bpc" id="L392" title="1 of 2 branches missed.">			if (HumanNameParser.isDegree(suffix.asStringValue())) {</span>
 <span class="fc" id="L393">				toRemove.add(suffix);</span>
 			}
 <span class="fc" id="L395">		}</span>
