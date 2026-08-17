@@ -48,10 +48,13 @@ these components SHALL take its `name` from that same component.
 
 ### Requirement: Point of Care carries no physical type code
 
-FHIR R4's `location-physical-type` code system has no concept for a point of care, and the
-v2-to-FHIR IG leaves the code for `PL`/`LA1`/`LA2`-1 Point of Care unresolved. The converter SHALL
-produce a `Location` named from the Point of Care component with no `physicalType` element at all,
-rather than substituting an approximate code.
+The v2-to-FHIR IG leaves the code for `PL`/`LA1`/`LA2`-1 Point of Care unresolved, naming an
+extension rather than a code, and no concept in FHIR R4's `location-physical-type` code system
+describes a point of care. `Location.physicalType` is `0..1`, so a `Location` without one is
+conformant. The converter SHALL produce a `Location` named from the Point of Care component with no
+`physicalType` element at all, rather than substituting an approximate code such as `wa`/Ward: that
+code is valid in itself, but nothing in the message or the IG assigns it to this component, so
+emitting it would assert a physical type the sending system never sent.
 
 #### Scenario: Point of Care is named but unlabelled
 
@@ -59,7 +62,7 @@ rather than substituting an approximate code.
 - **THEN** the converted bundle contains a `Location` named `IZGATEWAYART`
 - **AND** that `Location` has no `physicalType` element, empty or otherwise
 
-#### Scenario: No physical type code is invented for a point of care
+#### Scenario: No physical type code is substituted for a point of care
 
 - **WHEN** a person-location composite populates only the Point of Care component
 - **THEN** no `Location` derived from that composite carries `physicalType` `wa`, `bd` or any other

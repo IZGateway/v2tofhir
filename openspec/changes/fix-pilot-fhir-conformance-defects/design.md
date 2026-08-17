@@ -52,15 +52,18 @@ to "Facility" to match the source component — the value set's display is the c
 changing it buys nothing.
 
 A `null` code means "produce the named `Location`, emit no `physicalType`". That is how Point of Care
-is handled: FHIR R4's `location-physical-type` has no point-of-care concept, and the IG leaves that
-cell unresolved.
+is handled: the IG leaves that cell unresolved — it names an extension rather than a code — and no
+concept in FHIR R4's `location-physical-type` describes a point of care. `Location.physicalType` is
+`0..1`, so a `Location` without one is conformant.
 
 *Alternatives considered.* Renumbering the code arrays so the existing `i` indexing becomes correct
 would work but discards the IG mapping as documentation — the next reader would have no way to see
 which component each code came from. Defining our own point-of-care extension follows the IG's stated
 intent, but the IG never finished defining it, so we would be inventing a canonical and repeating the
 mistake this same review flagged in our use of the core `originalText` extension. Keeping `wa`/Ward is
-rejected outright: it is the invented-data problem the review reported, merely relabelled.
+rejected outright: `wa` is a real `location-physical-type` code, but neither the message nor the IG
+assigns it to Point of Care, so emitting it asserts a physical type the sender never sent — the same
+invented-data problem the review reported, merely relabelled.
 
 ### Components 9 and beyond move out of the shared helper
 
