@@ -2,17 +2,22 @@ package gov.cdc.izgw.v2tofhir.segment;
 
 import java.util.List;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.hl7.fhir.r4.model.CanonicalType;
 import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.DomainResource;
 import org.hl7.fhir.r4.model.Immunization;
 import org.hl7.fhir.r4.model.ImmunizationRecommendation;
 import org.hl7.fhir.r4.model.ImmunizationRecommendation.ImmunizationRecommendationRecommendationComponent;
+import org.hl7.fhir.r4.model.InstantType;
 import org.hl7.fhir.r4.model.MessageHeader;
 import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.Patient;
 
 import ca.uhn.hl7v2.model.Segment;
+import gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
 import gov.cdc.izgw.v2tofhir.converter.MessageParser;
 import gov.cdc.izgw.v2tofhir.terminology.TerminologyMapperFactory;
 import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
@@ -28,12 +33,63 @@ public class IzDetail {
 	private final MessageParser mp;
 	
 	private Boolean hasImmunization = null;
-	private Immunization immunization;
+    /**
+     * -- GETTER --
+     *  Returns the Immunization resource for this message context, or null if none has been created.
+     *
+     * @return the Immunization resource, or null
+     */
+    @Getter
+    private Immunization immunization;
 	
 	private Boolean hasImmunizationRecommendation = null;
-	private ImmunizationRecommendation immunizationRecommendation;
+	/**
+     * Used by every forecast group in the message.
+     * <a href="https://hl7.org/fhir/R4/immunizationrecommendation.html">ImmunizationRecommendation</a>
+     * I read FHIR R4 as defining ImmunizationRecommendation as a patient's point-in-time set of recommendations,
+	 * so one message produces one resource with one recommendation component per forecast.
+     * -- GETTER --
+     *  Returns the ImmunizationRecommendation resource for this message context, or null if none has been created.
+     *
+     * @return the ImmunizationRecommendation resource, or null
 
-	private Organization requestingOrganization;
+     */
+	@Getter
+    private ImmunizationRecommendation immunizationRecommendation;
+	/** True once a forecast block (OBX-3 = 30956-7) has been seen in the current ORC/RXA group */
+	private boolean forecastBlockStarted;
+	/** True when the message declares the Z42 profile (evaluated history and forecast) */
+	private boolean evaluatedHistoryAndForecast;
+
+    /**
+     * -- GETTER --
+     *  Returns the requesting Organization resource for this message context, or null if none has been created.
+     *
+     *
+     * -- SETTER --
+     *  Sets the requesting Organization resource for this message context.
+     *
+     @return the requesting Organization resource, or null
+      * @param requestingOrganization the Organization to associate with this context
+     */
+    @Setter
+    @Getter
+    private Organization requestingOrganization;
+	/** The authority that published the schedule named by OBX-3 = 59779-9, one per message
+     * -- GETTER --
+     *  Returns the Organization that published the schedule used to evaluate or forecast, or null if
+     *  no 59779-9 observation has been seen yet.
+     *
+     *
+     * -- SETTER --
+     *  Sets the Organization that published the schedule used to evaluate or forecast.
+     *
+     @return the publishing authority, or null
+      * @param scheduleAuthority the publishing authority
+     */
+	@Setter
+    @Getter
+    private Organization scheduleAuthority;
 	private Segment segment;
 
 	private IzDetail(MessageParser mp) {
@@ -100,45 +156,29 @@ public class IzDetail {
 		checkForImmunization();
 		return hasImmunization;
 	}
-	
-	/**
-	 * Returns the Immunization resource for this message context, or null if none has been created.
-	 * @return the Immunization resource, or null
+
+    /**
+	 * Returns true when this message declares the Z42 profile, an RSP_K11 carrying evaluated history
+	 * and forecast.  Some observation codes mean something different there than in a VXU or a
+	 * history-only response, so the mapping has to know which it is.
+	 * @return true if the message is a Z42 evaluated history and forecast response
 	 */
-	public Immunization getImmunization() {
-		return immunization;
+	public boolean isEvaluatedHistoryAndForecast() {
+		if (hasImmunization == null) {
+			checkForImmunization();
+		}
+		return evaluatedHistoryAndForecast;
 	}
 
-	/**
-	 * Returns the ImmunizationRecommendation resource for this message context, or null if none has been created.
-	 * @return the ImmunizationRecommendation resource, or null
-	 */
-	public ImmunizationRecommendation getImmunizationRecommendation() {
-		return immunizationRecommendation;
-	}
-
-	/**
-	 * Returns the requesting Organization resource for this message context, or null if none has been created.
-	 * @return the requesting Organization resource, or null
-	 */
-	public Organization getRequestingOrganization() {
-		return requestingOrganization;
-	}
-
-	/**
-	 * Sets the requesting Organization resource for this message context.
-	 * @param requestingOrganization the Organization to associate with this context
-	 */
-	public void setRequestingOrganization(Organization requestingOrganization) {
-		this.requestingOrganization = requestingOrganization;
-	}
-
-	private void checkForImmunization() {
+    private void checkForImmunization() {
 		// Look at the RXA, Profile and Message Header
 		hasImmunization = Boolean.FALSE;
 		hasImmunizationRecommendation = Boolean.FALSE;
 		immunization = null;
-		immunizationRecommendation = null;
+		// NOTE: immunizationRecommendation is deliberately NOT reset.  It is shared by all forecast
+		// groups in the message but each history group gets its own Immunization.
+		forecastBlockStarted = false;
+		evaluatedHistoryAndForecast = false;
 
 		// RXA couldn't be checked, fall back to MSH profile.
 		for (CanonicalType url: mp.getBundle().getMeta().getProfile()) {
@@ -151,11 +191,12 @@ public class IzDetail {
 			} 
 			
 			if ("CDCPHINVS#Z42".equals(url.getValue())) {
-				// Whereas an RSP_K11 conforming to a Z42 will have an ImmunizationRecommendation or 
-				// an Immunization.  We must look at the RXA to determine which of these two cases
-				// are possible.  If RXA-5 = 998^No Vaccine Administered^CVX, then it's a recommendation.
-				hasImmunization = Boolean.FALSE;
-				hasImmunizationRecommendation = Boolean.TRUE;
+				evaluatedHistoryAndForecast = true;
+				// An RSP_K11 Z42 has both resource types: evaluated history
+				// (a dose really administered) becomes an Immunization, and a forecast becomes an
+				// ImmunizationRecommendation. The decision is per ORC/RXA group, and RXA-5 carries
+				// the discriminator: 998^No Vaccine Administered^CVX means forecast.
+				checkRXA();
 				return;
 			}
 		}
@@ -180,10 +221,8 @@ public class IzDetail {
 	
 	/**
 	 * Looks at the RXA to see whether this is an Immunization or ImmunizationRecommendation
-	 * TODO: Consider how to integrate this check, or remove it
 	 * @return	true if RXA was checked, false if it could not be checked.
 	 */
-	@SuppressWarnings("unused")
 	private boolean checkRXA() {
 		// Set default value
 		boolean defaulted = true;
@@ -218,11 +257,32 @@ public class IzDetail {
 			if (l.isEmpty()) {
 				return null;
 			}
-			return l.get(l.size() - 1); 
+			return l.get(l.size() - 1);
 		}
 		return null;
 	}
-	
+
+	/**
+	 * Start a new forecast block (an OBX-3 = 30956-7^Vaccine Type^LN inside a forecast group).
+	 *
+	 * The first block in the group adopts the empty recommendation component already added by
+	 * RXAParser.setup(), so a message sending one forecast per RXA behaves as it always has.
+	 * Each later block adds another component to the same resource, which is what splits a
+	 * group carrying many forecasts under a single RXA.
+	 *
+	 * @return the recommendation component the block's OBX values belong in, or null if there is
+	 * no ImmunizationRecommendation to add it to.
+	 */
+	public ImmunizationRecommendationRecommendationComponent startForecastBlock() {
+		if (immunizationRecommendation == null) {
+			return null;
+		}
+		ImmunizationRecommendationRecommendationComponent first = forecastBlockStarted ? null : getRecommendation();
+		forecastBlockStarted = true;
+		// A new component is added at the end of the list, so getRecommendation() returns it.
+		return first != null ? first : immunizationRecommendation.addRecommendation();
+	}
+
 	/**
 	 * Initialize the resources on receipt of a new ORC or RXA segment. 
 	 * @param initialize If true, created new resource always, not just if missing
@@ -240,6 +300,13 @@ public class IzDetail {
 			created = immunizationRecommendation = mp.createResource(ImmunizationRecommendation.class);
 			if (p != null) {
 				immunizationRecommendation.setPatient(ParserUtils.toReference(p, immunizationRecommendation, "patient"));
+			}
+			// ImmunizationRecommendation.date is required (1..1).  RXA-22 supplies it when present,
+			// but some IIS truncate forecast RXAs before RXA-22, so default it to the message
+			// timestamp from MSH-7.
+			InstantType timestamp = mp.getBundle().getTimestampElement();
+			if (!timestamp.isEmpty()) {
+				immunizationRecommendation.setDateElement(DatatypeConverter.castInto(timestamp, new DateTimeType()));
 			}
 		}
 		if (hasImmunization() && immunization == null) {
