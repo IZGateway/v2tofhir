@@ -58,9 +58,9 @@ public abstract class AbstractSegmentParser extends AbstractStructureParser impl
 
 <span class="fc" id="L59">		super.segment = segment;</span>
 <span class="fc" id="L60">		IBaseResource r = setup();</span>
-<span class="fc bfc" id="L61" title="All 2 branches covered.">		if (r == null) {</span>
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">		if (r == null) {</span>
 			// setup() returned nothing, there must be nothing to do
-<span class="fc" id="L63">			return null;</span>
+<span class="nc" id="L63">			return null;</span>
 		}
 <span class="fc" id="L65">		List&lt;FieldHandler&gt; handlers = getFieldHandlers();</span>
 <span class="fc bfc" id="L66" title="All 2 branches covered.">		for (FieldHandler fieldHandler : handlers) {</span>
