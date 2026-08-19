@@ -458,8 +458,8 @@ public class AddressParser implements DatatypeParser&lt;Address&gt; {
 <span class="fc" id="L458">		Address addr = new Address();</span>
 <span class="fc bfc" id="L459" title="All 2 branches covered.">		for (int i = 0; i &lt; 14; i++) {</span>
 			
-<span class="fc bfc" id="L461" title="All 2 branches covered.">			if (types.length + offset &lt;= i) {</span>
-<span class="fc" id="L462">				break;</span>
+<span class="pc bpc" id="L461" title="1 of 2 branches missed.">			if (types.length + offset &lt;= i) {</span>
+<span class="nc" id="L462">				break;</span>
 			}
 <span class="fc" id="L464">			Type t = DatatypeConverter.adjustIfVaries(types, i + offset);</span>
 <span class="fc bfc" id="L465" title="All 2 branches covered.">			if (i == 0) {</span>
