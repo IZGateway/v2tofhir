@@ -352,6 +352,11 @@ ORC|RE||65949^DCS||||||20120113|^FagenAIRA^SophoclesAIRA||^FagenAIRA^SophoclesAI
 OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
 OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
 OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+	@ImmunizationRecommendation.exists().not() // A Z32 history response never yields a forecast
+	@Immunization.count() = 4 // Profile alone decides for Z32: every ORC yields one, including the two with no following RXA
+	@Immunization.where(vaccineCode.coding.code = '208').count() = 2 // The two groups that do carry an RXA
+	@Immunization.education.exists() // VIS observations still populate education outside a Z42
+	@Immunization.programEligibility.exists() // 64994-7 still reaches the Immunization here too
 
 MSH|^~\&|TEST|MOCK|IZGW|IZGW|20240618083104-0400||RSP^K11^RSP_K11|RESULT-04|P|2.5.1|||ER|AL|||||Z32^CDCPHINVS
 MSA|AA|QUERY-04
@@ -954,8 +959,13 @@ RXR|C28161^IM^NCIT^IM^^HL70162|LT^left Thigh^HL70163
 OBX|4|CE|64994-7^Eligibility Status^LN|1|V02^Medicaid^HL70064||||||F||||||VXC40^vaccine level^CDCPHINVS
 OBX|5|DT|29769-7^VIS presented^LN|2|20120113||||||F
 OBX|6|CE|69764-9^Eligibility Status^LN|2|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+	@Immunization.count() = 3 // A VXU (Z22) yields only Immunizations
+	@ImmunizationRecommendation.exists().not() // ... and never a forecast
+	@Immunization.education.presentationDate.exists() // Genuine VIS observations still populate education
+	@Immunization.education.documentType.exists() // ... including the 69764-9 document type
+	@Immunization.programEligibility.exists() // 64994-7 vaccine funding program eligibility
 
-# Send Acknowledgement ACK In Response To VXU 
+# Send Acknowledgement ACK In Response To VXU
 MSH|^~\&|DCS|MYIIS|MYIIS||200906040000-0500||ACK^V04^ACK|1234567|P|2.5.1|||NE|NE|||||Z23^CDCPHINVS
 MSA|AA|9299381
 
@@ -1034,6 +1044,17 @@ RXA|0|1|20091031|20091031|998^no vaccine admin^CVX|999||||||||||||||NA
 OBX|22|CE|30956-7^vaccine type^LN|1|31^Hep B Peds NOS^CVX ||||||F
 OBX|23|CE|59779-9^Immunization Schedule used^LN|1|VXC16^ACIP^CDCPHINVS||||||F
 OBX|24|DT|30980-7^Date vaccination due^LN|1|20091015||||||F
+	@Immunization.count() = 3 // The three evaluated history doses (31, 48, 110) are Immunizations
+	@Immunization.where(vaccineCode.coding.code = '31').status = 'completed' // From RXA-20 = CP
+	@Immunization.where(vaccineCode.coding.code = '48').vaccineCode.exists() // Administration details reach the Immunization
+	@Immunization.education.exists().not() // In history, 30956-7 is the evaluated antigen, not a VIS
+	@ImmunizationRecommendation.count() = 1 // One point in time set of recommendations per message
+	@ImmunizationRecommendation.recommendation.count() = 1 // One forecast, so one recommendation
+	@ImmunizationRecommendation.recommendation.vaccineCode.coding.code = '31' // From OBX-5, not the 998 in RXA-5
+	@ImmunizationRecommendation.date = '2009-10-31T14:52-05:00' // Required 1..1, and this forecast RXA stops before RXA-22, so it comes from MSH-7 -- at MSH-7's own minute precision, not padded
+	@ImmunizationRecommendation.identifier.exists() // The ORC-3 filler order number
+	@ImmunizationRecommendation.recommendation.dateCriterion.count() = 1 // Only the 30980-7 date due
+	@ImmunizationRecommendation.recommendation.dateCriterion.code.count() = 1 // R4 requires dateCriterion.code, and forecast RXA-3 is not one
 
 # Sample message for multiple recommendations: 
 MSH|^~\&|MYIIS|StatePH|MyEHR|DCS|20150131145233-0500||RSP^K11^RSP_K11|3533469|P|2.5.1|||NE|NE|||||Z42^CDCPHINVS|DCS^^^^^DCS^XX^^^6439432|StatePH 
@@ -1051,9 +1072,152 @@ OBX|26|CE|59779-9^Immunization Schedule used^LN|2|VXC16^ACIP^CDCPHINVS||||||F|||
 OBX|27|DT|30980-7^Date vaccination due^LN|2|20150214||||||F|||20150131 
 OBX|28|CE|30956-7^vaccine type^LN|3|107^DTAP^CVX||||||F|||20150131
 OBX|29|CE|59779-9^Immunization Schedule used^LN|3|VXC16^ACIP^CDCPHINVS||||||F|||20150131
-OBX|30|DT|30980-7^Date vaccination due^LN|3|20150214||||||F|||20150131 
+OBX|30|DT|30980-7^Date vaccination due^LN|3|20150214||||||F|||20150131
+	@Immunization.exists().not() // Shape A: every ORC/RXA group in this message is a forecast
+	@ImmunizationRecommendation.count() = 1 // Three forecasts under one RXA still make one resource
+	@ImmunizationRecommendation.recommendation.count() = 3 // One recommendation per 30956-7 vaccine type
+	@ImmunizationRecommendation.recommendation[0].vaccineCode.coding.code = '03' // MMR
+	@ImmunizationRecommendation.recommendation[1].vaccineCode.coding.code = '10' // IPV
+	@ImmunizationRecommendation.recommendation[2].vaccineCode.coding.code = '107' // DTAP
+	@ImmunizationRecommendation.recommendation.dateCriterion.count() = 3 // One date each, not merged across forecasts
+	@ImmunizationRecommendation.recommendation.dateCriterion.code.count() = 3 // R4 requires dateCriterion.code, and forecast RXA-3 is not one
+	@ImmunizationRecommendation.date = '2015-01-31T14:52:33-05:00' // Required 1..1, and this forecast RXA stops before RXA-22, so it comes from MSH-7
+	@ImmunizationRecommendation.identifier.exists() // The ORC-3 filler order number
 
-#  Send Request for Complete Immunization History (QBP/RSP) 
+# Hand written VXU carrying 30956-7 inside a genuine VIS block.  Locks in the pre-Z42 reading:
+# outside a Z42 message, 30956-7 still adds the iso21090-SC-coding extension to
+# Immunization.education.documentType.  Invented identifiers.
+MSH|^~\&|MYEHR|DCS|MYIIS||20250131000000-0500||VXU^V04^VXU_V04|9000002|P|2.5.1|||ER|AL|||||Z22^CDCPHINVS
+PID|1||999998^^^MYEHR^MR||Testpatient^Vera^^^^^L||20180411|F
+ORC|RE||9000200^DCS|||||||^Clerk^Myron
+RXA|0|1|20250131||110^DTaP-HepB-IPV^CVX|0.5|mL^^UCUM||00^new immunization record^NIP001|||||||||||CP|A
+RXR|C28161^IM^NCIT^IM^IM^HL70162
+OBX|1|CE|69764-9^Document type^LN|1|253088698300026411121116^Multivaccine VIS^cdcgs1vis||||||F
+OBX|2|DT|29768-9^VIS publication date^LN|1|20191015||||||F
+OBX|3|DT|29769-7^VIS presented^LN|1|20250131||||||F
+OBX|4|CE|30956-7^vaccine type^LN|1|110^DTaP-HepB-IPV^CVX||||||F
+	@Immunization.count() = 1 // A VXU yields one Immunization
+	@ImmunizationRecommendation.exists().not() // and never a forecast
+	@Immunization.education.count() = 1 // one VIS block, one education element
+	@Immunization.education.documentType.exists() // from 69764-9
+	@Immunization.education.publicationDate.exists() // from 29768-9
+	@Immunization.education.presentationDate.exists() // from 29769-7
+	@Immunization.education.documentType.extension('http://hl7.org/fhir/StructureDefinition/iso21090-SC-coding').exists() // 30956-7 outside a Z42 keeps its VIS reading
+	@Observation.subject.count() = 4 // Every Observation carries a subject on the VXU path too
+
+# Hand written Z42 response in the second observed IIS layout (shape B): two evaluated history
+# groups, one with genuine VIS observations and one with only an evaluated antigen and dose
+# validity, then one 998 RXA per forecast.  All identifiers are invented.
+MSH|^~\&|MYIIS|StatePH|MyEHR|DCS|20250131145233-0500||RSP^K11^RSP_K11|9000001|P|2.5.1|||NE|NE|||||Z42^CDCPHINVS|StatePH
+MSA|AA|9000001
+QAK|9000001|OK|Z44^Request Evaluated History and Forecast^CDCPHINVS
+QPD|Z44^Request Evaluated History and Forecast^CDCPHINVS|9000001|999999^^^MYEHR^MR|Testpatient^Bobbie^Q^^^^L|Testparent^Suzy^^^^^M|20200214|M
+PID|1||999999^^^MYEHR^MR||Testpatient^Bobbie^Q^^^^L||20200214|M
+ORC|RE||9000100^TESTIIS|||||||^Clerk^Myron
+RXA|0|1|20200415|20200415|08^Hep B adolescent^CVX|0.5|mL^^UCUM||00^new immunization record^NIP0001|||||||||||CP|A|20200415120000
+RXR|C28161^IM^NCIT^IM^IM^HL70162
+OBX|1|CE|64994-7^Vaccine funding program eligibility category^LN|1|V02^Medicaid^HL70064||||||F
+OBX|2|DT|29769-7^VIS presented^LN|2|20200415||||||F
+OBX|3|DT|29768-9^VIS publication date^LN|2|20191015||||||F
+OBX|4|CE|30956-7^vaccine type^LN|3|08^Hep B adolescent^CVX||||||F
+ORC|RE||9000101^TESTIIS|||||||^Clerk^Myron
+RXA|0|1|20220810|20220810|20^DTaP^CVX|0.5|mL^^UCUM||01^historical information^NIP0001|||||||||||CP|A|20220810120000
+OBX|5|CE|30956-7^vaccine type^LN|1|107^DTaP, UF^CVX||||||F
+OBX|6|ID|59781-5^Dose Validity^LN|1|Y||||||F
+OBX|7|CE|59779-9^Immunization Schedule Used^LN|1|VXC16^ACIP^CDCPHINVS||||||F
+OBX|8|NM|30973-2^Dose Number in Series^LN|1|2||||||F
+OBX|9|NM|59782-3^Number of Doses in Series^LN|1|5||||||F
+ORC|RE||9999^TESTIIS
+RXA|0|1|20250131|20250131|998^no vaccine administered^CVX|999||||||||||||||NA||20250201080000-0500
+OBX|10|CE|30956-7^vaccine type^LN|1|45^HepB, unspecified formulation^CVX||||||F
+OBX|11|DT|30980-7^Date vaccination due^LN|1|20250301||||||F
+OBX|12|CE|59783-1^Series status^LN|1|LA13422-3^On schedule^LN||||||F
+OBX|13|CE|59779-9^Immunization Schedule Used^LN|1|VXC16^ACIP^CDCPHINVS||||||F
+ORC|RE||9999^TESTIIS
+RXA|0|1|20250131|20250131|998^no vaccine administered^CVX|999||||||||||||||NA||20250201080000-0500
+OBX|14|CE|30956-7^vaccine type^LN|1|115^Tdap^CVX||||||F
+OBX|15|DT|30980-7^Date vaccination due^LN|1|20250401||||||F
+OBX|16|CE|59783-1^Series status^LN|1|LA13425-6^Past Due^LN||||||F
+ORC|RE||9999^TESTIIS
+RXA|0|1|20250131|20250131|998^no vaccine administered^CVX|999||||||||||||||NA||20250201080000-0500
+OBX|17|CE|30956-7^vaccine type^LN|1|03^MMR^CVX||||||F
+OBX|18|DT|30980-7^Date vaccination due^LN|1|20250501||||||F
+OBX|19|CE|59783-1^Series status^LN|1|LA13424-9^Too Old^LN||||||F
+OBX|20|ST|30982-3^Reason Code^LN|1|Patient has exceeded the maximum age||||||F
+	@Immunization.count() = 2 // Only the two groups whose RXA-5 is a real CVX code
+	@Immunization.education.count() = 1 // 29769-7 and 29768-9 share one element, and only that group has one
+	@Immunization.where(vaccineCode.coding.code = '20').education.exists().not() // 30956-7 and 59781-5 create no education
+	@Immunization.education.presentationDate.exists() // From 29769-7
+	@Immunization.education.publicationDate.exists() // From 29768-9
+	@Immunization.programEligibility.exists() // From 64994-7
+	@ImmunizationRecommendation.count() = 1 // Shape B collapses to the same single resource
+	@ImmunizationRecommendation.recommendation.count() = 3 // One per forecast RXA, so one per 30956-7
+	@ImmunizationRecommendation.recommendation[0].vaccineCode.coding.code = '45' // HepB
+	@ImmunizationRecommendation.recommendation[1].vaccineCode.coding.code = '115' // Tdap
+	@ImmunizationRecommendation.recommendation[2].vaccineCode.coding.code = '03' // MMR
+	@ImmunizationRecommendation.recommendation[2].forecastStatus.coding.code = 'LA13424-9' // Too Old, passed through as received
+	@ImmunizationRecommendation.recommendation[2].forecastReason.text = 'Patient has exceeded the maximum age' // From 30982-3 free text
+	@ImmunizationRecommendation.recommendation.forecastReason.count() = 1 // Only the Too Old forecast has one
+	@ImmunizationRecommendation.authority.exists() // From 59779-9, the authority that published the schedule
+	@Organization.where(name = 'ACIP').exists() // ... resolved to an Organization
+	@ImmunizationRecommendation.recommendation.supportingPatientInformation.exists().not() // Forecast observations duplicate the component, so no reference is emitted
+	@Observation.subject.count() = 20 // Every Observation is attributable to the patient (V2-to-FHIR IG)
+	@Observation.where(code.coding.code = '59783-1').subject.reference.startsWith('Patient/') // ... including a forecast observation with no partOf
+	@Observation.partOf.where(reference.startsWith('ImmunizationRecommendation')).count() = 0 // R4 does not allow that in Observation.partOf
+	@Observation.where(code.coding.code = '64994-7').partOf.reference.startsWith('Immunization/') // A recognized history code still links to its Immunization, which R4 does allow
+	@Observation.where(code.coding.code = '30973-2').partOf.reference.startsWith('Immunization/') // ... and so does one whose value was also folded into protocolApplied
+	@Observation.partOf.count() = 9 // The nine history observations, and none of the eleven forecast ones
+	@Immunization.where(vaccineCode.coding.code = '20').protocolApplied.doseNumber = 2 // From history 30973-2
+	@Immunization.where(vaccineCode.coding.code = '20').protocolApplied.seriesDoses = 5 // From history 59782-3
+	@Immunization.where(vaccineCode.coding.code = '20').protocolApplied.authority.exists() // From history 59779-9
+	@Immunization.where(vaccineCode.coding.code = '20').protocolApplied.count() = 1 // One shared protocolApplied element
+	@ImmunizationRecommendation.recommendation.forecastStatus.count() = 3 // Each forecast keeps its own 59783-1
+	@ImmunizationRecommendation.recommendation.dateCriterion.count() = 3 // ... and its own date
+	@ImmunizationRecommendation.recommendation.dateCriterion.code.count() = 3 // R4 requires dateCriterion.code
+	@ImmunizationRecommendation.identifier.count() = 1 // The repeated ORC-3 sentinel is taken once
+	@ImmunizationRecommendation.date = '2025-02-01T08:00:00-05:00' // From RXA-22, a different instant than the MSH-7 default, so this distinguishes the two sources
+
+# Hand written Z42 response covering three forecast layouts the CDC IG samples do not: several
+# vaccine types sharing one OBX-4 sub-id, a date observation arriving before any vaccine type, and a
+# forecast group carrying no vaccine type at all.  All identifiers are invented.
+MSH|^~\&|MYIIS|StatePH|MyEHR|DCS|20250201090000-0500||RSP^K11^RSP_K11|9000003|P|2.5.1|||NE|NE|||||Z42^CDCPHINVS|StatePH
+MSA|AA|9000003
+QAK|9000003|OK|Z44^Request Evaluated History and Forecast^CDCPHINVS
+QPD|Z44^Request Evaluated History and Forecast^CDCPHINVS|9000003|999997^^^MYEHR^MR|Testpatient^Casey^^^^^L||20150612|F
+PID|1||999997^^^MYEHR^MR||Testpatient^Casey^^^^^L||20150612|F
+ORC|RE||9999^TESTIIS
+RXA|0|1|20250201|20250201|998^no vaccine administered^CVX|999||||||||||||||NA
+OBX|1|DT|30980-7^Date vaccination due^LN|1|20250301||||||F
+OBX|2|CE|30956-7^vaccine type^LN|1|03^MMR^CVX||||||F
+OBX|3|CE|59783-1^Series status^LN|1|LA13422-3^On schedule^LN||||||F
+OBX|4|CE|30956-7^vaccine type^LN|1|10^IPV^CVX||||||F
+OBX|5|DT|30980-7^Date vaccination due^LN|1|20250401||||||F
+OBX|6|CE|59783-1^Series status^LN|1|LA13422-3^On schedule^LN||||||F
+OBX|7|CE|30956-7^vaccine type^LN|1|20^DTaP^CVX||||||F
+OBX|8|DT|30980-7^Date vaccination due^LN|1|20250501||||||F
+ORC|RE||9998^TESTIIS
+RXA|0|1|20250201|20250201|998^no vaccine administered^CVX|999||||||||||||||NA
+OBX|9|DT|30980-7^Date vaccination due^LN|1|20250601||||||F
+OBX|10|CE|59783-1^Series status^LN|1|LA13422-3^On schedule^LN||||||F
+	@Immunization.exists().not() // No group carries a real CVX code in RXA-5
+	@ImmunizationRecommendation.count() = 1 // Still one resource for the message
+	@ImmunizationRecommendation.recommendation.count() = 4 // Three from the first group, one from the second
+	@ImmunizationRecommendation.recommendation.vaccineCode.count() = 3 // OBX-4 is 1 on every observation, so the sub-id delimited nothing
+	@ImmunizationRecommendation.recommendation[0].vaccineCode.coding.code = '03' // MMR
+	@ImmunizationRecommendation.recommendation[1].vaccineCode.coding.code = '10' // IPV
+	@ImmunizationRecommendation.recommendation[2].vaccineCode.coding.code = '20' // DTaP
+	@ImmunizationRecommendation.recommendation[0].dateCriterion.value = '2025-03-01' // The date preceding any vaccine type stays on the component MMR then adopted
+	@ImmunizationRecommendation.recommendation[0].dateCriterion.count() = 1 // ... and does not pull the next forecast's date with it
+	@ImmunizationRecommendation.recommendation[1].dateCriterion.value = '2025-04-01' // Each later vaccine type starts a component that takes only its own dates
+	@ImmunizationRecommendation.recommendation[2].dateCriterion.value = '2025-05-01'
+	@ImmunizationRecommendation.recommendation[3].vaccineCode.exists().not() // A forecast group with no 30956-7 yields one component with no vaccineCode
+	@ImmunizationRecommendation.recommendation[3].dateCriterion.value = '2025-06-01' // ... still carrying what that group did send
+	@ImmunizationRecommendation.recommendation.dateCriterion.code.count() = 4 // R4 requires dateCriterion.code on every one
+	@ImmunizationRecommendation.recommendation.forecastStatus.count() = 3 // The DTaP forecast sent no 59783-1, and none is invented
+	@ImmunizationRecommendation.identifier.count() = 1 // The first forecast group's ORC-3 only
+	@ImmunizationRecommendation.date = '2025-02-01T09:00:00-05:00' // Defaulted from MSH-7, since no forecast RXA here reaches RXA-22
+
+#  Send Request for Complete Immunization History (QBP/RSP)
 # Process for requesting Immunization History 
 MSH|^~\&|||||201405150010-0500||QBP^Q11^QBP_Q11|793543|P|2.5.1|||||||||Z34^CDCPHINVS
 QPD|Z34^Request Immunization History^CDCPHINVS|1057|123456^^^MYEHR^MR|Child^Bobbie^Q^^^^L|Que^Suzy^^^^^M|20050512|M|10 East Main St^^Myfaircity^GA^^^L

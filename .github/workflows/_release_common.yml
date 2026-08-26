@@ -412,13 +412,13 @@ jobs:
           format: 'HTML'
           out: 'target/site'
           args: >
-            --ossIndexUsername ${{ secrets.OSS_INDEX_USERNAME }}
-            --ossIndexPassword ${{ secrets.OSS_INDEX_PASSWORD }}        
             --failOnCVSS 7
             --suppression ./dependency-suppression.xml
-            --disableNuspec    
-            --disableNugetconf  
-            --disableAssembly      
+            --disableNuspec
+            --disableNugetconf
+            --disableAssembly
+            --disableOssIndex
+            --nvdApiKey ${{ secrets.NVDAPIKEY }}   
 
       - name: Upload dependency check report
         uses: actions/upload-artifact@v7

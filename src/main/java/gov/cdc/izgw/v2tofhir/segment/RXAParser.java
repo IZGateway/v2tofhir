@@ -88,9 +88,10 @@ public class RXAParser extends AbstractSegmentParser {
 	public void setAdministrationDateTime(DateTimeType administrationDateTime) {
 		if (izDetail.hasImmunization()) {
 			izDetail.getImmunization().setOccurrence(administrationDateTime);
-		} else if (izDetail.hasRecommendation()) {
-			recommendation.getDateCriterionFirstRep().setValueElement(administrationDateTime);
 		}
+		// On the forecast path RXA-3 is only the time the forecast was generated.  It is not written
+		// to a dateCriterion: that would create one with no code, and R4 requires
+		// dateCriterion.code 1..1.
 	}
 	/*
 	5	RXA-5	Administered Code	CWE	1	1				Immunization.vaccineCode		Immunization.CodeableConcept	1	1	CWE[CodeableConcept]			
@@ -111,15 +112,9 @@ public class RXAParser extends AbstractSegmentParser {
 			} else {
 				izDetail.getImmunization().setVaccineCode(vaccineCode);
 			}
-		} else if (izDetail.hasRecommendation()) {
-			if (recommendation.hasVaccineCode()) {
-				for (Coding coding: vaccineCode.getCoding()) {
-					recommendation.getVaccineCodeFirstRep().addCoding(coding);
-				}
-			} else {
-				recommendation.addVaccineCode(vaccineCode);
-			}
 		}
+		// On the forecast path RXA-5 is the 998^no vaccine administered^CVX placeholder, so it is
+		// not a recommendation.vaccineCode.  That comes from the OBX-3 = 30956-7 vaccine type.
 	}
 	/*
 	6	RXA-6	Administered Amount	NM	1	1				Immunization.doseQuantity.value		Immunization.decimal	0	1				

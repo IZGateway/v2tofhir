@@ -160,14 +160,13 @@ jobs:
         format: 'HTML'
         out: 'target/site'
         args: >
-          --ossIndexUsername ${{ secrets.OSS_INDEX_USERNAME }}
-          --ossIndexPassword ${{ secrets.OSS_INDEX_PASSWORD }}        
           --failOnCVSS 7
           --suppression ./dependency-suppression.xml
           --disableNuspec    
           --disableNugetconf  
           --disableAssembly            
-            
+          --disableOssIndex
+          --nvdApiKey ${{ secrets.NVDAPIKEY }}
     - name: Publish Site
       uses: peaceiris/actions-gh-pages@v4.1.0
       with:

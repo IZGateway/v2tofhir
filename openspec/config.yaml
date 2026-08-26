@@ -78,7 +78,7 @@ rules:
     - Break tasks into testable units
     - Consider backward compatibility carefully
     - Update all callers of replaced static utilities
-  spec:
+  specs:
     - Reference HL7 specifications where relevant
     - Document interface contracts precisely
     - Consider existing static utility method signatures when designing interface
