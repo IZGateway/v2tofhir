@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2026-08-26
+
+### Changes
+- chore: Bump izgw-bom to latest release 1.14.0 ([#54](https://github.com/IZGateway/v2tofhir/pull/54))
+- fix: assign Location.physicalType codes to the correct PL/LA2 components ([#53](https://github.com/IZGateway/v2tofhir/pull/53))
+- IGDD-3285: fix Z42 history/forecast split for eHealth Exchange pilot ([#52](https://github.com/IZGateway/v2tofhir/pull/52))
+- chore: Update dependency checker to use different credentials. ([#51](https://github.com/IZGateway/v2tofhir/pull/51))
+
 ## [2.4.0] - 2026-08-04
 
 ### Changes
