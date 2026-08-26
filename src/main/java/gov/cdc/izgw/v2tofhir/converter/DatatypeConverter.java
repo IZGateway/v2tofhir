@@ -1175,7 +1175,10 @@ public class DatatypeConverter {
 		case "PL":
 			location.setMode(LocationMode.INSTANCE);
 			toLocationFromComposite(location, comp);
-			location.setDescription(ParserUtils.toString(comp, 9));
+			// Only a PL has these.  LA1-9 is an Address and LA2-9 through LA2-16 are the address
+			// components, both of which become Location.address below.
+			location.setDescription(ParserUtils.toString(comp, 8));	// PL-9 Location Description
+			location.addIdentifier(toIdentifier(ParserUtils.getComponent(comp, 9)));	// PL-10
 			break;
 		case "LA1":
 			location.setMode(LocationMode.INSTANCE);
@@ -1228,29 +1231,49 @@ public class DatatypeConverter {
 	}
 
 	/**
-	 * Convert the bulk of a PL, LA1 or LA2 to a location. These all look almost the
-	 * same. PL/LA1/LA2.3 - Bed HD/IS 0304 PL/LA1/LA2.2 - Room HD/IS 0303
-	 * PL/LA1/LA2.1 - Point Of Care HD/IS 0302 PL/LA1/LA2.8 - Floor HD/IS 0308
-	 * PL/LA1/LA2.7 - Building HD/IS 0307 PL/LA1/LA2.4 - Facility HD/IS
-	 * 
-	 * PL/LA1/LA2.5 - Location Status IS O - 0306 PL/LA1/LA2.6 - Person Location
-	 * Type IS O - 0305
-	 * 
+	 * The PL/LA1/LA2 components that name a physical location, most specific first, so that the
+	 * Location resources built from them nest correctly through Location.partOf.
+	 * @see #LOC_CODES
+	 */
+	private static final int[] LOC_COMPONENTS = { 2, 1, 0, 7, 6, 3 };
+	/**
+	 * The location-physical-type code for each component in {@link #LOC_COMPONENTS}, transcribed from
+	 * the HL7 V2-to-FHIR IG ConceptMap datatype-pl-to-location. A null code means the component names
+	 * a Location that carries no physicalType: FHIR R4's location-physical-type code system has no
+	 * concept for a point of care, and the IG leaves that cell unresolved.
+	 */
+	private static final String[] LOC_CODES = { "bd", "ro", null, "lvl", "bu", "si" };
+	/** The display for each code in {@link #LOC_CODES}, as the code system gives it */
+	private static final String[] LOC_DISPLAYS = { "Bed", "Room", null, "Level", "Building", "Site" };
+
+	/**
+	 * Convert the bulk of a PL, LA1 or LA2 to a location. These all look almost the same through
+	 * component 8, and the HL7 V2-to-FHIR IG ConceptMap datatype-pl-to-location gives the
+	 * location-physical-type code for each one:
+	 *
+	 * PL/LA1/LA2-3 Bed = bd, PL/LA1/LA2-2 Room = ro, PL/LA1/LA2-1 Point of Care = no code,
+	 * PL/LA1/LA2-8 Floor = lvl, PL/LA1/LA2-7 Building = bu, PL/LA1/LA2-4 Facility = si.
+	 *
+	 * Each populated component names its own Location, and they are chained through
+	 * Location.partOf from the most specific component to the least.
+	 *
+	 * PL/LA1/LA2-5 Location Status (table 0306) and PL/LA1/LA2-6 Person Location Type (table 0305)
+	 * describe the location rather than naming a place, so they become operationalStatus and type on
+	 * the Location itself and never a Location of their own.
+	 *
+	 * Components 9 and up differ between the three datatypes, so the caller reads them.
+	 *
 	 * @param location The location
 	 * @param comp     The composite to convert
 	 */
 	private static void toLocationFromComposite(Location location, Composite comp) {
 
-		String[] d = { "Bed", "Room", "Ward", "Level", "Building", "Site" };
-		String[] n = { "bd", "ro", "wa", "lvl", "bu", "si" };
-		int[] c = { 2, 1, 0, 7, 6, 3 };
 		Location curl = location;
-		for (int i = 0; i < c.length; i++) {
-			Type t1 = ParserUtils.getComponent(comp, i);
+		for (int i = 0; i < LOC_COMPONENTS.length; i++) {
+			Type t1 = ParserUtils.getComponent(comp, LOC_COMPONENTS[i]);
 			if (ParserUtils.isEmpty(t1)) {
 				continue;
 			}
-			CodeableConcept cc = new CodeableConcept().addCoding(new Coding(Systems.LOCATION_TYPE, n[i], d[i]));
 
 			if (curl.hasName()) {
 				Location partOf = new Location();
@@ -1259,14 +1282,15 @@ public class DatatypeConverter {
 				curl = partOf;
 			}
 			curl.setMode(LocationMode.INSTANCE);
-			curl.setPhysicalType(cc);
+			if (LOC_CODES[i] != null) {
+				curl.setPhysicalType(
+					new CodeableConcept().addCoding(new Coding(Systems.LOCATION_TYPE, LOC_CODES[i], LOC_DISPLAYS[i])));
+			}
 			curl.setName(ParserUtils.toString(t1));
 			ParserUtils.toReference(curl, null, "partof"); // Update reference
 		}
 		location.setOperationalStatus(toCoding(ParserUtils.getComponent(comp, 4), "0306"));
 		location.addType(toCodeableConcept(ParserUtils.getComponent(comp, 5), "0305"));
-		location.setDescription(ParserUtils.toString(comp, 8));
-		location.addIdentifier(toIdentifier(ParserUtils.getComponent(comp, 9)));
 	}
 
 	/**
