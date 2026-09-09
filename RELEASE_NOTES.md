@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.0] - 2026-09-09
+
+### Changes
+- chore: Bump izgw-bom to 1.15.0 for release ([#56](https://github.com/IZGateway/v2tofhir/pull/56))
+- chore(deps): bump actions/setup-java from 5 to 6 ([#55](https://github.com/IZGateway/v2tofhir/pull/55))
+
 ## [2.5.0] - 2026-08-26
 
 ### Changes
