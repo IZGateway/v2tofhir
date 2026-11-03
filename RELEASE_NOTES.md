@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.0] - 2026-11-03
+
+### Changes
+- chore: Update to release 1.18.0 of izgw-bom (54a728d47)
+- chore: Bump izgw-bom to latest snapshot 1.18.0 (7ad47737c)
+- chore: bump version to 2.8.0-SNAPSHOT (8f581e110)
+
 ## [2.7.0] - 2026-09-29
 
 ### Changes
