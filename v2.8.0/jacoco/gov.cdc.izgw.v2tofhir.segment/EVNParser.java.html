@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EVNParser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">gov.cdc.izgw.v2tofhir.segment</a> &gt; <span class="el_source">EVNParser.java</span></div><h1>EVNParser.java</h1><pre class="source lang-java linenums">package gov.cdc.izgw.v2tofhir.segment;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.hl7.fhir.instance.model.api.IBaseResource;
+import org.hl7.fhir.r4.model.CodeableConcept;
+import org.hl7.fhir.r4.model.DateTimeType;
+import org.hl7.fhir.r4.model.Identifier;
+import org.hl7.fhir.r4.model.InstantType;
+import org.hl7.fhir.r4.model.Location;
+import org.hl7.fhir.r4.model.MessageHeader;
+import org.hl7.fhir.r4.model.Practitioner;
+import org.hl7.fhir.r4.model.Provenance;
+
+import gov.cdc.izgw.v2tofhir.annotation.ComesFrom;
+import gov.cdc.izgw.v2tofhir.annotation.Produces;
+import gov.cdc.izgw.v2tofhir.converter.MessageParser;
+import gov.cdc.izgw.v2tofhir.utils.ParserUtils;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * The EVNParser extracts information from the EVN segment and adds it to the
+ * ProvenanceResource for the MessageHeader.
+ *
+ * @author Audacious Inquiry
+ *
+ */
+@Produces(segment = &quot;EVN&quot;, resource = Provenance.class)
+<span class="fc" id="L30">@Slf4j</span>
+public class EVNParser extends AbstractSegmentParser {
+	Provenance provenance;
+<span class="fc" id="L33">	private static List&lt;FieldHandler&gt; fieldHandlers = new ArrayList&lt;&gt;();</span>
+	static {
+<span class="fc" id="L35">		log.debug(&quot;{} loaded&quot;, EVNParser.class.getName());</span>
+<span class="fc" id="L36">	}</span>
+
+	/**
+	 * Construct a new DSC Parser for the given messageParser.
+	 * 
+	 * @param messageParser The messageParser using this QPDParser
+	 */
+	public EVNParser(MessageParser messageParser) {
+<span class="fc" id="L44">		super(messageParser, &quot;EVN&quot;);</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">		if (fieldHandlers.isEmpty()) {</span>
+<span class="fc" id="L46">			FieldHandler.initFieldHandlers(this, fieldHandlers);</span>
+		}
+<span class="fc" id="L48">	}</span>
+
+	@Override
+	public List&lt;FieldHandler&gt; getFieldHandlers() {
+<span class="fc" id="L52">		return fieldHandlers;</span>
+	}
+
+	public IBaseResource setup() {
+<span class="fc" id="L56">		MessageHeader mh = getFirstResource(MessageHeader.class);</span>
+<span class="fc bfc" id="L57" title="All 2 branches covered.">		if (mh != null) {</span>
+<span class="fc" id="L58">			provenance = (Provenance) mh.getUserData(Provenance.class.getName());</span>
+		} else {
+			// Create a standalone provenance resource for segment testing
+<span class="fc" id="L61">			provenance = createResource(Provenance.class);</span>
+		}
+<span class="fc" id="L63">		return provenance;</span>
+	}
+
+	/**
+	 * Set the recorded date time.
+	 * @param recordedDateTime The time the event was recorded.
+	 */
+	@ComesFrom(path = &quot;Provenance.recorded&quot;, field = 2, comment = &quot;Recorded Date/Time&quot;)
+	public void setRecordedDateTime(InstantType recordedDateTime) {
+<span class="fc" id="L72">		provenance.setRecordedElement(recordedDateTime);</span>
+<span class="fc" id="L73">	}</span>
+
+	/**
+	 * Set the reason for the event
+	 * @param eventReasonCode	the reason for the event
+	 */
+	@ComesFrom(path = &quot;Provenance.reason&quot;, field = 4, comment = &quot;Event Reason Code&quot;)
+	public void setEventReasonCode(CodeableConcept eventReasonCode) {
+<span class="nc" id="L81">		provenance.addReason(eventReasonCode);</span>
+<span class="nc" id="L82">	}</span>
+
+	/**
+	 * Set the operator
+	 * @param operatorId	The operator
+	 */
+	@ComesFrom(path = &quot;Provenance.agent.who.Practitioner&quot;, field = 5, comment = &quot;Operator ID&quot;)
+	public void setOperatorID(Practitioner operatorId) {
+<span class="nc" id="L90">		provenance.addAgent().setWho(ParserUtils.toReference(operatorId, provenance, &quot;agent&quot;));</span>
+<span class="nc" id="L91">	}</span>
+
+	/**
+	 * Set the date/time of the event
+	 * @param eventOccurred the occurence date/time of the event
+	 */
+	@ComesFrom(path = &quot;Provenance.occurredDateTime&quot;, field = 6, comment = &quot;Event Occurred&quot;)
+	public void setEventOccurred(DateTimeType eventOccurred) {
+<span class="fc" id="L99">		provenance.setOccurred(eventOccurred);</span>
+<span class="fc" id="L100">	}</span>
+
+	/**
+	 * Set the identifier of the facility where the event occurred
+	 * @param eventFacility The event facility identifier
+	 */
+	@ComesFrom(path = &quot;Provenance.location&quot;, field = 7, comment = &quot;Event Facility&quot;)
+	public void setEventFacility(Identifier eventFacility) {
+<span class="nc bnc" id="L108" title="All 2 branches missed.">		if (eventFacility.hasSystem()) {</span>
+<span class="nc" id="L109">			Location location = createResource(Location.class);</span>
+<span class="nc" id="L110">			location.setName(eventFacility.getSystem());</span>
+<span class="nc" id="L111">			location.addIdentifier(eventFacility);</span>
+<span class="nc" id="L112">			provenance.setLocation(ParserUtils.toReference(location, provenance, &quot;location&quot;));</span>
+		}
+<span class="nc" id="L114">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

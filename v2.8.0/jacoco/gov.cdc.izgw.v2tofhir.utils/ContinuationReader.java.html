@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ContinuationReader.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">gov.cdc.izgw.v2tofhir.utils</a> &gt; <span class="el_source">ContinuationReader.java</span></div><h1>ContinuationReader.java</h1><pre class="source lang-java linenums">package gov.cdc.izgw.v2tofhir.utils;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.Reader;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+
+/**
+ * A filter that reads lines from a reader with continuation lines (lines ending in a backslash) collapsed
+ * into a single line.
+ * 
+ * @author Audacious Inquiry
+ */
+public class ContinuationReader implements AutoCloseable {
+	private final BufferedReader br;
+<span class="fc" id="L18">	int lineNo = 0;</span>
+	/**
+	 * Construct a continuation reader from a reader
+	 * @param in	The reader
+	 */
+<span class="fc" id="L23">	public ContinuationReader(Reader in) {</span>
+<span class="fc" id="L24">		this.br = IOUtils.toBufferedReader(in);</span>
+<span class="fc" id="L25">	}</span>
+	/**
+	 * Get the 1-based line number read
+	 * @return The line number read
+	 */
+	public int getLine() {
+<span class="fc" id="L31">		return lineNo;</span>
+	}
+	
+	/**
+	 * @return Reads a line of input, trims it, and returns it, appending
+	 * the next line and any following continuation lines terminated with 
+	 * a backslash
+	 * 
+	 * This method allows lines to be written as:
+	 * &lt;pre&gt;
+	 * This is a line
+	 * This is a continuation line \
+	 *   This is more of the previous line with further continuation \
+	 *   This is the last of it
+	 *   This is the next line
+	 * &lt;/pre&gt;
+	 * 
+	 * And read as:
+	 * &lt;pre&gt;
+	 * This is a line
+	 * This is a continuation line This is more of the previous line with further continuation This is the last of it
+	 * This is the next line
+	 * &lt;/pre&gt;
+	 * 
+	 * Leading whitespace on any line are trimmed.
+	 * Terminal whitespace before the continuation character (\) is not trimmed,
+	 * but whitespace after it is.
+	 *    
+	 * @throws IOException If an error occurred while reading
+	 */
+	public String readLine() throws IOException {
+<span class="fc" id="L62">		String line = br.readLine();</span>
+<span class="fc" id="L63">		lineNo ++;</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">		if (line == null) {</span>
+<span class="fc" id="L65">			return line;</span>
+		}
+<span class="fc" id="L67">		line = line.trim();</span>
+<span class="fc bfc" id="L68" title="All 4 branches covered.">		if (line.isEmpty() || !line.endsWith(&quot;\\&quot;)) {</span>
+<span class="fc" id="L69">			return line;</span>
+		}
+		
+<span class="fc" id="L72">		String result = StringUtils.left(line, line.length() - 1);</span>
+<span class="fc" id="L73">		line = readLine();	// Recursively call to get next line</span>
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">		if (line != null) {</span>
+<span class="fc" id="L75">			return result + line;</span>
+		}
+<span class="nc" id="L77">		return result;</span>
+	}
+	@Override
+	public void close() throws Exception {
+<span class="pc bpc" id="L81" title="1 of 2 branches missed.">		if (br != null) {</span>
+<span class="fc" id="L82">			br.close();</span>
+		}
+<span class="fc" id="L84">	}</span>
+	
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

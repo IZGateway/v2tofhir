@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ISO3166.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">gov.cdc.izgw.v2tofhir.utils</a> &gt; <span class="el_source">ISO3166.java</span></div><h1>ISO3166.java</h1><pre class="source lang-java linenums">package gov.cdc.izgw.v2tofhir.utils;
+
+/**
+ * Deprecated forwarding stub for {@link gov.cdc.izgw.v2tofhir.terminology.ISO3166}.
+ *
+ * @deprecated Moved to {@link gov.cdc.izgw.v2tofhir.terminology.ISO3166}.
+ *             Use {@link gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper} for new code.
+ */
+@Deprecated(since = &quot;moved to gov.cdc.izgw.v2tofhir.terminology; use TerminologyMapper&quot;)
+public final class ISO3166 {
+    private ISO3166() {}
+
+    /**
+     * Get the ISO-3166 two letter code for the given country name or code.
+     *
+     * @param name  The country name or ISO code
+     * @return      The ISO-3166 two letter code for the given country
+     * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper#normalizeCountry(String)} instead.
+     * @see gov.cdc.izgw.v2tofhir.terminology.ISO3166#twoLetterCode(String)
+     */
+    @Deprecated(since = &quot;moved to gov.cdc.izgw.v2tofhir.terminology; use TerminologyMapper&quot;)
+    public static String twoLetterCode(String name) {
+<span class="nc" id="L23">        return gov.cdc.izgw.v2tofhir.terminology.ISO3166.twoLetterCode(name);</span>
+    }
+
+    /**
+     * Get the ISO-3166 three letter code for the given country name or code.
+     *
+     * @param name  The country name or ISO code
+     * @return      The ISO-3166 three letter code for the given country
+     * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.ISO3166#threeLetterCode(String)} directly.
+     * @see gov.cdc.izgw.v2tofhir.terminology.ISO3166#threeLetterCode(String)
+     */
+    @Deprecated(since = &quot;moved to gov.cdc.izgw.v2tofhir.terminology; use TerminologyMapper&quot;)
+    public static String threeLetterCode(String name) {
+<span class="nc" id="L36">        return gov.cdc.izgw.v2tofhir.terminology.ISO3166.threeLetterCode(name);</span>
+    }
+
+    /**
+     * Get the ISO-3166 name for the given country name or code.
+     *
+     * @param name  The country name or ISO code
+     * @return      The ISO-3166 country name for the given country
+     * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.TerminologyMapper#lookupCountry(String, String)} instead.
+     * @see gov.cdc.izgw.v2tofhir.terminology.ISO3166#name(String)
+     */
+    @Deprecated(since = &quot;moved to gov.cdc.izgw.v2tofhir.terminology; use TerminologyMapper&quot;)
+    public static String name(String name) {
+<span class="nc" id="L49">        return gov.cdc.izgw.v2tofhir.terminology.ISO3166.name(name);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
