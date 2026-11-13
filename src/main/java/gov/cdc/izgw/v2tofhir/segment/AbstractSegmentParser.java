@@ -28,7 +28,7 @@ public abstract class AbstractSegmentParser extends AbstractStructureParser impl
 	 * @param p	The message parser
 	 * @param s	The segment type name
 	 */
-	protected AbstractSegmentParser(MessageParser p, String s) {
+	public AbstractSegmentParser(MessageParser p, String s) {
 		super(p, s);
 		parser = messageParser = p;
 	}
