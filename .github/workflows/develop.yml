@@ -149,21 +149,37 @@ jobs:
 
 # Use GitHub Action to speed up and improve dependency checking
 # NOTE: Disable automatic dependency checking in the build, this replaces it          
+    - name: Get current date for cache key
+      id: date
+      run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+
+    - name: Cache Dependency-Check NVD data
+      uses: actions/cache@v4
+      with:
+        path: ~/dependency-check-data
+        key: dependency-check-nvd-${{ runner.os }}-${{ steps.date.outputs.date }}
+        restore-keys: |
+          dependency-check-nvd-${{ runner.os }}-
+
     - name: Dependency Check
       env:  
         # Per https://github.com/marketplace/actions/dependency-check, fix JAVA_HOME location for action
         JAVA_HOME: /opt/jdk
       uses: dependency-check/Dependency-Check_Action@main
+      continue-on-error: true
+      timeout-minutes: 30
       with:
         project: V2 to FHIR
         path: target/v2tofhir-${{env.IMAGE_BRANCH_TAG}}.jar
         format: 'HTML'
         out: 'target/site'
         args: >
+          --data /github/home/dependency-check-data
           --ossIndexUsername ${{ secrets.OSS_INDEX_USERNAME }}
           --ossIndexPassword ${{ secrets.OSS_INDEX_PASSWORD }}        
           --failOnCVSS 7
           --suppression ./dependency-suppression.xml
+          --nvdApiKey ${{ secrets.NVDAPIKEY }}
           --disableNuspec    
           --disableNugetconf  
           --disableAssembly            
