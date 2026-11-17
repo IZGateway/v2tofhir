@@ -27,6 +27,11 @@ public interface Processor<U, S> {
 	 *
 	 */
 	static class NullProcessor implements Processor<Object, Object> {
+		/** Create a processor that does nothing. */
+		public NullProcessor() {
+			// Nothing to initialize
+		}
+
 		@Override
 		public Base parse(Object structure) {
 			// Do Nothing
@@ -84,6 +89,7 @@ public interface Processor<U, S> {
 	String structure();
 
 	/**
+	 * Get the parser that uses this processor.
 	 * @return the current parser
 	 */
 	Parser<U, S> getParser();

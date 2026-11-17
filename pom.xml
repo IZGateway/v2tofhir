@@ -10,7 +10,7 @@
 	<version>2.9.0-SNAPSHOT</version>
 	<name>HL7 Version 2 to FHIR Conversion</name>
 	<description>This is the v2tofhir Converter core code for the IZ Gateway Transformation Service</description>
-	<url>http://github.com/IZGateway/v2tofhir</url>
+	<url>https://github.com/IZGateway/v2tofhir</url>
 	<inceptionYear>2025</inceptionYear>
 	<licenses>
 		<license>
@@ -421,11 +421,35 @@
 							<report>index</report>
 							<report>dependencies</report>
 							<report>dependency-info</report>
+							<!-- Known warning (IGDD-2974): this report lists every version that the imported
+								 BOMs manage, including libraries that v2tofhir does not use. Spring Boot
+								 imports the Apache Pulsar BOM (pulsar-bom 4.2.x). That BOM lists the
+								 tiered-storage-* modules, but Pulsar did not publish them to Maven Central
+								 after 4.0.14 (HTTP 404). Maven then prints
+								 "Unable to create Maven project for org.apache.pulsar:tiered-storage-*:jar".
+								 We do not use Pulsar. The warning is harmless and cannot be fixed in this
+								 repository. To remove it, remove this report from the list, or pin those
+								 artifacts to 4.0.14 in the izgw-bom dependencyManagement. -->
 							<report>dependency-management</report>
 							<report>distribution-management</report>
 							<report>licenses</report>
 							<report>scm</report>
 							<report>summary</report>
+						</reports>
+					</reportSet>
+				</reportSets>
+			</plugin>
+			<plugin>
+				<!-- Source cross-reference for the site. Without it the surefire report prints
+					 "Unable to locate Test Source XRef to link to" (IGDD-2974). -->
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jxr-plugin</artifactId>
+				<version>3.6.0</version>
+				<reportSets>
+					<reportSet>
+						<reports>
+							<report>jxr</report>
+							<report>test-jxr</report>
 						</reports>
 					</reportSet>
 				</reportSets>

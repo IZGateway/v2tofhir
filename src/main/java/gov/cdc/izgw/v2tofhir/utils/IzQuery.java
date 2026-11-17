@@ -90,7 +90,7 @@ public class IzQuery {
 	/**
 	 * Create a new Query for an Immunization or ImmunizationRecommendation
 	 * @param qpd	The QPD to create
-	 * @throws HL7Exception
+	 * @throws HL7Exception If a field cannot be read from the QPD segment
 	 */
 	public IzQuery(QPD qpd) throws HL7Exception {
 		this.qpd = qpd;

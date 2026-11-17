@@ -89,6 +89,7 @@ public abstract class AbstractStructureParser {
 	 */
 	protected abstract List<FieldHandler> getFieldHandlers(); 
 
+	/** The message parser that uses this structure parser. */
 	protected final Parser<Message, Structure> structureParser;
 	private final String structureName;
 

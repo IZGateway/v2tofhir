@@ -34,6 +34,9 @@ class InfrastructureTests extends TestBase {
 			}
 		}
 	}
+	// TerminologyMapper has no system alias lookup yet (IGDD-3747), so this test still
+	// uses the deprecated utils.Systems stub.
+	@SuppressWarnings("deprecation")
 	static List<List<String>> getCodeSystemAliases() {
 		return Systems.getCodeSystemAliases();
 	}

@@ -34,6 +34,10 @@ import ca.uhn.fhir.parser.IParser;
  *
  */
 public class YamlUtils {
+    /** Create a YamlUtils. All methods are static, so an instance is not needed. */
+    public YamlUtils() {
+        // Nothing to initialize
+    }
 
     /**
      * Create Json from a Yaml String
