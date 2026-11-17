@@ -1,0 +1,544 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="" lang="">
+<head><meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<title>AddressParser xref</title>
+<link type="text/css" rel="stylesheet" href="../../../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../../../apidocs/gov/cdc/izgw/v2tofhir/datatype/AddressParser.html">View Javadoc</a></div><pre>
+<a class="jxr_linenumber" name="L1" href="#L1">1</a>   <strong class="jxr_keyword">package</strong> gov.cdc.izgw.v2tofhir.datatype;
+<a class="jxr_linenumber" name="L2" href="#L2">2</a>   
+<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <strong class="jxr_keyword">import</strong> java.util.Iterator;
+<a class="jxr_linenumber" name="L4" href="#L4">4</a>   <strong class="jxr_keyword">import</strong> java.util.LinkedHashMap;
+<a class="jxr_linenumber" name="L5" href="#L5">5</a>   <strong class="jxr_keyword">import</strong> java.util.Map;
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   <strong class="jxr_keyword">import</strong> java.util.regex.Pattern;
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <strong class="jxr_keyword">import</strong> org.apache.commons.lang3.StringUtils;
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <strong class="jxr_keyword">import</strong> org.hl7.fhir.r4.model.Address;
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>  <strong class="jxr_keyword">import</strong> org.hl7.fhir.r4.model.Address.AddressUse;
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>  <strong class="jxr_keyword">import</strong> org.hl7.fhir.r4.model.StringType;
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>  
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <strong class="jxr_keyword">import</strong> ca.uhn.hl7v2.model.Composite;
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>  <strong class="jxr_keyword">import</strong> ca.uhn.hl7v2.model.Primitive;
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>  <strong class="jxr_keyword">import</strong> ca.uhn.hl7v2.model.Type;
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>  <strong class="jxr_keyword">import</strong> gov.cdc.izgw.v2tofhir.converter.DatatypeConverter;
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>  <strong class="jxr_keyword">import</strong> gov.cdc.izgw.v2tofhir.utils.ParserUtils;
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>  <strong class="jxr_keyword">import</strong> lombok.extern.slf4j.Slf4j;
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>  
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>  <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>  <em class="jxr_javadoccomment"> * AddressParser is a parser for addresses.</em>
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>  <em class="jxr_javadoccomment"> * </em>
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>  <em class="jxr_javadoccomment"> * @author Audacious Inquiry</em>
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>  <em class="jxr_javadoccomment"> */</em>
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>  @Slf4j
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a name="AddressParser" href="../../../../../gov/cdc/izgw/v2tofhir/datatype/AddressParser.html#AddressParser">AddressParser</a> <strong class="jxr_keyword">implements</strong> DatatypeParser&lt;Address&gt; {
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>  	<strong class="jxr_keyword">static</strong> {
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>  		log.debug(<span class="jxr_string">"{} loaded"</span>, AddressParser.<strong class="jxr_keyword">class</strong>.getName());
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>  	}
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> Pattern caPostalCode1 = Pattern
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>  			.compile(<span class="jxr_string">"^[a-zA-Z]&#92;&#92;d[a-zA-Z]$"</span>);
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>  
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> Pattern caPostalCode2 = Pattern
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>  			.compile(<span class="jxr_string">"^&#92;&#92;d[a-zA-Z]&#92;&#92;d$"</span>);
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>  
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> Pattern countryPattern = ParserUtils.toPattern(<span class="jxr_string">"US"</span>,
+<a class="jxr_linenumber" name="L37" href="#L37">37</a>  			<span class="jxr_string">"U.S."</span>, <span class="jxr_string">"U.S.A."</span>, <span class="jxr_string">"USA"</span>, <span class="jxr_string">"United States"</span>,
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>  			<span class="jxr_string">"United States of America"</span>, <span class="jxr_string">"CN"</span>, <span class="jxr_string">"Canada"</span>, <span class="jxr_string">"MX"</span>, <span class="jxr_string">"Mexico"</span>, <span class="jxr_string">"BZ"</span>,
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>  			<span class="jxr_string">"BELIZE"</span>, <span class="jxr_string">"CR"</span>, <span class="jxr_string">"COSTA RICA"</span>, <span class="jxr_string">"CZ"</span>, <span class="jxr_string">"CANAL ZONE"</span>, <span class="jxr_string">"SV"</span>,
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>  			<span class="jxr_string">"EL SALVADOR"</span>, <span class="jxr_string">"GT"</span>, <span class="jxr_string">"GUATEMALA"</span>, <span class="jxr_string">"HN"</span>, <span class="jxr_string">"HONDURAS"</span>, <span class="jxr_string">"NI"</span>,
+<a class="jxr_linenumber" name="L41" href="#L41">41</a>  			<span class="jxr_string">"NICARAGUA"</span>, <span class="jxr_string">"PA"</span>, <span class="jxr_string">"PANAMA"</span>);
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>  
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> Pattern postalCodePattern = Pattern.compile(
+<a class="jxr_linenumber" name="L44" href="#L44">44</a>  			<span class="jxr_string">"^&#92;&#92;d{5}$|^&#92;&#92;d{5}-&#92;&#92;d{4}$|^[a-zA-Z]&#92;&#92;d[a-zA-Z]-&#92;&#92;d[a-zA-Z]&#92;&#92;d$"</span>);
+<a class="jxr_linenumber" name="L45" href="#L45">45</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> String[] states = {
+<a class="jxr_linenumber" name="L46" href="#L46">46</a>  			<span class="jxr_string">"AL"</span>, <span class="jxr_string">"Alabama"</span>, <span class="jxr_string">"AK"</span>, <span class="jxr_string">"Alaska"</span>, <span class="jxr_string">"AZ"</span>, <span class="jxr_string">"Arizona"</span>, <span class="jxr_string">"AR"</span>, <span class="jxr_string">"Arkansas"</span>, <span class="jxr_string">"AS"</span>,
+<a class="jxr_linenumber" name="L47" href="#L47">47</a>  			<span class="jxr_string">"American Samoa"</span>, <span class="jxr_string">"CA"</span>, <span class="jxr_string">"California"</span>, <span class="jxr_string">"CO"</span>, <span class="jxr_string">"Colorado"</span>, <span class="jxr_string">"CT"</span>,
+<a class="jxr_linenumber" name="L48" href="#L48">48</a>  			<span class="jxr_string">"Connecticut"</span>, <span class="jxr_string">"DE"</span>, <span class="jxr_string">"Delaware"</span>, <span class="jxr_string">"DC"</span>, <span class="jxr_string">"District of Columbia"</span>, <span class="jxr_string">"FL"</span>,
+<a class="jxr_linenumber" name="L49" href="#L49">49</a>  			<span class="jxr_string">"Florida"</span>, <span class="jxr_string">"GA"</span>, <span class="jxr_string">"Georgia"</span>, <span class="jxr_string">"GU"</span>, <span class="jxr_string">"Guam"</span>, <span class="jxr_string">"HI"</span>, <span class="jxr_string">"Hawaii"</span>, <span class="jxr_string">"ID"</span>,
+<a class="jxr_linenumber" name="L50" href="#L50">50</a>  			<span class="jxr_string">"Idaho"</span>, <span class="jxr_string">"IL"</span>, <span class="jxr_string">"Illinois"</span>, <span class="jxr_string">"IN"</span>, <span class="jxr_string">"Indiana"</span>, <span class="jxr_string">"IA"</span>, <span class="jxr_string">"Iowa"</span>, <span class="jxr_string">"KS"</span>,
+<a class="jxr_linenumber" name="L51" href="#L51">51</a>  			<span class="jxr_string">"Kansas"</span>, <span class="jxr_string">"KY"</span>, <span class="jxr_string">"Kentucky"</span>, <span class="jxr_string">"LA"</span>, <span class="jxr_string">"Louisiana"</span>, <span class="jxr_string">"ME"</span>, <span class="jxr_string">"Maine"</span>, <span class="jxr_string">"MD"</span>,
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>  			<span class="jxr_string">"Maryland"</span>, <span class="jxr_string">"MA"</span>, <span class="jxr_string">"Massachusetts"</span>, <span class="jxr_string">"MI"</span>, <span class="jxr_string">"Michigan"</span>, <span class="jxr_string">"MN"</span>,
+<a class="jxr_linenumber" name="L53" href="#L53">53</a>  			<span class="jxr_string">"Minnesota"</span>, <span class="jxr_string">"MS"</span>, <span class="jxr_string">"Mississippi"</span>, <span class="jxr_string">"MO"</span>, <span class="jxr_string">"Missouri"</span>, <span class="jxr_string">"MT"</span>, <span class="jxr_string">"Montana"</span>,
+<a class="jxr_linenumber" name="L54" href="#L54">54</a>  			<span class="jxr_string">"NE"</span>, <span class="jxr_string">"Nebraska"</span>, <span class="jxr_string">"NV"</span>, <span class="jxr_string">"Nevada"</span>, <span class="jxr_string">"NH"</span>, <span class="jxr_string">"New Hampshire"</span>, <span class="jxr_string">"NJ"</span>,
+<a class="jxr_linenumber" name="L55" href="#L55">55</a>  			<span class="jxr_string">"New Jersey"</span>, <span class="jxr_string">"NM"</span>, <span class="jxr_string">"New Mexico"</span>, <span class="jxr_string">"NY"</span>, <span class="jxr_string">"New York"</span>, <span class="jxr_string">"NC"</span>,
+<a class="jxr_linenumber" name="L56" href="#L56">56</a>  			<span class="jxr_string">"North Carolina"</span>, <span class="jxr_string">"ND"</span>, <span class="jxr_string">"North Dakota"</span>, <span class="jxr_string">"MP"</span>,
+<a class="jxr_linenumber" name="L57" href="#L57">57</a>  			<span class="jxr_string">"Northern Mariana Islands"</span>, <span class="jxr_string">"OH"</span>, <span class="jxr_string">"Ohio"</span>, <span class="jxr_string">"OK"</span>, <span class="jxr_string">"Oklahoma"</span>, <span class="jxr_string">"OR"</span>,
+<a class="jxr_linenumber" name="L58" href="#L58">58</a>  			<span class="jxr_string">"Oregon"</span>, <span class="jxr_string">"PA"</span>, <span class="jxr_string">"Pennsylvania"</span>, <span class="jxr_string">"PR"</span>, <span class="jxr_string">"Puerto Rico"</span>, <span class="jxr_string">"RI"</span>,
+<a class="jxr_linenumber" name="L59" href="#L59">59</a>  			<span class="jxr_string">"Rhode Island"</span>, <span class="jxr_string">"SC"</span>, <span class="jxr_string">"South Carolina"</span>, <span class="jxr_string">"SD"</span>, <span class="jxr_string">"South Dakota"</span>, <span class="jxr_string">"TN"</span>,
+<a class="jxr_linenumber" name="L60" href="#L60">60</a>  			<span class="jxr_string">"Tennessee"</span>, <span class="jxr_string">"TX"</span>, <span class="jxr_string">"Texas"</span>, <span class="jxr_string">"TT"</span>, <span class="jxr_string">"Trust Territories"</span>, <span class="jxr_string">"UT"</span>, <span class="jxr_string">"Utah"</span>,
+<a class="jxr_linenumber" name="L61" href="#L61">61</a>  			<span class="jxr_string">"VT"</span>, <span class="jxr_string">"Vermont"</span>, <span class="jxr_string">"VA"</span>, <span class="jxr_string">"Virginia"</span>, <span class="jxr_string">"VI"</span>, <span class="jxr_string">"Virgin Islands"</span>, <span class="jxr_string">"WA"</span>,
+<a class="jxr_linenumber" name="L62" href="#L62">62</a>  			<span class="jxr_string">"Washington"</span>, <span class="jxr_string">"WV"</span>, <span class="jxr_string">"West Virginia"</span>, <span class="jxr_string">"WI"</span>, <span class="jxr_string">"Wisconsin"</span>, <span class="jxr_string">"WY"</span>,
+<a class="jxr_linenumber" name="L63" href="#L63">63</a>  			<span class="jxr_string">"Wyoming"</span>, <span class="jxr_string">"Newfoundland and Labrador"</span>, <span class="jxr_string">"Newfoundland"</span>, <span class="jxr_string">"Labrador"</span>,
+<a class="jxr_linenumber" name="L64" href="#L64">64</a>  			<span class="jxr_string">"NL"</span>, <span class="jxr_string">"Prince Edward Island"</span>, <span class="jxr_string">"PE"</span>, <span class="jxr_string">"Nova Scotia"</span>, <span class="jxr_string">"NS"</span>,
+<a class="jxr_linenumber" name="L65" href="#L65">65</a>  			<span class="jxr_string">"New Brunswick"</span>, <span class="jxr_string">"NB"</span>, <span class="jxr_string">"Quebec"</span>, <span class="jxr_string">"QC"</span>, <span class="jxr_string">"Ontario"</span>, <span class="jxr_string">"ON"</span>, <span class="jxr_string">"Manitoba"</span>,
+<a class="jxr_linenumber" name="L66" href="#L66">66</a>  			<span class="jxr_string">"MB"</span>, <span class="jxr_string">"Saskatchewan"</span>, <span class="jxr_string">"SK"</span>, <span class="jxr_string">"Alberta"</span>, <span class="jxr_string">"AB"</span>, <span class="jxr_string">"British Columbia"</span>,
+<a class="jxr_linenumber" name="L67" href="#L67">67</a>  			<span class="jxr_string">"BC"</span>, <span class="jxr_string">"Yukon"</span>, <span class="jxr_string">"YT"</span>, <span class="jxr_string">"Northwest Territories"</span>, <span class="jxr_string">"NT"</span>, <span class="jxr_string">"Nunavut"</span>, <span class="jxr_string">"NU"</span>,
+<a class="jxr_linenumber" name="L68" href="#L68">68</a>  			<span class="jxr_string">"AG"</span>, <span class="jxr_string">"AGUASCALIENTES"</span>, <span class="jxr_string">"BN"</span>, <span class="jxr_string">"BAJA CALIFORNIA NORTE"</span>, <span class="jxr_string">"BS"</span>,
+<a class="jxr_linenumber" name="L69" href="#L69">69</a>  			<span class="jxr_string">"BAJA CALIFORNIA SUR"</span>, <span class="jxr_string">"CH"</span>, <span class="jxr_string">"COAHUILA"</span>, <span class="jxr_string">"CI"</span>, <span class="jxr_string">"CHIHUAHUA"</span>, <span class="jxr_string">"CL"</span>,
+<a class="jxr_linenumber" name="L70" href="#L70">70</a>  			<span class="jxr_string">"COLIMA"</span>, <span class="jxr_string">"CP"</span>, <span class="jxr_string">"CAMPECHE"</span>, <span class="jxr_string">"CS"</span>, <span class="jxr_string">"CHIAPAS"</span>, <span class="jxr_string">"DF"</span>,
+<a class="jxr_linenumber" name="L71" href="#L71">71</a>  			<span class="jxr_string">"DISTRICTO FEDERAL"</span>, <span class="jxr_string">"DG"</span>, <span class="jxr_string">"DURANGO"</span>, <span class="jxr_string">"GE"</span>, <span class="jxr_string">"GUERRERO"</span>, <span class="jxr_string">"GJ"</span>,
+<a class="jxr_linenumber" name="L72" href="#L72">72</a>  			<span class="jxr_string">"GUANAJUATO"</span>, <span class="jxr_string">"HD"</span>, <span class="jxr_string">"HIDALGO"</span>, <span class="jxr_string">"JA"</span>, <span class="jxr_string">"JALISCO"</span>, <span class="jxr_string">"MC"</span>, <span class="jxr_string">"MICHOACAN"</span>,
+<a class="jxr_linenumber" name="L73" href="#L73">73</a>  			<span class="jxr_string">"MR"</span>, <span class="jxr_string">"MORELOS"</span>, <span class="jxr_string">"MX"</span>, <span class="jxr_string">"MEXICO"</span>, <span class="jxr_string">"NA"</span>, <span class="jxr_string">"NAYARIT"</span>, <span class="jxr_string">"NL"</span>,
+<a class="jxr_linenumber" name="L74" href="#L74">74</a>  			<span class="jxr_string">"NUEVO LEON"</span>, <span class="jxr_string">"OA"</span>, <span class="jxr_string">"OAXACA"</span>, <span class="jxr_string">"PU"</span>, <span class="jxr_string">"PUEBLA"</span>, <span class="jxr_string">"QE"</span>, <span class="jxr_string">"QUERETARO"</span>,
+<a class="jxr_linenumber" name="L75" href="#L75">75</a>  			<span class="jxr_string">"QI"</span>, <span class="jxr_string">"QUINTANA ROO"</span>, <span class="jxr_string">"SI"</span>, <span class="jxr_string">"SINALOA"</span>, <span class="jxr_string">"SL"</span>, <span class="jxr_string">"SAN LUIS POTOSI"</span>,
+<a class="jxr_linenumber" name="L76" href="#L76">76</a>  			<span class="jxr_string">"SO"</span>, <span class="jxr_string">"SONORA"</span>, <span class="jxr_string">"TA"</span>, <span class="jxr_string">"TAMAULIPAS"</span>, <span class="jxr_string">"TB"</span>, <span class="jxr_string">"TABASCO"</span>, <span class="jxr_string">"TL"</span>,
+<a class="jxr_linenumber" name="L77" href="#L77">77</a>  			<span class="jxr_string">"TLAXCALA"</span>, <span class="jxr_string">"VC"</span>, <span class="jxr_string">"VERACRUZ"</span>, <span class="jxr_string">"YU"</span>, <span class="jxr_string">"YUCATAN"</span>, <span class="jxr_string">"ZA"</span>, <span class="jxr_string">"ZACATECA"</span>
+<a class="jxr_linenumber" name="L78" href="#L78">78</a>  	};
+<a class="jxr_linenumber" name="L79" href="#L79">79</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> Pattern statePattern = ParserUtils.toPattern(states);
+<a class="jxr_linenumber" name="L80" href="#L80">80</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> Map&lt;String, String[]&gt; STATE_MAP = <strong class="jxr_keyword">new</strong> LinkedHashMap&lt;&gt;();
+<a class="jxr_linenumber" name="L81" href="#L81">81</a>  	<strong class="jxr_keyword">static</strong> {
+<a class="jxr_linenumber" name="L82" href="#L82">82</a>  		<strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; states.length; i += 2) {
+<a class="jxr_linenumber" name="L83" href="#L83">83</a>  			String[] stateAndAbbreviation = { states[i], states[i + 1] };
+<a class="jxr_linenumber" name="L84" href="#L84">84</a>  			STATE_MAP.put(stateAndAbbreviation[0], stateAndAbbreviation);
+<a class="jxr_linenumber" name="L85" href="#L85">85</a>  			STATE_MAP.put(stateAndAbbreviation[1].toUpperCase(), stateAndAbbreviation);
+<a class="jxr_linenumber" name="L86" href="#L86">86</a>  		}
+<a class="jxr_linenumber" name="L87" href="#L87">87</a>  	}
+<a class="jxr_linenumber" name="L88" href="#L88">88</a>  
+<a class="jxr_linenumber" name="L89" href="#L89">89</a>  	<em class="jxr_comment">// See https://pe.usps.com/text/pub28/28apc_002.htm</em>
+<a class="jxr_linenumber" name="L90" href="#L90">90</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> Pattern streetPattern = ParserUtils.toPattern(<span class="jxr_string">"ALLEE"</span>,
+<a class="jxr_linenumber" name="L91" href="#L91">91</a>  			<span class="jxr_string">"ALLEY"</span>, <span class="jxr_string">"ALLY"</span>, <span class="jxr_string">"ALY"</span>, <span class="jxr_string">"ANEX"</span>, <span class="jxr_string">"ANNEX"</span>, <span class="jxr_string">"ANNX"</span>, <span class="jxr_string">"ANX"</span>, <span class="jxr_string">"ARC"</span>,
+<a class="jxr_linenumber" name="L92" href="#L92">92</a>  			<span class="jxr_string">"ARCADE"</span>, <span class="jxr_string">"AV"</span>, <span class="jxr_string">"AVE"</span>, <span class="jxr_string">"AVEN"</span>, <span class="jxr_string">"AVENU"</span>, <span class="jxr_string">"AVENUE"</span>, <span class="jxr_string">"AVN"</span>, <span class="jxr_string">"AVNUE"</span>,
+<a class="jxr_linenumber" name="L93" href="#L93">93</a>  			<span class="jxr_string">"BAYOO"</span>, <span class="jxr_string">"BAYOU"</span>, <span class="jxr_string">"BCH"</span>, <span class="jxr_string">"BEACH"</span>, <span class="jxr_string">"BEND"</span>, <span class="jxr_string">"BG"</span>, <span class="jxr_string">"BGS"</span>, <span class="jxr_string">"BLF"</span>,
+<a class="jxr_linenumber" name="L94" href="#L94">94</a>  			<span class="jxr_string">"BLFS"</span>, <span class="jxr_string">"BLUF"</span>, <span class="jxr_string">"BLUFF"</span>, <span class="jxr_string">"BLUFFS"</span>, <span class="jxr_string">"BLVD"</span>, <span class="jxr_string">"BND"</span>, <span class="jxr_string">"BOT"</span>, <span class="jxr_string">"BOTTM"</span>,
+<a class="jxr_linenumber" name="L95" href="#L95">95</a>  			<span class="jxr_string">"BOTTOM"</span>, <span class="jxr_string">"BOUL"</span>, <span class="jxr_string">"BOULEVARD"</span>, <span class="jxr_string">"BOULV"</span>, <span class="jxr_string">"BR"</span>, <span class="jxr_string">"BRANCH"</span>, <span class="jxr_string">"BRDGE"</span>,
+<a class="jxr_linenumber" name="L96" href="#L96">96</a>  			<span class="jxr_string">"BRG"</span>, <span class="jxr_string">"BRIDGE"</span>, <span class="jxr_string">"BRK"</span>, <span class="jxr_string">"BRKS"</span>, <span class="jxr_string">"BRNCH"</span>, <span class="jxr_string">"BROOK"</span>, <span class="jxr_string">"BROOKS"</span>, <span class="jxr_string">"BTM"</span>,
+<a class="jxr_linenumber" name="L97" href="#L97">97</a>  			<span class="jxr_string">"BURG"</span>, <span class="jxr_string">"BURGS"</span>, <span class="jxr_string">"BYP"</span>, <span class="jxr_string">"BYPA"</span>, <span class="jxr_string">"BYPAS"</span>, <span class="jxr_string">"BYPASS"</span>, <span class="jxr_string">"BYPS"</span>, <span class="jxr_string">"BYU"</span>,
+<a class="jxr_linenumber" name="L98" href="#L98">98</a>  			<span class="jxr_string">"CAMP"</span>, <span class="jxr_string">"CANYN"</span>, <span class="jxr_string">"CANYON"</span>, <span class="jxr_string">"CAPE"</span>, <span class="jxr_string">"CAUSEWAY"</span>, <span class="jxr_string">"CAUSWA"</span>, <span class="jxr_string">"CEN"</span>,
+<a class="jxr_linenumber" name="L99" href="#L99">99</a>  			<span class="jxr_string">"CENT"</span>, <span class="jxr_string">"CENTER"</span>, <span class="jxr_string">"CENTERS"</span>, <span class="jxr_string">"CENTR"</span>, <span class="jxr_string">"CENTRE"</span>, <span class="jxr_string">"CIR"</span>, <span class="jxr_string">"CIRC"</span>,
+<a class="jxr_linenumber" name="L100" href="#L100">100</a> 			<span class="jxr_string">"CIRCL"</span>, <span class="jxr_string">"CIRCLE"</span>, <span class="jxr_string">"CIRCLES"</span>, <span class="jxr_string">"CIRS"</span>, <span class="jxr_string">"CLB"</span>, <span class="jxr_string">"CLF"</span>, <span class="jxr_string">"CLFS"</span>, <span class="jxr_string">"CLIFF"</span>,
+<a class="jxr_linenumber" name="L101" href="#L101">101</a> 			<span class="jxr_string">"CLIFFS"</span>, <span class="jxr_string">"CLUB"</span>, <span class="jxr_string">"CMN"</span>, <span class="jxr_string">"CMNS"</span>, <span class="jxr_string">"CMP"</span>, <span class="jxr_string">"CNTER"</span>, <span class="jxr_string">"CNTR"</span>, <span class="jxr_string">"CNYN"</span>,
+<a class="jxr_linenumber" name="L102" href="#L102">102</a> 			<span class="jxr_string">"COMMON"</span>, <span class="jxr_string">"COMMONS"</span>, <span class="jxr_string">"COR"</span>, <span class="jxr_string">"CORNER"</span>, <span class="jxr_string">"CORNERS"</span>, <span class="jxr_string">"CORS"</span>, <span class="jxr_string">"COURSE"</span>,
+<a class="jxr_linenumber" name="L103" href="#L103">103</a> 			<span class="jxr_string">"COURT"</span>, <span class="jxr_string">"COURTS"</span>, <span class="jxr_string">"COVE"</span>, <span class="jxr_string">"COVES"</span>, <span class="jxr_string">"CP"</span>, <span class="jxr_string">"CPE"</span>, <span class="jxr_string">"CRCL"</span>, <span class="jxr_string">"CRCLE"</span>,
+<a class="jxr_linenumber" name="L104" href="#L104">104</a> 			<span class="jxr_string">"CREEK"</span>, <span class="jxr_string">"CRES"</span>, <span class="jxr_string">"CRESCENT"</span>, <span class="jxr_string">"CREST"</span>, <span class="jxr_string">"CRK"</span>, <span class="jxr_string">"CROSSING"</span>,
+<a class="jxr_linenumber" name="L105" href="#L105">105</a> 			<span class="jxr_string">"CROSSROAD"</span>, <span class="jxr_string">"CROSSROADS"</span>, <span class="jxr_string">"CRSE"</span>, <span class="jxr_string">"CRSENT"</span>, <span class="jxr_string">"CRSNT"</span>, <span class="jxr_string">"CRSSNG"</span>,
+<a class="jxr_linenumber" name="L106" href="#L106">106</a> 			<span class="jxr_string">"CRST"</span>, <span class="jxr_string">"CSWY"</span>, <span class="jxr_string">"CT"</span>, <span class="jxr_string">"CTR"</span>, <span class="jxr_string">"CTRS"</span>, <span class="jxr_string">"CTS"</span>, <span class="jxr_string">"CURV"</span>, <span class="jxr_string">"CURVE"</span>, <span class="jxr_string">"CV"</span>,
+<a class="jxr_linenumber" name="L107" href="#L107">107</a> 			<span class="jxr_string">"CVS"</span>, <span class="jxr_string">"CYN"</span>, <span class="jxr_string">"DALE"</span>, <span class="jxr_string">"DAM"</span>, <span class="jxr_string">"DIV"</span>, <span class="jxr_string">"DIVIDE"</span>, <span class="jxr_string">"DL"</span>, <span class="jxr_string">"DM"</span>, <span class="jxr_string">"DR"</span>,
+<a class="jxr_linenumber" name="L108" href="#L108">108</a> 			<span class="jxr_string">"DRIV"</span>, <span class="jxr_string">"DRIVE"</span>, <span class="jxr_string">"DRIVES"</span>, <span class="jxr_string">"DRS"</span>, <span class="jxr_string">"DRV"</span>, <span class="jxr_string">"DV"</span>, <span class="jxr_string">"DVD"</span>, <span class="jxr_string">"EST"</span>,
+<a class="jxr_linenumber" name="L109" href="#L109">109</a> 			<span class="jxr_string">"ESTATE"</span>, <span class="jxr_string">"ESTATES"</span>, <span class="jxr_string">"ESTS"</span>, <span class="jxr_string">"EXP"</span>, <span class="jxr_string">"EXPR"</span>, <span class="jxr_string">"EXPRESS"</span>, <span class="jxr_string">"EXPRESSWAY"</span>,
+<a class="jxr_linenumber" name="L110" href="#L110">110</a> 			<span class="jxr_string">"EXPW"</span>, <span class="jxr_string">"EXPY"</span>, <span class="jxr_string">"EXT"</span>, <span class="jxr_string">"EXTENSION"</span>, <span class="jxr_string">"EXTENSIONS"</span>, <span class="jxr_string">"EXTN"</span>, <span class="jxr_string">"EXTNSN"</span>,
+<a class="jxr_linenumber" name="L111" href="#L111">111</a> 			<span class="jxr_string">"EXTS"</span>, <span class="jxr_string">"FALL"</span>, <span class="jxr_string">"FALLS"</span>, <span class="jxr_string">"FERRY"</span>, <span class="jxr_string">"FIELD"</span>, <span class="jxr_string">"FIELDS"</span>, <span class="jxr_string">"FLAT"</span>,
+<a class="jxr_linenumber" name="L112" href="#L112">112</a> 			<span class="jxr_string">"FLATS"</span>, <span class="jxr_string">"FLD"</span>, <span class="jxr_string">"FLDS"</span>, <span class="jxr_string">"FLS"</span>, <span class="jxr_string">"FLT"</span>, <span class="jxr_string">"FLTS"</span>, <span class="jxr_string">"FORD"</span>, <span class="jxr_string">"FORDS"</span>,
+<a class="jxr_linenumber" name="L113" href="#L113">113</a> 			<span class="jxr_string">"FOREST"</span>, <span class="jxr_string">"FORESTS"</span>, <span class="jxr_string">"FORG"</span>, <span class="jxr_string">"FORGE"</span>, <span class="jxr_string">"FORGES"</span>, <span class="jxr_string">"FORK"</span>, <span class="jxr_string">"FORKS"</span>,
+<a class="jxr_linenumber" name="L114" href="#L114">114</a> 			<span class="jxr_string">"FORT"</span>, <span class="jxr_string">"FRD"</span>, <span class="jxr_string">"FRDS"</span>, <span class="jxr_string">"FREEWAY"</span>, <span class="jxr_string">"FREEWY"</span>, <span class="jxr_string">"FRG"</span>, <span class="jxr_string">"FRGS"</span>, <span class="jxr_string">"FRK"</span>,
+<a class="jxr_linenumber" name="L115" href="#L115">115</a> 			<span class="jxr_string">"FRKS"</span>, <span class="jxr_string">"FRRY"</span>, <span class="jxr_string">"FRST"</span>, <span class="jxr_string">"FRT"</span>, <span class="jxr_string">"FRWAY"</span>, <span class="jxr_string">"FRWY"</span>, <span class="jxr_string">"FRY"</span>, <span class="jxr_string">"FT"</span>, <span class="jxr_string">"FWY"</span>,
+<a class="jxr_linenumber" name="L116" href="#L116">116</a> 			<span class="jxr_string">"GARDEN"</span>, <span class="jxr_string">"GARDENS"</span>, <span class="jxr_string">"GARDN"</span>, <span class="jxr_string">"GATEWAY"</span>, <span class="jxr_string">"GATEWY"</span>, <span class="jxr_string">"GATWAY"</span>, <span class="jxr_string">"GDN"</span>,
+<a class="jxr_linenumber" name="L117" href="#L117">117</a> 			<span class="jxr_string">"GDNS"</span>, <span class="jxr_string">"GLEN"</span>, <span class="jxr_string">"GLENS"</span>, <span class="jxr_string">"GLN"</span>, <span class="jxr_string">"GLNS"</span>, <span class="jxr_string">"GRDEN"</span>, <span class="jxr_string">"GRDN"</span>, <span class="jxr_string">"GRDNS"</span>,
+<a class="jxr_linenumber" name="L118" href="#L118">118</a> 			<span class="jxr_string">"GREEN"</span>, <span class="jxr_string">"GREENS"</span>, <span class="jxr_string">"GRN"</span>, <span class="jxr_string">"GRNS"</span>, <span class="jxr_string">"GROV"</span>, <span class="jxr_string">"GROVE"</span>, <span class="jxr_string">"GROVES"</span>, <span class="jxr_string">"GRV"</span>,
+<a class="jxr_linenumber" name="L119" href="#L119">119</a> 			<span class="jxr_string">"GRVS"</span>, <span class="jxr_string">"GTWAY"</span>, <span class="jxr_string">"GTWY"</span>, <span class="jxr_string">"HARB"</span>, <span class="jxr_string">"HARBOR"</span>, <span class="jxr_string">"HARBORS"</span>, <span class="jxr_string">"HARBR"</span>,
+<a class="jxr_linenumber" name="L120" href="#L120">120</a> 			<span class="jxr_string">"HAVEN"</span>, <span class="jxr_string">"HBR"</span>, <span class="jxr_string">"HBRS"</span>, <span class="jxr_string">"HEIGHTS"</span>, <span class="jxr_string">"HIGHWAY"</span>, <span class="jxr_string">"HIGHWY"</span>, <span class="jxr_string">"HILL"</span>,
+<a class="jxr_linenumber" name="L121" href="#L121">121</a> 			<span class="jxr_string">"HILLS"</span>, <span class="jxr_string">"HIWAY"</span>, <span class="jxr_string">"HIWY"</span>, <span class="jxr_string">"HL"</span>, <span class="jxr_string">"HLLW"</span>, <span class="jxr_string">"HLS"</span>, <span class="jxr_string">"HOLLOW"</span>, <span class="jxr_string">"HOLLOWS"</span>,
+<a class="jxr_linenumber" name="L122" href="#L122">122</a> 			<span class="jxr_string">"HOLW"</span>, <span class="jxr_string">"HOLWS"</span>, <span class="jxr_string">"HRBOR"</span>, <span class="jxr_string">"HT"</span>, <span class="jxr_string">"HTS"</span>, <span class="jxr_string">"HVN"</span>, <span class="jxr_string">"HWAY"</span>, <span class="jxr_string">"HWY"</span>,
+<a class="jxr_linenumber" name="L123" href="#L123">123</a> 			<span class="jxr_string">"INLET"</span>, <span class="jxr_string">"INLT"</span>, <span class="jxr_string">"IS"</span>, <span class="jxr_string">"ISLAND"</span>, <span class="jxr_string">"ISLANDS"</span>, <span class="jxr_string">"ISLE"</span>, <span class="jxr_string">"ISLES"</span>,
+<a class="jxr_linenumber" name="L124" href="#L124">124</a> 			<span class="jxr_string">"ISLND"</span>, <span class="jxr_string">"ISLNDS"</span>, <span class="jxr_string">"ISS"</span>, <span class="jxr_string">"JCT"</span>, <span class="jxr_string">"JCTION"</span>, <span class="jxr_string">"JCTN"</span>, <span class="jxr_string">"JCTNS"</span>, <span class="jxr_string">"JCTS"</span>,
+<a class="jxr_linenumber" name="L125" href="#L125">125</a> 			<span class="jxr_string">"JUNCTION"</span>, <span class="jxr_string">"JUNCTIONS"</span>, <span class="jxr_string">"JUNCTN"</span>, <span class="jxr_string">"JUNCTON"</span>, <span class="jxr_string">"KEY"</span>, <span class="jxr_string">"KEYS"</span>, <span class="jxr_string">"KNL"</span>,
+<a class="jxr_linenumber" name="L126" href="#L126">126</a> 			<span class="jxr_string">"KNLS"</span>, <span class="jxr_string">"KNOL"</span>, <span class="jxr_string">"KNOLL"</span>, <span class="jxr_string">"KNOLLS"</span>, <span class="jxr_string">"KY"</span>, <span class="jxr_string">"KYS"</span>, <span class="jxr_string">"LAKE"</span>, <span class="jxr_string">"LAKES"</span>,
+<a class="jxr_linenumber" name="L127" href="#L127">127</a> 			<span class="jxr_string">"LAND"</span>, <span class="jxr_string">"LANDING"</span>, <span class="jxr_string">"LANE"</span>, <span class="jxr_string">"LCK"</span>, <span class="jxr_string">"LCKS"</span>, <span class="jxr_string">"LDG"</span>, <span class="jxr_string">"LDGE"</span>, <span class="jxr_string">"LF"</span>,
+<a class="jxr_linenumber" name="L128" href="#L128">128</a> 			<span class="jxr_string">"LGT"</span>, <span class="jxr_string">"LGTS"</span>, <span class="jxr_string">"LIGHT"</span>, <span class="jxr_string">"LIGHTS"</span>, <span class="jxr_string">"LK"</span>, <span class="jxr_string">"LKS"</span>, <span class="jxr_string">"LN"</span>, <span class="jxr_string">"LNDG"</span>,
+<a class="jxr_linenumber" name="L129" href="#L129">129</a> 			<span class="jxr_string">"LNDNG"</span>, <span class="jxr_string">"LOAF"</span>, <span class="jxr_string">"LOCK"</span>, <span class="jxr_string">"LOCKS"</span>, <span class="jxr_string">"LODG"</span>, <span class="jxr_string">"LODGE"</span>, <span class="jxr_string">"LOOP"</span>, <span class="jxr_string">"LOOPS"</span>,
+<a class="jxr_linenumber" name="L130" href="#L130">130</a> 			<span class="jxr_string">"MALL"</span>, <span class="jxr_string">"MANOR"</span>, <span class="jxr_string">"MANORS"</span>, <span class="jxr_string">"MDW"</span>, <span class="jxr_string">"MDWS"</span>, <span class="jxr_string">"MEADOW"</span>, <span class="jxr_string">"MEADOWS"</span>,
+<a class="jxr_linenumber" name="L131" href="#L131">131</a> 			<span class="jxr_string">"MEDOWS"</span>, <span class="jxr_string">"MEWS"</span>, <span class="jxr_string">"MILL"</span>, <span class="jxr_string">"MILLS"</span>, <span class="jxr_string">"MISSION"</span>, <span class="jxr_string">"MISSN"</span>, <span class="jxr_string">"ML"</span>, <span class="jxr_string">"MLS"</span>,
+<a class="jxr_linenumber" name="L132" href="#L132">132</a> 			<span class="jxr_string">"MNR"</span>, <span class="jxr_string">"MNRS"</span>, <span class="jxr_string">"MNT"</span>, <span class="jxr_string">"MNTAIN"</span>, <span class="jxr_string">"MNTN"</span>, <span class="jxr_string">"MNTNS"</span>, <span class="jxr_string">"MOTORWAY"</span>,
+<a class="jxr_linenumber" name="L133" href="#L133">133</a> 			<span class="jxr_string">"MOUNT"</span>, <span class="jxr_string">"MOUNTAIN"</span>, <span class="jxr_string">"MOUNTAINS"</span>, <span class="jxr_string">"MOUNTIN"</span>, <span class="jxr_string">"MSN"</span>, <span class="jxr_string">"MSSN"</span>, <span class="jxr_string">"MT"</span>,
+<a class="jxr_linenumber" name="L134" href="#L134">134</a> 			<span class="jxr_string">"MTIN"</span>, <span class="jxr_string">"MTN"</span>, <span class="jxr_string">"MTNS"</span>, <span class="jxr_string">"MTWY"</span>, <span class="jxr_string">"NCK"</span>, <span class="jxr_string">"NECK"</span>, <span class="jxr_string">"OPAS"</span>, <span class="jxr_string">"ORCH"</span>,
+<a class="jxr_linenumber" name="L135" href="#L135">135</a> 			<span class="jxr_string">"ORCHARD"</span>, <span class="jxr_string">"ORCHRD"</span>, <span class="jxr_string">"OVAL"</span>, <span class="jxr_string">"OVERPASS"</span>, <span class="jxr_string">"OVL"</span>, <span class="jxr_string">"PARK"</span>, <span class="jxr_string">"PARKS"</span>,
+<a class="jxr_linenumber" name="L136" href="#L136">136</a> 			<span class="jxr_string">"PARKWAY"</span>, <span class="jxr_string">"PARKWAYS"</span>, <span class="jxr_string">"PARKWY"</span>, <span class="jxr_string">"PASS"</span>, <span class="jxr_string">"PASSAGE"</span>, <span class="jxr_string">"PATH"</span>, <span class="jxr_string">"PATHS"</span>,
+<a class="jxr_linenumber" name="L137" href="#L137">137</a> 			<span class="jxr_string">"PIKE"</span>, <span class="jxr_string">"PIKES"</span>, <span class="jxr_string">"PINE"</span>, <span class="jxr_string">"PINES"</span>, <span class="jxr_string">"PKWAY"</span>, <span class="jxr_string">"PKWY"</span>, <span class="jxr_string">"PKWYS"</span>, <span class="jxr_string">"PKY"</span>,
+<a class="jxr_linenumber" name="L138" href="#L138">138</a> 			<span class="jxr_string">"PL"</span>, <span class="jxr_string">"PLACE"</span>, <span class="jxr_string">"PLAIN"</span>, <span class="jxr_string">"PLAINS"</span>, <span class="jxr_string">"PLAZA"</span>, <span class="jxr_string">"PLN"</span>, <span class="jxr_string">"PLNS"</span>, <span class="jxr_string">"PLZ"</span>,
+<a class="jxr_linenumber" name="L139" href="#L139">139</a> 			<span class="jxr_string">"PLZA"</span>, <span class="jxr_string">"PNE"</span>, <span class="jxr_string">"PNES"</span>, <span class="jxr_string">"POINT"</span>, <span class="jxr_string">"POINTS"</span>, <span class="jxr_string">"PORT"</span>, <span class="jxr_string">"PORTS"</span>, <span class="jxr_string">"PR"</span>,
+<a class="jxr_linenumber" name="L140" href="#L140">140</a> 			<span class="jxr_string">"PRAIRIE"</span>, <span class="jxr_string">"PRK"</span>, <span class="jxr_string">"PRR"</span>, <span class="jxr_string">"PRT"</span>, <span class="jxr_string">"PRTS"</span>, <span class="jxr_string">"PSGE"</span>, <span class="jxr_string">"PT"</span>, <span class="jxr_string">"PTS"</span>, <span class="jxr_string">"RAD"</span>,
+<a class="jxr_linenumber" name="L141" href="#L141">141</a> 			<span class="jxr_string">"RADIAL"</span>, <span class="jxr_string">"RADIEL"</span>, <span class="jxr_string">"RADL"</span>, <span class="jxr_string">"RAMP"</span>, <span class="jxr_string">"RANCH"</span>, <span class="jxr_string">"RANCHES"</span>, <span class="jxr_string">"RAPID"</span>,
+<a class="jxr_linenumber" name="L142" href="#L142">142</a> 			<span class="jxr_string">"RAPIDS"</span>, <span class="jxr_string">"RD"</span>, <span class="jxr_string">"RDG"</span>, <span class="jxr_string">"RDGE"</span>, <span class="jxr_string">"RDGS"</span>, <span class="jxr_string">"RDS"</span>, <span class="jxr_string">"REST"</span>, <span class="jxr_string">"RIDGE"</span>,
+<a class="jxr_linenumber" name="L143" href="#L143">143</a> 			<span class="jxr_string">"RIDGES"</span>, <span class="jxr_string">"RIV"</span>, <span class="jxr_string">"RIVER"</span>, <span class="jxr_string">"RIVR"</span>, <span class="jxr_string">"RNCH"</span>, <span class="jxr_string">"RNCHS"</span>, <span class="jxr_string">"ROAD"</span>, <span class="jxr_string">"ROADS"</span>,
+<a class="jxr_linenumber" name="L144" href="#L144">144</a> 			<span class="jxr_string">"ROUTE"</span>, <span class="jxr_string">"ROW"</span>, <span class="jxr_string">"RPD"</span>, <span class="jxr_string">"RPDS"</span>, <span class="jxr_string">"RST"</span>, <span class="jxr_string">"RTE"</span>, <span class="jxr_string">"RUE"</span>, <span class="jxr_string">"RUN"</span>, <span class="jxr_string">"RVR"</span>,
+<a class="jxr_linenumber" name="L145" href="#L145">145</a> 			<span class="jxr_string">"SHL"</span>, <span class="jxr_string">"SHLS"</span>, <span class="jxr_string">"SHOAL"</span>, <span class="jxr_string">"SHOALS"</span>, <span class="jxr_string">"SHOAR"</span>, <span class="jxr_string">"SHOARS"</span>, <span class="jxr_string">"SHORE"</span>,
+<a class="jxr_linenumber" name="L146" href="#L146">146</a> 			<span class="jxr_string">"SHORES"</span>, <span class="jxr_string">"SHR"</span>, <span class="jxr_string">"SHRS"</span>, <span class="jxr_string">"SKWY"</span>, <span class="jxr_string">"SKYWAY"</span>, <span class="jxr_string">"SMT"</span>, <span class="jxr_string">"SPG"</span>, <span class="jxr_string">"SPGS"</span>,
+<a class="jxr_linenumber" name="L147" href="#L147">147</a> 			<span class="jxr_string">"SPNG"</span>, <span class="jxr_string">"SPNGS"</span>, <span class="jxr_string">"SPRING"</span>, <span class="jxr_string">"SPRINGS"</span>, <span class="jxr_string">"SPRNG"</span>, <span class="jxr_string">"SPRNGS"</span>, <span class="jxr_string">"SPUR"</span>,
+<a class="jxr_linenumber" name="L148" href="#L148">148</a> 			<span class="jxr_string">"SPURS"</span>, <span class="jxr_string">"SQ"</span>, <span class="jxr_string">"SQR"</span>, <span class="jxr_string">"SQRE"</span>, <span class="jxr_string">"SQRS"</span>, <span class="jxr_string">"SQS"</span>, <span class="jxr_string">"SQU"</span>, <span class="jxr_string">"SQUARE"</span>,
+<a class="jxr_linenumber" name="L149" href="#L149">149</a> 			<span class="jxr_string">"SQUARES"</span>, <span class="jxr_string">"ST"</span>, <span class="jxr_string">"STA"</span>, <span class="jxr_string">"STATION"</span>, <span class="jxr_string">"STATN"</span>, <span class="jxr_string">"STN"</span>, <span class="jxr_string">"STR"</span>, <span class="jxr_string">"STRA"</span>,
+<a class="jxr_linenumber" name="L150" href="#L150">150</a> 			<span class="jxr_string">"STRAV"</span>, <span class="jxr_string">"STRAVEN"</span>, <span class="jxr_string">"STRAVENUE"</span>, <span class="jxr_string">"STRAVN"</span>, <span class="jxr_string">"STREAM"</span>, <span class="jxr_string">"STREET"</span>,
+<a class="jxr_linenumber" name="L151" href="#L151">151</a> 			<span class="jxr_string">"STREETS"</span>, <span class="jxr_string">"STREME"</span>, <span class="jxr_string">"STRM"</span>, <span class="jxr_string">"STRT"</span>, <span class="jxr_string">"STRVN"</span>, <span class="jxr_string">"STRVNUE"</span>, <span class="jxr_string">"STS"</span>,
+<a class="jxr_linenumber" name="L152" href="#L152">152</a> 			<span class="jxr_string">"SUMIT"</span>, <span class="jxr_string">"SUMITT"</span>, <span class="jxr_string">"SUMMIT"</span>, <span class="jxr_string">"TER"</span>, <span class="jxr_string">"TERR"</span>, <span class="jxr_string">"TERRACE"</span>, <span class="jxr_string">"THROUGHWAY"</span>,
+<a class="jxr_linenumber" name="L153" href="#L153">153</a> 			<span class="jxr_string">"TPKE"</span>, <span class="jxr_string">"TRACE"</span>, <span class="jxr_string">"TRACES"</span>, <span class="jxr_string">"TRACK"</span>, <span class="jxr_string">"TRACKS"</span>, <span class="jxr_string">"TRAFFICWAY"</span>, <span class="jxr_string">"TRAIL"</span>,
+<a class="jxr_linenumber" name="L154" href="#L154">154</a> 			<span class="jxr_string">"TRAILER"</span>, <span class="jxr_string">"TRAILS"</span>, <span class="jxr_string">"TRAK"</span>, <span class="jxr_string">"TRCE"</span>, <span class="jxr_string">"TRFY"</span>, <span class="jxr_string">"TRK"</span>, <span class="jxr_string">"TRKS"</span>, <span class="jxr_string">"TRL"</span>,
+<a class="jxr_linenumber" name="L155" href="#L155">155</a> 			<span class="jxr_string">"TRLR"</span>, <span class="jxr_string">"TRLRS"</span>, <span class="jxr_string">"TRLS"</span>, <span class="jxr_string">"TRNPK"</span>, <span class="jxr_string">"TRWY"</span>, <span class="jxr_string">"TUNEL"</span>, <span class="jxr_string">"TUNL"</span>, <span class="jxr_string">"TUNLS"</span>,
+<a class="jxr_linenumber" name="L156" href="#L156">156</a> 			<span class="jxr_string">"TUNNEL"</span>, <span class="jxr_string">"TUNNELS"</span>, <span class="jxr_string">"TUNNL"</span>, <span class="jxr_string">"TURNPIKE"</span>, <span class="jxr_string">"TURNPK"</span>, <span class="jxr_string">"UN"</span>,
+<a class="jxr_linenumber" name="L157" href="#L157">157</a> 			<span class="jxr_string">"UNDERPASS"</span>, <span class="jxr_string">"UNION"</span>, <span class="jxr_string">"UNIONS"</span>, <span class="jxr_string">"UNS"</span>, <span class="jxr_string">"UPAS"</span>, <span class="jxr_string">"VALLEY"</span>, <span class="jxr_string">"VALLEYS"</span>,
+<a class="jxr_linenumber" name="L158" href="#L158">158</a> 			<span class="jxr_string">"VALLY"</span>, <span class="jxr_string">"VDCT"</span>, <span class="jxr_string">"VIA"</span>, <span class="jxr_string">"VIADCT"</span>, <span class="jxr_string">"VIADUCT"</span>, <span class="jxr_string">"VIEW"</span>, <span class="jxr_string">"VIEWS"</span>,
+<a class="jxr_linenumber" name="L159" href="#L159">159</a> 			<span class="jxr_string">"VILL"</span>, <span class="jxr_string">"VILLAG"</span>, <span class="jxr_string">"VILLAGE"</span>, <span class="jxr_string">"VILLAGES"</span>, <span class="jxr_string">"VILLE"</span>, <span class="jxr_string">"VILLG"</span>,
+<a class="jxr_linenumber" name="L160" href="#L160">160</a> 			<span class="jxr_string">"VILLIAGE"</span>, <span class="jxr_string">"VIS"</span>, <span class="jxr_string">"VIST"</span>, <span class="jxr_string">"VISTA"</span>, <span class="jxr_string">"VL"</span>, <span class="jxr_string">"VLG"</span>, <span class="jxr_string">"VLGS"</span>, <span class="jxr_string">"VLLY"</span>,
+<a class="jxr_linenumber" name="L161" href="#L161">161</a> 			<span class="jxr_string">"VLY"</span>, <span class="jxr_string">"VLYS"</span>, <span class="jxr_string">"VST"</span>, <span class="jxr_string">"VSTA"</span>, <span class="jxr_string">"VW"</span>, <span class="jxr_string">"VWS"</span>, <span class="jxr_string">"WALK"</span>, <span class="jxr_string">"WALKS"</span>, <span class="jxr_string">"WALL"</span>,
+<a class="jxr_linenumber" name="L162" href="#L162">162</a> 			<span class="jxr_string">"WAY"</span>, <span class="jxr_string">"WAYS"</span>, <span class="jxr_string">"WELL"</span>, <span class="jxr_string">"WELLS"</span>, <span class="jxr_string">"WL"</span>, <span class="jxr_string">"WLS"</span>, <span class="jxr_string">"WY"</span>, <span class="jxr_string">"XING"</span>, <span class="jxr_string">"XRD"</span>,
+<a class="jxr_linenumber" name="L163" href="#L163">163</a> 			<span class="jxr_string">"XRDS"</span>, <span class="jxr_string">"AVENIDA"</span>, <span class="jxr_string">"CALLE"</span>, <span class="jxr_string">"CLL"</span>, <span class="jxr_string">"CAMINITO"</span>, <span class="jxr_string">"CMT"</span>, <span class="jxr_string">"CAMINO"</span>,
+<a class="jxr_linenumber" name="L164" href="#L164">164</a> 			<span class="jxr_string">"CAM"</span>, <span class="jxr_string">"CERRADA"</span>, <span class="jxr_string">"CER"</span>, <span class="jxr_string">"CIRCULO"</span>, <span class="jxr_string">"ENTRADA"</span>, <span class="jxr_string">"ENT"</span>, <span class="jxr_string">"PASEO"</span>,
+<a class="jxr_linenumber" name="L165" href="#L165">165</a> 			<span class="jxr_string">"PSO"</span>, <span class="jxr_string">"PLACITA"</span>, <span class="jxr_string">"PLA"</span>, <span class="jxr_string">"RANCHO"</span>, <span class="jxr_string">"RCH"</span>, <span class="jxr_string">"VEREDA"</span>, <span class="jxr_string">"VER"</span>, <span class="jxr_string">"VIS"</span>);
+<a class="jxr_linenumber" name="L166" href="#L166">166</a> 
+<a class="jxr_linenumber" name="L167" href="#L167">167</a> 	<em class="jxr_comment">// See https://pe.usps.com/text/pub28/pub28apc_003.htm</em>
+<a class="jxr_linenumber" name="L168" href="#L168">168</a> 	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> Pattern unitPattern = ParserUtils.toPattern(
+<a class="jxr_linenumber" name="L169" href="#L169">169</a> 			<span class="jxr_string">"Apartment"</span>, <span class="jxr_string">"APT"</span>, <span class="jxr_string">"Basement"</span>, <span class="jxr_string">"BLDG"</span>, <span class="jxr_string">"BOX"</span>, <span class="jxr_string">"BSMT"</span>, <span class="jxr_string">"Building"</span>,
+<a class="jxr_linenumber" name="L170" href="#L170">170</a> 			<span class="jxr_string">"Department"</span>, <span class="jxr_string">"DEPT"</span>, <span class="jxr_string">"FL"</span>, <span class="jxr_string">"Floor"</span>, <span class="jxr_string">"FRNT"</span>, <span class="jxr_string">"Front"</span>, <span class="jxr_string">"Hanger"</span>,
+<a class="jxr_linenumber" name="L171" href="#L171">171</a> 			<span class="jxr_string">"HNGR"</span>, <span class="jxr_string">"KEY"</span>, <span class="jxr_string">"Key"</span>, <span class="jxr_string">"LBBY"</span>, <span class="jxr_string">"Lobby"</span>, <span class="jxr_string">"LOT"</span>, <span class="jxr_string">"Lot"</span>, <span class="jxr_string">"Lower"</span>,
+<a class="jxr_linenumber" name="L172" href="#L172">172</a> 			<span class="jxr_string">"LOWR"</span>, <span class="jxr_string">"OFC"</span>, <span class="jxr_string">"Office"</span>, <span class="jxr_string">"Penthouse"</span>, <span class="jxr_string">"PH"</span>, <span class="jxr_string">"PIER"</span>, <span class="jxr_string">"Pier"</span>, <span class="jxr_string">"REAR"</span>,
+<a class="jxr_linenumber" name="L173" href="#L173">173</a> 			<span class="jxr_string">"Rear"</span>, <span class="jxr_string">"RM"</span>, <span class="jxr_string">"Room"</span>, <span class="jxr_string">"SIDE"</span>, <span class="jxr_string">"Side"</span>, <span class="jxr_string">"SLIP"</span>, <span class="jxr_string">"Slip"</span>, <span class="jxr_string">"Space"</span>,
+<a class="jxr_linenumber" name="L174" href="#L174">174</a> 			<span class="jxr_string">"SPC"</span>, <span class="jxr_string">"STE"</span>, <span class="jxr_string">"STOP"</span>, <span class="jxr_string">"Stop"</span>, <span class="jxr_string">"Suite"</span>, <span class="jxr_string">"Trailer"</span>, <span class="jxr_string">"TRLR"</span>, <span class="jxr_string">"UNIT"</span>,
+<a class="jxr_linenumber" name="L175" href="#L175">175</a> 			<span class="jxr_string">"Unit"</span>, <span class="jxr_string">"Upper"</span>, <span class="jxr_string">"UPPR"</span>, <span class="jxr_string">"Altura"</span>, <span class="jxr_string">"ALT"</span>, <span class="jxr_string">"Alturas"</span>, <span class="jxr_string">"ALTS"</span>,
+<a class="jxr_linenumber" name="L176" href="#L176">176</a> 			<span class="jxr_string">"Barriada"</span>, <span class="jxr_string">"BDA"</span>, <span class="jxr_string">"Barrio"</span>, <span class="jxr_string">"BO"</span>, <span class="jxr_string">"Carretera"</span>, <span class="jxr_string">"CARR"</span>,
+<a class="jxr_linenumber" name="L177" href="#L177">177</a> 			<span class="jxr_string">"Condominio"</span>, <span class="jxr_string">"COND"</span>, <span class="jxr_string">"Cooperativa"</span>, <span class="jxr_string">"COO"</span>, <span class="jxr_string">"Departamento"</span>, <span class="jxr_string">"DEPT"</span>,
+<a class="jxr_linenumber" name="L178" href="#L178">178</a> 			<span class="jxr_string">"Edificio"</span>, <span class="jxr_string">"EDIF"</span>, <span class="jxr_string">"Estancias"</span>, <span class="jxr_string">"EST"</span>, <span class="jxr_string">"Extensión"</span>, <span class="jxr_string">"EXT"</span>,
+<a class="jxr_linenumber" name="L179" href="#L179">179</a> 			<span class="jxr_string">"Industrial Interior"</span>, <span class="jxr_string">"IND INT"</span>, <span class="jxr_string">"Jardines"</span>, <span class="jxr_string">"JARD"</span>, <span class="jxr_string">"Mansiones"</span>,
+<a class="jxr_linenumber" name="L180" href="#L180">180</a> 			<span class="jxr_string">"MANS"</span>, <span class="jxr_string">"Parcelas"</span>, <span class="jxr_string">"PARC"</span>, <span class="jxr_string">"Quebrada"</span>, <span class="jxr_string">"QBDA"</span>, <span class="jxr_string">"Reparto"</span>, <span class="jxr_string">"REPTO"</span>,
+<a class="jxr_linenumber" name="L181" href="#L181">181</a> 			<span class="jxr_string">"Residencial"</span>, <span class="jxr_string">"RES"</span>, <span class="jxr_string">"Sector"</span>, <span class="jxr_string">"SECT"</span>, <span class="jxr_string">"Sección"</span>, <span class="jxr_string">"SECC"</span>,
+<a class="jxr_linenumber" name="L182" href="#L182">182</a> 			<span class="jxr_string">"Terraza"</span>, <span class="jxr_string">"TERR"</span>, <span class="jxr_string">"Urbanización"</span>, <span class="jxr_string">"URB"</span>);
+<a class="jxr_linenumber" name="L183" href="#L183">183</a> 
+<a class="jxr_linenumber" name="L184" href="#L184">184</a> 	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> Pattern directionalPattern = ParserUtils.toPattern(<span class="jxr_string">"N"</span>,
+<a class="jxr_linenumber" name="L185" href="#L185">185</a> 			<span class="jxr_string">"NORTE"</span>, <span class="jxr_string">"NORTH"</span>, <span class="jxr_string">"NE"</span>, <span class="jxr_string">"NORESTE"</span>, <span class="jxr_string">"NORTHEAST"</span>, <span class="jxr_string">"NW"</span>, <span class="jxr_string">"NOROESTE"</span>,
+<a class="jxr_linenumber" name="L186" href="#L186">186</a> 			<span class="jxr_string">"NORTHWEST"</span>, <span class="jxr_string">"S"</span>, <span class="jxr_string">"SUR"</span>, <span class="jxr_string">"SOUTH"</span>, <span class="jxr_string">"SE"</span>, <span class="jxr_string">"SURESTE"</span>, <span class="jxr_string">"SOUTHEAST"</span>,
+<a class="jxr_linenumber" name="L187" href="#L187">187</a> 			<span class="jxr_string">"SW"</span>, <span class="jxr_string">"SUROESTE"</span>, <span class="jxr_string">"SOUTHWEST"</span>, <span class="jxr_string">"E"</span>, <span class="jxr_string">"ESTE"</span>, <span class="jxr_string">"EAST"</span>, <span class="jxr_string">"W"</span>, <span class="jxr_string">"OESTE"</span>,
+<a class="jxr_linenumber" name="L188" href="#L188">188</a> 			<span class="jxr_string">"WEST"</span>);
+<a class="jxr_linenumber" name="L189" href="#L189">189</a> 
+<a class="jxr_linenumber" name="L190" href="#L190">190</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L191" href="#L191">191</a> <em class="jxr_javadoccomment">	 * Construct a new AddressParser</em>
+<a class="jxr_linenumber" name="L192" href="#L192">192</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L193" href="#L193">193</a> 	<strong class="jxr_keyword">public</strong> <a name="AddressParser" href="../../../../../gov/cdc/izgw/v2tofhir/datatype/AddressParser.html#AddressParser">AddressParser</a>() {
+<a class="jxr_linenumber" name="L194" href="#L194">194</a> 		<em class="jxr_comment">// Construct the default address parser</em>
+<a class="jxr_linenumber" name="L195" href="#L195">195</a> 	}
+<a class="jxr_linenumber" name="L196" href="#L196">196</a> 	
+<a class="jxr_linenumber" name="L197" href="#L197">197</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L198" href="#L198">198</a> <em class="jxr_javadoccomment">	 * Get state abbreviation for state name or abbreviation</em>
+<a class="jxr_linenumber" name="L199" href="#L199">199</a> <em class="jxr_javadoccomment">	 * @param state state name or abbreviation</em>
+<a class="jxr_linenumber" name="L200" href="#L200">200</a> <em class="jxr_javadoccomment">	 * @return	The state abbreviation</em>
+<a class="jxr_linenumber" name="L201" href="#L201">201</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L202" href="#L202">202</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> String getStateAbbreviation(String state) {
+<a class="jxr_linenumber" name="L203" href="#L203">203</a> 		String[] array = STATE_MAP.get(StringUtils.upperCase(state));
+<a class="jxr_linenumber" name="L204" href="#L204">204</a> 		<strong class="jxr_keyword">return</strong> array == <strong class="jxr_keyword">null</strong> ? <strong class="jxr_keyword">null</strong> : array[0];
+<a class="jxr_linenumber" name="L205" href="#L205">205</a> 	}
+<a class="jxr_linenumber" name="L206" href="#L206">206</a> 	
+<a class="jxr_linenumber" name="L207" href="#L207">207</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L208" href="#L208">208</a> <em class="jxr_javadoccomment">	 * Get state name for state name or abbreviation</em>
+<a class="jxr_linenumber" name="L209" href="#L209">209</a> <em class="jxr_javadoccomment">	 * @param state state name or abbreviation</em>
+<a class="jxr_linenumber" name="L210" href="#L210">210</a> <em class="jxr_javadoccomment">	 * @return	The state name</em>
+<a class="jxr_linenumber" name="L211" href="#L211">211</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L212" href="#L212">212</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> String getStateName(String state) {
+<a class="jxr_linenumber" name="L213" href="#L213">213</a> 		String[] array = STATE_MAP.get(StringUtils.upperCase(state));
+<a class="jxr_linenumber" name="L214" href="#L214">214</a> 		<strong class="jxr_keyword">return</strong> array == <strong class="jxr_keyword">null</strong> ? <strong class="jxr_keyword">null</strong> : array[1];
+<a class="jxr_linenumber" name="L215" href="#L215">215</a> 	}
+<a class="jxr_linenumber" name="L216" href="#L216">216</a> 	
+<a class="jxr_linenumber" name="L217" href="#L217">217</a> 	@Override
+<a class="jxr_linenumber" name="L218" href="#L218">218</a> 	<strong class="jxr_keyword">public</strong> Class&lt;Address&gt; type() {
+<a class="jxr_linenumber" name="L219" href="#L219">219</a> 		<strong class="jxr_keyword">return</strong> Address.<strong class="jxr_keyword">class</strong>;
+<a class="jxr_linenumber" name="L220" href="#L220">220</a> 	}
+<a class="jxr_linenumber" name="L221" href="#L221">221</a> 	
+<a class="jxr_linenumber" name="L222" href="#L222">222</a> 	@Override
+<a class="jxr_linenumber" name="L223" href="#L223">223</a> 	<strong class="jxr_keyword">public</strong> Address convert(Type type) {
+<a class="jxr_linenumber" name="L224" href="#L224">224</a> 		Address addr = <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L225" href="#L225">225</a> 		type = DatatypeConverter.adjustIfVaries(type);
+<a class="jxr_linenumber" name="L226" href="#L226">226</a> 
+<a class="jxr_linenumber" name="L227" href="#L227">227</a> 		<strong class="jxr_keyword">if</strong> (type instanceof Primitive pt) {
+<a class="jxr_linenumber" name="L228" href="#L228">228</a> 			<strong class="jxr_keyword">if</strong> (DatatypeConverter.isDeleted(pt)) {
+<a class="jxr_linenumber" name="L229" href="#L229">229</a> 				<strong class="jxr_keyword">return</strong> DatatypeConverter.markDeleted(<strong class="jxr_keyword">new</strong> Address());
+<a class="jxr_linenumber" name="L230" href="#L230">230</a> 			}
+<a class="jxr_linenumber" name="L231" href="#L231">231</a> 			addr = fromString(pt.getValue());
+<a class="jxr_linenumber" name="L232" href="#L232">232</a> 		} <strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong> (type instanceof Composite comp) {
+<a class="jxr_linenumber" name="L233" href="#L233">233</a> 			<strong class="jxr_keyword">switch</strong> (type.getName()) {
+<a class="jxr_linenumber" name="L234" href="#L234">234</a> 			<strong class="jxr_keyword">case</strong> <span class="jxr_string">"AD"</span>, <span class="jxr_string">"XAD"</span>:
+<a class="jxr_linenumber" name="L235" href="#L235">235</a> 				addr = parse(comp.getComponents(), 0);
+<a class="jxr_linenumber" name="L236" href="#L236">236</a> 				<strong class="jxr_keyword">break</strong>;
+<a class="jxr_linenumber" name="L237" href="#L237">237</a> 			<strong class="jxr_keyword">case</strong> <span class="jxr_string">"SAD"</span>:
+<a class="jxr_linenumber" name="L238" href="#L238">238</a> 				addr = <strong class="jxr_keyword">new</strong> Address().addLine(ParserUtils.toString(comp, 0));
+<a class="jxr_linenumber" name="L239" href="#L239">239</a> 				<strong class="jxr_keyword">break</strong>;
+<a class="jxr_linenumber" name="L240" href="#L240">240</a> 			<strong class="jxr_keyword">case</strong> <span class="jxr_string">"LA1"</span>:
+<a class="jxr_linenumber" name="L241" href="#L241">241</a> 				Type[] types = comp.getComponents();
+<a class="jxr_linenumber" name="L242" href="#L242">242</a> 				<strong class="jxr_keyword">if</strong> (types.length &gt; 8) {
+<a class="jxr_linenumber" name="L243" href="#L243">243</a> 					<em class="jxr_comment">// Recursive call to parse LA1-8 which is of type AD</em>
+<a class="jxr_linenumber" name="L244" href="#L244">244</a> 					addr = convert(types[8]);
+<a class="jxr_linenumber" name="L245" href="#L245">245</a> 				}
+<a class="jxr_linenumber" name="L246" href="#L246">246</a> 				<strong class="jxr_keyword">break</strong>;
+<a class="jxr_linenumber" name="L247" href="#L247">247</a> 			<strong class="jxr_keyword">case</strong> <span class="jxr_string">"LA2"</span>:
+<a class="jxr_linenumber" name="L248" href="#L248">248</a> 				addr = parse(comp.getComponents(), 8);
+<a class="jxr_linenumber" name="L249" href="#L249">249</a> 				<strong class="jxr_keyword">break</strong>;
+<a class="jxr_linenumber" name="L250" href="#L250">250</a> 			<strong class="jxr_keyword">default</strong>:
+<a class="jxr_linenumber" name="L251" href="#L251">251</a> 				<strong class="jxr_keyword">break</strong>;
+<a class="jxr_linenumber" name="L252" href="#L252">252</a> 			}
+<a class="jxr_linenumber" name="L253" href="#L253">253</a> 		} 
+<a class="jxr_linenumber" name="L254" href="#L254">254</a> 		
+<a class="jxr_linenumber" name="L255" href="#L255">255</a> 		removeEmptyLines(addr);
+<a class="jxr_linenumber" name="L256" href="#L256">256</a> 		<strong class="jxr_keyword">if</strong> (addr == <strong class="jxr_keyword">null</strong> || addr.isEmpty()) {
+<a class="jxr_linenumber" name="L257" href="#L257">257</a> 			<strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L258" href="#L258">258</a> 		}
+<a class="jxr_linenumber" name="L259" href="#L259">259</a> 		<strong class="jxr_keyword">return</strong> addr;
+<a class="jxr_linenumber" name="L260" href="#L260">260</a> 	}
+<a class="jxr_linenumber" name="L261" href="#L261">261</a> 
+<a class="jxr_linenumber" name="L262" href="#L262">262</a> 	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">void</strong> removeEmptyLines(Address addr) {
+<a class="jxr_linenumber" name="L263" href="#L263">263</a> 		<strong class="jxr_keyword">if</strong> (addr != <strong class="jxr_keyword">null</strong> &amp;&amp; addr.hasLine()) {
+<a class="jxr_linenumber" name="L264" href="#L264">264</a> 			Iterator&lt;StringType&gt; it = addr.getLine().iterator();
+<a class="jxr_linenumber" name="L265" href="#L265">265</a> 			<strong class="jxr_keyword">while</strong> (it.hasNext()) {
+<a class="jxr_linenumber" name="L266" href="#L266">266</a> 				StringType line = it.next(); 
+<a class="jxr_linenumber" name="L267" href="#L267">267</a> 				<strong class="jxr_keyword">if</strong> (line == <strong class="jxr_keyword">null</strong> || line.isEmpty()) {
+<a class="jxr_linenumber" name="L268" href="#L268">268</a> 					it.remove();
+<a class="jxr_linenumber" name="L269" href="#L269">269</a> 				}
+<a class="jxr_linenumber" name="L270" href="#L270">270</a> 			}
+<a class="jxr_linenumber" name="L271" href="#L271">271</a> 		}
+<a class="jxr_linenumber" name="L272" href="#L272">272</a> 	}
+<a class="jxr_linenumber" name="L273" href="#L273">273</a> 	
+<a class="jxr_linenumber" name="L274" href="#L274">274</a> 	@Override 
+<a class="jxr_linenumber" name="L275" href="#L275">275</a> 	<strong class="jxr_keyword">public</strong> Type convert(Address addr) {
+<a class="jxr_linenumber" name="L276" href="#L276">276</a> 		<strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L277" href="#L277">277</a> 	}
+<a class="jxr_linenumber" name="L278" href="#L278">278</a> 	@Override
+<a class="jxr_linenumber" name="L279" href="#L279">279</a> 	<strong class="jxr_keyword">public</strong> Address fromString(String value) {
+<a class="jxr_linenumber" name="L280" href="#L280">280</a> 		<strong class="jxr_keyword">if</strong> (StringUtils.isBlank(value)) {
+<a class="jxr_linenumber" name="L281" href="#L281">281</a> 			<strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L282" href="#L282">282</a> 		}
+<a class="jxr_linenumber" name="L283" href="#L283">283</a> 		String[] parts = value.split(<span class="jxr_string">"[&#92;&#92;n&#92;&#92;r]"</span>);
+<a class="jxr_linenumber" name="L284" href="#L284">284</a> 		String[] originalParts = parts;
+<a class="jxr_linenumber" name="L285" href="#L285">285</a> 		<strong class="jxr_keyword">if</strong> (parts.length == 1) {
+<a class="jxr_linenumber" name="L286" href="#L286">286</a> 			parts = value.split(<span class="jxr_string">","</span>);
+<a class="jxr_linenumber" name="L287" href="#L287">287</a> 		}
+<a class="jxr_linenumber" name="L288" href="#L288">288</a> 		Address addr = <strong class="jxr_keyword">new</strong> Address();
+<a class="jxr_linenumber" name="L289" href="#L289">289</a> 		addr.setText(value);
+<a class="jxr_linenumber" name="L290" href="#L290">290</a> 		<strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; parts.length; i++) {
+<a class="jxr_linenumber" name="L291" href="#L291">291</a> 			String part = StringUtils.normalizeSpace(parts[i]);
+<a class="jxr_linenumber" name="L292" href="#L292">292</a>  			<strong class="jxr_keyword">if</strong> (part.isEmpty()) {
+<a class="jxr_linenumber" name="L293" href="#L293">293</a> 				<strong class="jxr_keyword">continue</strong>;
+<a class="jxr_linenumber" name="L294" href="#L294">294</a> 			}
+<a class="jxr_linenumber" name="L295" href="#L295">295</a> 			<strong class="jxr_keyword">if</strong> (!addr.hasLine()) {
+<a class="jxr_linenumber" name="L296" href="#L296">296</a> 				getLineOrCsz(originalParts, addr, part);
+<a class="jxr_linenumber" name="L297" href="#L297">297</a> 				<strong class="jxr_keyword">continue</strong>;
+<a class="jxr_linenumber" name="L298" href="#L298">298</a> 			} 
+<a class="jxr_linenumber" name="L299" href="#L299">299</a> 			
+<a class="jxr_linenumber" name="L300" href="#L300">300</a> 			<strong class="jxr_keyword">if</strong> (isAddressLine(part)) {
+<a class="jxr_linenumber" name="L301" href="#L301">301</a> 				addr.addLine(part);
+<a class="jxr_linenumber" name="L302" href="#L302">302</a> 				<strong class="jxr_keyword">continue</strong>;
+<a class="jxr_linenumber" name="L303" href="#L303">303</a> 			} 
+<a class="jxr_linenumber" name="L304" href="#L304">304</a> 			
+<a class="jxr_linenumber" name="L305" href="#L305">305</a> 			<strong class="jxr_keyword">if</strong> (isCountry(addr, part)) {
+<a class="jxr_linenumber" name="L306" href="#L306">306</a> 				addr.setCountry(part);
+<a class="jxr_linenumber" name="L307" href="#L307">307</a> 				<strong class="jxr_keyword">continue</strong>;
+<a class="jxr_linenumber" name="L308" href="#L308">308</a> 			} 
+<a class="jxr_linenumber" name="L309" href="#L309">309</a> 			
+<a class="jxr_linenumber" name="L310" href="#L310">310</a> 			<strong class="jxr_keyword">if</strong> (!addr.hasPostalCode()) {
+<a class="jxr_linenumber" name="L311" href="#L311">311</a> 				getCityStatePostalCode(addr, part);
+<a class="jxr_linenumber" name="L312" href="#L312">312</a> 			}
+<a class="jxr_linenumber" name="L313" href="#L313">313</a> 		}
+<a class="jxr_linenumber" name="L314" href="#L314">314</a> 		<strong class="jxr_keyword">return</strong> addr.isEmpty() ? <strong class="jxr_keyword">null</strong> : addr;
+<a class="jxr_linenumber" name="L315" href="#L315">315</a> 	}
+<a class="jxr_linenumber" name="L316" href="#L316">316</a> 	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">void</strong> getLineOrCsz(String[] originalParts, Address addr, String part) {
+<a class="jxr_linenumber" name="L317" href="#L317">317</a> 		<em class="jxr_comment">// First line is usually an address line, but</em>
+<a class="jxr_linenumber" name="L318" href="#L318">318</a> 		<em class="jxr_comment">// sometimes it might just be a city, state and postal code</em>
+<a class="jxr_linenumber" name="L319" href="#L319">319</a> 		<em class="jxr_comment">// in cases of partial representations.</em>
+<a class="jxr_linenumber" name="L320" href="#L320">320</a> 		<strong class="jxr_keyword">if</strong> (isCszOnly(originalParts)) {
+<a class="jxr_linenumber" name="L321" href="#L321">321</a> 			getCityStatePostalCode(addr, part);
+<a class="jxr_linenumber" name="L322" href="#L322">322</a> 		} <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L323" href="#L323">323</a> 			addr.addLine(part);
+<a class="jxr_linenumber" name="L324" href="#L324">324</a> 		}
+<a class="jxr_linenumber" name="L325" href="#L325">325</a> 	}
+<a class="jxr_linenumber" name="L326" href="#L326">326</a> 	
+<a class="jxr_linenumber" name="L327" href="#L327">327</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L328" href="#L328">328</a> <em class="jxr_javadoccomment">	 * Returns true if part is a possible country name</em>
+<a class="jxr_linenumber" name="L329" href="#L329">329</a> <em class="jxr_javadoccomment">	 * @param addr	The addr that may need a country</em>
+<a class="jxr_linenumber" name="L330" href="#L330">330</a> <em class="jxr_javadoccomment">	 * @param part	The part to examine</em>
+<a class="jxr_linenumber" name="L331" href="#L331">331</a> <em class="jxr_javadoccomment">	 * @return	true if addr needs country and part is a country name</em>
+<a class="jxr_linenumber" name="L332" href="#L332">332</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L333" href="#L333">333</a> 	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">boolean</strong> isCountry(Address addr, String part) {
+<a class="jxr_linenumber" name="L334" href="#L334">334</a> 		<strong class="jxr_keyword">return</strong> !addr.hasCountry()
+<a class="jxr_linenumber" name="L335" href="#L335">335</a> 				&amp;&amp; countryPattern.matcher(part).matches();
+<a class="jxr_linenumber" name="L336" href="#L336">336</a> 	}
+<a class="jxr_linenumber" name="L337" href="#L337">337</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L338" href="#L338">338</a> <em class="jxr_javadoccomment">	 * Returns true if an address part matches patterns indicating it is an address line.</em>
+<a class="jxr_linenumber" name="L339" href="#L339">339</a> <em class="jxr_javadoccomment">	 * </em>
+<a class="jxr_linenumber" name="L340" href="#L340">340</a> <em class="jxr_javadoccomment">	 * NOTE: Not all address lines will be matched, only those containing certain patterns</em>
+<a class="jxr_linenumber" name="L341" href="#L341">341</a> <em class="jxr_javadoccomment">	 * that match (e.g., those with a street name or abbreviation, a directional indicator, or a unit number)</em>
+<a class="jxr_linenumber" name="L342" href="#L342">342</a> <em class="jxr_javadoccomment">	 * @param part	The string to match</em>
+<a class="jxr_linenumber" name="L343" href="#L343">343</a> <em class="jxr_javadoccomment">	 * @return true if it appears to be an address line, false if it doesn't match any known patterns.</em>
+<a class="jxr_linenumber" name="L344" href="#L344">344</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L345" href="#L345">345</a> 	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">boolean</strong> isAddressLine(String part) {
+<a class="jxr_linenumber" name="L346" href="#L346">346</a> 		<strong class="jxr_keyword">return</strong> streetPattern.matcher(part).matches()
+<a class="jxr_linenumber" name="L347" href="#L347">347</a> 				|| directionalPattern.matcher(part).matches()
+<a class="jxr_linenumber" name="L348" href="#L348">348</a> 				|| unitPattern.matcher(part).matches();
+<a class="jxr_linenumber" name="L349" href="#L349">349</a> 	}
+<a class="jxr_linenumber" name="L350" href="#L350">350</a> 	
+<a class="jxr_linenumber" name="L351" href="#L351">351</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L352" href="#L352">352</a> <em class="jxr_javadoccomment">	 * Check for odd cases like:</em>
+<a class="jxr_linenumber" name="L353" href="#L353">353</a> <em class="jxr_javadoccomment">	 * Just CSZ: Chicago, IL, 65932</em>
+<a class="jxr_linenumber" name="L354" href="#L354">354</a> <em class="jxr_javadoccomment">	 * Just CS and Country: Myfaircity, GA\nUSA</em>
+<a class="jxr_linenumber" name="L355" href="#L355">355</a> <em class="jxr_javadoccomment">	 * Just State: Indiana</em>
+<a class="jxr_linenumber" name="L356" href="#L356">356</a> <em class="jxr_javadoccomment">	 * @return true if it's an odd case.</em>
+<a class="jxr_linenumber" name="L357" href="#L357">357</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L358" href="#L358">358</a> 	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">boolean</strong> isCszOnly(String[] parts) {
+<a class="jxr_linenumber" name="L359" href="#L359">359</a> 		<strong class="jxr_keyword">if</strong> (parts.length &gt; 2) {
+<a class="jxr_linenumber" name="L360" href="#L360">360</a> 			<strong class="jxr_keyword">return</strong> false;
+<a class="jxr_linenumber" name="L361" href="#L361">361</a> 		}
+<a class="jxr_linenumber" name="L362" href="#L362">362</a> 		<strong class="jxr_keyword">if</strong> (parts.length == 2 &amp;&amp; 
+<a class="jxr_linenumber" name="L363" href="#L363">363</a> 			!countryPattern.matcher(StringUtils.trim(parts[1])).matches()
+<a class="jxr_linenumber" name="L364" href="#L364">364</a> 		) {
+<a class="jxr_linenumber" name="L365" href="#L365">365</a> 			<strong class="jxr_keyword">return</strong> false;
+<a class="jxr_linenumber" name="L366" href="#L366">366</a> 		}
+<a class="jxr_linenumber" name="L367" href="#L367">367</a> 		<strong class="jxr_keyword">return</strong> isCszOnly(StringUtils.trim(parts[0]));
+<a class="jxr_linenumber" name="L368" href="#L368">368</a> 	}
+<a class="jxr_linenumber" name="L369" href="#L369">369</a> 	
+<a class="jxr_linenumber" name="L370" href="#L370">370</a> 	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">boolean</strong> isCszOnly(String line) {
+<a class="jxr_linenumber" name="L371" href="#L371">371</a> 		<strong class="jxr_keyword">boolean</strong> hasCa1Part = false;
+<a class="jxr_linenumber" name="L372" href="#L372">372</a> 		<strong class="jxr_keyword">boolean</strong> hasPostalCode = false;
+<a class="jxr_linenumber" name="L373" href="#L373">373</a> 		<strong class="jxr_keyword">boolean</strong> hasState = false;
+<a class="jxr_linenumber" name="L374" href="#L374">374</a> 		<strong class="jxr_keyword">boolean</strong> hasAnythingAfterState = false;
+<a class="jxr_linenumber" name="L375" href="#L375">375</a> 		<strong class="jxr_keyword">for</strong> (String part : line.split(<span class="jxr_string">"[ ,]+"</span>)) {
+<a class="jxr_linenumber" name="L376" href="#L376">376</a> 			<strong class="jxr_keyword">if</strong> (postalCodePattern.matcher(part).matches()) {
+<a class="jxr_linenumber" name="L377" href="#L377">377</a> 				hasPostalCode = <strong class="jxr_keyword">true</strong>;
+<a class="jxr_linenumber" name="L378" href="#L378">378</a> 			} <strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong> (caPostalCode1.matcher(part).matches()) {
+<a class="jxr_linenumber" name="L379" href="#L379">379</a> 				hasCa1Part = <strong class="jxr_keyword">true</strong>;
+<a class="jxr_linenumber" name="L380" href="#L380">380</a> 			} <strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong> (caPostalCode2.matcher(part).matches()) {
+<a class="jxr_linenumber" name="L381" href="#L381">381</a> 				hasPostalCode = hasCa1Part;
+<a class="jxr_linenumber" name="L382" href="#L382">382</a> 			} <strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong> (statePattern.matcher(part).matches()) {
+<a class="jxr_linenumber" name="L383" href="#L383">383</a> 				hasState = <strong class="jxr_keyword">true</strong>;
+<a class="jxr_linenumber" name="L384" href="#L384">384</a> 			} <strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong> (hasState) {
+<a class="jxr_linenumber" name="L385" href="#L385">385</a> 				<em class="jxr_comment">// Pennsylvania Ave would result in a false match if we didn't check</em>
+<a class="jxr_linenumber" name="L386" href="#L386">386</a> 				<em class="jxr_comment">// for anything else on the line other that postalCode and state</em>
+<a class="jxr_linenumber" name="L387" href="#L387">387</a> 				hasAnythingAfterState = <strong class="jxr_keyword">true</strong>;
+<a class="jxr_linenumber" name="L388" href="#L388">388</a> 			}
+<a class="jxr_linenumber" name="L389" href="#L389">389</a> 		}
+<a class="jxr_linenumber" name="L390" href="#L390">390</a> 		<strong class="jxr_keyword">return</strong> (hasState || hasPostalCode) &amp;&amp; !hasAnythingAfterState;
+<a class="jxr_linenumber" name="L391" href="#L391">391</a> 	}
+<a class="jxr_linenumber" name="L392" href="#L392">392</a> 
+<a class="jxr_linenumber" name="L393" href="#L393">393</a> 	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">void</strong> getCityStatePostalCode(Address addr, String part) {
+<a class="jxr_linenumber" name="L394" href="#L394">394</a> 		<em class="jxr_comment">// could be an address line, country, or some combination of</em>
+<a class="jxr_linenumber" name="L395" href="#L395">395</a> 		<em class="jxr_comment">// city, state, and postal code</em>
+<a class="jxr_linenumber" name="L396" href="#L396">396</a> 
+<a class="jxr_linenumber" name="L397" href="#L397">397</a> 		String[] lineParts = part.split(<span class="jxr_string">"[, ]+"</span>);
+<a class="jxr_linenumber" name="L398" href="#L398">398</a> 		lineParts = getPostalCode(addr, lineParts);
+<a class="jxr_linenumber" name="L399" href="#L399">399</a> 		lineParts = getState(addr, lineParts);
+<a class="jxr_linenumber" name="L400" href="#L400">400</a> 		lineParts = getCountry(addr, lineParts);
+<a class="jxr_linenumber" name="L401" href="#L401">401</a> 		<em class="jxr_comment">// City is anything left</em>
+<a class="jxr_linenumber" name="L402" href="#L402">402</a> 		<strong class="jxr_keyword">if</strong> (lineParts.length != 0) {
+<a class="jxr_linenumber" name="L403" href="#L403">403</a> 			addr.setCity(StringUtils.joinWith(<span class="jxr_string">" "</span>, (Object[])lineParts));
+<a class="jxr_linenumber" name="L404" href="#L404">404</a> 		}
+<a class="jxr_linenumber" name="L405" href="#L405">405</a> 	}
+<a class="jxr_linenumber" name="L406" href="#L406">406</a> 	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> String[] getCountry(Address addr, String[] lineParts) {
+<a class="jxr_linenumber" name="L407" href="#L407">407</a> 		<strong class="jxr_keyword">int</strong> position = 0;
+<a class="jxr_linenumber" name="L408" href="#L408">408</a> 		<strong class="jxr_keyword">for</strong> (String linePart : lineParts) {
+<a class="jxr_linenumber" name="L409" href="#L409">409</a> 			<strong class="jxr_keyword">if</strong> (countryPattern.matcher(linePart).matches()) {
+<a class="jxr_linenumber" name="L410" href="#L410">410</a> 				addr.setCountry(linePart);
+<a class="jxr_linenumber" name="L411" href="#L411">411</a> 				<strong class="jxr_keyword">return</strong> ParserUtils.removeArrayElement(lineParts, position);
+<a class="jxr_linenumber" name="L412" href="#L412">412</a> 			}
+<a class="jxr_linenumber" name="L413" href="#L413">413</a> 			++position;
+<a class="jxr_linenumber" name="L414" href="#L414">414</a> 		}
+<a class="jxr_linenumber" name="L415" href="#L415">415</a> 		<strong class="jxr_keyword">return</strong> lineParts;
+<a class="jxr_linenumber" name="L416" href="#L416">416</a> 	}
+<a class="jxr_linenumber" name="L417" href="#L417">417</a> 	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> String[] getState(Address addr, String[] lineParts) {
+<a class="jxr_linenumber" name="L418" href="#L418">418</a> 		<strong class="jxr_keyword">int</strong> position = 0;
+<a class="jxr_linenumber" name="L419" href="#L419">419</a> 		<strong class="jxr_keyword">for</strong> (String linePart : lineParts) {
+<a class="jxr_linenumber" name="L420" href="#L420">420</a> 			<strong class="jxr_keyword">if</strong> (statePattern.matcher(linePart).matches()) {
+<a class="jxr_linenumber" name="L421" href="#L421">421</a> 				addr.setState(linePart);
+<a class="jxr_linenumber" name="L422" href="#L422">422</a> 				<strong class="jxr_keyword">return</strong> ParserUtils.removeArrayElement(lineParts, position);
+<a class="jxr_linenumber" name="L423" href="#L423">423</a> 			}
+<a class="jxr_linenumber" name="L424" href="#L424">424</a> 			++position;
+<a class="jxr_linenumber" name="L425" href="#L425">425</a> 		}
+<a class="jxr_linenumber" name="L426" href="#L426">426</a> 		<strong class="jxr_keyword">return</strong> lineParts;
+<a class="jxr_linenumber" name="L427" href="#L427">427</a> 	}
+<a class="jxr_linenumber" name="L428" href="#L428">428</a> 	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> String[] getPostalCode(Address addr, String[] lineParts) {
+<a class="jxr_linenumber" name="L429" href="#L429">429</a> 		String postalPart1 = <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L430" href="#L430">430</a> 		<strong class="jxr_keyword">int</strong> position = 0;
+<a class="jxr_linenumber" name="L431" href="#L431">431</a> 		<strong class="jxr_keyword">for</strong> (String linePart : lineParts) {
+<a class="jxr_linenumber" name="L432" href="#L432">432</a> 			<strong class="jxr_keyword">if</strong> (postalCodePattern.matcher(linePart).matches()) {
+<a class="jxr_linenumber" name="L433" href="#L433">433</a> 				addr.setPostalCode(linePart);
+<a class="jxr_linenumber" name="L434" href="#L434">434</a> 				<strong class="jxr_keyword">return</strong> ParserUtils.removeArrayElement(lineParts, position);
+<a class="jxr_linenumber" name="L435" href="#L435">435</a> 			} <strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong> (postalPart1 == <strong class="jxr_keyword">null</strong> &amp;&amp; caPostalCode1.matcher(linePart).matches()) {
+<a class="jxr_linenumber" name="L436" href="#L436">436</a> 				postalPart1 = linePart;
+<a class="jxr_linenumber" name="L437" href="#L437">437</a> 			} <strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong> (postalPart1 != <strong class="jxr_keyword">null</strong> &amp;&amp; caPostalCode2.matcher(linePart).matches()) {
+<a class="jxr_linenumber" name="L438" href="#L438">438</a> 				addr.setPostalCode(postalPart1 + <span class="jxr_string">" "</span> + linePart);
+<a class="jxr_linenumber" name="L439" href="#L439">439</a> 				<em class="jxr_comment">// Remove the part we just matched</em>
+<a class="jxr_linenumber" name="L440" href="#L440">440</a> 				lineParts = ParserUtils.removeArrayElement(lineParts, position);
+<a class="jxr_linenumber" name="L441" href="#L441">441</a> 				<em class="jxr_comment">// And it's predecessor.</em>
+<a class="jxr_linenumber" name="L442" href="#L442">442</a> 				<strong class="jxr_keyword">return</strong> ParserUtils.removeArrayElement(lineParts, position - 1);
+<a class="jxr_linenumber" name="L443" href="#L443">443</a> 			} <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L444" href="#L444">444</a> 				postalPart1 = <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L445" href="#L445">445</a> 			}
+<a class="jxr_linenumber" name="L446" href="#L446">446</a> 			++position;
+<a class="jxr_linenumber" name="L447" href="#L447">447</a> 		}
+<a class="jxr_linenumber" name="L448" href="#L448">448</a> 		<strong class="jxr_keyword">return</strong> lineParts;
+<a class="jxr_linenumber" name="L449" href="#L449">449</a> 	}
+<a class="jxr_linenumber" name="L450" href="#L450">450</a> 	
+<a class="jxr_linenumber" name="L451" href="#L451">451</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L452" href="#L452">452</a> <em class="jxr_javadoccomment">	 * Parse a composite made up of types into an address.</em>
+<a class="jxr_linenumber" name="L453" href="#L453">453</a> <em class="jxr_javadoccomment">	 * @param types	The components of the address</em>
+<a class="jxr_linenumber" name="L454" href="#L454">454</a> <em class="jxr_javadoccomment">	 * @param offset The offset to the address line</em>
+<a class="jxr_linenumber" name="L455" href="#L455">455</a> <em class="jxr_javadoccomment">	 * @return	A new FHIR Address populated from the values in types.</em>
+<a class="jxr_linenumber" name="L456" href="#L456">456</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L457" href="#L457">457</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> Address parse(Type[] types, <strong class="jxr_keyword">int</strong> offset) {
+<a class="jxr_linenumber" name="L458" href="#L458">458</a> 		Address addr = <strong class="jxr_keyword">new</strong> Address();
+<a class="jxr_linenumber" name="L459" href="#L459">459</a> 		<strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; 14; i++) {
+<a class="jxr_linenumber" name="L460" href="#L460">460</a> 			
+<a class="jxr_linenumber" name="L461" href="#L461">461</a> 			<strong class="jxr_keyword">if</strong> (types.length + offset &lt;= i) {
+<a class="jxr_linenumber" name="L462" href="#L462">462</a> 				<strong class="jxr_keyword">break</strong>;
+<a class="jxr_linenumber" name="L463" href="#L463">463</a> 			}
+<a class="jxr_linenumber" name="L464" href="#L464">464</a> 			Type t = DatatypeConverter.adjustIfVaries(types, i + offset);
+<a class="jxr_linenumber" name="L465" href="#L465">465</a> 			<strong class="jxr_keyword">if</strong> (i == 0) {
+<a class="jxr_linenumber" name="L466" href="#L466">466</a> 				addr.addLine(ParserUtils.toString(t));
+<a class="jxr_linenumber" name="L467" href="#L467">467</a> 			} <strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong> (t instanceof Primitive part) {
+<a class="jxr_linenumber" name="L468" href="#L468">468</a> 				<strong class="jxr_keyword">switch</strong> (i) {
+<a class="jxr_linenumber" name="L469" href="#L469">469</a> 					<strong class="jxr_keyword">case</strong> 1 :
+<a class="jxr_linenumber" name="L470" href="#L470">470</a> 						addr.addLine(part.getValue());
+<a class="jxr_linenumber" name="L471" href="#L471">471</a> 						<strong class="jxr_keyword">break</strong>;
+<a class="jxr_linenumber" name="L472" href="#L472">472</a> 					<strong class="jxr_keyword">case</strong> 2 :
+<a class="jxr_linenumber" name="L473" href="#L473">473</a> 						addr.setCity(part.getValue());
+<a class="jxr_linenumber" name="L474" href="#L474">474</a> 						<strong class="jxr_keyword">break</strong>;
+<a class="jxr_linenumber" name="L475" href="#L475">475</a> 					<strong class="jxr_keyword">case</strong> 3 :
+<a class="jxr_linenumber" name="L476" href="#L476">476</a> 						addr.setState(part.getValue());
+<a class="jxr_linenumber" name="L477" href="#L477">477</a> 						<strong class="jxr_keyword">break</strong>;
+<a class="jxr_linenumber" name="L478" href="#L478">478</a> 					<strong class="jxr_keyword">case</strong> 4 :
+<a class="jxr_linenumber" name="L479" href="#L479">479</a> 						addr.setPostalCode(part.getValue());
+<a class="jxr_linenumber" name="L480" href="#L480">480</a> 						<strong class="jxr_keyword">break</strong>;
+<a class="jxr_linenumber" name="L481" href="#L481">481</a> 					<strong class="jxr_keyword">case</strong> 5 :
+<a class="jxr_linenumber" name="L482" href="#L482">482</a> 						addr.setCountry(part.getValue());
+<a class="jxr_linenumber" name="L483" href="#L483">483</a> 						<strong class="jxr_keyword">break</strong>;
+<a class="jxr_linenumber" name="L484" href="#L484">484</a> 					<strong class="jxr_keyword">case</strong> 6 :
+<a class="jxr_linenumber" name="L485" href="#L485">485</a> 						addr.setUse(getUse(part.getValue()));
+<a class="jxr_linenumber" name="L486" href="#L486">486</a> 						<strong class="jxr_keyword">break</strong>;
+<a class="jxr_linenumber" name="L487" href="#L487">487</a> 					<strong class="jxr_keyword">case</strong> 8 :
+<a class="jxr_linenumber" name="L488" href="#L488">488</a> 						addr.setDistrict(part.getValue());
+<a class="jxr_linenumber" name="L489" href="#L489">489</a> 						<strong class="jxr_keyword">break</strong>;
+<a class="jxr_linenumber" name="L490" href="#L490">490</a> 					<strong class="jxr_keyword">default</strong>:
+<a class="jxr_linenumber" name="L491" href="#L491">491</a> 						<strong class="jxr_keyword">break</strong>;
+<a class="jxr_linenumber" name="L492" href="#L492">492</a> 					}
+<a class="jxr_linenumber" name="L493" href="#L493">493</a> 			}
+<a class="jxr_linenumber" name="L494" href="#L494">494</a> 		}
+<a class="jxr_linenumber" name="L495" href="#L495">495</a> 		<strong class="jxr_keyword">if</strong> (addr.isEmpty()) {
+<a class="jxr_linenumber" name="L496" href="#L496">496</a> 			<strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L497" href="#L497">497</a> 		}
+<a class="jxr_linenumber" name="L498" href="#L498">498</a> 		<strong class="jxr_keyword">return</strong> addr;
+<a class="jxr_linenumber" name="L499" href="#L499">499</a> 	}
+<a class="jxr_linenumber" name="L500" href="#L500">500</a> 	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> AddressUse getUse(String value) {
+<a class="jxr_linenumber" name="L501" href="#L501">501</a> 		<strong class="jxr_keyword">if</strong> (StringUtils.isBlank(value)) {
+<a class="jxr_linenumber" name="L502" href="#L502">502</a> 			<strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L503" href="#L503">503</a> 		}
+<a class="jxr_linenumber" name="L504" href="#L504">504</a> 		<strong class="jxr_keyword">switch</strong> (value.trim().toUpperCase()) {
+<a class="jxr_linenumber" name="L505" href="#L505">505</a> 			<strong class="jxr_keyword">case</strong> <span class="jxr_string">"B"</span>, <em class="jxr_comment">// Firm/Business</em>
+<a class="jxr_linenumber" name="L506" href="#L506">506</a> 				 <span class="jxr_string">"O"</span> : <em class="jxr_comment">// Office/Business</em>
+<a class="jxr_linenumber" name="L507" href="#L507">507</a> 				<strong class="jxr_keyword">return</strong> AddressUse.WORK;
+<a class="jxr_linenumber" name="L508" href="#L508">508</a> 			<strong class="jxr_keyword">case</strong> <span class="jxr_string">"BI"</span> : <em class="jxr_comment">// Billing Address</em>
+<a class="jxr_linenumber" name="L509" href="#L509">509</a> 				<strong class="jxr_keyword">return</strong> AddressUse.BILLING;
+<a class="jxr_linenumber" name="L510" href="#L510">510</a> 			<strong class="jxr_keyword">case</strong> <span class="jxr_string">"C"</span> : <em class="jxr_comment">// Current Or Temporary</em>
+<a class="jxr_linenumber" name="L511" href="#L511">511</a> 				<strong class="jxr_keyword">return</strong> AddressUse.TEMP;
+<a class="jxr_linenumber" name="L512" href="#L512">512</a> 			<strong class="jxr_keyword">case</strong> <span class="jxr_string">"H"</span> : <em class="jxr_comment">// Home</em>
+<a class="jxr_linenumber" name="L513" href="#L513">513</a> 				<strong class="jxr_keyword">return</strong> AddressUse.HOME;
+<a class="jxr_linenumber" name="L514" href="#L514">514</a> 			<strong class="jxr_keyword">case</strong> <span class="jxr_string">"BA"</span>, <em class="jxr_comment">// Bad address</em>
+<a class="jxr_linenumber" name="L515" href="#L515">515</a> 				 <span class="jxr_string">"BDL"</span>, <em class="jxr_comment">// Birth delivery location (address where birth occurred)</em>
+<a class="jxr_linenumber" name="L516" href="#L516">516</a> 				 <span class="jxr_string">"BR"</span>, <em class="jxr_comment">// Residence at birth (home address at time of birth)</em>
+<a class="jxr_linenumber" name="L517" href="#L517">517</a> 				 <span class="jxr_string">"F"</span>, <em class="jxr_comment">// Country Of Origin</em>
+<a class="jxr_linenumber" name="L518" href="#L518">518</a> 				 <span class="jxr_string">"L"</span>, <em class="jxr_comment">// Legal Address</em>
+<a class="jxr_linenumber" name="L519" href="#L519">519</a> 				 <span class="jxr_string">"M"</span>, <em class="jxr_comment">// Mailing</em>
+<a class="jxr_linenumber" name="L520" href="#L520">520</a> 				 <span class="jxr_string">"N"</span>, <em class="jxr_comment">// Birth (nee) (birth address, not otherwise specified)</em>
+<a class="jxr_linenumber" name="L521" href="#L521">521</a> 				 <span class="jxr_string">"P"</span>, <em class="jxr_comment">// Permanent</em>
+<a class="jxr_linenumber" name="L522" href="#L522">522</a> 				 <span class="jxr_string">"RH"</span>, <em class="jxr_comment">// Registry home</em>
+<a class="jxr_linenumber" name="L523" href="#L523">523</a> 				 <span class="jxr_string">"S"</span>, <em class="jxr_comment">// Service Location</em>
+<a class="jxr_linenumber" name="L524" href="#L524">524</a> 				 <span class="jxr_string">"SH"</span>, <em class="jxr_comment">// Shipping Address</em>
+<a class="jxr_linenumber" name="L525" href="#L525">525</a> 				 <span class="jxr_string">"TM"</span>, <em class="jxr_comment">// Tube Address</em>
+<a class="jxr_linenumber" name="L526" href="#L526">526</a> 				 <span class="jxr_string">"V"</span> : <em class="jxr_comment">// Vacation</em>
+<a class="jxr_linenumber" name="L527" href="#L527">527</a> 			<strong class="jxr_keyword">default</strong> :
+<a class="jxr_linenumber" name="L528" href="#L528">528</a> 				<strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L529" href="#L529">529</a> 		}
+<a class="jxr_linenumber" name="L530" href="#L530">530</a> 	}
+<a class="jxr_linenumber" name="L531" href="#L531">531</a> }
+</pre>
+<hr/>
+<div id="footer">© 2025–2026 <a href="https://pointclickcare.com/industry-solutions/federal-government/">Audacious Inquiry</a></div>
+</body>
+</html>

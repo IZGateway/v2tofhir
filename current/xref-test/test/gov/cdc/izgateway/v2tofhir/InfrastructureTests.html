@@ -1,0 +1,175 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="" lang="">
+<head><meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<title>InfrastructureTests xref</title>
+<link type="text/css" rel="stylesheet" href="../../../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../../../testapidocs/test/gov/cdc/izgateway/v2tofhir/InfrastructureTests.html">View Javadoc</a></div><pre>
+<a class="jxr_linenumber" name="L1" href="#L1">1</a>   <strong class="jxr_keyword">package</strong> test.gov.cdc.izgateway.v2tofhir;
+<a class="jxr_linenumber" name="L2" href="#L2">2</a>   
+<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <strong class="jxr_keyword">import</strong> <strong class="jxr_keyword">static</strong> org.junit.jupiter.api.Assertions.assertEquals;
+<a class="jxr_linenumber" name="L4" href="#L4">4</a>   <strong class="jxr_keyword">import</strong> <strong class="jxr_keyword">static</strong> org.junit.jupiter.api.Assertions.assertTrue;
+<a class="jxr_linenumber" name="L5" href="#L5">5</a>   
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   <strong class="jxr_keyword">import</strong> java.util.ArrayList;
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <strong class="jxr_keyword">import</strong> java.util.LinkedHashSet;
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <strong class="jxr_keyword">import</strong> java.util.List;
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <strong class="jxr_keyword">import</strong> java.util.Set;
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>  
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>  <strong class="jxr_keyword">import</strong> org.hl7.fhir.r4.model.Coding;
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>  <strong class="jxr_keyword">import</strong> org.junit.jupiter.api.Disabled;
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <strong class="jxr_keyword">import</strong> org.junit.jupiter.params.ParameterizedTest;
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>  <strong class="jxr_keyword">import</strong> org.junit.jupiter.params.provider.MethodSource;
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>  
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>  <strong class="jxr_keyword">import</strong> ca.uhn.hl7v2.model.Type;
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>  <strong class="jxr_keyword">import</strong> gov.cdc.izgw.v2tofhir.utils.Systems;
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>  <strong class="jxr_keyword">import</strong> lombok.extern.slf4j.Slf4j;
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>  
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>  @Slf4j
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>  <strong class="jxr_keyword">class</strong> <a name="InfrastructureTests" href="../../../../../test/gov/cdc/izgateway/v2tofhir/InfrastructureTests.html#InfrastructureTests">InfrastructureTests</a> <strong class="jxr_keyword">extends</strong> <a name="TestBase" href="../../../../../test/gov/cdc/izgateway/v2tofhir/TestBase.html#TestBase">TestBase</a> {
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>  	<strong class="jxr_keyword">static</strong> {
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>  		log.debug(<span class="jxr_string">"{} loaded"</span>, InfrastructureTests.<strong class="jxr_keyword">class</strong>.getName());
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>  	}
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>  	@ParameterizedTest
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>  	@MethodSource(<span class="jxr_string">"getCodeSystemAliases"</span>)
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>  	<strong class="jxr_keyword">void</strong> testCodeSystemAliases(List&lt;String&gt; aliases) {
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>  		String mapsTo = aliases.get(0);
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>  		<strong class="jxr_keyword">for</strong> (String alias: aliases) {
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>  			Coding coding = <strong class="jxr_keyword">new</strong> Coding(alias, <strong class="jxr_keyword">null</strong>, <strong class="jxr_keyword">null</strong>);
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>  			<strong class="jxr_keyword">if</strong> (coding.getUserData(<span class="jxr_string">"originalSystem"</span>) != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>  				<em class="jxr_comment">// It was mapped</em>
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>  				assertEquals(mapsTo, coding.getSystem());
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>  			}
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>  		}
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>  	}
+<a class="jxr_linenumber" name="L37" href="#L37">37</a>  	<em class="jxr_comment">// TerminologyMapper has no system alias lookup yet (IGDD-3747), so this test still</em>
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>  	<em class="jxr_comment">// uses the deprecated utils.Systems stub.</em>
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>  	@SuppressWarnings(<span class="jxr_string">"deprecation"</span>)
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>  	<strong class="jxr_keyword">static</strong> List&lt;List&lt;String&gt;&gt; getCodeSystemAliases() {
+<a class="jxr_linenumber" name="L41" href="#L41">41</a>  		<strong class="jxr_keyword">return</strong> Systems.getCodeSystemAliases();
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>  	}
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>  	
+<a class="jxr_linenumber" name="L44" href="#L44">44</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> String[][] V2TYPES = {
+<a class="jxr_linenumber" name="L45" href="#L45">45</a>  		{ <span class="jxr_string">"AD"</span>, <span class="jxr_string">"ADDRESS"</span>}, 
+<a class="jxr_linenumber" name="L46" href="#L46">46</a>  		{ <span class="jxr_string">"AUI"</span>, <span class="jxr_string">"AUTHORIZATION INFORMATION"</span>}, 
+<a class="jxr_linenumber" name="L47" href="#L47">47</a>  		{ <span class="jxr_string">"CCD"</span>, <span class="jxr_string">"CHARGE CODE AND DATE"</span>}, 
+<a class="jxr_linenumber" name="L48" href="#L48">48</a>  		{ <span class="jxr_string">"CCP"</span>, <span class="jxr_string">"CHANNEL CALIBRATION PARAMETERS"</span>}, 
+<a class="jxr_linenumber" name="L49" href="#L49">49</a>  		{ <span class="jxr_string">"CD"</span>, <span class="jxr_string">"CHANNEL DEFINITION"</span>}, 
+<a class="jxr_linenumber" name="L50" href="#L50">50</a>  		{ <span class="jxr_string">"CE"</span>, <span class="jxr_string">"CODED ELEMENT"</span>}, 
+<a class="jxr_linenumber" name="L51" href="#L51">51</a>  		{ <span class="jxr_string">"CF"</span>, <span class="jxr_string">"CODED ELEMENT WITH FORMATTED VALUES"</span>}, 
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>  		{ <span class="jxr_string">"CNE"</span>, <span class="jxr_string">"CODED WITH NO EXCEPTIONS"</span>}, 
+<a class="jxr_linenumber" name="L53" href="#L53">53</a>  		{ <span class="jxr_string">"CNN"</span>, <span class="jxr_string">"COMPOSITE ID NUMBER AND NAME SIMPLIFIED"</span>}, 
+<a class="jxr_linenumber" name="L54" href="#L54">54</a>  		{ <span class="jxr_string">"CP"</span>, <span class="jxr_string">"COMPOSITE PRICE"</span>}, 
+<a class="jxr_linenumber" name="L55" href="#L55">55</a>  		{ <span class="jxr_string">"CQ"</span>, <span class="jxr_string">"COMPOSITE QUANTITY WITH UNITS"</span>}, 
+<a class="jxr_linenumber" name="L56" href="#L56">56</a>  		{ <span class="jxr_string">"CSU"</span>, <span class="jxr_string">"CHANNEL SENSITIVITY"</span>}, 
+<a class="jxr_linenumber" name="L57" href="#L57">57</a>  		{ <span class="jxr_string">"CWE"</span>, <span class="jxr_string">"CODED WITH EXCEPTIONS"</span>}, 
+<a class="jxr_linenumber" name="L58" href="#L58">58</a>  		{ <span class="jxr_string">"CX"</span>, <span class="jxr_string">"EXTENDED COMPOSITE ID WITH CHECK DIGIT"</span>}, 
+<a class="jxr_linenumber" name="L59" href="#L59">59</a>  		{ <span class="jxr_string">"DDI"</span>, <span class="jxr_string">"DAILY DEDUCTIBLE INFORMATION"</span>}, 
+<a class="jxr_linenumber" name="L60" href="#L60">60</a>  		{ <span class="jxr_string">"DIN"</span>, <span class="jxr_string">"DATE AND INSTITUTION NAME"</span>}, 
+<a class="jxr_linenumber" name="L61" href="#L61">61</a>  		{ <span class="jxr_string">"DLD"</span>, <span class="jxr_string">"DISCHARGE TO LOCATION AND DATE"</span>}, 
+<a class="jxr_linenumber" name="L62" href="#L62">62</a>  		{ <span class="jxr_string">"DLN"</span>, <span class="jxr_string">"DRIVER’S LICENSE NUMBER"</span>}, 
+<a class="jxr_linenumber" name="L63" href="#L63">63</a>  		{ <span class="jxr_string">"DLT"</span>, <span class="jxr_string">"DELTA"</span>}, 
+<a class="jxr_linenumber" name="L64" href="#L64">64</a>  		{ <span class="jxr_string">"DR"</span>, <span class="jxr_string">"DATE/TIME RANGE"</span>}, 
+<a class="jxr_linenumber" name="L65" href="#L65">65</a>  		{ <span class="jxr_string">"DT"</span>, <span class="jxr_string">"DATE"</span>}, 
+<a class="jxr_linenumber" name="L66" href="#L66">66</a>  		{ <span class="jxr_string">"DTM"</span>, <span class="jxr_string">"DATE/TIME"</span>}, 
+<a class="jxr_linenumber" name="L67" href="#L67">67</a>  		{ <span class="jxr_string">"DTN"</span>, <span class="jxr_string">"DAY TYPE AND NUMBER"</span>}, 
+<a class="jxr_linenumber" name="L68" href="#L68">68</a>  		{ <span class="jxr_string">"ED"</span>, <span class="jxr_string">"ENCAPSULATED DATA"</span>}, 
+<a class="jxr_linenumber" name="L69" href="#L69">69</a>  		{ <span class="jxr_string">"EI"</span>, <span class="jxr_string">"ENTITY IDENTIFIER"</span>}, 
+<a class="jxr_linenumber" name="L70" href="#L70">70</a>  		{ <span class="jxr_string">"EIP"</span>, <span class="jxr_string">"ENTITY IDENTIFIER PAIR"</span>}, 
+<a class="jxr_linenumber" name="L71" href="#L71">71</a>  		{ <span class="jxr_string">"ELD"</span>, <span class="jxr_string">"ERROR LOCATION AND DESCRIPTION"</span>}, 
+<a class="jxr_linenumber" name="L72" href="#L72">72</a>  		{ <span class="jxr_string">"ERL"</span>, <span class="jxr_string">"ERROR LOCATION"</span>}, 
+<a class="jxr_linenumber" name="L73" href="#L73">73</a>  		{ <span class="jxr_string">"FC"</span>, <span class="jxr_string">"FINANCIAL CLASS"</span>}, 
+<a class="jxr_linenumber" name="L74" href="#L74">74</a>  		{ <span class="jxr_string">"FN"</span>, <span class="jxr_string">"FAMILY NAME"</span>}, 
+<a class="jxr_linenumber" name="L75" href="#L75">75</a>  		{ <span class="jxr_string">"FT"</span>, <span class="jxr_string">"FORMATTED TEXT DATA"</span>}, 
+<a class="jxr_linenumber" name="L76" href="#L76">76</a>  		{ <span class="jxr_string">"GTS"</span>, <span class="jxr_string">"GENERAL TIMING SPECIFICATION"</span>}, 
+<a class="jxr_linenumber" name="L77" href="#L77">77</a>  		{ <span class="jxr_string">"HD"</span>, <span class="jxr_string">"HIERARCHIC DESIGNATOR"</span>}, 
+<a class="jxr_linenumber" name="L78" href="#L78">78</a>  		{ <span class="jxr_string">"ICD"</span>, <span class="jxr_string">"INSURANCE CERTIFICATION DEFINITION"</span>}, 
+<a class="jxr_linenumber" name="L79" href="#L79">79</a>  		{ <span class="jxr_string">"ID"</span>, <span class="jxr_string">"CODED VALUE FOR HL7 DEFINED TABLES"</span>}, 
+<a class="jxr_linenumber" name="L80" href="#L80">80</a>  		{ <span class="jxr_string">"IS"</span>, <span class="jxr_string">"CODED VALUE FOR USER DEFINES TABLES"</span>}, 
+<a class="jxr_linenumber" name="L81" href="#L81">81</a>  		{ <span class="jxr_string">"JCC"</span>, <span class="jxr_string">"JOB CODE/CLASS"</span>}, 
+<a class="jxr_linenumber" name="L82" href="#L82">82</a>  		{ <span class="jxr_string">"LA1"</span>, <span class="jxr_string">"LOCATION WITH ADDRESS VARIATION 1"</span>}, 
+<a class="jxr_linenumber" name="L83" href="#L83">83</a>  		{ <span class="jxr_string">"LA2"</span>, <span class="jxr_string">"LOCATION WITH ADDRESS VARIATION 2"</span>}, 
+<a class="jxr_linenumber" name="L84" href="#L84">84</a>  		{ <span class="jxr_string">"MA"</span>, <span class="jxr_string">"MULTIPLEXED ARRAY"</span>}, 
+<a class="jxr_linenumber" name="L85" href="#L85">85</a>  		{ <span class="jxr_string">"MO"</span>, <span class="jxr_string">"MONEY"</span>}, 
+<a class="jxr_linenumber" name="L86" href="#L86">86</a>  		{ <span class="jxr_string">"MOC"</span>, <span class="jxr_string">"MONEY AND CHARGE CODE"</span>}, 
+<a class="jxr_linenumber" name="L87" href="#L87">87</a>  		{ <span class="jxr_string">"MOP"</span>, <span class="jxr_string">"MONEY OR PERCENTAGE"</span>}, 
+<a class="jxr_linenumber" name="L88" href="#L88">88</a>  		{ <span class="jxr_string">"MSG"</span>, <span class="jxr_string">"MESSAGE TYPE"</span>}, 
+<a class="jxr_linenumber" name="L89" href="#L89">89</a>  		{ <span class="jxr_string">"NA"</span>, <span class="jxr_string">"NUMERIC ARRAY"</span>}, 
+<a class="jxr_linenumber" name="L90" href="#L90">90</a>  		{ <span class="jxr_string">"NDL"</span>, <span class="jxr_string">""</span>}, 
+<a class="jxr_linenumber" name="L91" href="#L91">91</a>  		{ <span class="jxr_string">"NM"</span>, <span class="jxr_string">"NUMERIC"</span>}, 
+<a class="jxr_linenumber" name="L92" href="#L92">92</a>  		{ <span class="jxr_string">"NR"</span>, <span class="jxr_string">"NUMERIC RANGE"</span>}, 
+<a class="jxr_linenumber" name="L93" href="#L93">93</a>  		{ <span class="jxr_string">"OCD"</span>, <span class="jxr_string">"OCCURRENCE CODE AND DATE"</span>}, 
+<a class="jxr_linenumber" name="L94" href="#L94">94</a>  		{ <span class="jxr_string">"OSD"</span>, <span class="jxr_string">"ORDER SEQUENCE DEFINITION"</span>}, 
+<a class="jxr_linenumber" name="L95" href="#L95">95</a>  		{ <span class="jxr_string">"OSP"</span>, <span class="jxr_string">"OCCURRENCE SPAN CODE AND DATE"</span>}, 
+<a class="jxr_linenumber" name="L96" href="#L96">96</a>  		{ <span class="jxr_string">"PIP"</span>, <span class="jxr_string">"PRACTITIONER INSTITUTIONAL PRIVILEGES"</span>}, 
+<a class="jxr_linenumber" name="L97" href="#L97">97</a>  		{ <span class="jxr_string">"PL"</span>, <span class="jxr_string">"PERSON LOCATION"</span>}, 
+<a class="jxr_linenumber" name="L98" href="#L98">98</a>  		{ <span class="jxr_string">"PLN"</span>, <span class="jxr_string">"PRACTITIONER LICENSE OR OTHER ID NUMBER"</span>}, 
+<a class="jxr_linenumber" name="L99" href="#L99">99</a>  		{ <span class="jxr_string">"PPN"</span>, <span class="jxr_string">"PERFORMING PERSON TIME STAMP"</span>}, 
+<a class="jxr_linenumber" name="L100" href="#L100">100</a> 		{ <span class="jxr_string">"PRL"</span>, <span class="jxr_string">"PARENT RESULT LINK"</span>}, 
+<a class="jxr_linenumber" name="L101" href="#L101">101</a> 		{ <span class="jxr_string">"PT"</span>, <span class="jxr_string">"PROCESSING TYPE"</span>}, 
+<a class="jxr_linenumber" name="L102" href="#L102">102</a> 		{ <span class="jxr_string">"PTA"</span>, <span class="jxr_string">"POLICY TYPE AND AMOUNT"</span>}, 
+<a class="jxr_linenumber" name="L103" href="#L103">103</a> 		{ <span class="jxr_string">"QIP"</span>, <span class="jxr_string">"QUERY INPUT PARAMETER LIST"</span>}, 
+<a class="jxr_linenumber" name="L104" href="#L104">104</a> 		{ <span class="jxr_string">"QSC"</span>, <span class="jxr_string">"QUERY SELECTION CRITERIA"</span>}, 
+<a class="jxr_linenumber" name="L105" href="#L105">105</a> 		{ <span class="jxr_string">"RCD"</span>, <span class="jxr_string">"ROW COLUMN DEFINITION"</span>}, 
+<a class="jxr_linenumber" name="L106" href="#L106">106</a> 		{ <span class="jxr_string">"RFR"</span>, <span class="jxr_string">"REFERENCE RANGE"</span>}, 
+<a class="jxr_linenumber" name="L107" href="#L107">107</a> 		{ <span class="jxr_string">"RI"</span>, <span class="jxr_string">"REPEAT INTERVAL"</span>}, 
+<a class="jxr_linenumber" name="L108" href="#L108">108</a> 		{ <span class="jxr_string">"RMC"</span>, <span class="jxr_string">"ROOM COVERAGE"</span>}, 
+<a class="jxr_linenumber" name="L109" href="#L109">109</a> 		{ <span class="jxr_string">"RP"</span>, <span class="jxr_string">"REFERENCE POINTER"</span>}, 
+<a class="jxr_linenumber" name="L110" href="#L110">110</a> 		{ <span class="jxr_string">"RPT"</span>, <span class="jxr_string">"REPEAT PATTERN"</span>}, 
+<a class="jxr_linenumber" name="L111" href="#L111">111</a> 		{ <span class="jxr_string">"SAD"</span>, <span class="jxr_string">"STREET ADDRESS"</span>}, 
+<a class="jxr_linenumber" name="L112" href="#L112">112</a> 		{ <span class="jxr_string">"SCV"</span>, <span class="jxr_string">"SCHEDULING CLASS VALUE PAIR"</span>}, 
+<a class="jxr_linenumber" name="L113" href="#L113">113</a> 		{ <span class="jxr_string">"SI"</span>, <span class="jxr_string">"SEQUENCE ID"</span>}, 
+<a class="jxr_linenumber" name="L114" href="#L114">114</a> 		{ <span class="jxr_string">"SN"</span>, <span class="jxr_string">"STRUCTURED NUMERIC"</span>}, 
+<a class="jxr_linenumber" name="L115" href="#L115">115</a> 		{ <span class="jxr_string">"SPD"</span>, <span class="jxr_string">"SPECIALTY DESCRIPTION"</span>}, 
+<a class="jxr_linenumber" name="L116" href="#L116">116</a> 		{ <span class="jxr_string">"SPS"</span>, <span class="jxr_string">"SPECIMEN SOURCE"</span>}, 
+<a class="jxr_linenumber" name="L117" href="#L117">117</a> 		{ <span class="jxr_string">"SRT"</span>, <span class="jxr_string">"SORT ORDER"</span>}, 
+<a class="jxr_linenumber" name="L118" href="#L118">118</a> 		{ <span class="jxr_string">"ST"</span>, <span class="jxr_string">"STRING DATA"</span>}, 
+<a class="jxr_linenumber" name="L119" href="#L119">119</a> 		{ <span class="jxr_string">"TM"</span>, <span class="jxr_string">"TIME"</span>}, 
+<a class="jxr_linenumber" name="L120" href="#L120">120</a> 		{ <span class="jxr_string">"TN"</span>, <span class="jxr_string">"TELEPHONE NUMBER"</span>}, 
+<a class="jxr_linenumber" name="L121" href="#L121">121</a> 		{ <span class="jxr_string">"TQ"</span>, <span class="jxr_string">"TIMING QUANTITY"</span>}, 
+<a class="jxr_linenumber" name="L122" href="#L122">122</a> 		{ <span class="jxr_string">"TS"</span>, <span class="jxr_string">"TIME STAMP"</span>}, 
+<a class="jxr_linenumber" name="L123" href="#L123">123</a> 		{ <span class="jxr_string">"TX"</span>, <span class="jxr_string">"TEXT DATA"</span>}, 
+<a class="jxr_linenumber" name="L124" href="#L124">124</a> 		{ <span class="jxr_string">"UVC"</span>, <span class="jxr_string">"UB VALUE CODE AND AMOUNT"</span>}, 
+<a class="jxr_linenumber" name="L125" href="#L125">125</a> 		{ <span class="jxr_string">"VH"</span>, <span class="jxr_string">"VISITING HOURS"</span>}, 
+<a class="jxr_linenumber" name="L126" href="#L126">126</a> 		{ <span class="jxr_string">"VID"</span>, <span class="jxr_string">"VERSION IDENTIFIER"</span>}, 
+<a class="jxr_linenumber" name="L127" href="#L127">127</a> 		{ <span class="jxr_string">"VR"</span>, <span class="jxr_string">"VALUE RANGE"</span>}, 
+<a class="jxr_linenumber" name="L128" href="#L128">128</a> 		{ <span class="jxr_string">"WVI"</span>, <span class="jxr_string">"CHANNEL IDENTIFIER"</span>}, 
+<a class="jxr_linenumber" name="L129" href="#L129">129</a> 		{ <span class="jxr_string">"WVS"</span>, <span class="jxr_string">"WAVEFORM SOURCE"</span>}, 
+<a class="jxr_linenumber" name="L130" href="#L130">130</a> 		{ <span class="jxr_string">"XAD"</span>, <span class="jxr_string">"EXTENDED ADDRESS"</span>}, 
+<a class="jxr_linenumber" name="L131" href="#L131">131</a> 		{ <span class="jxr_string">"XCN"</span>, <span class="jxr_string">"EXTENDED COMPOSITE ID NUMBER AND NAME FOR PERSONS"</span>}, 
+<a class="jxr_linenumber" name="L132" href="#L132">132</a> 		{ <span class="jxr_string">"XON"</span>, <span class="jxr_string">"EXTENDED COMPOSITE NAME AND IDENTIFICATION NUMBER FOR ORGANIZATIONS"</span>}, 
+<a class="jxr_linenumber" name="L133" href="#L133">133</a> 		{ <span class="jxr_string">"XPN"</span>, <span class="jxr_string">"EXTENDED PERSON NAME"</span>}, 
+<a class="jxr_linenumber" name="L134" href="#L134">134</a> 		{ <span class="jxr_string">"XTN"</span>, <span class="jxr_string">"EXTENDED TELECOMMUNICATION NUMBER"</span>} 
+<a class="jxr_linenumber" name="L135" href="#L135">135</a> 	};
+<a class="jxr_linenumber" name="L136" href="#L136">136</a> 	
+<a class="jxr_linenumber" name="L137" href="#L137">137</a> 	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> Set&lt;String&gt; TEST_DATATYPES_AVAILABLE = getTypesInUse();
+<a class="jxr_linenumber" name="L138" href="#L138">138</a> 	
+<a class="jxr_linenumber" name="L139" href="#L139">139</a> 	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> Set&lt;String&gt; getTypesInUse() {
+<a class="jxr_linenumber" name="L140" href="#L140">140</a> 		Set&lt;String&gt; typesInUse = <strong class="jxr_keyword">new</strong> LinkedHashSet&lt;&gt;();
+<a class="jxr_linenumber" name="L141" href="#L141">141</a> 		<strong class="jxr_keyword">for</strong> (Type field: TestBase.getTestData(<strong class="jxr_keyword">null</strong>)) {
+<a class="jxr_linenumber" name="L142" href="#L142">142</a> 			typesInUse.add(field.getName());
+<a class="jxr_linenumber" name="L143" href="#L143">143</a> 		}
+<a class="jxr_linenumber" name="L144" href="#L144">144</a> 		<strong class="jxr_keyword">return</strong> typesInUse;
+<a class="jxr_linenumber" name="L145" href="#L145">145</a> 	}
+<a class="jxr_linenumber" name="L146" href="#L146">146</a> 	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> List&lt;String[]&gt; getAllV2Types() {
+<a class="jxr_linenumber" name="L147" href="#L147">147</a> 		List&lt;String[]&gt; l = <strong class="jxr_keyword">new</strong> ArrayList&lt;&gt;(V2TYPES.length);
+<a class="jxr_linenumber" name="L148" href="#L148">148</a> 		<strong class="jxr_keyword">for</strong> (String[] a : V2TYPES) {
+<a class="jxr_linenumber" name="L149" href="#L149">149</a> 			l.add(a);
+<a class="jxr_linenumber" name="L150" href="#L150">150</a> 		}
+<a class="jxr_linenumber" name="L151" href="#L151">151</a> 		<strong class="jxr_keyword">return</strong> l;
+<a class="jxr_linenumber" name="L152" href="#L152">152</a> 	}
+<a class="jxr_linenumber" name="L153" href="#L153">153</a> 	
+<a class="jxr_linenumber" name="L154" href="#L154">154</a> 	@ParameterizedTest
+<a class="jxr_linenumber" name="L155" href="#L155">155</a> 	@MethodSource(<span class="jxr_string">"getAllV2Types"</span>)
+<a class="jxr_linenumber" name="L156" href="#L156">156</a> 	@Disabled(<span class="jxr_string">"Run this test to see what kind of test data is available from messages"</span>)
+<a class="jxr_linenumber" name="L157" href="#L157">157</a> 	<strong class="jxr_keyword">void</strong> testTypeList(String v2Type, String v2Name) {
+<a class="jxr_linenumber" name="L158" href="#L158">158</a> 		assertTrue(TEST_DATATYPES_AVAILABLE.contains(v2Type),
+<a class="jxr_linenumber" name="L159" href="#L159">159</a> 			<span class="jxr_string">"V2 "</span> + v2Type + <span class="jxr_string">" - "</span> + v2Name + <span class="jxr_string">" is not found in test data"</span>
+<a class="jxr_linenumber" name="L160" href="#L160">160</a> 			);
+<a class="jxr_linenumber" name="L161" href="#L161">161</a> 	}
+<a class="jxr_linenumber" name="L162" href="#L162">162</a> }
+</pre>
+<hr/>
+<div id="footer">© 2025–2026 <a href="https://pointclickcare.com/industry-solutions/federal-government/">Audacious Inquiry</a></div>
+</body>
+</html>

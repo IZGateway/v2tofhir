@@ -26,33 +26,38 @@ public interface Processor&lt;U, S&gt; {
 	 * @author Audacious Inquiry
 	 *
 	 */
-<span class="fc" id="L29">	static class NullProcessor implements Processor&lt;Object, Object&gt; {</span>
+	static class NullProcessor implements Processor&lt;Object, Object&gt; {
+		/** Create a processor that does nothing. */
+<span class="fc" id="L31">		public NullProcessor() {</span>
+			// Nothing to initialize
+<span class="fc" id="L33">		}</span>
+
 		@Override
 		public Base parse(Object structure) {
 			// Do Nothing
-<span class="nc" id="L33">			return null;</span>
+<span class="nc" id="L38">			return null;</span>
 		}
 
 		@Override
 		public boolean isEmpty(Object structure) {
-<span class="nc" id="L38">			return true;</span>
+<span class="nc" id="L43">			return true;</span>
 		}
 
 		@Override
 		public String structure() {
-<span class="nc" id="L43">			return &quot;(null)&quot;;</span>
+<span class="nc" id="L48">			return &quot;(null)&quot;;</span>
 		}
 
 		@Override
 		public Parser&lt;Object, Object&gt; getParser() {
-<span class="nc" id="L48">			return null;</span>
+<span class="nc" id="L53">			return null;</span>
 		}
 	}
 
 	/** A do-nothing processor.  */
-<span class="fc" id="L53">	static final Processor&lt;Object, Object&gt; NULL_PROCESSOR = new NullProcessor();</span>
+<span class="fc" id="L58">	static final Processor&lt;Object, Object&gt; NULL_PROCESSOR = new NullProcessor();</span>
 	/** The class of the do-nothing processor.  */
-<span class="fc" id="L55">	static final Class&lt;NullProcessor&gt; NULL_PROCESSOR_CLASS = NullProcessor.class;</span>
+<span class="fc" id="L60">	static final Class&lt;NullProcessor&gt; NULL_PROCESSOR_CLASS = NullProcessor.class;</span>
 
 	/**
 	 * Parses an structure into FHIR Resources.
@@ -74,7 +79,7 @@ public interface Processor&lt;U, S&gt; {
 	 * @return what this parser produces
 	 */
 	default Produces getProduces() {
-<span class="fc" id="L77">		return this.getClass().getAnnotation(Produces.class);</span>
+<span class="fc" id="L82">		return this.getClass().getAnnotation(Produces.class);</span>
 	}
 
 	/**
@@ -84,6 +89,7 @@ public interface Processor&lt;U, S&gt; {
 	String structure();
 
 	/**
+	 * Get the parser that uses this processor.
 	 * @return the current parser
 	 */
 	Parser&lt;U, S&gt; getParser();
@@ -94,7 +100,7 @@ public interface Processor&lt;U, S&gt; {
 	 * @return The bundle that is being prepared during the parse.
 	 */
 	default Bundle getBundle() {
-<span class="fc" id="L97">		return getParser().getContext().getBundle();</span>
+<span class="fc" id="L103">		return getParser().getContext().getBundle();</span>
 	}
 
 	/**
@@ -103,11 +109,11 @@ public interface Processor&lt;U, S&gt; {
 	 * @return	The issue
 	 */
 	public static OperationOutcomeIssueComponent getLastIssue(OperationOutcome oo) {
-<span class="nc" id="L106">		List&lt;OperationOutcomeIssueComponent&gt; l = oo.getIssue();</span>
-<span class="nc bnc" id="L107" title="All 2 branches missed.">		if (l.isEmpty()) {</span>
-<span class="nc" id="L108">			return oo.getIssueFirstRep();</span>
+<span class="nc" id="L112">		List&lt;OperationOutcomeIssueComponent&gt; l = oo.getIssue();</span>
+<span class="nc bnc" id="L113" title="All 2 branches missed.">		if (l.isEmpty()) {</span>
+<span class="nc" id="L114">			return oo.getIssueFirstRep();</span>
 		}
-<span class="nc" id="L110">		return l.get(l.size() - 1);</span>
+<span class="nc" id="L116">		return l.get(l.size() - 1);</span>
 	}
 	
 	
@@ -116,7 +122,7 @@ public interface Processor&lt;U, S&gt; {
 	 */
 	default void finish() {
 		// do nothing by default
-<span class="fc" id="L119">	}</span>
+<span class="fc" id="L125">	}</span>
 
 	/**
 	 * Handle any post-processing of the structure after it and all 
@@ -126,7 +132,7 @@ public interface Processor&lt;U, S&gt; {
 	 */
 	default void postProcess(S structure) {
 		// do nothing by default
-<span class="nc" id="L129">	}</span>
+<span class="nc" id="L135">	}</span>
 }
 
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

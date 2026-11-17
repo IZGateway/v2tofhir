@@ -34,11 +34,16 @@ import lombok.extern.slf4j.Slf4j;
  * @see TerminologyMapperFactory
  */
 <span class="fc" id="L36">@Slf4j</span>
-<span class="fc" id="L37">public class DefaultTerminologyMapper implements TerminologyMapper {</span>
+public class DefaultTerminologyMapper implements TerminologyMapper {
 
-<span class="fc" id="L39">    private final Map&lt;String, ConceptMap&gt; loadedConceptMaps = new LinkedHashMap&lt;&gt;();</span>
-<span class="fc" id="L40">    private final Map&lt;String, CodeSystem&gt; loadedCodeSystems = new LinkedHashMap&lt;&gt;();</span>
-<span class="fc" id="L41">    private final Map&lt;String, ValueSet&gt; loadedValueSets = new LinkedHashMap&lt;&gt;();</span>
+    /** Create a mapper that uses the built-in terminology tables. */
+<span class="fc" id="L40">    public DefaultTerminologyMapper() {</span>
+        // Nothing to initialize
+<span class="fc" id="L42">    }</span>
+
+<span class="fc" id="L44">    private final Map&lt;String, ConceptMap&gt; loadedConceptMaps = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L45">    private final Map&lt;String, CodeSystem&gt; loadedCodeSystems = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L46">    private final Map&lt;String, ValueSet&gt; loadedValueSets = new LinkedHashMap&lt;&gt;();</span>
 
     // -------------------------------------------------------------------------
     // NamingSystemResolver
@@ -50,7 +55,7 @@ import lombok.extern.slf4j.Slf4j;
      */
     @Override
     public Optional&lt;String&gt; toUri(String oid) {
-<span class="fc" id="L53">        return Optional.ofNullable(Systems.toUri(oid));</span>
+<span class="fc" id="L58">        return Optional.ofNullable(Systems.toUri(oid));</span>
     }
 
     /**
@@ -59,7 +64,7 @@ import lombok.extern.slf4j.Slf4j;
      */
     @Override
     public Optional&lt;String&gt; toOid(String uri) {
-<span class="fc" id="L62">        return Optional.ofNullable(Systems.toOid(uri));</span>
+<span class="fc" id="L67">        return Optional.ofNullable(Systems.toOid(uri));</span>
     }
 
     /**
@@ -68,7 +73,7 @@ import lombok.extern.slf4j.Slf4j;
      */
     @Override
     public Optional&lt;NamingSystem&gt; getNamingSystem(String oidOrUriOrId) {
-<span class="fc" id="L71">        return Optional.ofNullable(Systems.getNamingSystem(oidOrUriOrId));</span>
+<span class="fc" id="L76">        return Optional.ofNullable(Systems.getNamingSystem(oidOrUriOrId));</span>
     }
 
     /**
@@ -80,7 +85,7 @@ import lombok.extern.slf4j.Slf4j;
      */
     @Override
     public String v2TableUri(String tableNameOrNumber) {
-<span class="fc" id="L83">        return Mapping.mapTableNameToSystem(tableNameOrNumber);</span>
+<span class="fc" id="L88">        return Mapping.mapTableNameToSystem(tableNameOrNumber);</span>
     }
 
     /**
@@ -93,12 +98,12 @@ import lombok.extern.slf4j.Slf4j;
      */
     @Override
     public String normalizeSystem(String system) {
-<span class="pc bpc" id="L96" title="1 of 2 branches missed.">        if (system == null) {</span>
-<span class="nc" id="L97">            return null;</span>
+<span class="pc bpc" id="L101" title="1 of 2 branches missed.">        if (system == null) {</span>
+<span class="nc" id="L102">            return null;</span>
         }
-<span class="fc" id="L99">        org.hl7.fhir.r4.model.Identifier temp = new org.hl7.fhir.r4.model.Identifier().setSystem(system);</span>
-<span class="fc" id="L100">        Mapping.mapSystem(temp);</span>
-<span class="fc" id="L101">        return temp.getSystem();</span>
+<span class="fc" id="L104">        org.hl7.fhir.r4.model.Identifier temp = new org.hl7.fhir.r4.model.Identifier().setSystem(system);</span>
+<span class="fc" id="L105">        Mapping.mapSystem(temp);</span>
+<span class="fc" id="L106">        return temp.getSystem();</span>
     }
 
     // -------------------------------------------------------------------------
@@ -114,13 +119,13 @@ import lombok.extern.slf4j.Slf4j;
      */
     @Override
     public Optional&lt;TranslationResult&gt; mapCode(String mappingName, Coding source) {
-<span class="fc" id="L117">        Mapping m = Mapping.getMapping(mappingName);</span>
-<span class="fc bfc" id="L118" title="All 2 branches covered.">        if (m == null) {</span>
-<span class="fc" id="L119">            return Optional.empty();</span>
+<span class="fc" id="L122">        Mapping m = Mapping.getMapping(mappingName);</span>
+<span class="fc bfc" id="L123" title="All 2 branches covered.">        if (m == null) {</span>
+<span class="fc" id="L124">            return Optional.empty();</span>
         }
-<span class="fc" id="L121">        Coding result = m.mapCode(source, true);</span>
-<span class="fc" id="L122">        return Optional.ofNullable(result)</span>
-<span class="fc" id="L123">                .map(c -&gt; TranslationResult.exact(source, c, mappingName));</span>
+<span class="fc" id="L126">        Coding result = m.mapCode(source, true);</span>
+<span class="fc" id="L127">        return Optional.ofNullable(result)</span>
+<span class="fc" id="L128">                .map(c -&gt; TranslationResult.exact(source, c, mappingName));</span>
     }
 
     /**
@@ -132,7 +137,7 @@ import lombok.extern.slf4j.Slf4j;
      */
     @Override
     public Optional&lt;TranslationResult&gt; translate(Coding source, String targetSystem) {
-<span class="fc" id="L135">        return Optional.empty();</span>
+<span class="fc" id="L140">        return Optional.empty();</span>
     }
 
     // -------------------------------------------------------------------------
@@ -145,7 +150,7 @@ import lombok.extern.slf4j.Slf4j;
      */
     @Override
     public Optional&lt;String&gt; getDisplay(String system, String code) {
-<span class="fc" id="L148">        return Optional.ofNullable(Mapping.getDisplay(code, system));</span>
+<span class="fc" id="L153">        return Optional.ofNullable(Mapping.getDisplay(code, system));</span>
     }
 
     /**
@@ -154,7 +159,7 @@ import lombok.extern.slf4j.Slf4j;
      */
     @Override
     public boolean hasDisplay(String system, String code) {
-<span class="fc" id="L157">        return Mapping.hasDisplay(code, system);</span>
+<span class="fc" id="L162">        return Mapping.hasDisplay(code, system);</span>
     }
 
     /**
@@ -163,8 +168,8 @@ import lombok.extern.slf4j.Slf4j;
      */
     @Override
     public void setDisplay(String system, String code, String display) {
-<span class="fc" id="L166">        Mapping.updateCodeLookup(new Coding(system, code, display));</span>
-<span class="fc" id="L167">    }</span>
+<span class="fc" id="L171">        Mapping.updateCodeLookup(new Coding(system, code, display));</span>
+<span class="fc" id="L172">    }</span>
 
     // -------------------------------------------------------------------------
     // CodeValidator
@@ -179,7 +184,7 @@ import lombok.extern.slf4j.Slf4j;
      */
     @Override
     public boolean validateCode(String valueSetUri, String system, String code) {
-<span class="fc" id="L182">        return false;</span>
+<span class="fc" id="L187">        return false;</span>
     }
 
     // -------------------------------------------------------------------------
@@ -192,7 +197,7 @@ import lombok.extern.slf4j.Slf4j;
      */
     @Override
     public Optional&lt;Coding&gt; mapUnit(String unitCode) {
-<span class="fc" id="L195">        return Optional.ofNullable(Units.toUcum(unitCode));</span>
+<span class="fc" id="L200">        return Optional.ofNullable(Units.toUcum(unitCode));</span>
     }
 
     // -------------------------------------------------------------------------
@@ -208,10 +213,10 @@ import lombok.extern.slf4j.Slf4j;
      */
     @Override
     public Optional&lt;Extension&gt; mapRace(String code, String codeSystem) {
-<span class="fc" id="L211">        CodeableConcept race = new CodeableConcept().addCoding(new Coding(codeSystem, code, null));</span>
-<span class="fc" id="L212">        Extension ext = new Extension().setUrl(RaceAndEthnicity.US_CORE_RACE);</span>
-<span class="fc" id="L213">        RaceAndEthnicity.setRaceCode(race, ext);</span>
-<span class="pc bpc" id="L214" title="1 of 2 branches missed.">        return ext.hasExtension() ? Optional.of(ext) : Optional.empty();</span>
+<span class="fc" id="L216">        CodeableConcept race = new CodeableConcept().addCoding(new Coding(codeSystem, code, null));</span>
+<span class="fc" id="L217">        Extension ext = new Extension().setUrl(RaceAndEthnicity.US_CORE_RACE);</span>
+<span class="fc" id="L218">        RaceAndEthnicity.setRaceCode(race, ext);</span>
+<span class="pc bpc" id="L219" title="1 of 2 branches missed.">        return ext.hasExtension() ? Optional.of(ext) : Optional.empty();</span>
     }
 
     /**
@@ -223,10 +228,10 @@ import lombok.extern.slf4j.Slf4j;
      */
     @Override
     public Optional&lt;Extension&gt; mapEthnicity(String code, String codeSystem) {
-<span class="fc" id="L226">        CodeableConcept ethnicity = new CodeableConcept().addCoding(new Coding(codeSystem, code, null));</span>
-<span class="fc" id="L227">        Extension ext = new Extension().setUrl(RaceAndEthnicity.US_CORE_ETHNICITY);</span>
-<span class="fc" id="L228">        RaceAndEthnicity.setEthnicityCode(ethnicity, ext);</span>
-<span class="pc bpc" id="L229" title="1 of 2 branches missed.">        return ext.hasExtension() ? Optional.of(ext) : Optional.empty();</span>
+<span class="fc" id="L231">        CodeableConcept ethnicity = new CodeableConcept().addCoding(new Coding(codeSystem, code, null));</span>
+<span class="fc" id="L232">        Extension ext = new Extension().setUrl(RaceAndEthnicity.US_CORE_ETHNICITY);</span>
+<span class="fc" id="L233">        RaceAndEthnicity.setEthnicityCode(ethnicity, ext);</span>
+<span class="pc bpc" id="L234" title="1 of 2 branches missed.">        return ext.hasExtension() ? Optional.of(ext) : Optional.empty();</span>
     }
 
     // -------------------------------------------------------------------------
@@ -241,12 +246,12 @@ import lombok.extern.slf4j.Slf4j;
      */
     @Override
     public Optional&lt;Coding&gt; lookupCountry(String code, String codeSystem) {
-<span class="fc" id="L244">        String name = ISO3166.name(code);</span>
-<span class="fc bfc" id="L245" title="All 2 branches covered.">        if (name == null) {</span>
-<span class="fc" id="L246">            return Optional.empty();</span>
+<span class="fc" id="L249">        String name = ISO3166.name(code);</span>
+<span class="fc bfc" id="L250" title="All 2 branches covered.">        if (name == null) {</span>
+<span class="fc" id="L251">            return Optional.empty();</span>
         }
-<span class="fc" id="L248">        String alpha2 = ISO3166.twoLetterCode(code);</span>
-<span class="pc bpc" id="L249" title="1 of 2 branches missed.">        return Optional.of(new Coding(codeSystem, alpha2 != null ? alpha2 : code, name));</span>
+<span class="fc" id="L253">        String alpha2 = ISO3166.twoLetterCode(code);</span>
+<span class="pc bpc" id="L254" title="1 of 2 branches missed.">        return Optional.of(new Coding(codeSystem, alpha2 != null ? alpha2 : code, name));</span>
     }
 
     /**
@@ -255,7 +260,7 @@ import lombok.extern.slf4j.Slf4j;
      */
     @Override
     public Optional&lt;String&gt; normalizeCountry(String nameOrCode) {
-<span class="fc" id="L258">        return Optional.ofNullable(ISO3166.twoLetterCode(nameOrCode));</span>
+<span class="fc" id="L263">        return Optional.ofNullable(ISO3166.twoLetterCode(nameOrCode));</span>
     }
 
     // -------------------------------------------------------------------------
@@ -277,26 +282,26 @@ import lombok.extern.slf4j.Slf4j;
      */
     @Override
     public void load(Resource resource) {
-<span class="fc bfc" id="L280" title="All 2 branches covered.">        if (resource == null) {</span>
-<span class="fc" id="L281">            throw new TerminologyException(&quot;Cannot load a null resource&quot;);</span>
+<span class="fc bfc" id="L285" title="All 2 branches covered.">        if (resource == null) {</span>
+<span class="fc" id="L286">            throw new TerminologyException(&quot;Cannot load a null resource&quot;);</span>
         }
-<span class="fc bfc" id="L283" title="All 5 branches covered.">        switch (resource) {</span>
-<span class="fc" id="L284">        case NamingSystem ns -&gt; {</span>
-<span class="fc" id="L285">            List&lt;String&gt; identifiers = new ArrayList&lt;&gt;();</span>
-<span class="fc" id="L286">            ns.getUniqueId().forEach(uid -&gt; identifiers.add(uid.getValue()));</span>
-<span class="pc bpc" id="L287" title="1 of 2 branches missed.">            if (!identifiers.isEmpty()) {</span>
-<span class="fc" id="L288">                Systems.addNamingSystem(ns.getName(), identifiers.toArray(new String[0]));</span>
+<span class="fc bfc" id="L288" title="All 5 branches covered.">        switch (resource) {</span>
+<span class="fc" id="L289">        case NamingSystem ns -&gt; {</span>
+<span class="fc" id="L290">            List&lt;String&gt; identifiers = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L291">            ns.getUniqueId().forEach(uid -&gt; identifiers.add(uid.getValue()));</span>
+<span class="pc bpc" id="L292" title="1 of 2 branches missed.">            if (!identifiers.isEmpty()) {</span>
+<span class="fc" id="L293">                Systems.addNamingSystem(ns.getName(), identifiers.toArray(new String[0]));</span>
             } else {
-<span class="nc" id="L290">                log.warn(&quot;NamingSystem '{}' has no unique identifiers; skipping registration&quot;, ns.getName());</span>
+<span class="nc" id="L295">                log.warn(&quot;NamingSystem '{}' has no unique identifiers; skipping registration&quot;, ns.getName());</span>
             }
-<span class="fc" id="L292">        }</span>
-<span class="fc" id="L293">        case ConceptMap cm -&gt; loadedConceptMaps.put(cm.getIdElement().getIdPart(), cm);</span>
-<span class="fc" id="L294">        case CodeSystem cs -&gt; loadedCodeSystems.put(cs.getIdElement().getIdPart(), cs);</span>
-<span class="fc" id="L295">        case ValueSet vs -&gt; loadedValueSets.put(vs.getIdElement().getIdPart(), vs);</span>
-<span class="fc" id="L296">        default -&gt; throw new TerminologyException(</span>
-<span class="fc" id="L297">				&quot;Unsupported resource type for load(): &quot; + resource.getResourceType());</span>
+<span class="fc" id="L297">        }</span>
+<span class="fc" id="L298">        case ConceptMap cm -&gt; loadedConceptMaps.put(cm.getIdElement().getIdPart(), cm);</span>
+<span class="fc" id="L299">        case CodeSystem cs -&gt; loadedCodeSystems.put(cs.getIdElement().getIdPart(), cs);</span>
+<span class="fc" id="L300">        case ValueSet vs -&gt; loadedValueSets.put(vs.getIdElement().getIdPart(), vs);</span>
+<span class="fc" id="L301">        default -&gt; throw new TerminologyException(</span>
+<span class="fc" id="L302">				&quot;Unsupported resource type for load(): &quot; + resource.getResourceType());</span>
         }
-<span class="fc" id="L299">    }</span>
+<span class="fc" id="L304">    }</span>
 
     /**
      * {@inheritDoc}
@@ -308,15 +313,15 @@ import lombok.extern.slf4j.Slf4j;
      */
     @Override
     public Optional&lt;ConceptMap&gt; getConceptMap(String id) {
-<span class="fc" id="L311">        ConceptMap cm = loadedConceptMaps.get(id);</span>
-<span class="fc bfc" id="L312" title="All 2 branches covered.">        if (cm != null) {</span>
-<span class="fc" id="L313">            return Optional.of(cm);</span>
+<span class="fc" id="L316">        ConceptMap cm = loadedConceptMaps.get(id);</span>
+<span class="fc bfc" id="L317" title="All 2 branches covered.">        if (cm != null) {</span>
+<span class="fc" id="L318">            return Optional.of(cm);</span>
         }
-<span class="fc bfc" id="L315" title="All 2 branches covered.">        if (Units.CONCEPT_MAP_ID.equals(id)) {</span>
-<span class="fc" id="L316">            return Units.getConceptMap();</span>
+<span class="fc bfc" id="L320" title="All 2 branches covered.">        if (Units.CONCEPT_MAP_ID.equals(id)) {</span>
+<span class="fc" id="L321">            return Units.getConceptMap();</span>
         }
-<span class="fc" id="L318">        return Optional.ofNullable(Mapping.getMapping(id))</span>
-<span class="fc" id="L319">                .map(Mapping::asConceptMap);</span>
+<span class="fc" id="L323">        return Optional.ofNullable(Mapping.getMapping(id))</span>
+<span class="fc" id="L324">                .map(Mapping::asConceptMap);</span>
     }
 
     /**
@@ -327,18 +332,18 @@ import lombok.extern.slf4j.Slf4j;
      */
     @Override
     public Optional&lt;CodeSystem&gt; getCodeSystem(String id) {
-<span class="fc" id="L330">        CodeSystem cs = loadedCodeSystems.get(id);</span>
-<span class="fc bfc" id="L331" title="All 2 branches covered.">        if (cs != null) {</span>
-<span class="fc" id="L332">            return Optional.of(cs);</span>
+<span class="fc" id="L335">        CodeSystem cs = loadedCodeSystems.get(id);</span>
+<span class="fc bfc" id="L336" title="All 2 branches covered.">        if (cs != null) {</span>
+<span class="fc" id="L337">            return Optional.of(cs);</span>
         }
-<span class="fc" id="L334">        NamingSystem ns = Systems.getNamingSystem(id);</span>
-<span class="pc bpc" id="L335" title="1 of 2 branches missed.">        if (ns != null) {</span>
-<span class="nc" id="L336">            Object userData = ns.getUserData(CodeSystem.class.getName());</span>
-<span class="nc bnc" id="L337" title="All 2 branches missed.">            if (userData instanceof CodeSystem cachedCs) {</span>
-<span class="nc" id="L338">                return Optional.of(cachedCs);</span>
+<span class="fc" id="L339">        NamingSystem ns = Systems.getNamingSystem(id);</span>
+<span class="pc bpc" id="L340" title="1 of 2 branches missed.">        if (ns != null) {</span>
+<span class="nc" id="L341">            Object userData = ns.getUserData(CodeSystem.class.getName());</span>
+<span class="nc bnc" id="L342" title="All 2 branches missed.">            if (userData instanceof CodeSystem cachedCs) {</span>
+<span class="nc" id="L343">                return Optional.of(cachedCs);</span>
             }
         }
-<span class="fc" id="L341">        return Optional.empty();</span>
+<span class="fc" id="L346">        return Optional.empty();</span>
     }
 
     /**
@@ -349,14 +354,14 @@ import lombok.extern.slf4j.Slf4j;
      */
     @Override
     public Optional&lt;ValueSet&gt; getValueSet(String id) {
-<span class="fc" id="L352">        ValueSet vs = loadedValueSets.get(id);</span>
-<span class="fc bfc" id="L353" title="All 2 branches covered.">        if (vs != null) {</span>
-<span class="fc" id="L354">            return Optional.of(vs);</span>
+<span class="fc" id="L357">        ValueSet vs = loadedValueSets.get(id);</span>
+<span class="fc bfc" id="L358" title="All 2 branches covered.">        if (vs != null) {</span>
+<span class="fc" id="L359">            return Optional.of(vs);</span>
         }
-<span class="fc bfc" id="L356" title="All 2 branches covered.">        if (Units.VALUE_SET_ID.equals(id)) {</span>
-<span class="fc" id="L357">            return Units.getValueSet();</span>
+<span class="fc bfc" id="L361" title="All 2 branches covered.">        if (Units.VALUE_SET_ID.equals(id)) {</span>
+<span class="fc" id="L362">            return Units.getValueSet();</span>
         }
-<span class="fc" id="L359">        return Optional.empty();</span>
+<span class="fc" id="L364">        return Optional.empty();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
