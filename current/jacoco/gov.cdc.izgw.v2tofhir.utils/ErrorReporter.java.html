@@ -82,9 +82,9 @@ public interface ErrorReporter {
 	 */
 	public static ErrorReporter get() {
 <span class="fc" id="L84">		WeakReference&lt;ErrorReporter&gt; ref = DefaultErrorReporter.ERROR_REPORTER.get();</span>
-<span class="pc bpc" id="L85" title="1 of 2 branches missed.">		if (ref != null) {</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">		if (ref != null) {</span>
 <span class="fc" id="L86">			ErrorReporter r = ref.get();</span>
-<span class="fc bfc" id="L87" title="All 2 branches covered.">			if (r != null) {</span>
+<span class="pc bpc" id="L87" title="1 of 2 branches missed.">			if (r != null) {</span>
 <span class="fc" id="L88">				return r;</span>
 			}
 		}
