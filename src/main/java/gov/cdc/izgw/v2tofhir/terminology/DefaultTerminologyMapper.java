@@ -36,6 +36,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DefaultTerminologyMapper implements TerminologyMapper {
 
+    /** Create a mapper that uses the built-in terminology tables. */
+    public DefaultTerminologyMapper() {
+        // Nothing to initialize
+    }
+
     private final Map<String, ConceptMap> loadedConceptMaps = new LinkedHashMap<>();
     private final Map<String, CodeSystem> loadedCodeSystems = new LinkedHashMap<>();
     private final Map<String, ValueSet> loadedValueSets = new LinkedHashMap<>();

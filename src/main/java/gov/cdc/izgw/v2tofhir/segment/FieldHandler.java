@@ -48,6 +48,7 @@ public class FieldHandler implements Comparable<FieldHandler> {
 	private final Class<? extends IBase> theClass;
 	private final Class<? extends Type> theType;
 	/**
+	 * Create a FieldHandler from a ComesFrom annotation on a parser method.
 	 * @param method	The method to which the ComesFrom annotation applies.
 	 * @param from		The annotation
 	 * @param p	The class for the parser
@@ -271,6 +272,7 @@ public class FieldHandler implements Comparable<FieldHandler> {
 	}
 	
 	/**
+	 * Compare two field handlers to sort them.
 	 * @param fh1	The first field handler to compare
 	 * @param fh2	The second field handler to compare
 	 * @return &lt; 0 if fh1 &lt; fh2, 0 if equal, &gt; 0 if fh1 &gt; fh2

@@ -27,6 +27,11 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class FhirConverter implements HttpMessageConverter<Resource> {
+	/** Create a FHIR message converter. */
+	public FhirConverter() {
+		// Nothing to initialize
+	}
+
 	@Override
 	public boolean canRead(Class<?> clazz, MediaType mediaType) {
 		mediaType = mediaType == null ? null : new MediaType(StringUtils.lowerCase(mediaType.getType()), StringUtils.lowerCase(mediaType.getSubtype()));

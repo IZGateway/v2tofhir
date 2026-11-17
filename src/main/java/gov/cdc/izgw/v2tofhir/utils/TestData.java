@@ -11,6 +11,7 @@ import java.util.ServiceConfigurationError;
 
 import org.apache.commons.io.input.BOMInputStream;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.hl7.fhir.instance.model.api.IBase;
 import org.hl7.fhir.r4.fhirpath.ExpressionNode;
 import org.hl7.fhir.r4.model.BooleanType;
@@ -161,7 +162,7 @@ public class TestData {
 		return s;
 	}
 	private static String getSegmentName(String line) {
-		if (StringUtils.startsWithAny(line, "MSH", "QPD")) {
+		if (Strings.CS.startsWithAny(line, "MSH", "QPD")) {
 			return line.substring(0, 3);
 		}
 		int pos = line.indexOf('|', 4);

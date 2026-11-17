@@ -67,6 +67,7 @@ public class ContentUtils {
 		MediaType.APPLICATION_XML,
 		MediaType.TEXT_XML
 	);
+	/** The media types that the FHIR converter supports. */
 	protected static final List<MediaType> HL7_MEDIA_TYPES = Arrays.asList(
 		new MediaType("application", "fhir"),
 		new MediaType("text", "fhir"),

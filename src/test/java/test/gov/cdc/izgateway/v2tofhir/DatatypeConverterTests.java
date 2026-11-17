@@ -23,6 +23,7 @@ import java.util.function.Supplier;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.text.StringEscapeUtils;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.CodeType;
@@ -154,6 +155,9 @@ class DatatypeConverterTests extends TestBase {
 		if (coding != null && coding.hasSystem()) {
 			if (coding.getSystem().contains(":")) {
 				// There is a proper URI, verify we got it correctly.
+				// TerminologyMapper has no system alias lookup yet (IGDD-3747), so this test still
+				// uses the deprecated utils.Systems stub.
+				@SuppressWarnings("deprecation")
 				Collection<String> names = Systems.getSystemNames(coding.getSystem());
 				if (coding.hasUserData("originalSystem")) {
 					String originalSystem = (String)coding.getUserData("originalSystem");
@@ -173,7 +177,7 @@ class DatatypeConverterTests extends TestBase {
 				
 			} else {
 				assertTrue(
-					StringUtils.contains(encoded, coding.getSystem()), 
+					Strings.CS.contains(encoded, coding.getSystem()), 
 					t.encode() + " does not contain " + coding.getSystem()
 				);
 			}

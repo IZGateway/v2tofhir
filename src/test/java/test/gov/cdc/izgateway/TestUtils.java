@@ -13,6 +13,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.hl7.fhir.r4.model.BaseDateTimeType;
 import org.hl7.fhir.r4.model.CodeType;
 import org.hl7.fhir.r4.model.PrimitiveType;
@@ -37,6 +38,10 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class TestUtils {
+	/** Utility class with static methods only. */
+	private TestUtils() {
+		// Do not create instances
+	}
 	private static final String[] PAD_FORMATS = { " %s ", " %s", "%s ", "%s" };
 	private static final FhirContext ctx = FhirContext.forR4();
 	private static final IParser fhirParser = ctx.newJsonParser().setPrettyPrint(true);
@@ -78,7 +83,7 @@ public class TestUtils {
 		if (comp != 2) {
 			return comp;
 		}
-		return StringUtils.compare(toString(a), toString(b));
+		return Strings.CS.compare(toString(a), toString(b));
 	}
 
 	/**
@@ -95,7 +100,7 @@ public class TestUtils {
 		if (comp != 2) {
 			return comp;
 		}
-		return StringUtils.compare(toString(a), toString(b));
+		return Strings.CS.compare(toString(a), toString(b));
 	}
 
 	/**
@@ -132,7 +137,7 @@ public class TestUtils {
 		if (b == null) {
 			return 1;
 		}
-		int comp = StringUtils.compare(a.getClass().getName(), b.getClass().getName());
+		int comp = Strings.CS.compare(a.getClass().getName(), b.getClass().getName());
 		if (comp != 0) {
 			return comp;
 		}

@@ -11,7 +11,7 @@ import java.util.ServiceConfigurationError;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.hl7.fhir.r4.model.DecimalType;
 import org.hl7.fhir.r4.model.IntegerType;
 import org.hl7.fhir.r4.model.PositiveIntType;
@@ -125,7 +125,7 @@ class NumericTypeTests {
 		List<String> a = new ArrayList<>();
 		for (String format: NUMBER_FORMATS) {
 			String v = n.toPlainString();
-			if (StringUtils.contains(v, "-") && StringUtils.containsAny(format, "+", "-")) {
+			if (Strings.CS.contains(v, "-") && Strings.CS.containsAny(format, "+", "-")) {
 				continue;
 			}
 			a.add(String.format(format, v));

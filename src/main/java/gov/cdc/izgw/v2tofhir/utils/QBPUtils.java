@@ -132,7 +132,7 @@ public class QBPUtils {
 	 * @param qbp	The QBP message to update
 	 * @param map	A map such as that returned by ServletRequest.getParameters() 
 	 * containing the request parameters
-	 * @param isPatient 
+	 * @param isPatient True if the request is for the Patient resource
 	 * @return	The updated QPD Segment
 	 * @throws HL7Exception If an error occurs
 	 */

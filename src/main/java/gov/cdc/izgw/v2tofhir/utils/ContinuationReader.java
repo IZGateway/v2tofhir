@@ -32,6 +32,7 @@ public class ContinuationReader implements AutoCloseable {
 	}
 	
 	/**
+	 * Read a logical line of input, which can span several physical lines.
 	 * @return Reads a line of input, trims it, and returns it, appending
 	 * the next line and any following continuation lines terminated with 
 	 * a backslash

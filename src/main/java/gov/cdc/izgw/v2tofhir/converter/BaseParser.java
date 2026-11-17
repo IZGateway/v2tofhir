@@ -70,13 +70,18 @@ public abstract class BaseParser<U,S> implements Parser<U,S> {
 	/** The shared context for parse of this message 
 	 */
 	private final Context<Parser<U,S>> context;
+	/** The resources that the current structure created or changed. Cleared before each structure. */
 	protected final Set<IBaseResource> updated = new LinkedHashSet<>();
+	/** The resources that need a Provenance resource when the parse is complete. */
 	protected final Set<IBaseResource> resourcesNeedingProvenance = new LinkedHashSet<>();
 	
 	@Getter
 	private Supplier<String> idGenerator = ULID::random;
+	/** Cache of the processor class found for each structure name. */
 	protected final Map<String, Class<Processor<U, S>>> parsers = new LinkedHashMap<>();
+	/** The structures already processed, with the name of the processor that processed each one. */
 	protected final Map<S, String> processed = new LinkedHashMap<>();
+	/** The processor for the structure that is being parsed now. */
 	protected Processor<U, S> processor = null;
 	
 	/**
@@ -199,10 +204,19 @@ public abstract class BaseParser<U,S> implements Parser<U,S> {
 		return b;
 	}
 	
+	/**
+	 * Called before a structure is parsed. The default does nothing. Subclasses can override it.
+	 * @param structure The structure that will be parsed
+	 */
 	protected void beforeParsing(S structure) {
 		// Do Nothing
 	}
 	
+	/**
+	 * Called after a structure is parsed, also when parsing failed. The default does nothing.
+	 * Subclasses can override it.
+	 * @param structure The structure that was parsed
+	 */
 	protected void afterParsing(S structure) {
 		// Do nothing
 	}
