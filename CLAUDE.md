@@ -28,7 +28,7 @@ mvn org.owasp:dependency-check-maven:check        # OWASP check (fails on CVSS >
 - The parent POM `gov.cdc.izgw:izgw-bom` is a SNAPSHOT on GitHub Packages. If Maven can't resolve it, the build can't start: GitHub Packages credentials are missing from `~/.m2/settings.xml` (repository ids `github-bom`, `v2tofhir`). Stop and tell the user; there is no workaround.
 - The OWASP plugin isn't bound to any lifecycle phase, so `install` and `verify` don't run it. CI runs it only on releases, through the Dependency-Check GitHub Action.
 - Surefire only includes `**/*Tests.java`. A class named `FooTest` will **silently not run**.
-- `ERROR ... MSH segment not parsed` lines in test output are expected.
+- `ERROR ... MSAParser -- MSH segment not parsed` lines in test output are expected. They come from tests that convert an MSA segment without an MSH.
 - `Z42ForecastTests` is skipped unless `-Dv2tofhir.localMessages=<dir>` points at a directory of local messages outside the repo.
 
 ### Adding tests
@@ -42,10 +42,12 @@ To add a data-driven case, append a message to `src/test/resources/messages.txt`
 
 ## Error handling
 
-Conversion follows Postel's law, so there are three cases:
-- **Bad or empty input data:** `DatatypeConverter.to*`, `DatatypeParser.convert`/`fromString` and the segment parsers return `null` or skip the value, log a warning, and continue. Never throw for bad input.
-- **No parser for a segment, or a parser without the right constructor:** log it and skip the segment.
-- **Programmer or configuration errors** fail loudly with `ServiceConfigurationError` when the class loads or initializes. Examples: a `@ComesFrom` setter that doesn't take a FHIR type, missing coding resources, a mapping CSV with missing headers. Don't catch and swallow these.
+Conversion follows Postel's law. New code must handle bad or empty input by returning `null` (or skipping the value) and logging a warning. Never throw for bad input.
+
+How failures behave today:
+- **An exception thrown while a segment is parsed** is caught in `BaseParser`, which logs a warning and moves on to the next segment. The rest of that segment's fields are lost, so don't use throwing as a way to report bad data.
+- **A missing parser, or a parser whose constructor fails,** is logged and the segment is skipped. A bad `@ComesFrom` setter (one that doesn't take a FHIR type) makes `FieldHandler.initFieldHandlers` throw `ServiceConfigurationError` inside the constructor. That surfaces only as an ERROR log (`Unexpected ... while creating <X>Parser`), and the segment produces nothing. After adding or changing a parser, check the test log for this error.
+- **Missing coding resources or a malformed mapping CSV** throw `ServiceConfigurationError` when `Mapping` loads, and that fails loudly.
 
 ## Architecture
 
@@ -57,7 +59,7 @@ Conversion follows Postel's law, so there are three cases:
 - The constructor lazily collects these into a static `fieldHandlers` list (`if (fieldHandlers.isEmpty()) FieldHandler.initFieldHandlers(...)`). Do this in the constructor, not in a `static {}` block.
 - `@ComesFrom(map=...)` names a concept-map CSV in `src/main/resources/coding/`.
 
-**Several segments can build one resource**, e.g. Patient ← PID+PD1+PV1 and Immunization ← ORC+RXA+RXR+OBX. A later parser looks up the in-progress resource rather than creating a new one. `IzDetail` holds the shared per-message state for Immunization and ImmunizationRecommendation. Resource ids are ULIDs (`FhirIdCodec`); use `setIdGenerator(...)` to get deterministic ids in tests. `Provenance` resources are only created when `setStoringProvenance(true)` is set.
+**Several segments can build one resource**, e.g. Patient ← PID+PD1+PV1 and Immunization ← ORC+RXA+RXR+OBX. A later parser looks up the in-progress resource rather than creating a new one. `IzDetail` holds the shared per-message state for Immunization and ImmunizationRecommendation. Resource ids are ULIDs (`FhirIdCodec`); use `setIdGenerator(...)` to get deterministic ids in tests. A `Provenance` resource is created for every resource by default. Turn this off with `setStoringProvenance(false)`.
 
 **Datatypes:** `converter/DatatypeConverter` has static `toX(Type)` methods plus generic `convert(Class|String, Type, table)` dispatchers. The free-text parsers in `datatype/` implement `DatatypeParser<T>`, and they are wired in by hand. A new one needs three things in `DatatypeConverter`: a static instance, a `toX()` delegate, and a case in the generic `convert()`.
 
