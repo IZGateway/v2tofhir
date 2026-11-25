@@ -208,3 +208,21 @@ jobs:
       with:
         name: DependencyCheck
         path: ./target/site/dependency-check-report.html
+
+  # Auto-approve and merge PRs opened by the NIGHTLY Security Updates workflow
+  # (security-updates.yml) once the build job above has built the PR, passed the unit
+  # tests, deployed the SNAPSHOT to GitHub Packages, built the site and passed OWASP
+  # dependency-check. v2tofhir is a library with no dev environment of its own. The shared
+  # workflow skips every other PR, and refuses unless only izg-dependency-bot wrote to the
+  # branch and the PR only changes pom.xml with the bot's signed commit. See the README
+  # section "auto-merge-security-update" in IZGateway/izg-dependency-scripts.
+  auto-merge-security-update:
+    needs: build
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: IZGateway/izg-dependency-scripts/.github/workflows/auto-merge-security-update.yml@v1
+    secrets:
+      dependency-bot-app-id: ${{ secrets.DEPENDENCY_BOT_APP_ID }}
+      dependency-bot-app-key: ${{ secrets.DEPENDENCY_BOT_APP_KEY }}

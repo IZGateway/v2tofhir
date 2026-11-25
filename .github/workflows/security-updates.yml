@@ -1,0 +1,90 @@
+name: Security Updates
+
+# Nightly patch and minor updates for the dependencies and plugins this project owns
+# (everything outside the izgw-bom parent, which is bumped by its own release process).
+# The work is done by the shared workflow in IZGateway/izg-dependency-scripts; see its
+# README section "maven-security-updates".
+#
+# The bot's PR is built by develop.yml like any other PR: unit tests, deploy of the SNAPSHOT
+# to GitHub Packages, site, and OWASP dependency-check. v2tofhir is a library, so it has no
+# dev environment or integration-test stage of its own; those run in the consuming services.
+# PRs from the NIGHTLY schedule (or a manual run with auto_merge) are approved and merged by
+# the auto-merge-security-update job in develop.yml once that build passes. Other manual runs
+# open a PR for human review.
+#
+# Scope is controlled by:
+#   - automation-exclusions.txt   artifacts never bumped (upstream IZG projects, FIPS jars)
+#   - versions-rules.xml          pre-release / flavour filters
+#   - versions-maven-plugin config inherited from izgw-bom (patch and minor, never major)
+
+on:
+  schedule:
+    # Mon-Fri 08:00 UTC: after izgw-bom's nightly update (07:00 UTC) and the
+    # scheduled v2tofhir build (06:00 UTC), so upstream changes land first.
+    - cron: "0 8 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      auto_merge:
+        description: "Auto-merge the PR like a nightly run (use to test the auto-merge path)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  packages: read
+  actions: write        # re-run the PR build if it is cancelled in the CI queue; also
+                        # covers "actions: read", which report-ci-failure needs
+  pull-requests: read
+
+concurrency:
+  group: security-updates
+  cancel-in-progress: false
+
+jobs:
+  security-updates:
+    uses: IZGateway/izg-dependency-scripts/.github/workflows/maven-security-updates.yml@v1
+    with:
+      auto-merge: ${{ github.event_name == 'schedule' || inputs.auto_merge == true }}
+      maven-servers: github github-bom v2tofhir
+      ci-workflow: develop.yml
+      ci-description: the build, unit tests, SNAPSHOT deploy, site and OWASP dependency-check
+    secrets:
+      dependency-bot-app-id: ${{ secrets.DEPENDENCY_BOT_APP_ID }}
+      dependency-bot-app-key: ${{ secrets.DEPENDENCY_BOT_APP_KEY }}
+
+  # File (or comment on) an IGDD Bug when a SCHEDULED run fails, using the shared
+  # report-ci-failure action (README "report-ci-failure" in IZGateway/izg-dependency-scripts).
+  # The security-updates job above is a reusable-workflow call and cannot hold extra steps,
+  # so reporting is a separate last job. report-ci-failure only looks up failed steps in its
+  # OWN job, so the first step finds the failed job and step in this run and passes it as
+  # `reason`; that keeps one Jira ticket per distinct failure. Manual runs never report.
+  report-failure:
+    needs: security-updates
+    if: failure() && github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+    steps:
+      - name: Find the failed job and step
+        id: failed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          REASON=$(timeout 60 gh api "repos/$GH_REPO/actions/runs/$RUN_ID/attempts/$RUN_ATTEMPT/jobs?per_page=100" \
+            --jq '[.jobs[] | select(.conclusion == "failure")
+                   | "\(.name): \([.steps[]? | select(.conclusion == "failure") | .name] | last // "unknown step")"]
+                  | first // empty') || REASON=""
+          echo "Failure: ${REASON:-unknown step}"
+          echo "reason=${REASON:-unknown step}" >> "$GITHUB_OUTPUT"
+
+      - name: Report failure to Jira
+        uses: IZGateway/izg-dependency-scripts/.github/actions/report-ci-failure@v1
+        with:
+          component: V2toFHIR
+          jira-api-url: ${{ secrets.JIRA_API_URL }}
+          jira-auth: ${{ secrets.JIRA_API_AUTH_BASE64 }}
+          reason: ${{ steps.failed.outputs.reason }}
+          pr-url: ${{ needs.security-updates.outputs.pr-url }}
