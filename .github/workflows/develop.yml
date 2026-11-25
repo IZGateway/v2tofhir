@@ -85,7 +85,9 @@ jobs:
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
             https://maven.apache.org/xsd/settings-1.0.0.xsd">
-            <localRepository>~/.m2/repository</localRepository>
+            <!-- Do not set localRepository (IGDD-2974). Maven does not expand "~", so
+                 "~/.m2/repository" made a folder named "~" in the workspace. The setup-java
+                 Maven cache then had nothing to save. The default is ~/.m2/repository. -->
             <interactiveMode />
             <usePluginRegistry />
             <offline />
@@ -142,13 +144,29 @@ jobs:
         ELASTIC_API_KEY: ${{ secrets.ELASTIC_API_KEY }}
 
       run: |
-        env && mvn -B clean package install deploy site -Dbuildno=${{github.run_number}} \
+        env && mvn -B -U clean deploy -Dbuildno=${{github.run_number}} \
             -DdoRevisionCheck=${{env.DO_REVISION_CHECK}} \
             -DskipDependencyCheck=true \
-            -Dimage.tag=$IMAGE_BRANCH_TAG 
+            -Dimage.tag=$IMAGE_BRANCH_TAG
+        # Two things avoid "[WARNING] Overwriting artifact's file ... to target/classes" (IGDD-2974):
+        # 1. The command above lists only "deploy". "deploy" already runs test, package and
+        #    install. When several of these phases are listed, Maven runs the build lifecycle
+        #    more than once.
+        # 2. The site is built in a separate Maven run on purpose. When tests and "site" run in
+        #    the same Maven run, "site" forks the build lifecycle and Maven prints the warning.
+        # Do not use "clean" here. The site reads the test results and the JaCoCo coverage that
+        # the first run wrote, so the tests do not run again.
+        mvn -B site -DskipTests -Dbuildno=${{github.run_number}} \
+            -DdoRevisionCheck=${{env.DO_REVISION_CHECK}} \
+            -DskipDependencyCheck=true \
+            -Dimage.tag=$IMAGE_BRANCH_TAG
 
 # Use GitHub Action to speed up and improve dependency checking
-# NOTE: Disable automatic dependency checking in the build, this replaces it          
+# NOTE: Disable automatic dependency checking in the build, this replaces it
+# This scan does not use an NVD API key (IGDD-2974). The action runs the scanner with --noupdate.
+# The scanner uses the NVD database that is inside the Docker image of the action. The owners of
+# the action build this image every night with a new database. Thus the runner does not download
+# NVD data, and it does not need a key.
     - name: Dependency Check
       env:  
         # Per https://github.com/marketplace/actions/dependency-check, fix JAVA_HOME location for action
@@ -166,7 +184,6 @@ jobs:
           --disableNugetconf  
           --disableAssembly            
           --disableOssIndex
-          --nvdApiKey ${{ secrets.NVDAPIKEY }}
     - name: Publish Site
       uses: peaceiris/actions-gh-pages@v4.1.0
       with:

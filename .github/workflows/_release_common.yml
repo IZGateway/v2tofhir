@@ -394,13 +394,25 @@ jobs:
           echo "- Build artifacts"
           echo "- Generate Site"
           echo "- Deploy artifacts to GitHub Packages"
-          if mvn -B clean test package site deploy -DskipDependencyCheck=true; then
+          # Two things avoid "[WARNING] Overwriting artifact's file ... to target/classes" (IGDD-2974):
+          # 1. The first command lists only "deploy". "deploy" already runs test, package and
+          #    install. When several of these phases are listed, Maven runs the build lifecycle
+          #    more than once.
+          # 2. The site is built in a separate Maven run on purpose. When tests and "site" run in
+          #    the same Maven run, "site" forks the build lifecycle and Maven prints the warning.
+          # Do not use "clean" in the second command. The site reads the test results and the
+          # JaCoCo coverage that the first run wrote, so the tests do not run again.
+          if mvn -B clean deploy -DskipDependencyCheck=true \
+             && mvn -B site -DskipTests -DskipDependencyCheck=true; then
             echo "Maven build, test, site generation, and deploy completed successfully."
           else
             echo "ERROR: Maven build, test, site generation, or deploy failed. Aborting release pipeline." >&2
             exit 1
           fi
 
+      # This scan does not use an NVD API key (IGDD-2974). The action runs the scanner with
+      # --noupdate. The scanner uses the NVD database that is inside the Docker image of the
+      # action. The owners of the action build this image every night with a new database.
       - name: Run OWASP Dependency Check
         env:
           # Per https://github.com/marketplace/actions/dependency-check, fix JAVA_HOME location for action
@@ -418,7 +430,6 @@ jobs:
             --disableNugetconf
             --disableAssembly
             --disableOssIndex
-            --nvdApiKey ${{ secrets.NVDAPIKEY }}   
 
       - name: Upload dependency check report
         uses: actions/upload-artifact@v7

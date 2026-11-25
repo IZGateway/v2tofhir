@@ -9,6 +9,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 import com.ainq.fhir.utils.YamlParser;
 
@@ -97,7 +98,7 @@ public class TestBase implements ErrorReporter {
 	
 	static Set<Type> getTestDataForIdentifier() {
 		return getTestData(t -> ID_TYPES.contains(t.getName())
-				&& (!"XCN".equals(t.getName()) || !StringUtils.startsWith(encode(t), "^")));
+				&& (!"XCN".equals(t.getName()) || !Strings.CS.startsWith(encode(t), "^")));
 	}
 
 	static String encode(Type t) {
@@ -122,7 +123,7 @@ public class TestBase implements ErrorReporter {
 
 	static Set<Type> getTestData(Predicate<Type> test) {
 		Set<Type> types = getTestFields(null);
-		Set<Type> s = new TreeSet<>((Type t, Type u) -> StringUtils.compare(t.toString(), u.toString()));
+		Set<Type> s = new TreeSet<>((Type t, Type u) -> Strings.CS.compare(t.toString(), u.toString()));
 		addTestData(test, types, s);
 		return s;
 	}

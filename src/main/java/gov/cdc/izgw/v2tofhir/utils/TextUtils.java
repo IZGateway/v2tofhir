@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Objects;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.hl7.fhir.instance.model.api.IBase;
 import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.BaseDateTimeType;
@@ -64,7 +65,7 @@ public class TextUtils {
 		}
 		appendIfNonBlank(b, district, "\n");
 		
-		if (StringUtils.equalsAny(StringUtils.upperCase(country), "MX", "MEX", "MEXICO")) {
+		if (Strings.CS.equalsAny(StringUtils.upperCase(country), "MX", "MEX", "MEXICO")) {
 			appendIfNonBlank(b, postalCode, "  ");
 			appendIfNonBlank(b, city, ", ");
 			appendIfNonBlank(b, state, null);
@@ -73,9 +74,9 @@ public class TextUtils {
 			appendIfNonBlank(b, state, "  ");
 			appendIfNonBlank(b, postalCode, null);
 		}
-		if (StringUtils.endsWithAny(b, ", ", "  ")) {
+		if (Strings.CS.endsWithAny(b, ", ", "  ")) {
 			b.setLength(b.length() - 2);
-		} else if (StringUtils.endsWith(b, " ")) {
+		} else if (Strings.CS.endsWith(b, " ")) {
 			b.setLength(b.length() - 1);
 		}
 		if (StringUtils.isNotBlank(b)) {
@@ -156,10 +157,10 @@ public class TextUtils {
 	}
 
 	private static String getHumanReadableSystemName(String system) {
-		if (!StringUtils.contains(system, ":")) {
+		if (!Strings.CS.contains(system, ":")) {
 			return system;
 		}
-		List<String> l = Systems.getSystemNames(system);
+		List<String> l = gov.cdc.izgw.v2tofhir.terminology.Systems.getSystemNames(system);
 		// First name is always preferred name, second is the V2 common name
 		if (!l.isEmpty()) {
 			system = l.get(0);
@@ -515,9 +516,9 @@ public class TextUtils {
 			Coding coding = cc.getCodingFirstRep();
 			type = Objects.toString(cc.getText(),  
 							Objects.toString(coding.getCode(), 
-								Systems.toTextName(identifier.getSystem())));
+								gov.cdc.izgw.v2tofhir.terminology.Systems.toTextName(identifier.getSystem())));
 		} else {
-			List<String> types = Systems.getSystemNames(identifier.getSystem());
+			List<String> types = gov.cdc.izgw.v2tofhir.terminology.Systems.getSystemNames(identifier.getSystem());
 			if (!types.isEmpty()) {
 				type = types.get(0);
 				if (types.size() > 1) {

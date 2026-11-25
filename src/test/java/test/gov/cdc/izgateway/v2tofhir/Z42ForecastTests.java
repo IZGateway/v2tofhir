@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.hl7.fhir.r4.model.Base;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Immunization;
@@ -120,7 +121,7 @@ class Z42ForecastTests extends TestBase {
 			for (Observation obs : resourcesOf(bundle, Observation.class)) {
 				assertFalse(
 					obs.getPartOf().stream().anyMatch(
-						ref -> StringUtils.startsWith(ref.getReference(), "ImmunizationRecommendation")
+						ref -> Strings.CS.startsWith(ref.getReference(), "ImmunizationRecommendation")
 					),
 					file.getName() + " no Observation.partOf references an ImmunizationRecommendation"
 				);

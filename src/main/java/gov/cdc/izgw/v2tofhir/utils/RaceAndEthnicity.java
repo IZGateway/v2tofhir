@@ -19,6 +19,7 @@ public final class RaceAndEthnicity {
      * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.RaceAndEthnicity#US_CORE_ETHNICITY} directly.
      * @see gov.cdc.izgw.v2tofhir.terminology.RaceAndEthnicity#US_CORE_ETHNICITY
      */
+    @Deprecated(since = "moved to gov.cdc.izgw.v2tofhir.terminology; use TerminologyMapper")
     public static final String US_CORE_ETHNICITY = gov.cdc.izgw.v2tofhir.terminology.RaceAndEthnicity.US_CORE_ETHNICITY;
     /**
      * Extension URL for US Core Race.
@@ -26,6 +27,7 @@ public final class RaceAndEthnicity {
      * @deprecated Use {@link gov.cdc.izgw.v2tofhir.terminology.RaceAndEthnicity#US_CORE_RACE} directly.
      * @see gov.cdc.izgw.v2tofhir.terminology.RaceAndEthnicity#US_CORE_RACE
      */
+    @Deprecated(since = "moved to gov.cdc.izgw.v2tofhir.terminology; use TerminologyMapper")
     public static final String US_CORE_RACE = gov.cdc.izgw.v2tofhir.terminology.RaceAndEthnicity.US_CORE_RACE;
 
     /**

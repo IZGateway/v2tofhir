@@ -26,6 +26,7 @@ public interface ErrorReporter {
 			// Private constructor to prevent instantiation
 		}
 		private static final ThreadLocal<WeakReference<ErrorReporter>> ERROR_REPORTER = new ThreadLocal<>();
+		/** The default error reporter. It logs each message as a warning. */
 		public static final ErrorReporter INSTANCE = new ErrorReporter() {
 			@Override
 			public void warn(String message, Object... args) {
