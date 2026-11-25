@@ -1,0 +1,21 @@
+# automation-exclusions.txt
+#
+# Artifacts listed here are NOT bumped by the nightly Security Updates workflow
+# (.github/workflows/security-updates.yml).
+#
+# Format: groupId:artifactId  (one per line; * is supported, e.g. org.example:*)
+# Lines beginning with # are ignored. No workflow change is needed to add an entry.
+#
+# -----------------------------------------------------------------------
+# Upstream IZ Gateway projects (izgw-bom parent).
+# These are bumped by their own release process, not by this workflow.
+# -----------------------------------------------------------------------
+gov.cdc.izgw:*
+#
+# -----------------------------------------------------------------------
+# Bouncy Castle FIPS: a new version must be checked for FIPS 140
+# certification before upgrading (normally managed by izgw-bom).
+# -----------------------------------------------------------------------
+org.bouncycastle:bc-fips
+org.bouncycastle:bcpkix-fips
+org.bouncycastle:bctls-fips

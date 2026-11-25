@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  versions-rules.xml
+  Rules for versions-maven-plugin, used by the Security Updates workflow
+  (.github/workflows/security-updates.yml). izgw-bom configures the plugin's rulesUri
+  to point at this file in the project root, so it must exist here.
+
+  Only stable releases are considered. izgw-bom's plugin configuration
+  (allowMajorUpdates=false, allowMinorUpdates=true) limits updates to patch and minor releases.
+
+  See: https://www.mojohaus.org/versions/versions-maven-plugin/version-rules.html
+-->
+<ruleset comparisonMethod="maven"
+         xmlns="http://mojo.codehaus.org/versions-maven-plugin/rule/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://mojo.codehaus.org/versions-maven-plugin/rule/2.0.0
+                             https://www.mojohaus.org/versions-maven-plugin/xsd/rule-2.0.0.xsd">
+    <rules>
+        <!-- Global: ignore pre-release versions (RC, CR, alpha, beta, milestone / M, early-access,
+             preview, dev, pre, SNAPSHOT). The optional [-.]? before the number also matches dotted
+             semver qualifiers such as 1.2.3-rc.1, -beta.2, -alpha.1 and -M.3. -->
+        <rule>
+            <ignoreVersions>
+                <ignoreVersion type="regex">(?i).*[-.](rc|cr|alpha|beta|milestone|ea|preview|dev|pre)([-.]?\d+)*$</ignoreVersion>
+                <ignoreVersion type="regex">(?i).*[-.]M[-.]?\d+$</ignoreVersion>
+                <ignoreVersion type="regex">(?i).*-SNAPSHOT$</ignoreVersion>
+            </ignoreVersions>
+        </rule>
+    </rules>
+</ruleset>
