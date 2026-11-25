@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Units.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">gov.cdc.izgw.v2tofhir.terminology</a> &gt; <span class="el_source">Units.java</span></div><h1>Units.java</h1><pre class="source lang-java linenums">package gov.cdc.izgw.v2tofhir.terminology;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Optional;
+
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.ConceptMap;
+import org.hl7.fhir.r4.model.ConceptMap.TargetElementComponent;
+import org.hl7.fhir.r4.model.ValueSet;
+import org.hl7.fhir.r4.model.ValueSet.ConceptReferenceComponent;
+import org.hl7.fhir.r4.model.ValueSet.ConceptSetComponent;
+
+import ca.uhn.fhir.context.FhirContext;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * Utility class for parsing and converting V2 ANSI, ISO+ or UCUM unit codes.
+ *
+ * &lt;p&gt;At class-load time the unit lookup tables are populated by consulting the configured
+ * {@link TerminologyMapper} (via {@link TerminologyMapperFactory}) for:
+ * &lt;ul&gt;
+ *   &lt;li&gt;{@code ConceptMap/v2-ucum-units} — maps V2 ANSI/ISO+ codes to UCUM&lt;/li&gt;
+ *   &lt;li&gt;{@code ValueSet/ucum-common-units} — well-known UCUM codes and their display names&lt;/li&gt;
+ * &lt;/ul&gt;
+ * If the configured mapper does not supply either resource, the bundled classpath JSON file is
+ * used as a fallback, so a custom {@link TerminologyMapper} can selectively override one or
+ * both resources without replacing the defaults entirely.
+ * To re-initialize at runtime call {@link #initialize(TerminologyLoader)}.
+ *
+ * @author Audacious Inquiry
+ * @see &lt;a href=&quot;http://hl7.org/fhir/R4/valueset-ucum-common.html&quot;&gt;UCUM Common Units ValueSet&lt;/a&gt;
+ */
+<span class="fc" id="L38">@Slf4j</span>
+public class Units {
+
+    /** Resource id of the ConceptMap that maps V2/ANSI/ISO+ unit codes to UCUM. */
+    public static final String CONCEPT_MAP_ID = &quot;v2-ucum-units&quot;;
+
+    /** Resource id of the ValueSet containing well-known UCUM unit codes and display names. */
+    public static final String VALUE_SET_ID = &quot;ucum-common-units&quot;;
+
+<span class="fc" id="L47">    private static final HashMap&lt;String, Pair&lt;String, String&gt;&gt; ucumMap = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L48">    private static final HashMap&lt;String, String&gt; commonUcum = new LinkedHashMap&lt;&gt;();</span>
+
+    /** The ConceptMap last used to populate {@link #ucumMap}; {@code null} until first initialization. */
+    private static ConceptMap unitConceptMap;
+
+    /** The ValueSet last used to populate {@link #commonUcum}; {@code null} until first initialization. */
+    private static ValueSet unitValueSet;
+
+    static {
+<span class="fc" id="L57">        init();</span>
+<span class="fc" id="L58">    }</span>
+
+    private Units() {
+    }
+
+    /**
+     * Initializes the unit maps at class-load time.
+     *
+     * &lt;p&gt;First asks the configured {@link TerminologyMapper} (via {@link TerminologyMapperFactory})
+     * for {@code ConceptMap/v2-ucum-units} and {@code ValueSet/ucum-common-units}.
+     * Any resource not supplied by the mapper is loaded from the bundled classpath JSON file,
+     * so a custom mapper can selectively override one or both resources.&lt;/p&gt;
+     */
+    private static void init() {
+<span class="fc" id="L72">        TerminologyLoader mapper = TerminologyMapperFactory.get();</span>
+<span class="fc" id="L73">        Optional&lt;ConceptMap&gt; cm = mapper.getConceptMap(CONCEPT_MAP_ID);</span>
+<span class="fc" id="L74">        Optional&lt;ValueSet&gt; vs = mapper.getValueSet(VALUE_SET_ID);</span>
+
+        // Fall back to classpath for any resource the configured mapper does not supply
+<span class="pc bpc" id="L77" title="3 of 4 branches missed.">        if (cm.isEmpty() || vs.isEmpty()) {</span>
+<span class="fc" id="L78">            FhirContext ctx = FhirContext.forR4();</span>
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">            if (cm.isEmpty()) {</span>
+<span class="fc" id="L80">                cm = Optional.ofNullable(</span>
+<span class="fc" id="L81">                        loadClasspathResource(ctx, &quot;ConceptMap-v2-ucum-units.json&quot;, ConceptMap.class));</span>
+                // If the ConceptMap is missing from the mapper store it there
+<span class="fc" id="L83">                cm.ifPresent(mapper::load);</span>
+            }
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">            if (vs.isEmpty()) {</span>
+<span class="fc" id="L86">                vs = Optional.ofNullable(</span>
+<span class="fc" id="L87">                        loadClasspathResource(ctx, &quot;ValueSet-ucum-common-units.json&quot;, ValueSet.class));</span>
+                // If the ValueSet is missing from the mapper store it there
+<span class="fc" id="L89">                vs.ifPresent(mapper::load);</span>
+            }
+        }
+<span class="fc" id="L92">        initialize(mapper);</span>
+<span class="fc" id="L93">    }</span>
+
+    /**
+     * (Re-)initializes the unit lookup maps from the given {@link TerminologyLoader}.
+     *
+     * &lt;p&gt;Retrieves {@code ConceptMap/v2-ucum-units} (V2 &amp;rarr; UCUM code mappings) and
+     * {@code ValueSet/ucum-common-units} (well-known UCUM codes and display names) from the
+     * loader.  Any previous map contents are discarded before population begins, so callers
+     * can use this method to hot-swap terminology data at runtime.&lt;/p&gt;
+     *
+     * &lt;p&gt;The {@code ValueSet} is processed first so that its display names are available when
+     * building the {@code ConceptMap} entries.&lt;/p&gt;
+     *
+     * @param loader the {@link TerminologyLoader} to retrieve resources from; must not be {@code null}
+     */
+    public static void initialize(TerminologyLoader loader) {
+<span class="fc" id="L109">        ucumMap.clear();</span>
+<span class="fc" id="L110">        commonUcum.clear();</span>
+
+        // Populate commonUcum from ValueSet; retain the resource for external access
+<span class="fc" id="L113">        loader.getValueSet(VALUE_SET_ID).ifPresent(Units::populateCommonUcum);</span>
+
+        // Populate ucumMap from ConceptMap; retain the resource for external access
+<span class="fc" id="L116">        loader.getConceptMap(CONCEPT_MAP_ID).ifPresent(Units::populateUcumMap);</span>
+<span class="fc" id="L117">    }</span>
+
+	private static void populateUcumMap(ConceptMap cm) {
+<span class="fc" id="L120">		unitConceptMap = cm;</span>
+<span class="fc" id="L121">		cm.getGroup().forEach(group -&gt; </span>
+<span class="fc" id="L122">			group.getElement().forEach(element -&gt; {</span>
+<span class="fc" id="L123">		        String v2Code = element.getCode();</span>
+<span class="pc bpc" id="L124" title="2 of 4 branches missed.">		        if (!StringUtils.isBlank(v2Code) &amp;&amp; !element.getTarget().isEmpty()) {</span>
+<span class="fc" id="L125">			        TargetElementComponent target = element.getTarget().get(0);</span>
+<span class="fc" id="L126">			        String ucumCode = target.getCode();</span>
+<span class="fc" id="L127">			        String display = </span>
+<span class="fc" id="L128">			            	StringUtils.defaultIfEmpty(target.getDisplay(),</span>
+<span class="fc" id="L129">			            		StringUtils.defaultIfEmpty(commonUcum.get(ucumCode), ucumCode)</span>
+			            	);
+<span class="fc" id="L131">			        Pair&lt;String, String&gt; value = Pair.of(ucumCode, display);</span>
+			        // V2 codes in the ConceptMap are already uppercase; uppercase defensively
+<span class="fc" id="L133">			        ucumMap.put(v2Code.toUpperCase(), value);</span>
+			        // Also index by uppercase UCUM code so that UCUM codes map to themselves
+<span class="fc" id="L135">			        ucumMap.put(ucumCode.toUpperCase(), value);</span>
+		        }
+<span class="fc" id="L137">			})</span>
+		);
+<span class="fc" id="L139">	}</span>
+
+	private static void populateCommonUcum(ValueSet vs) {
+<span class="fc" id="L142">		unitValueSet = vs;</span>
+<span class="fc bfc" id="L143" title="All 2 branches covered.">		for (ConceptSetComponent include : vs.getCompose().getInclude()) {</span>
+<span class="fc bfc" id="L144" title="All 2 branches covered.">		    for (ConceptReferenceComponent concept : include.getConcept()) {</span>
+<span class="pc bpc" id="L145" title="1 of 2 branches missed.">		        if (StringUtils.isNotBlank(concept.getCode())) {</span>
+<span class="fc" id="L146">		            commonUcum.put(concept.getCode(), concept.getDisplay());</span>
+		        }
+<span class="fc" id="L148">		    }</span>
+<span class="fc" id="L149">		}</span>
+<span class="fc" id="L150">	}</span>
+
+    /**
+     * Returns the {@link ConceptMap} that was last used to populate the V2-to-UCUM lookup table,
+     * or {@link java.util.Optional#empty()} if initialization has not yet occurred or failed.
+     *
+     * @return the {@code ConceptMap/v2-ucum-units} resource, or empty
+     */
+    public static Optional&lt;ConceptMap&gt; getConceptMap() {
+<span class="fc" id="L159">        return Optional.ofNullable(unitConceptMap);</span>
+    }
+
+    /**
+     * Returns the {@link ValueSet} that was last used to populate the common-UCUM display-name
+     * table, or {@link Optional#empty()} if initialization has not yet occurred or failed.
+     *
+     * @return the {@code ValueSet/ucum-common-units} resource, or empty
+     */
+    public static Optional&lt;ValueSet&gt; getValueSet() {
+<span class="fc" id="L169">        return Optional.ofNullable(unitValueSet);</span>
+    }
+
+    /**
+     * Loads and parses a FHIR JSON resource from the classpath.
+     *
+     * @param &lt;T&gt;          expected FHIR resource type
+     * @param ctx          the {@link FhirContext} to use for parsing
+     * @param resourceName classpath-relative filename (e.g., {@code &quot;ConceptMap-v2-ucum-units.json&quot;})
+     * @param type         expected resource class
+     * @return the parsed resource, or {@code null} if the resource was not found or parsing failed
+     */
+    private static &lt;T extends org.hl7.fhir.r4.model.Resource&gt; T loadClasspathResource(
+            FhirContext ctx, String resourceName, Class&lt;T&gt; type) {
+<span class="fc" id="L183">        try (InputStream is = Units.class.getClassLoader().getResourceAsStream(resourceName)) {</span>
+<span class="pc bpc" id="L184" title="1 of 2 branches missed.">            if (is == null) {</span>
+<span class="nc" id="L185">                log.error(&quot;Classpath resource not found: {}&quot;, resourceName);</span>
+<span class="nc" id="L186">                return null;</span>
+            }
+<span class="fc" id="L188">            return ctx.newJsonParser().parseResource(type, is);</span>
+<span class="nc bnc" id="L189" title="All 2 branches missed.">        } catch (IOException e) {</span>
+<span class="nc" id="L190">            log.error(&quot;Failed to close stream for classpath resource {}: {}&quot;, resourceName, e.getMessage());</span>
+<span class="nc" id="L191">            return null;</span>
+        }
+    }
+
+    /**
+     * Convert a string in ANSI, ISO+ or UCUM units to UCUM.
+     *
+     * @param unit  The string to convert to a UCUM code
+     * @return      The Coding representing the UCUM unit
+     */
+    public static Coding toUcum(String unit) {
+<span class="pc bpc" id="L202" title="1 of 4 branches missed.">        if (unit == null || StringUtils.isBlank(unit)) {</span>
+<span class="fc" id="L203">            return null;</span>
+        }
+<span class="fc" id="L205">        unit = unit.replace(&quot;\s+&quot;, &quot;&quot;);  // Remove any whitespace for lookup</span>
+<span class="fc" id="L206">        String display = commonUcum.get(unit);</span>
+<span class="fc bfc" id="L207" title="All 2 branches covered.">        if (display != null) {</span>
+<span class="fc" id="L208">            return new Coding(Systems.UCUM, unit, display);</span>
+        }
+<span class="fc" id="L210">        unit = StringUtils.upperCase(unit);  // Convert to Uppercase for lookup</span>
+<span class="fc" id="L211">        Pair&lt;String,String&gt; ucumValue = ucumMap.get(unit);</span>
+<span class="fc bfc" id="L212" title="All 2 branches covered.">        if (ucumValue == null) {</span>
+<span class="fc" id="L213">            return null;</span>
+        }
+<span class="fc" id="L215">        Coding coding = new Coding(Systems.UCUM, ucumValue.getKey(), ucumValue.getValue());</span>
+        // If found in commonUcum, set display name.
+<span class="fc" id="L217">        display = commonUcum.get(coding.getCode());</span>
+<span class="pc bpc" id="L218" title="1 of 2 branches missed.">        if (display != null) {</span>
+<span class="fc" id="L219">            coding.setDisplay(display);</span>
+        }
+<span class="fc" id="L221">        return coding;</span>
+    }
+
+    /**
+     * Check whether a unit string is an actual UCUM code
+     * 
+     * NOTE: UCUM is a code system with a grammar, which means that codes are effectively infinite
+     * in number. This method only checks for UCUM units commonly used in medicine. The lists are extensive,
+     * but it's also possible that some value UCUM codes will be missed by this method.
+     *   
+     * @param unit  A string to check
+     * @return      true if the unit is known to be UCUM, or false otherwise.
+     */
+    public static boolean isUcum(String unit) {
+<span class="nc bnc" id="L235" title="All 2 branches missed.">        if (StringUtils.isBlank(unit)) {</span>
+<span class="nc" id="L236">            return false;</span>
+        }
+<span class="nc bnc" id="L238" title="All 2 branches missed.">        if (commonUcum.containsKey(unit)) {</span>
+<span class="nc" id="L239">            return true;</span>
+        }
+<span class="nc" id="L241">        Coding coding = toUcum(unit);</span>
+<span class="nc bnc" id="L242" title="All 2 branches missed.">        if (coding == null) {</span>
+<span class="nc" id="L243">            return false;</span>
+        }
+<span class="nc" id="L245">        return unit.equals(coding.getCode()); </span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DisplayNameResolver.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">gov.cdc.izgw.v2tofhir.terminology</a> &gt; <span class="el_source">DisplayNameResolver.java</span></div><h1>DisplayNameResolver.java</h1><pre class="source lang-java linenums">package gov.cdc.izgw.v2tofhir.terminology;
+
+import java.util.Optional;
+
+/**
+ * Resolves and manages preferred display names for coded concepts.
+ *
+ * &lt;p&gt;Lookup defaults return empty results; {@link #setDisplay} default throws
+ * {@link UnsupportedOperationException} as there is no meaningful no-op for a store operation.&lt;/p&gt;
+ *
+ * @author Audacious Inquiry
+ * @see TerminologyMapper
+ */
+public interface DisplayNameResolver {
+
+    /**
+     * Returns the preferred display text for the given code in the given system.
+     *
+     * @param system the code system URI
+     * @param code   the code
+     * @return the display text, or {@link Optional#empty()} if not registered
+     */
+    default Optional&lt;String&gt; getDisplay(String system, String code) {
+<span class="nc" id="L24">        return Optional.empty();</span>
+    }
+
+    /**
+     * Returns {@code true} if a display name is registered for the given code.
+     *
+     * @param system the code system URI
+     * @param code   the code
+     * @return {@code true} if a display is available; {@code false} otherwise
+     */
+    default boolean hasDisplay(String system, String code) {
+<span class="nc" id="L35">        return false;</span>
+    }
+
+    /**
+     * Registers or overrides the display name for the given code.
+     *
+     * &lt;p&gt;The default implementation throws {@link UnsupportedOperationException}.
+     * Implementations that support a writable display registry should override this method.&lt;/p&gt;
+     *
+     * @param system  the code system URI
+     * @param code    the code
+     * @param display the display text to register
+     * @throws UnsupportedOperationException if this resolver does not support display registration
+     */
+    default void setDisplay(String system, String code, String display) {
+<span class="nc" id="L50">        throw new UnsupportedOperationException(&quot;setDisplay is not supported by this DisplayNameResolver&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

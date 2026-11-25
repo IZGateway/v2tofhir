@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConceptTranslator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HL7 Version 2 to FHIR Conversion</a> &gt; <a href="index.source.html" class="el_package">gov.cdc.izgw.v2tofhir.terminology</a> &gt; <span class="el_source">ConceptTranslator.java</span></div><h1>ConceptTranslator.java</h1><pre class="source lang-java linenums">package gov.cdc.izgw.v2tofhir.terminology;
+
+import java.util.Optional;
+
+import org.hl7.fhir.r4.model.CodeType;
+import org.hl7.fhir.r4.model.CodeableConcept;
+import org.hl7.fhir.r4.model.Coding;
+
+/**
+ * Translates coded concepts between code systems using concept maps or named mapping tables.
+ *
+ * &lt;p&gt;All default implementations return {@link Optional#empty()}; override to provide real translation.&lt;/p&gt;
+ *
+ * @author Audacious Inquiry
+ * @see TerminologyMapper
+ */
+public interface ConceptTranslator {
+
+    /**
+     * Translates the given source coding to the target code system using the best available concept map.
+     *
+     * @param source       the coding to translate
+     * @param targetSystem the target code system URI
+     * @return the translation result, or {@link Optional#empty()} if no mapping is available
+     */
+    default Optional&lt;TranslationResult&gt; translate(Coding source, String targetSystem) {
+<span class="nc" id="L27">        return Optional.empty();</span>
+    }
+
+    /**
+     * Applies the named concept map or mapping table to the source coding.
+     *
+     * &lt;p&gt;This is the primary entry point for annotation-driven mapping from
+     * {@code @ComesFrom(table=...)} or {@code @ComesFrom(map=...)}.&lt;/p&gt;
+     *
+     * @param mappingName the name of the concept map or V2 table (e.g., {@code &quot;0001&quot;}, {@code &quot;USCoreRace&quot;})
+     * @param source      the coding to map
+     * @return the translation result, or {@link Optional#empty()} if no mapping is available
+     */
+    default Optional&lt;TranslationResult&gt; mapCode(String mappingName, Coding source) {
+<span class="nc" id="L41">        return Optional.empty();</span>
+    }
+
+    /**
+     * Maps the best coding within a {@link CodeableConcept} using the named concept map or
+     * mapping table, applying a two-pass priority algorithm.
+     *
+     * &lt;p&gt;&lt;b&gt;Pass 1 — explicit match:&lt;/b&gt; iterates all codings calling
+     * {@link #mapCode(String, Coding)}; returns the result code element of the first result
+     * where {@link TranslationResult#exact()} is {@code true}.&lt;/p&gt;
+     *
+     * &lt;p&gt;&lt;b&gt;Pass 2 — pass-through / approximate match:&lt;/b&gt; iterates all codings again and
+     * returns the result code element of the first non-empty result (e.g. when
+     * {@code unmapped.mode = &quot;provided&quot;} is in effect and {@code exact} is {@code false}).&lt;/p&gt;
+     *
+     * &lt;p&gt;&lt;b&gt;Pass 3 — last resort:&lt;/b&gt; returns the code element of the first coding in the
+     * {@link CodeableConcept} without any translation.&lt;/p&gt;
+     *
+     * &lt;p&gt;Returns {@code null} if {@code cc} is {@code null} or has no codings.&lt;/p&gt;
+     *
+     * @param mappingName the name of the concept map or V2 table
+     * @param cc          the {@link CodeableConcept} to map
+     * @return the best available {@link CodeType}, or {@code null} if the concept is empty
+     */
+    default CodeType mapCodeableConcept(String mappingName, CodeableConcept cc) {
+<span class="fc bfc" id="L66" title="All 4 branches covered.">        if (cc == null || !cc.hasCoding()) {</span>
+<span class="fc" id="L67">            return null;</span>
+        }
+
+        // Pass 1: explicit (exact) match wins
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        for (Coding coding : cc.getCoding()) {</span>
+<span class="fc" id="L72">            Optional&lt;TranslationResult&gt; result = mapCode(mappingName, coding);</span>
+<span class="fc bfc" id="L73" title="All 4 branches covered.">            if (result.isPresent() &amp;&amp; result.get().exact()) {</span>
+<span class="fc" id="L74">                return result.get().resultCoding().getCodeElement();</span>
+            }
+<span class="fc" id="L76">        }</span>
+
+        // Pass 2: any non-empty result (pass-through / approximate)
+<span class="fc bfc" id="L79" title="All 2 branches covered.">        for (Coding coding : cc.getCoding()) {</span>
+<span class="fc" id="L80">            Optional&lt;TranslationResult&gt; result = mapCode(mappingName, coding);</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">            if (result.isPresent()) {</span>
+<span class="fc" id="L82">                return result.get().resultCoding().getCodeElement();</span>
+            }
+<span class="fc" id="L84">        }</span>
+
+        // Pass 3: last resort — return the first coding unchanged
+<span class="fc" id="L87">        return cc.getCodingFirstRep().getCodeElement();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
